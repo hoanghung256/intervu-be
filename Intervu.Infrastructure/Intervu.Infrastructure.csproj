@@ -11,6 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Intervu.Application\Intervu.Application.csproj" />
     <ProjectReference Include="..\Intervu.Domain\Intervu.Domain.csproj" />
   </ItemGroup>
 

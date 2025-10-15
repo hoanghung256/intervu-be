@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Intervu.Infrastructure.Repositories.SqlServer.DataContext
+namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
 {
     public class IntervuDbContext : DbContext
     {
