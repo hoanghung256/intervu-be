@@ -1,0 +1,6 @@
+@Intervu.API_HostAddress = http://localhost:5293
+
+GET {{Intervu.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
