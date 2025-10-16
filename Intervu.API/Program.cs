@@ -1,3 +1,5 @@
+using Intervu.Application;
+using Intervu.Infrastructure;
 
 namespace Intervu.API
 {
@@ -8,11 +10,19 @@ namespace Intervu.API
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
-
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
+
             builder.Services.AddSwaggerGen();
+
+            builder.Services.AddUseCases(builder.Configuration);
+
+            builder.Services.AddPersistenceSqlServer(builder.Configuration);
+
+            builder.Services.AddInfrastructureExternalServices(builder.Configuration);
+
+
 
             var app = builder.Build();
 
