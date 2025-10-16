@@ -1,3 +1,4 @@
+using Intervu.API.Properties;
 using Intervu.Application;
 using Intervu.Infrastructure;
 
@@ -22,7 +23,32 @@ namespace Intervu.API
 
             builder.Services.AddInfrastructureExternalServices(builder.Configuration);
 
+            builder.Services.AddCors(options =>
+            {
+                // Development CORS policy - allow all
+                options.AddPolicy(name: CorsPolicies.DevCorsPolicy,
+                    policy =>
+                    {
+                        policy.AllowAnyOrigin()
+                              .AllowAnyHeader()
+                              .AllowAnyMethod();
+                    }
+                );
 
+                // Production CORS policy - restrict to specific origins
+                options.AddPolicy(name: CorsPolicies.ProdCorsPolicy,
+                    policy =>
+                    {
+                        var allowedOrigins = builder.Configuration
+                                            .GetValue<string>("CorsSettings:AllowedOrigins")?
+                                            .Split(",") ?? [];
+
+                        policy.WithOrigins(allowedOrigins)
+                              .AllowAnyHeader()
+                              .AllowAnyMethod();
+                    }
+                );
+            });
 
             var app = builder.Build();
 
