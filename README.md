@@ -26,7 +26,7 @@ The header is the most important part and follows a strict format: `<type>(<scop
 
 #### **`<type>`**
 
-This prefix describes the kind of change you've made. The types used in this project are:
+This prefix describes the kind of change you have made. The types used in this project are:
 
 | Type | Description |
 | :--- | :--- |
