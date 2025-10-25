@@ -15,8 +15,8 @@ namespace Intervu.Infrastructure
     {
         public static IServiceCollection AddPersistenceSqlServer(this IServiceCollection services, IConfiguration configuration)
         {
-            //services.AddDbContextPool<IntervuDbContext>(options =>
-            //    options.UseSqlServer(configuration.GetConnectionString("SqlDefaultConnection")));
+            services.AddDbContextPool<IntervuDbContext>(options =>
+                options.UseSqlServer(configuration.GetConnectionString("SqlDefeaultConnection")));
 
             // Register your repositories here
             //services.AddScoped<ISomeRepository, SomeRepository>();
