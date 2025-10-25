@@ -1,6 +1,9 @@
+﻿using Asp.Versioning;
+using Asp.Versioning.ApiExplorer;
 using Intervu.API.Properties;
 using Intervu.Application;
 using Intervu.Infrastructure;
+using Microsoft.OpenApi.Models;
 
 namespace Intervu.API
 {
@@ -10,60 +13,101 @@ namespace Intervu.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-            builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+            // --- API VERSIONING CONFIGURATION ---
+            builder.Services.AddApiVersioning(options =>
+            {
+                options.DefaultApiVersion = new ApiVersion(1, 0);
+                options.AssumeDefaultVersionWhenUnspecified = true;
+                options.ReportApiVersions = true;
+
+                // Support read version /api/v{version}/controller
+                options.ApiVersionReader = new UrlSegmentApiVersionReader();
+            })
+            .AddApiExplorer(options =>
+            {
+                options.GroupNameFormat = "'v'VVV"; // Format version group: v1, v2, v3
+                options.SubstituteApiVersionInUrl = true; // Inject {version} dynamically in [Route] of controller
+            });
+
+            // --- CONTROLLERS ---
+            builder.Services.AddControllers(options =>
+            {
+                options.Conventions.Add(new LowercaseControllerRouteConvention());
+            });
+
+            // --- SWAGGER CONFIGURATION ---
             builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen(options =>
+            {
+                options.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Title = "Intervu API",
+                    Version = "v1"
+                });
 
-            builder.Services.AddSwaggerGen();
+                options.SwaggerDoc("v2", new OpenApiInfo
+                {
+                    Title = "Intervu API",
+                    Version = "v2"
+                });
+            });
 
+            // --- CUSTOM SERVICES ---
             builder.Services.AddUseCases(builder.Configuration);
-
             builder.Services.AddPersistenceSqlServer(builder.Configuration);
-
             builder.Services.AddInfrastructureExternalServices(builder.Configuration);
 
+            // --- CORS ---
             builder.Services.AddCors(options =>
             {
-                // Development CORS policy - allow all
-                options.AddPolicy(name: CorsPolicies.DevCorsPolicy,
-                    policy =>
-                    {
-                        policy.AllowAnyOrigin()
-                              .AllowAnyHeader()
-                              .AllowAnyMethod();
-                    }
-                );
+                // Allow all origin when in development
+                options.AddPolicy(name: CorsPolicies.DevCorsPolicy, policy =>
+                {
+                    policy.AllowAnyOrigin()
+                          .AllowAnyHeader()
+                          .AllowAnyMethod();
+                });
 
-                // Production CORS policy - restrict to specific origins
-                options.AddPolicy(name: CorsPolicies.ProdCorsPolicy,
-                    policy =>
-                    {
-                        var allowedOrigins = builder.Configuration
-                                            .GetValue<string>("CorsSettings:AllowedOrigins")?
-                                            .Split(",") ?? [];
+                // Strict origin when in production
+                options.AddPolicy(name: CorsPolicies.ProdCorsPolicy, policy =>
+                {
+                    var allowedOrigins = builder.Configuration
+                        .GetValue<string>("CorsSettings:AllowedOrigins")?
+                        .Split(",") ?? [];
 
-                        policy.WithOrigins(allowedOrigins)
-                              .AllowAnyHeader()
-                              .AllowAnyMethod();
-                    }
-                );
+                    policy.WithOrigins(allowedOrigins)
+                          .AllowAnyHeader()
+                          .AllowAnyMethod();
+                });
             });
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
+            // --- HTTP REQUEST PIPELINE ---
             if (app.Environment.IsDevelopment())
             {
+                var provider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
+
                 app.UseSwagger();
-                app.UseSwaggerUI();
+                app.UseSwaggerUI(options =>
+                {
+                    foreach (var description in provider.ApiVersionDescriptions)
+                    {
+                        options.SwaggerEndpoint(
+                            $"/swagger/{description.GroupName}/swagger.json",
+                            $"Intervu API {description.GroupName.ToUpperInvariant()}"
+                        );
+                    }
+                });
+
+                app.UseCors(CorsPolicies.DevCorsPolicy);
+            } else
+            {
+                app.UseCors(CorsPolicies.ProdCorsPolicy);
             }
 
-            app.UseHttpsRedirection();
-
+                app.UseHttpsRedirection();
             app.UseAuthorization();
-
-
             app.MapControllers();
 
             app.Run();

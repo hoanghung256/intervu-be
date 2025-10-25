@@ -28,7 +28,10 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer("Server=localhost;Database=Intervu;Trusted_Connection=True;TrustServerCertificate=True;");
+            if (!optionsBuilder.IsConfigured)
+            {
+                optionsBuilder.UseSqlServer("Server=localhost;Database=Intervu;Trusted_Connection=True;TrustServerCertificate=True;");
+            }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
