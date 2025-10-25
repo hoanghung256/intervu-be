@@ -2,7 +2,18 @@
 
 Welcome to the Intervu project! This document provides general guidelines and conventions to ensure code quality and consistency throughout the development process.
 
-## Commit Message Convention
+## Quick Links (Tabs)
+
+- [Commit Guidelines](#commit-guidelines-tab)
+- [Entity Framework Codefirst Guideline](#quick-notes-tab)
+- [Meeting Notes](#meeting-notes-tab)
+- [TODO / Backlog](#todo--backlog-tab)
+
+---
+
+## Commit Guidelines <!-- commit-guidelines-tab -->
+
+### Commit Message Convention
 
 To maintain a clean, readable, and easy-to-track project history, we will adhere to the **Conventional Commits** specification. This practice not only helps team members understand the nature of changes but also enables automated changelog generation and semantic versioning.
 
@@ -108,6 +119,64 @@ Closes #123
 BREAKING CHANGE: The authentication method has been changed.
 Clients must now obtain a JWT and send it with every request.
 ```
+
+## Entity Framework Codefirst Guideline <!-- quick-notes-tab -->
+
+### Overview
+
+This section provides guidelines for using **Entity Framework Core (Code-First)** in the Intervu project.  
+The commands below are used to generate database migrations and apply schema changes consistently across environments.
+
+---
+
+### 🧱 1. Creating a Migration
+
+To generate a new migration, use the following command:
+
+dotnet ef migrations add <migration-name> -o Persistence/SqlServer/Migrations
+
+#### Explanation
+
+| Part | Description |
+| :--- | :--- |
+| dotnet ef migrations add | Generates a new migration based on model changes. |
+| <migration-name> | A short, descriptive name for the migration (e.g., AddUserTable, UpdateEventSchema). |
+| -o Persistence/SqlServer/Migrations | Specifies the folder where migration files will be stored. In this project, all migrations are located under Persistence/SqlServer/Migrations. |
+
+#### Example
+
+dotnet ef migrations add InitDatabase -o Persistence/SqlServer/Migrations
+
+This will create files under:
+
+📂 Persistence  
+　📂 SqlServer  
+　　📂 Migrations  
+　　　├── 20251025123045_InitDatabase.cs  
+　　　└── IntervuDbContextModelSnapshot.cs  
+
+---
+
+### 🗄️ 2. Updating the Database
+
+Once a migration has been created, apply it to the database using:
+
+dotnet ef database update
+
+#### Explanation
+
+| Command | Purpose |
+| :--- | :--- |
+| dotnet ef database update | Applies all pending migrations to the database, ensuring the schema matches the current EF model. |
+
+#### Example
+
+dotnet ef database update
+
+This command will:  
+- Create the database if it does not already exist.  
+- Apply all migrations found under Persistence/SqlServer/Migrations.  
+- Update the database schema to reflect your current entity models.
 
 ---
 
