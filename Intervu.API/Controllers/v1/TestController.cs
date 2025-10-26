@@ -98,12 +98,14 @@ namespace Intervu.API.Controllers.v1
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetProfile([FromQuery] int id)
+        public async Task<IActionResult> GetProfile([FromQuery] int id, [FromQuery] string alo)
         {
             var profile = await _context.Users.FindAsync(id);
+            Console.WriteLine("check: " + alo);
 
             return Ok(new
             {
+                success = true,
                 message = "success",
                 data = profile
             });
