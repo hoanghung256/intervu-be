@@ -9,11 +9,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
+namespace Intervu.Infrastructure.Migrations
 {
     [DbContext(typeof(IntervuDbContext))]
-    [Migration("20251025055908_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20251027024208_InitCreate")]
+    partial class InitCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -87,10 +87,8 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                     b.Property<DateTime>("ScheduledTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.Property<int>("StudentId")
                         .HasColumnType("int");
@@ -115,7 +113,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                             DurationMinutes = 60,
                             InterviewerId = 2,
                             ScheduledTime = new DateTime(2025, 11, 1, 9, 0, 0, 0, DateTimeKind.Unspecified),
-                            Status = "Scheduled",
+                            Status = 0,
                             StudentId = 1,
                             VideoCallRoomUrl = "https://meet.example/room1"
                         });
@@ -134,6 +132,9 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                         .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("CurrentAmount")
+                        .HasColumnType("int");
 
                     b.Property<string>("PortfolioUrl")
                         .IsRequired()
@@ -154,6 +155,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                             Id = 1,
                             Bio = "Aspiring backend developer.",
                             CVUrl = "https://example.com/cv-alice.pdf",
+                            CurrentAmount = 0,
                             PortfolioUrl = "https://portfolio.example.com/alice",
                             Skills = "[C#, SQL]"
                         });
@@ -215,6 +217,9 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<int>("CurrentAmount")
+                        .HasColumnType("int");
+
                     b.Property<int>("ExperienceYears")
                         .HasColumnType("int");
 
@@ -245,6 +250,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                             Bio = "Senior software engineer",
                             CVUrl = "https://example.com/cv-bob.pdf",
                             Company = "Tech Co",
+                            CurrentAmount = 0,
                             ExperienceYears = 8,
                             IsVerified = true,
                             PortfolioUrl = "https://portfolio.example.com/bob",
@@ -334,10 +340,8 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("TransactionDate")
                         .HasColumnType("datetime2");
@@ -361,7 +365,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                             IntervieweeId = 1,
                             InterviewerId = 2,
                             PaymentMethod = "Card",
-                            Status = "Pending",
+                            Status = 0,
                             TransactionDate = new DateTime(2025, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
                         });
                 });
@@ -393,15 +397,11 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<int>("Role")
+                        .HasColumnType("int");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -417,8 +417,8 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                             Email = "alice@example.com",
                             FullName = "Alice Student",
                             Password = "hashedpassword",
-                            Role = "Interviewee",
-                            Status = "Active"
+                            Role = 0,
+                            Status = 0
                         },
                         new
                         {
@@ -426,8 +426,8 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                             Email = "bob@example.com",
                             FullName = "Bob Interviewer",
                             Password = "hashedpassword",
-                            Role = "Interviewer",
-                            Status = "Active"
+                            Role = 1,
+                            Status = 0
                         },
                         new
                         {
@@ -435,8 +435,8 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                             Email = "admin@example.com",
                             FullName = "Admin",
                             Password = "hashedpassword",
-                            Role = "Admin",
-                            Status = "Active"
+                            Role = 2,
+                            Status = 0
                         });
                 });
 

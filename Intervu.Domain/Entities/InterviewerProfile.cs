@@ -22,6 +22,8 @@ namespace Intervu.Domain.Entities
 
         public string Company { get; set; }
 
+        public int CurrentAmount { get; set; }
+
         public int ExperienceYears { get; set; }
 
         public string Bio { get; set; }

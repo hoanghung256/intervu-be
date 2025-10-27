@@ -5,10 +5,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
 
-namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
+namespace Intervu.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -37,9 +37,9 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                     FullName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     Email = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     Password = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
-                    Role = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Role = table.Column<int>(type: "int", nullable: false),
                     ProfilePicture = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false)
+                    Status = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -54,7 +54,8 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                     CVUrl = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
                     PortfolioUrl = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
                     Skills = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Bio = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Bio = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CurrentAmount = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -77,6 +78,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                     Specializations = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ProgrammingLanguages = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Company = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    CurrentAmount = table.Column<int>(type: "int", nullable: false),
                     ExperienceYears = table.Column<int>(type: "int", nullable: false),
                     Bio = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     IsVerified = table.Column<bool>(type: "bit", nullable: false)
@@ -178,7 +180,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                     ScheduledTime = table.Column<DateTime>(type: "datetime2", nullable: false),
                     DurationMinutes = table.Column<int>(type: "int", nullable: false),
                     VideoCallRoomUrl = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false)
+                    Status = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -209,7 +211,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                     Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     PaymentMethod = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     TransactionDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false)
+                    Status = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -244,20 +246,20 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                 columns: new[] { "Id", "Email", "FullName", "Password", "ProfilePicture", "Role", "Status" },
                 values: new object[,]
                 {
-                    { 1, "alice@example.com", "Alice Student", "hashedpassword", null, "Interviewee", "Active" },
-                    { 2, "bob@example.com", "Bob Interviewer", "hashedpassword", null, "Interviewer", "Active" },
-                    { 3, "admin@example.com", "Admin", "hashedpassword", null, "Admin", "Active" }
+                    { 1, "alice@example.com", "Alice Student", "hashedpassword", null, 0, 0 },
+                    { 2, "bob@example.com", "Bob Interviewer", "hashedpassword", null, 1, 0 },
+                    { 3, "admin@example.com", "Admin", "hashedpassword", null, 2, 0 }
                 });
 
             migrationBuilder.InsertData(
                 table: "IntervieweeProfiles",
-                columns: new[] { "Id", "Bio", "CVUrl", "PortfolioUrl", "Skills" },
-                values: new object[] { 1, "Aspiring backend developer.", "https://example.com/cv-alice.pdf", "https://portfolio.example.com/alice", "[C#, SQL]" });
+                columns: new[] { "Id", "Bio", "CVUrl", "CurrentAmount", "PortfolioUrl", "Skills" },
+                values: new object[] { 1, "Aspiring backend developer.", "https://example.com/cv-alice.pdf", 0, "https://portfolio.example.com/alice", "[C#, SQL]" });
 
             migrationBuilder.InsertData(
                 table: "InterviewerProfiles",
-                columns: new[] { "Id", "Bio", "CVUrl", "Company", "ExperienceYears", "IsVerified", "PortfolioUrl", "ProgrammingLanguages", "Specializations" },
-                values: new object[] { 2, "Senior software engineer", "https://example.com/cv-bob.pdf", "Tech Co", 8, true, "https://portfolio.example.com/bob", "C#, JavaScript", "Backend, System Design" });
+                columns: new[] { "Id", "Bio", "CVUrl", "Company", "CurrentAmount", "ExperienceYears", "IsVerified", "PortfolioUrl", "ProgrammingLanguages", "Specializations" },
+                values: new object[] { 2, "Senior software engineer", "https://example.com/cv-bob.pdf", "Tech Co", 0, 8, true, "https://portfolio.example.com/bob", "C#, JavaScript", "Backend, System Design" });
 
             migrationBuilder.InsertData(
                 table: "NotificationReceives",
@@ -272,7 +274,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
             migrationBuilder.InsertData(
                 table: "InterviewRooms",
                 columns: new[] { "Id", "DurationMinutes", "InterviewerId", "ScheduledTime", "Status", "StudentId", "VideoCallRoomUrl" },
-                values: new object[] { 1, 60, 2, new DateTime(2025, 11, 1, 9, 0, 0, 0, DateTimeKind.Unspecified), "Scheduled", 1, "https://meet.example/room1" });
+                values: new object[] { 1, 60, 2, new DateTime(2025, 11, 1, 9, 0, 0, 0, DateTimeKind.Unspecified), 0, 1, "https://meet.example/room1" });
 
             migrationBuilder.InsertData(
                 table: "InterviewerAvailabilities",
@@ -282,7 +284,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
             migrationBuilder.InsertData(
                 table: "Payments",
                 columns: new[] { "Id", "Amount", "InterviewRoomId", "IntervieweeId", "InterviewerId", "PaymentMethod", "Status", "TransactionDate" },
-                values: new object[] { 1, 50.00m, 1, 1, 2, "Card", "Pending", new DateTime(2025, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified) });
+                values: new object[] { 1, 50.00m, 1, 1, 2, "Card", 0, new DateTime(2025, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified) });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Feedbacks_InterviewerId",

@@ -48,8 +48,8 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 b.HasIndex(x => x.Email).IsUnique();
                 b.Property(x => x.Password).HasMaxLength(500);
                 b.Property(x => x.ProfilePicture).HasMaxLength(1000);
-                b.Property(x => x.Role).HasConversion<string>().HasMaxLength(50).IsRequired();
-                b.Property(x => x.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
+                b.Property(x => x.Role).IsRequired();
+                b.Property(x => x.Status).IsRequired();
             });
 
             // IntervieweeProfile (one-to-one with User, shared PK)
@@ -108,7 +108,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 b.Property(x => x.ScheduledTime).IsRequired();
                 b.Property(x => x.DurationMinutes).IsRequired();
                 b.Property(x => x.VideoCallRoomUrl).HasMaxLength(1000);
-                b.Property(x => x.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
+                b.Property(x => x.Status).IsRequired();
 
                 b.HasOne<IntervieweeProfile>()
                  .WithMany()
@@ -149,7 +149,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 b.Property(x => x.Amount).HasColumnType("decimal(18,2)").IsRequired();
                 b.Property(x => x.PaymentMethod).HasMaxLength(200);
                 b.Property(x => x.TransactionDate).IsRequired();
-                b.Property(x => x.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
+                b.Property(x => x.Status).IsRequired();
 
                 b.HasOne<InterviewRoom>()
                  .WithMany()

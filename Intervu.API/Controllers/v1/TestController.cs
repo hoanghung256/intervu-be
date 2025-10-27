@@ -58,26 +58,43 @@ namespace Intervu.API.Controllers.v1
         //}
 
         [HttpPost]
-        public async Task<IActionResult> UploadFile(IFormFile file)
+        public async Task<IActionResult> UploadFile([FromBody] UserRequest request)
         {
-            if (file == null || file.Length == 0)
-                return BadRequest("No file uploaded.");
-
             try
             {
-                var fileName = $"{FolderName}/{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-
-                using (var stream = file.OpenReadStream())
+                await _context.Users.AddAsync(new Domain.Entities.User
                 {
-                    await _fileService.UploadFileAsync(stream, fileName);
-                }
-                var fileUrl = $"https://storage.googleapis.com/{_bucketName}/{fileName}";
-                return Ok(new { url = fileUrl });
-            }
-            catch (Exception ex)
+                    FullName = request.FullName,
+                    Email = request.Email,
+                    Password = request.Password,
+                    Role = Domain.Entities.Constants.UserRole.Interviewee,
+                    Status = Domain.Entities.Constants.UserStatus.Active,
+                    ProfilePicture = null
+                });
+                await _context.SaveChangesAsync();
+            } catch (Exception ex)
             {
-                return StatusCode(500, $"Error uploading file: {ex.Message}");
+                return Ok(new
+                {
+                    succes = false,
+                    message = ex.Message,
+                    data = ""
+                });
             }
+
+            return Ok(new
+            {
+                success = true,
+                message = "Success",
+                data = ""
+            });
+        }
+
+        public class UserRequest
+        {
+            public string FullName { get; set; }
+            public string Email { get; set; }
+            public string Password { get; set; }
         }
 
         [HttpDelete]
@@ -106,7 +123,7 @@ namespace Intervu.API.Controllers.v1
             return Ok(new
             {
                 success = true,
-                message = "success",
+                message = "Success",
                 data = profile
             });
         }

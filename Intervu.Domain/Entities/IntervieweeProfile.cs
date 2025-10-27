@@ -19,5 +19,7 @@ namespace Intervu.Domain.Entities
         public string Skills { get; set; }
 
         public string Bio { get; set; }
+
+        public int CurrentAmount { get; set; }
     }
 }
