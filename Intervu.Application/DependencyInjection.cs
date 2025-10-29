@@ -14,8 +14,8 @@ namespace Intervu.Application
             services.AddAutoMapper(typeof(DependencyInjection));
 
             // Register Services
-            services.AddScoped<JwtService>();
-            services.AddScoped<PasswordHashHandler>();
+            // services.AddScoped<JwtService>();
+            // services.AddScoped<PasswordHashHandler>();
 
             // Auth UseCases
             // services.AddTransient<ILoginUseCase, LoginUseCase>();
