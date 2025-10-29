@@ -20,8 +20,8 @@ namespace Intervu.Application
             services.AddScoped<PasswordHashHandler>();
 
             // Auth UseCases
-            services.AddTransient<ILoginUseCase, LoginUseCase>();
-            services.AddTransient<IRegisterUseCase, RegisterUseCase>();
+            // services.AddTransient<ILoginUseCase, LoginUseCase>();
+            // services.AddTransient<IRegisterUseCase, RegisterUseCase>();
 
             return services;
         }
