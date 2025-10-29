@@ -1,7 +1,7 @@
 ﻿using Asp.Versioning;
 using Google.Api.Gax.ResourceNames;
 using Google.Cloud.Storage.V1;
-using Intervu.Application.ExternalServices;
+using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Infrastructure.ExternalServices.FirebaseStorageService;
 using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
 using Microsoft.AspNetCore.Http;

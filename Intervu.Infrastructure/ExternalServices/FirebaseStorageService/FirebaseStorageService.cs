@@ -1,6 +1,6 @@
 ﻿using Azure.Core;
 using Google.Cloud.Storage.V1;
-using Intervu.Application.ExternalServices;
+using Intervu.Application.Interfaces.ExternalServices;
 using Microsoft.AspNetCore.Http;
 
 namespace Intervu.Infrastructure.ExternalServices.FirebaseStorageService

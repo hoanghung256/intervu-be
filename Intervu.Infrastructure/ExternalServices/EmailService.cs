@@ -1,5 +1,5 @@
 ﻿using System;
-using Intervu.Application.ExternalServices;
+using Intervu.Application.Interfaces.ExternalServices;
 
 namespace Intervu.Infrastructure.ExternalServices
 {

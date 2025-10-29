@@ -1,5 +1,4 @@
-﻿using Intervu.Application.ExternalServices;
-using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
+﻿using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +7,7 @@ using Google.Apis.Auth.OAuth2;
 using FirebaseAdmin;
 using Google.Cloud.Storage.V1;
 using Intervu.Infrastructure.ExternalServices.FirebaseStorageService;
+using Intervu.Application.Interfaces.ExternalServices;
 
 namespace Intervu.Infrastructure
 {

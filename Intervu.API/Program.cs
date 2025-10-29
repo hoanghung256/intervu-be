@@ -1,9 +1,13 @@
 ﻿using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
+using Intervu.API.Hubs;
 using Intervu.API.Properties;
 using Intervu.Application;
 using Intervu.Infrastructure;
 using Microsoft.OpenApi.Models;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
+using System.Net;
 
 namespace Intervu.API
 {
@@ -63,9 +67,11 @@ namespace Intervu.API
                 // Allow all origin when in development
                 options.AddPolicy(name: CorsPolicies.DevCorsPolicy, policy =>
                 {
-                    policy.AllowAnyOrigin()
+                    string? currentIpV4 = GetLocalIPv4();
+                    policy.WithOrigins("https://localhost:5173", $"https://{currentIpV4}:5173")
                           .AllowAnyHeader()
-                          .AllowAnyMethod();
+                          .AllowAnyMethod()
+                          .AllowCredentials();
                 });
 
                 // Strict origin when in production
@@ -80,6 +86,9 @@ namespace Intervu.API
                           .AllowAnyMethod();
                 });
             });
+
+            // --- SIGNALR ---
+            builder.Services.AddSignalR();
 
             var app = builder.Build();
 
@@ -106,11 +115,32 @@ namespace Intervu.API
                 app.UseCors(CorsPolicies.ProdCorsPolicy);
             }
 
-                app.UseHttpsRedirection();
+            app.MapHub<InterviewRoomHub>("/hubs/interviewroom");
+
+            app.UseHttpsRedirection();
             app.UseAuthorization();
             app.MapControllers();
 
             app.Run();
+        }
+
+        public static string? GetLocalIPv4()
+        {
+            foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (ni.OperationalStatus == OperationalStatus.Up)
+                {
+                    foreach (UnicastIPAddressInformation ip in ni.GetIPProperties().UnicastAddresses)
+                    {
+                        if (ip.Address.AddressFamily == AddressFamily.InterNetwork &&
+                            !IPAddress.IsLoopback(ip.Address))
+                        {
+                            return ip.Address.ToString();
+                        }
+                    }
+                }
+            }
+            return null;
         }
     }
 }

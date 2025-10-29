@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Intervu.Application.ExternalServices
+namespace Intervu.Application.Interfaces.ExternalServices
 {
     public interface IMailService
     {

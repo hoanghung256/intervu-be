@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Intervu.Domain.Abstractions.Repository.Interfaces
+namespace Intervu.Application.Interfaces.Repositories
 {
     public interface IRepositoryBase<T> where T : class
     {

@@ -1,17 +1,16 @@
-﻿using Intervu.Domain.Abstractions.Repository.Interfaces;
+﻿using Intervu.Application.Interfaces.Repositories;
 using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Intervu.Infrastructure.Persistence.SqlServer
 {
     public abstract class RepositoryBase<T> : IRepositoryBase<T> where T : class
     {
         protected readonly IntervuDbContext _context;
+
+        protected RepositoryBase(IntervuDbContext context)
+        {
+            _context = context;
+        }
 
         public async Task AddAsync(T entity) => await _context.Set<T>().AddAsync(entity);
 
