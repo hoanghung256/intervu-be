@@ -1,6 +1,4 @@
-﻿using Intervu.Application.Interfaces.UseCases.Authentication;
 using Intervu.Application.Mappings;
-using Intervu.Application.UseCases.Authentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
