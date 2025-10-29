@@ -1,4 +1,3 @@
-﻿using Intervu.Application.Interfaces.UseCases.Authentication;
 using Intervu.Application.Mappings;
 using Intervu.Application.Services;
 using Intervu.Application.UseCases.Authentication;
@@ -17,12 +16,12 @@ namespace Intervu.Application
             services.AddAutoMapper(typeof(DependencyInjection));
 
             // Register Services
-            services.AddScoped<JwtService>();
-            services.AddScoped<PasswordHashHandler>();
+            // services.AddScoped<JwtService>();
+            // services.AddScoped<PasswordHashHandler>();
 
             // Auth UseCases
-            services.AddTransient<ILoginUseCase, LoginUseCase>();
-            services.AddTransient<IRegisterUseCase, RegisterUseCase>();
+            // services.AddTransient<ILoginUseCase, LoginUseCase>();
+            // services.AddTransient<IRegisterUseCase, RegisterUseCase>();
 
             return services;
         }

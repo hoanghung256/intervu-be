@@ -8,6 +8,8 @@ using FirebaseAdmin;
 using Google.Cloud.Storage.V1;
 using Intervu.Infrastructure.ExternalServices.FirebaseStorageService;
 using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.Repositories;
+using Intervu.Infrastructure.Persistence.SqlServer;
 
 namespace Intervu.Infrastructure
 {
@@ -47,6 +49,9 @@ namespace Intervu.Infrastructure
             //services.AddSingleton(bucketName);
             services.AddTransient<IMailService, EmailService>();
             //services.AddTransient<IFileService, FirebaseStorageService>();
+
+            // Register repositories
+            services.AddScoped<IUserRepository, UserRepository>();
 
             return services;
         }

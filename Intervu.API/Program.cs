@@ -8,6 +8,8 @@ using Microsoft.OpenApi.Models;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Net;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Intervu.API
 {
@@ -61,7 +63,30 @@ namespace Intervu.API
             builder.Services.AddPersistenceSqlServer(builder.Configuration);
             builder.Services.AddInfrastructureExternalServices(builder.Configuration);
 
-            // --- CORS ---
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.SaveToken = true;
+                options.RequireHttpsMetadata = false;
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidIssuer = builder.Configuration["JwtConfig:Issuer"],
+                    ValidAudience = builder.Configuration["JwtConfig:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(builder.Configuration["JwtConfig:Key"]!)),
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true
+                };
+            });
+
+            builder.Services.AddAuthorization();
+
             builder.Services.AddCors(options =>
             {
                 // Allow all origin when in development
@@ -118,6 +143,8 @@ namespace Intervu.API
             app.MapHub<InterviewRoomHub>("/hubs/interviewroom");
 
             app.UseHttpsRedirection();
+
+            app.UseAuthentication();
             app.UseAuthorization();
             app.MapControllers();
 
