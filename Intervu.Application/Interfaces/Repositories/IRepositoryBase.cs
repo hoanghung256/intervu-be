@@ -12,5 +12,6 @@ namespace Intervu.Application.Interfaces.Repositories
         Task AddAsync(T entity);
         void UpdateAsync(T entity);
         void DeleteAsync(T entity);
+        Task<int> SaveChangesAsync();
     }
 }

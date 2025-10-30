@@ -19,5 +19,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
         public async Task<T?> GetByIdAsync(int id) => await _context.Set<T>().FindAsync(id);
 
         public void UpdateAsync(T entity) => _context.Set<T>().Update(entity);
+
+        public async Task<int> SaveChangesAsync() => await _context.SaveChangesAsync();
     }
 }

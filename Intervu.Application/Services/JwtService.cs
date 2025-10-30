@@ -1,8 +1,6 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Intervu.Application.DTOs.User;
-using Intervu.Application.Interfaces.UseCases.Authentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
@@ -10,56 +8,79 @@ namespace Intervu.Application.Services
 {
     public class JwtService
     {
-        private readonly ILoginUseCase _loginUseCase;
         private readonly IConfiguration _configuration;
-        public JwtService(ILoginUseCase loginUseCase, IConfiguration configuration)
+
+        public JwtService(IConfiguration configuration)
         {
-            _loginUseCase = loginUseCase;
             _configuration = configuration;
         }
 
-        public async Task<LoginResponse> Authenticate(LoginRequest loginRequest)
+        public string GenerateToken(string userId, string email, string role)
         {
-            if (string.IsNullOrEmpty(loginRequest.Email) || string.IsNullOrEmpty(loginRequest.Password))
-            {
-                return null;
-            }
-
-            var user = await _loginUseCase.GetUserByEmailAndPassword(loginRequest.Email, loginRequest.Password);
-
-            if (user == null || !PasswordHashHandler.VerifyPassword(loginRequest.Password, user.Password))
-            {
-                return null;
-            }
-
-            var issuer = _configuration["Jwt:Issuer"];
-            var audience = _configuration["Jwt:Audience"];
-            var key = _configuration["Jwt:Key"];
-            var tokenValidityMins = _configuration.GetValue<int>("Jwt:TokenValidityInMinutes");
-            var tokenExpiryTimeStamp = DateTime.UtcNow.AddMinutes(tokenValidityMins);
+            var issuer = _configuration["JwtConfig:Issuer"];
+            var audience = _configuration["JwtConfig:Audience"];
+            var key = _configuration["JwtConfig:Key"];
+            var tokenValidityMins = _configuration.GetValue<int>("JwtConfig:TokenValidityInMinutes");
+            
+            var now = DateTime.UtcNow;
+            var expires = now.AddMinutes(tokenValidityMins > 0 ? tokenValidityMins : 60); // Default 60 minutes if not configured
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(new[]
                 {
-                    new Claim(JwtRegisteredClaimNames.Name, loginRequest.Email)
+                    new Claim(JwtRegisteredClaimNames.Sub, userId),
+                    new Claim(JwtRegisteredClaimNames.Email, email),
+                    new Claim(ClaimTypes.Role, role),
+                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
                 }),
-                Expires = tokenExpiryTimeStamp,
+                NotBefore = now,
+                Expires = expires,
+                IssuedAt = now,
                 Issuer = issuer,
                 Audience = audience,
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)), SecurityAlgorithms.HmacSha256Signature)
+                SigningCredentials = new SigningCredentials(
+                    new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key!)),
+                    SecurityAlgorithms.HmacSha256Signature)
             };
 
             var tokenHandler = new JwtSecurityTokenHandler();
             var securityToken = tokenHandler.CreateToken(tokenDescriptor);
-            var accessToken = tokenHandler.WriteToken(securityToken);
+            return tokenHandler.WriteToken(securityToken);
+        }
 
-            return new LoginResponse
+        public bool ValidateToken(string token)
+        {
+            var key = _configuration["JwtConfig:Key"];
+            var issuer = _configuration["JwtConfig:Issuer"];
+            var audience = _configuration["JwtConfig:Audience"];
+            var tokenHandler = new JwtSecurityTokenHandler();
+
+            try
             {
-                Email = loginRequest.Email,
-                Token = accessToken,
-                ExpiresIn = (int)tokenExpiryTimeStamp.Subtract(DateTime.UtcNow).TotalSeconds
-            };
+                tokenHandler.ValidateToken(token, new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key!)),
+                    ValidateIssuer = true,
+                    ValidIssuer = issuer,
+                    ValidateAudience = true,
+                    ValidAudience = audience,
+                    ClockSkew = TimeSpan.Zero
+                }, out SecurityToken validatedToken);
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public int GetTokenValidityInSeconds()
+        {
+            var tokenValidityMins = _configuration.GetValue<int>("JwtConfig:TokenValidityInMinutes");
+            return (int)TimeSpan.FromMinutes(tokenValidityMins).TotalSeconds;
         }
     }
 }
