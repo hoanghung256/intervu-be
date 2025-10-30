@@ -49,9 +49,12 @@ namespace Intervu.Application.UseCases.Authentication
             // Get token expiry time
             var expiresIn = _jwtService.GetTokenValidityInSeconds();
 
+            // Detach password before returning user data
+            user.Password = null;
+
             return new LoginResponse
             {
-                Email = user.Email,
+                User = user,
                 Token = token,
                 ExpiresIn = expiresIn
             };

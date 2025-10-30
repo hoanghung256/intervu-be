@@ -2,15 +2,15 @@
 {
     public class LoginResponse
     {
-        public string Email { get; set; } = string.Empty;
+        public Domain.Entities.User User { get; set; }
         public string Token { get; set; } = string.Empty;
         public int ExpiresIn { get; set; }
 
         public LoginResponse() { }
 
-        public LoginResponse(string Email, String Token, int ExpiresIn)
+        public LoginResponse(Domain.Entities.User user, String Token, int ExpiresIn)
         {
-            this.Email = Email;
+            this.User = user;
             this.Token = Token;
             this.ExpiresIn = ExpiresIn;
         }

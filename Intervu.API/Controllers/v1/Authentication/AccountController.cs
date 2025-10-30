@@ -2,11 +2,14 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Intervu.Application.Interfaces.UseCases.Authentication;
+using Asp.Versioning;
+using FirebaseAdmin.Messaging;
 
-namespace Intervu.API.Controllers.Authentication
+namespace Intervu.API.Controllers.v1.Authentication
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [ApiVersion("1.0")]
+    [Route("api/v{version:apiVersion}/[controller]")]
     public class AccountController : ControllerBase
     {
         private readonly ILoginUseCase _loginUseCase;
@@ -26,10 +29,16 @@ namespace Intervu.API.Controllers.Authentication
             
             if (response == null)
             {
-                return Unauthorized(new { message = "Invalid email or password" });
+                return Ok(new { 
+                    success = false,
+                    message = "Invalid email or password"
+                });
             }
             
-            return Ok(response);
+            return Ok(new {
+                success = true,
+                data = response
+            });
         }
 
         [AllowAnonymous]
