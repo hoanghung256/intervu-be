@@ -1,14 +1,17 @@
-﻿using Intervu.Domain.Abstractions.Entities.Interfaces;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Intervu.Domain.Abstractions.Entities
+namespace Intervu.Domain.Abstractions.Entities.Interfaces
 {
-    public abstract class EntityAuditSoftDelete<T> : EntityBase<T>, ISoftDelete
+    /*
+    * For entity that requires both date tracking and soft delete functionality.
+    */
+    public abstract class EntityAuditSoftDelete<T> : EntityBase<T>, IDateTracking
     {
-        public bool IsDeleted { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
     }
 }

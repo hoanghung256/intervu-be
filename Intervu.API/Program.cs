@@ -140,7 +140,7 @@ namespace Intervu.API
                 app.UseCors(CorsPolicies.ProdCorsPolicy);
             }
 
-            app.MapHub<InterviewRoomHub>("/hubs/interviewroom");
+            app.MapHub<InterviewRoomHub>("/api/v1/hubs/interviewroom");
 
             app.UseHttpsRedirection();
 

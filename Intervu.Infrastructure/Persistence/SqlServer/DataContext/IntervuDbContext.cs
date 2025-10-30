@@ -1,8 +1,11 @@
-﻿using Intervu.Domain.Entities;
+﻿using Intervu.Domain.Abstractions.Entities;
+using Intervu.Domain.Abstractions.Entities.Interfaces;
+using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using System;
+using System.Linq.Expressions;
 
 namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
 {
@@ -105,8 +108,8 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
             {
                 b.ToTable("InterviewRooms");
                 b.HasKey(x => x.Id);
-                b.Property(x => x.ScheduledTime).IsRequired();
-                b.Property(x => x.DurationMinutes).IsRequired();
+                b.Property(x => x.ScheduledTime);
+                b.Property(x => x.DurationMinutes);
                 b.Property(x => x.VideoCallRoomUrl).HasMaxLength(1000);
                 b.Property(x => x.Status).IsRequired();
 
@@ -194,13 +197,41 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                  .OnDelete(DeleteBehavior.Cascade);
             });
 
+            /// <summary>
+            /// Global query filter for soft delete
+            /// When querying any entity that has an "IsDeleted" property.
+            /// 
+            /// When you need to ignore this filter, use .IgnoreQueryFilters()
+            /// 
+            /// Ex:
+            /// var allRooms = await _context.InterviewRooms
+            ///     .IgnoreQueryFilters()
+            ///     .ToListAsync();
+            /// </summary>
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                var isDeletableEntity = entityType.FindProperty("IsDeleted");
+
+                if (isDeletableEntity != null && isDeletableEntity.ClrType == typeof(bool))
+                {
+                    var parameter = Expression.Parameter(entityType.ClrType, "e");
+                    var body = Expression.Equal(
+                        Expression.Property(parameter, "IsDeleted"),
+                        Expression.Constant(false)
+                    );
+
+                    var lambda = Expression.Lambda(body, parameter);
+                    modelBuilder.Entity(entityType.ClrType).HasQueryFilter(lambda);
+                }
+            }
+
             // Seed data
             var user1 = new User
             {
                 Id = 1,
                 FullName = "Alice Student",
                 Email = "alice@example.com",
-                Password = "hashedpassword",
+                Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
                 Role = UserRole.Interviewee,
                 ProfilePicture = null,
                 Status = UserStatus.Active,
@@ -211,7 +242,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 Id = 2,
                 FullName = "Bob Interviewer",
                 Email = "bob@example.com",
-                Password = "hashedpassword",
+                Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
                 Role = UserRole.Interviewer,
                 ProfilePicture = null,
                 Status = UserStatus.Active,
@@ -222,7 +253,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 Id = 3,
                 FullName = "Admin",
                 Email = "admin@example.com",
-                Password = "hashedpassword",
+                Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
                 Role = UserRole.Admin,
                 ProfilePicture = null,
                 Status = UserStatus.Active,
@@ -303,6 +334,40 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
             });
 
             modelBuilder.Entity<NotificationReceive>().HasData(new { NotificationId = 1, ReceiverId = 1 });
+        }
+
+        public override int SaveChanges()
+        {
+            UpdateTimestamps();
+            return base.SaveChanges();
+        }
+
+        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            UpdateTimestamps();
+            return await base.SaveChangesAsync(cancellationToken);
+        }
+
+
+        private void UpdateTimestamps()
+        {
+            var entries = ChangeTracker.Entries()
+                .Where(e => e.Entity is EntityAudit<Guid> || e.Entity is EntityAudit<int> || e.Entity is EntityAuditSoftDelete<Guid> || e.Entity is EntityAuditSoftDelete<int>);
+
+            foreach (var entry in entries)
+            {
+                dynamic entity = entry.Entity;
+
+                if (entry.State == EntityState.Added)
+                {
+                    entity.CreatedAt = DateTime.UtcNow;
+                }
+
+                if (entry.State == EntityState.Modified)
+                {
+                    entity.UpdatedAt = DateTime.UtcNow;
+                }
+            }
         }
     }
 }

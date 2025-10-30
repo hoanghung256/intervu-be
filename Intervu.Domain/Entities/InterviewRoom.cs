@@ -1,6 +1,5 @@
 using Intervu.Domain.Abstractions.Entities;
 using Intervu.Domain.Entities.Constants;
-using System;
 
 namespace Intervu.Domain.Entities
 {
@@ -9,19 +8,19 @@ namespace Intervu.Domain.Entities
         /// <summary>
         /// EntityBase.Id represents InterviewRoomId
         /// </summary>
-        public int StudentId { get; set; }
+        public int? StudentId { get; set; }
 
-        public int InterviewerId { get; set; }
+        public int? InterviewerId { get; set; }
 
-        public DateTime ScheduledTime { get; set; }
+        public DateTime? ScheduledTime { get; set; }
 
-        public int DurationMinutes { get; set; }
+        public int? DurationMinutes { get; set; }
 
-        public string VideoCallRoomUrl { get; set; }
+        public string? VideoCallRoomUrl { get; set; }
 
-    /// <summary>
-    /// Scheduled, Completed, Cancelled, No-Show
-    /// </summary>
-    public InterviewRoomStatus Status { get; set; }
+        /// <summary>
+        /// Scheduled, Completed, Cancelled, No-Show
+        /// </summary>
+        public InterviewRoomStatus Status { get; set; }
     }
 }

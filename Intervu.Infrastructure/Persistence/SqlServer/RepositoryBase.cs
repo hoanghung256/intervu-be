@@ -1,4 +1,5 @@
 ﻿using Intervu.Application.Interfaces.Repositories;
+using Intervu.Domain.Abstractions.Entities.Interfaces;
 using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
 
 namespace Intervu.Infrastructure.Persistence.SqlServer
@@ -17,6 +18,18 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
         public void DeleteAsync(T entity) => _context.Set<T>().Remove(entity);
 
         public async Task<T?> GetByIdAsync(int id) => await _context.Set<T>().FindAsync(id);
+
+        public void SoftDeleteAsync(T entity)
+        {
+            if (entity is ISoftDelete deletableEntity)
+            {
+                deletableEntity.IsDeleted = true;
+            }
+            else
+            {
+                throw new InvalidOperationException("Entity does not support soft delete.");
+            }
+        }
 
         public void UpdateAsync(T entity) => _context.Set<T>().Update(entity);
 

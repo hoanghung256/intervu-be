@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Intervu.Domain.Entities.Constants;
 
 namespace Intervu.Application.Interfaces.UseCases.InterviewRoom
 {
     public interface IGetRoomHistory
     {
-        Task ExecuteAsync(Guid userId);
+        Task<IEnumerable<Domain.Entities.InterviewRoom>> ExecuteAsync(UserRole role, int userId);
     }
 }

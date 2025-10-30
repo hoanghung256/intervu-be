@@ -1,17 +1,28 @@
-﻿using Intervu.Application.Interfaces.UseCases.InterviewRoom;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Intervu.Application.Interfaces.Repositories;
+using Intervu.Application.Interfaces.UseCases.InterviewRoom;
+using Intervu.Domain.Entities.Constants;
 
 namespace Intervu.Application.UseCases.InterviewRoom
 {
     internal class GetRoomHistory : IGetRoomHistory
     {
-        public Task ExecuteAsync(Guid userId)
+        private readonly IInterviewRoomRepository _repo;
+
+        public GetRoomHistory(IInterviewRoomRepository repo) 
         {
-            throw new NotImplementedException();
+            _repo = repo;
+        }
+
+        public async Task<IEnumerable<Domain.Entities.InterviewRoom>> ExecuteAsync(UserRole role, int userId)
+        {
+            if (role == UserRole.Interviewee)
+            {
+                return await _repo.GetListByIntervieweeId(userId);
+            }
+            else
+            {
+                return await _repo.GetListByInterviewerId(userId);
+            }
         }
     }
 }

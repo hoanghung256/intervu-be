@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 namespace Intervu.Domain.Abstractions.Entities
 {
     /*
-     * For entity that requires both date tracking and soft delete functionality.
-     */
-    public abstract class EntityAuditBase<T> : EntityBase<T>, IAuditable
+    * For entity that requires date tracking functionality only.
+    */
+    public abstract class EntityAudit<T> : EntityBase<T>, IAuditable
     {
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }

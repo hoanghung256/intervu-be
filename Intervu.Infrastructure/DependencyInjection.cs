@@ -21,7 +21,7 @@ namespace Intervu.Infrastructure
                 options.UseSqlServer(configuration.GetConnectionString("SqlDefeaultConnection")));
 
             // Register your repositories here
-            //services.AddScoped<ISomeRepository, SomeRepository>();
+            services.AddScoped<IInterviewRoomRepository, InterviewRoomRepository>();
 
             return services;
         }

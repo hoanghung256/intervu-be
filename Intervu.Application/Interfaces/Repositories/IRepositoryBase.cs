@@ -13,5 +13,6 @@ namespace Intervu.Application.Interfaces.Repositories
         void UpdateAsync(T entity);
         void DeleteAsync(T entity);
         Task<int> SaveChangesAsync();
+        void SoftDeleteAsync(T entity);
     }
 }
