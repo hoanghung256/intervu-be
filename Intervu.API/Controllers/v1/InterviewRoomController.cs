@@ -21,10 +21,9 @@ namespace Intervu.API.Controllers.v1
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetList(int userId)
+        public async Task<IActionResult> GetList(int userId, int role)
         {
-            UserRole role = UserRole.Interviewee;
-            var list = await _getRoomHistory.ExecuteAsync(role, userId);
+            var list = await _getRoomHistory.ExecuteAsync((UserRole)role, userId);
 
             return Ok(new
             {
@@ -35,15 +34,16 @@ namespace Intervu.API.Controllers.v1
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateRoom([FromBody]int interviewerId, int intervieweeId)
+        public async Task<IActionResult> CreateRoom([FromBody] int? interviewerId, int intervieweeId)
         {
-            int roomId = await _createRoom.ExecuteAsync(intervieweeId);
+            int roomId = interviewerId == null ? await _createRoom.ExecuteAsync(intervieweeId) : await _createRoom.ExecuteAsync(intervieweeId, interviewerId.Value);
 
             return Ok(new
             {
                 success = true,
                 message = "Success",
-                data = new {
+                data = new
+                {
                     roomId = roomId
                 }
             });
