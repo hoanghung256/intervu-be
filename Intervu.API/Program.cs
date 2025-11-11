@@ -1,7 +1,6 @@
 ﻿using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using Intervu.API.Hubs;
-using Intervu.API.Properties;
 using Intervu.Application;
 using Intervu.Infrastructure;
 using Microsoft.OpenApi.Models;
@@ -10,6 +9,9 @@ using System.Net.Sockets;
 using System.Net;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Intervu.Domain.Entities.Constants;
+using Intervu.API.Utils.Constant;
+using Intervu.API.Utils;
 
 namespace Intervu.API
 {
@@ -63,6 +65,7 @@ namespace Intervu.API
             builder.Services.AddPersistenceSqlServer(builder.Configuration);
             builder.Services.AddInfrastructureExternalServices(builder.Configuration);
 
+            // --- AUTHENTICATION WITH JWT CONFIGURATION ---
             builder.Services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -85,8 +88,47 @@ namespace Intervu.API
                 };
             });
 
-            builder.Services.AddAuthorization();
+            // --- AUTHORIZATION POLICIES ---
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy(
+                    AuthorizationPolicies.Admin,
+                    policy => policy.RequireRole(UserRole.Admin.ToString())
+                );
 
+                options.AddPolicy(
+                    AuthorizationPolicies.Interviewer,
+                    policy => policy.RequireRole(UserRole.Interviewer.ToString())
+                );
+
+                options.AddPolicy(
+                    AuthorizationPolicies.Interviewee,
+                    policy => policy.RequireRole(UserRole.Interviewee.ToString())
+                );
+
+                options.AddPolicy(
+                    AuthorizationPolicies.IntervieweeOrInterviewer,
+                    policy => policy.RequireAssertion(context =>
+                        context.User.IsInRole(UserRole.Interviewee.ToString()) ||
+                        context.User.IsInRole(UserRole.Interviewer.ToString()))
+                );
+
+                options.AddPolicy(
+                    AuthorizationPolicies.InterviewOrAdmin,
+                    policy => policy.RequireAssertion(context =>
+                        context.User.IsInRole(UserRole.Interviewer.ToString()) ||
+                        context.User.IsInRole(UserRole.Admin.ToString()))
+                );
+
+                options.AddPolicy(
+                    AuthorizationPolicies.IntervieweeOrAdmin,
+                    policy => policy.RequireAssertion(context =>
+                        context.User.IsInRole(UserRole.Interviewee.ToString()) ||
+                        context.User.IsInRole(UserRole.Admin.ToString()))
+                );
+            });
+
+            // --- CORS CONFIGURATION ---
             builder.Services.AddCors(options =>
             {
                 // Allow all origin when in development
@@ -135,7 +177,8 @@ namespace Intervu.API
                 });
 
                 app.UseCors(CorsPolicies.DevCorsPolicy);
-            } else
+            } 
+            else
             {
                 app.UseCors(CorsPolicies.ProdCorsPolicy);
             }

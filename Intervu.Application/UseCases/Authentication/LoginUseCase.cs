@@ -3,6 +3,7 @@ using Intervu.Application.DTOs.User;
 using Intervu.Application.Interfaces.Repositories;
 using Intervu.Application.Interfaces.UseCases.Authentication;
 using Intervu.Application.Services;
+using Intervu.Domain.Entities;
 
 namespace Intervu.Application.UseCases.Authentication
 {
@@ -31,7 +32,7 @@ namespace Intervu.Application.UseCases.Authentication
             }
 
             // Get user from repository
-            var user = await _userRepository.GetByEmailAsync(request.Email);
+            User? user = await _userRepository.GetByEmailAsync(request.Email);
 
             // Verify user exists and password is correct
             if (user == null || !PasswordHashHandler.VerifyPassword(request.Password, user.Password))
