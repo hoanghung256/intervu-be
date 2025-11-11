@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using System.Text.RegularExpressions;
 
-namespace Intervu.API.Properties
+namespace Intervu.API.Utils
 {
     public class LowercaseControllerRouteConvention : IControllerModelConvention
     {

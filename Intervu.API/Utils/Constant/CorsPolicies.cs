@@ -1,4 +1,4 @@
-﻿namespace Intervu.API.Properties
+﻿namespace Intervu.API.Utils.Constant
 {
     public static class CorsPolicies
     {
