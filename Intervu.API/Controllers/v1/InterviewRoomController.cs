@@ -1,7 +1,11 @@
 ﻿using Asp.Versioning;
+using Intervu.API.Utils.Constant;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Intervu.Domain.Entities.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace Intervu.API.Controllers.v1
@@ -20,33 +24,45 @@ namespace Intervu.API.Controllers.v1
             _createRoom = createRoom;
         }
 
+        [Authorize(Policy = AuthorizationPolicies.IntervieweeOrInterviewer)]
         [HttpGet]
-        public async Task<IActionResult> GetList(int userId)
+        public async Task<IActionResult> GetList()
         {
-            UserRole role = UserRole.Interviewee;
+            bool isGetUserIdSuccess = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId);
+            bool isGetRoleSuccess = Enum.TryParse<UserRole>(User.FindFirstValue(ClaimTypes.Role), out UserRole role);
+
             var list = await _getRoomHistory.ExecuteAsync(role, userId);
 
             return Ok(new
             {
-                success = true,
+                success = true, 
                 message = "Success",
                 data = list
             });
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateRoom([FromBody]int interviewerId, int intervieweeId)
+        public async Task<IActionResult> CreateRoom([FromBody] CreateRoomDto createRoomDto)
         {
-            int roomId = await _createRoom.ExecuteAsync(intervieweeId);
+            int roomId = createRoomDto.interviewerId == null 
+                ? await _createRoom.ExecuteAsync(createRoomDto.intervieweeId) 
+                : await _createRoom.ExecuteAsync(createRoomDto.intervieweeId, createRoomDto.interviewerId);
 
             return Ok(new
             {
                 success = true,
                 message = "Success",
-                data = new {
+                data = new
+                {
                     roomId = roomId
                 }
             });
+        }
+
+        public class CreateRoomDto
+        {
+            public int intervieweeId { get; set; }
+            public int interviewerId { get; set; }
         }
     }
 }

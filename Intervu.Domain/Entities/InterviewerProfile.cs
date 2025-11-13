@@ -22,8 +22,6 @@ namespace Intervu.Domain.Entities
 
         public string ProgrammingLanguages { get; set; }
 
-        public string Company { get; set; }
-
         public int CurrentAmount { get; set; }
 
         public int ExperienceYears { get; set; }
@@ -31,7 +29,9 @@ namespace Intervu.Domain.Entities
         public string Bio { get; set; }
 
         public InterviewerProfileStatus Status { get; set; }
-
-
+        
+        public ICollection<Company> Companies { get; set; } = new List<Company>();
+        
+        public ICollection<Skill> Skills { get; set; } = new List<Skill>();
     }
 }

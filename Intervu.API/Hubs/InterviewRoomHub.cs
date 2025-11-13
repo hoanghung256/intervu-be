@@ -2,8 +2,8 @@
 
 namespace Intervu.API.Hubs
 {
-	public class InterviewRoomHub : Hub
-	{
+    public class InterviewRoomHub : Hub
+    {
         private static Dictionary<string, string> UserConnectionMap = new();
 
         public override async Task OnConnectedAsync()
@@ -31,11 +31,11 @@ namespace Intervu.API.Hubs
         }
 
         public async Task JoinRoom(string room)
-		{
-			await Groups.AddToGroupAsync(Context.ConnectionId, room);
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, room);
 
-			await Clients.Group(room).SendAsync("UserJoined", Context.ConnectionId);
-		}
+            await Clients.Group(room).SendAsync("UserJoined", Context.ConnectionId);
+        }
 
         public async Task LeaveRoom(string room)
         {
@@ -43,22 +43,38 @@ namespace Intervu.API.Hubs
             await Clients.Group(room).SendAsync("UserLeft", Context.ConnectionId);
         }
 
-		public async Task SendOffer(string toUserId, string sdp)
-		{
+        public async Task SendOffer(string toUserId, string sdp)
+        {
             if (UserConnectionMap.TryGetValue(toUserId, out var connectionId))
             {
                 await Clients.Client(connectionId).SendAsync("ReceiveOffer", Context.ConnectionId, sdp);
             }
         }
 
-		public async Task SendAnswer(string toConnectionId, string sdp)
-		{
+        public async Task SendAnswer(string toConnectionId, string sdp)
+        {
             await Clients.Client(toConnectionId).SendAsync("ReceiveAnswer", Context.ConnectionId, sdp);
         }
 
-		public async Task SendIceCandidate(string toConnectionId, string candidate)
+        public async Task SendIceCandidate(string toConnectionId, string candidate)
         {
             await Clients.Client(toConnectionId).SendAsync("ReceiveIceCandidate", Context.ConnectionId, candidate);
+        }
+
+        /// <summary>
+        /// Broadcasts code changes to other users in the same room.
+        /// </summary>
+        public async Task SendCode(string room, string code)
+        {
+            await Clients.OthersInGroup(room).SendAsync("ReceiveCode", code);
+        }
+
+        /// <summary>
+        /// Broadcasts the selected programming language and initial code to other users in the room.
+        /// </summary>
+        public async Task SendLanguage(string roomId, string language, string initialCode)
+        {
+            await Clients.OthersInGroup(roomId).SendAsync("ReceiveLanguage", language, initialCode);
         }
     }
 }

@@ -4,6 +4,7 @@ using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Intervu.Infrastructure.Migrations
 {
     [DbContext(typeof(IntervuDbContext))]
-    partial class IntervuDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251113030656_AddSkillAndCompanyManyToMany")]
+    partial class AddSkillAndCompanyManyToMany
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -463,7 +466,11 @@ namespace Intervu.Infrastructure.Migrations
                     b.Property<int>("ExperienceYears")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsVerified")
+                        .HasColumnType("bit");
+
                     b.Property<string>("PortfolioUrl")
+                        .IsRequired()
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
 
@@ -474,9 +481,6 @@ namespace Intervu.Infrastructure.Migrations
                     b.Property<string>("Specializations")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -490,10 +494,10 @@ namespace Intervu.Infrastructure.Migrations
                             CVUrl = "https://example.com/cv-bob.pdf",
                             CurrentAmount = 0,
                             ExperienceYears = 8,
+                            IsVerified = true,
                             PortfolioUrl = "https://portfolio.example.com/bob",
                             ProgrammingLanguages = "C#, JavaScript",
-                            Specializations = "Backend, System Design",
-                            Status = 0
+                            Specializations = "Backend, System Design"
                         },
                         new
                         {
@@ -502,10 +506,10 @@ namespace Intervu.Infrastructure.Migrations
                             CVUrl = "https://example.com/cv-john.pdf",
                             CurrentAmount = 0,
                             ExperienceYears = 6,
+                            IsVerified = true,
                             PortfolioUrl = "https://portfolio.example.com/john",
                             ProgrammingLanguages = "JavaScript, Go, TypeScript",
-                            Specializations = "Fullstack, Cloud",
-                            Status = 1,
+                            Specializations = "Fullstack, Cloud"
                         },
                         new
                         {
@@ -517,8 +521,7 @@ namespace Intervu.Infrastructure.Migrations
                             IsVerified = true,
                             PortfolioUrl = "https://portfolio.example.com/sarah",
                             ProgrammingLanguages = "JavaScript, TypeScript",
-                            Specializations = "Frontend, UI/UX",
-                            Status = 1,
+                            Specializations = "Frontend, UI/UX"
                         });
                 });
 
