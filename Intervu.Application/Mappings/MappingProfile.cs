@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
+using Intervu.Application.DTOs.Company;
 using Intervu.Application.DTOs.Interviewer;
+using Intervu.Application.DTOs.Skill;
 using Intervu.Application.DTOs.User;
 using Intervu.Domain.Entities;
 
@@ -13,6 +15,8 @@ namespace Intervu.Application.Mappings
             CreateMap<User, LoginResponse>()
                 .ForMember(dest => dest.Token, opt => opt.Ignore())
                 .ForMember(dest => dest.ExpiresIn, opt => opt.Ignore());
+
+            CreateMap<User, UserDto>();
 
             CreateMap<LoginRequest, User>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore());
@@ -45,6 +49,9 @@ namespace Intervu.Application.Mappings
                 .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
                 .ForMember(dest => dest.ProfilePicture, opt => opt.MapFrom(src => src.ProfilePicture)).ReverseMap();
+
+            CreateMap<Company, CompanyDto>().ReverseMap();
+            CreateMap<Skill, SkillDto>().ReverseMap();
         }
     }
 }
