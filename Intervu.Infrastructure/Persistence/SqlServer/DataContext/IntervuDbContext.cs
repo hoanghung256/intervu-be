@@ -280,7 +280,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 Company = "Tech Co",
                 ExperienceYears = 8,
                 Bio = "Senior software engineer",
-                IsVerified = true
+                Status = InterviewerProfileStatus.Pending
             });
 
             modelBuilder.Entity<InterviewerAvailability>().HasData(new InterviewerAvailability

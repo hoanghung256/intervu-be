@@ -1,4 +1,5 @@
 using Intervu.Domain.Abstractions.Entities;
+using Intervu.Domain.Entities.Constants;
 using System;
 
 namespace Intervu.Domain.Entities
@@ -9,9 +10,10 @@ namespace Intervu.Domain.Entities
         /// References User.Id (Interviewer)
         /// EntityBase.Id will be used as InterviewerId
         /// </summary>
+        /// 
         public string CVUrl { get; set; }
 
-        public string PortfolioUrl { get; set; }
+        public string? PortfolioUrl { get; set; }
 
         /// <summary>
         /// e.g. Backend, Frontend, ... stored as text or CSV/JSON
@@ -28,6 +30,8 @@ namespace Intervu.Domain.Entities
 
         public string Bio { get; set; }
 
-        public bool IsVerified { get; set; }
+        public InterviewerProfileStatus Status { get; set; }
+
+
     }
 }

@@ -3,13 +3,16 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.13.35931.197
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Intervu.Domain", "Intervu.Domain\Intervu.Domain.csproj", "{E21F9EA9-8201-40D5-93AA-02FC9D824694}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Intervu.Domain", "Intervu.Domain\Intervu.Domain.csproj", "{E21F9EA9-8201-40D5-93AA-02FC9D824694}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Intervu.API", "Intervu.API\Intervu.API.csproj", "{2A1EE090-04F5-4E3A-8749-FB18269DEE11}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Intervu.API", "Intervu.API\Intervu.API.csproj", "{2A1EE090-04F5-4E3A-8749-FB18269DEE11}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A2414F93-2F36-4CB6-AA2F-95B6559B57E7} = {A2414F93-2F36-4CB6-AA2F-95B6559B57E7}
+	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Intervu.Infrastructure", "Intervu.Infrastructure\Intervu.Infrastructure.csproj", "{2DE34385-60AF-46A6-9E22-7D3F474C7112}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Intervu.Infrastructure", "Intervu.Infrastructure\Intervu.Infrastructure.csproj", "{2DE34385-60AF-46A6-9E22-7D3F474C7112}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Intervu.Application", "Intervu.Application\Intervu.Application.csproj", "{A2414F93-2F36-4CB6-AA2F-95B6559B57E7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Intervu.Application", "Intervu.Application\Intervu.Application.csproj", "{A2414F93-2F36-4CB6-AA2F-95B6559B57E7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

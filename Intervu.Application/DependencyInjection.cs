@@ -6,6 +6,9 @@ using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Intervu.Application.UseCases.InterviewRoom;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Intervu.Application.Interfaces.UseCases.Interviewer;
+using Intervu.Application.UseCases.InterviewerProfile;
+using Intervu.Application.Interfaces.UseCases.InterviewerProfile;
 
 namespace Intervu.Application
 {
@@ -25,6 +28,11 @@ namespace Intervu.Application
             // ----- InterviewRoom ----
             services.AddScoped<ICreateInterviewRoom, CreateInterviewRoom>();
             services.AddScoped<IGetRoomHistory, GetRoomHistory>();
+            // ----- InterviewerProfile ----
+            services.AddScoped<ICreateInterviewProfile, CreateInterviewerProfile>();
+            services.AddScoped<IUpdateInterviewProfile, UpdateInterviewerProfile>();
+            services.AddScoped<IViewInterviewProfile, ViewInterviewerProfile>();
+            services.AddScoped<IDeleteInterviewerProfile, DeleteInterviewerProfile>();
 
             return services;
         }

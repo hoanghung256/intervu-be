@@ -21,7 +21,9 @@ namespace Intervu.Infrastructure
                 options.UseSqlServer(configuration.GetConnectionString("SqlDefeaultConnection")));
 
             // Register your repositories here
+            services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IInterviewRoomRepository, InterviewRoomRepository>();
+            services.AddScoped<IInterviewerProfileRepository, InterviewerProfileRepository>();
 
             return services;
         }
@@ -49,9 +51,6 @@ namespace Intervu.Infrastructure
             //services.AddSingleton(bucketName);
             services.AddTransient<IMailService, EmailService>();
             //services.AddTransient<IFileService, FirebaseStorageService>();
-
-            // Register repositories
-            services.AddScoped<IUserRepository, UserRepository>();
 
             return services;
         }
