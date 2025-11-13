@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Linq.Expressions;
+using System.Threading.Tasks.Dataflow;
 
 namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
 {
@@ -28,6 +29,8 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
         public DbSet<Payment> Payments { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<NotificationReceive> NotificationReceives { get; set; }
+        public DbSet<Company> Companies { get; set; }
+        public DbSet<Skill> Skills { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -80,13 +83,36 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 b.Property(x => x.PortfolioUrl).HasMaxLength(4000);
                 b.Property(x => x.Specializations).HasColumnType("nvarchar(max)");
                 b.Property(x => x.ProgrammingLanguages).HasColumnType("nvarchar(max)");
-                b.Property(x => x.Company).HasMaxLength(200);
                 b.Property(x => x.Bio).HasColumnType("nvarchar(max)");
 
                 b.HasOne<User>()
                  .WithOne()
                  .HasForeignKey<InterviewerProfile>(p => p.Id)
                  .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasMany(x => x.Companies)
+                 .WithMany(c => c.InterviewerProfiles)
+                 .UsingEntity<Dictionary<string, object>>(
+                     "InterviewerCompanies",
+                     l => l.HasOne<Company>().WithMany().HasForeignKey("CompaniesId").OnDelete(DeleteBehavior.Cascade),
+                     r => r.HasOne<InterviewerProfile>().WithMany().HasForeignKey("InterviewerProfilesId").OnDelete(DeleteBehavior.Cascade),
+                     j =>
+                     {
+                         j.HasKey("InterviewerProfilesId", "CompaniesId");
+                         j.ToTable("InterviewerCompanies");
+                     });
+
+                b.HasMany(x => x.Skills)
+                 .WithMany(s => s.InterviewerProfiles)
+                 .UsingEntity<Dictionary<string, object>>(
+                     "InterviewerSkills",
+                     l => l.HasOne<Skill>().WithMany().HasForeignKey("SkillsId").OnDelete(DeleteBehavior.Cascade),
+                     r => r.HasOne<InterviewerProfile>().WithMany().HasForeignKey("InterviewerProfilesId").OnDelete(DeleteBehavior.Cascade),
+                     j =>
+                     {
+                         j.HasKey("InterviewerProfilesId", "SkillsId");
+                         j.ToTable("InterviewerSkills");
+                     });
             });
 
             // InterviewerAvailability (many availabilities per interviewer)
@@ -197,6 +223,23 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                  .OnDelete(DeleteBehavior.Cascade);
             });
 
+            modelBuilder.Entity<Company>(b =>
+            {
+                b.ToTable("Companies");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Name).HasMaxLength(200).IsRequired();
+                b.Property(x => x.LogoPath).HasMaxLength(500);
+                b.Property(x => x.Website).HasMaxLength(500);
+            });
+
+            modelBuilder.Entity<Skill>(b =>
+            {
+                b.ToTable("Skills");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Name).HasMaxLength(200).IsRequired();
+                b.Property(x => x.Description).HasColumnType("nvarchar(max)");
+            });
+
             /// <summary>
             /// Global query filter for soft delete
             /// When querying any entity that has an "IsDeleted" property.
@@ -259,6 +302,31 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 Status = UserStatus.Active,
             };
 
+            var user5 = new User
+            {
+                Id = 5,
+                FullName = "John Doe",
+                Email = "john.doe@example.com",
+                Password = user1.Password,
+                Role = UserRole.Interviewer,
+                ProfilePicture = null,
+                Status = UserStatus.Active,
+            };
+
+            var user6 = new User
+            {
+                Id = 6,
+                FullName = "Sarah Lee",
+                Email = "sarah.lee@example.com",
+                Password = user1.Password,
+                Role = UserRole.Interviewer,
+                ProfilePicture = null,
+                Status = UserStatus.Active,
+            };
+
+            modelBuilder.Entity<User>().HasData(user5, user6);
+
+
             modelBuilder.Entity<User>().HasData(user1, user2, user3);
 
             modelBuilder.Entity<IntervieweeProfile>().HasData(new IntervieweeProfile
@@ -270,18 +338,44 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 Bio = "Aspiring backend developer."
             });
 
-            modelBuilder.Entity<InterviewerProfile>().HasData(new InterviewerProfile
+            modelBuilder.Entity<InterviewerProfile>().HasData(
+            new InterviewerProfile
             {
                 Id = 2,
                 CVUrl = "https://example.com/cv-bob.pdf",
                 PortfolioUrl = "https://portfolio.example.com/bob",
                 Specializations = "Backend, System Design",
                 ProgrammingLanguages = "C#, JavaScript",
-                Company = "Tech Co",
                 ExperienceYears = 8,
-                Bio = "Senior software engineer",
+                CurrentAmount = 0,
+                Bio = "Senior Backend Engineer with real interview experience",
                 IsVerified = true
-            });
+            },
+            new InterviewerProfile
+            {
+                Id = 5,
+                CVUrl = "https://example.com/cv-john.pdf",
+                PortfolioUrl = "https://portfolio.example.com/john",
+                Specializations = "Fullstack, Cloud",
+                ProgrammingLanguages = "JavaScript, Go, TypeScript",
+                ExperienceYears = 6,
+                CurrentAmount = 0,
+                Bio = "Fullstack Engineer previously at Uber",
+                IsVerified = true
+            },
+            new InterviewerProfile
+            {
+                Id = 6,
+                CVUrl = "https://example.com/cv-sarah.pdf",
+                PortfolioUrl = "https://portfolio.example.com/sarah",
+                Specializations = "Frontend, UI/UX",
+                ProgrammingLanguages = "JavaScript, TypeScript",
+                ExperienceYears = 7,
+                CurrentAmount = 0,
+                Bio = "Senior Frontend Engineer focusing on UI/UX interviews",
+                IsVerified = true
+            }
+            );
 
             modelBuilder.Entity<InterviewerAvailability>().HasData(new InterviewerAvailability
             {
@@ -334,6 +428,86 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
             });
 
             modelBuilder.Entity<NotificationReceive>().HasData(new { NotificationId = 1, ReceiverId = 1 });
+
+            modelBuilder.Entity<Company>().HasData(
+                new Company { Id = 1, Name = "Google", Website = "https://google.com", LogoPath = "logos/google.png" },
+                new Company { Id = 2, Name = "Meta", Website = "https://meta.com", LogoPath = "logos/meta.png" },
+                new Company { Id = 3, Name = "Amazon", Website = "https://amazon.com", LogoPath = "logos/amazon.png" },
+                new Company { Id = 4, Name = "Microsoft", Website = "https://microsoft.com", LogoPath = "logos/microsoft.png" },
+                new Company { Id = 5, Name = "Netflix", Website = "https://netflix.com", LogoPath = "logos/netflix.png" },
+                new Company { Id = 6, Name = "TikTok", Website = "https://tiktok.com", LogoPath = "logos/tiktok.png" },
+                new Company { Id = 7, Name = "Apple", Website = "https://apple.com", LogoPath = "logos/apple.png" },
+                new Company { Id = 8, Name = "Uber", Website = "https://uber.com", LogoPath = "logos/uber.png" },
+                new Company { Id = 9, Name = "Spotify", Website = "https://spotify.com", LogoPath = "logos/spotify.png" },
+                new Company { Id = 10, Name = "Stripe", Website = "https://stripe.com", LogoPath = "logos/stripe.png" }
+            );
+
+            modelBuilder.Entity<Skill>().HasData(
+                new Skill { Id = 1, Name = "C#" },
+                new Skill { Id = 2, Name = "Java" },
+                new Skill { Id = 3, Name = "JavaScript" },
+                new Skill { Id = 4, Name = "TypeScript" },
+                new Skill { Id = 5, Name = "React" },
+                new Skill { Id = 6, Name = "Node.js" },
+                new Skill { Id = 7, Name = "SQL" },
+                new Skill { Id = 8, Name = "MongoDB" },
+                new Skill { Id = 9, Name = "AWS" },
+                new Skill { Id = 10, Name = "Azure" },
+                new Skill { Id = 11, Name = "System Design" },
+                new Skill { Id = 12, Name = "Microservices" },
+                new Skill { Id = 13, Name = "Docker" },
+                new Skill { Id = 14, Name = "Kubernetes" },
+                new Skill { Id = 15, Name = "Machine Learning" }
+            );
+
+            // Bob (2)
+            modelBuilder.Entity("InterviewerCompanies").HasData(
+                new { InterviewerProfilesId = 2, CompaniesId = 1 }, // Google
+                new { InterviewerProfilesId = 2, CompaniesId = 4 }, // Microsoft
+                new { InterviewerProfilesId = 2, CompaniesId = 10 } // Stripe
+            );
+
+            // John (5)
+            modelBuilder.Entity("InterviewerCompanies").HasData(
+                new { InterviewerProfilesId = 5, CompaniesId = 8 }, // Uber
+                new { InterviewerProfilesId = 5, CompaniesId = 3 }, // Amazon
+                new { InterviewerProfilesId = 5, CompaniesId = 6 }  // TikTok
+            );
+
+            // Sarah (6)
+            modelBuilder.Entity("InterviewerCompanies").HasData(
+                new { InterviewerProfilesId = 6, CompaniesId = 7 }, // Apple
+                new { InterviewerProfilesId = 6, CompaniesId = 9 }, // Spotify
+                new { InterviewerProfilesId = 6, CompaniesId = 2 }  // Meta
+            );
+
+            // Bob (backend)
+            modelBuilder.Entity("InterviewerSkills").HasData(
+                new { InterviewerProfilesId = 2, SkillsId = 1 },
+                new { InterviewerProfilesId = 2, SkillsId = 7 },
+                new { InterviewerProfilesId = 2, SkillsId = 11 },
+                new { InterviewerProfilesId = 2, SkillsId = 12 },
+                new { InterviewerProfilesId = 2, SkillsId = 13 }
+            );
+
+            // John (fullstack)
+            modelBuilder.Entity("InterviewerSkills").HasData(
+                new { InterviewerProfilesId = 5, SkillsId = 3 },
+                new { InterviewerProfilesId = 5, SkillsId = 4 },
+                new { InterviewerProfilesId = 5, SkillsId = 12 },
+                new { InterviewerProfilesId = 5, SkillsId = 9 },
+                new { InterviewerProfilesId = 5, SkillsId = 14 }
+            );
+
+            // Sarah (frontend + ML)
+            modelBuilder.Entity("InterviewerSkills").HasData(
+                new { InterviewerProfilesId = 6, SkillsId = 3 },
+                new { InterviewerProfilesId = 6, SkillsId = 4 },
+                new { InterviewerProfilesId = 6, SkillsId = 5 },
+                new { InterviewerProfilesId = 6, SkillsId = 15 }
+            );
+
+
         }
 
         public override int SaveChanges()
