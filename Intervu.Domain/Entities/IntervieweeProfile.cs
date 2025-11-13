@@ -21,5 +21,6 @@ namespace Intervu.Domain.Entities
         public string Bio { get; set; }
 
         public int CurrentAmount { get; set; }
+
     }
 }
