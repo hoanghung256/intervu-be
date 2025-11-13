@@ -81,8 +81,8 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 b.HasKey(x => x.Id);
                 b.Property(x => x.CVUrl).HasMaxLength(4000);
                 b.Property(x => x.PortfolioUrl).HasMaxLength(4000);
-                b.Property(x => x.Specializations).HasColumnType("nvarchar(max)");
-                b.Property(x => x.ProgrammingLanguages).HasColumnType("nvarchar(max)");
+                //b.Property(x => x.Specializations).HasColumnType("nvarchar(max)");
+                //b.Property(x => x.ProgrammingLanguages).HasColumnType("nvarchar(max)");
                 b.Property(x => x.Bio).HasColumnType("nvarchar(max)");
 
                 b.HasOne<User>()
@@ -344,10 +344,8 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 Id = 2,
                 CVUrl = "https://example.com/cv-bob.pdf",
                 PortfolioUrl = "https://portfolio.example.com/bob",
-                Specializations = "Backend, System Design",
-                ProgrammingLanguages = "C#, JavaScript",
                 ExperienceYears = 8,
-                Status = InterviewerProfileStatus.Pending
+                Status = InterviewerProfileStatus.Pending,
                 CurrentAmount = 0,
                 Bio = "Senior Backend Engineer with real interview experience",
             },
@@ -356,8 +354,6 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 Id = 5,
                 CVUrl = "https://example.com/cv-john.pdf",
                 PortfolioUrl = "https://portfolio.example.com/john",
-                Specializations = "Fullstack, Cloud",
-                ProgrammingLanguages = "JavaScript, Go, TypeScript",
                 ExperienceYears = 6,
                 CurrentAmount = 0,
                 Bio = "Fullstack Engineer previously at Uber",
@@ -368,8 +364,6 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 Id = 6,
                 CVUrl = "https://example.com/cv-sarah.pdf",
                 PortfolioUrl = "https://portfolio.example.com/sarah",
-                Specializations = "Frontend, UI/UX",
-                ProgrammingLanguages = "JavaScript, TypeScript",
                 ExperienceYears = 7,
                 CurrentAmount = 0,
                 Bio = "Senior Frontend Engineer focusing on UI/UX interviews",

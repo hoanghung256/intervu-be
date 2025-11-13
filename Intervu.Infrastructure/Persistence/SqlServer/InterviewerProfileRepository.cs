@@ -32,39 +32,16 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             throw new NotImplementedException();
         }
 
-        public async Task<InterviewerProfileDto> GetProfileByIdAsync(int id)
+        public async Task<InterviewerProfile?> GetProfileByIdAsync(int id)
         {
-            var profile = await _context.InterviewerProfiles
-                .FirstOrDefaultAsync(p => p.Id == id);
+            InterviewerProfile? profile = await _context.InterviewerProfiles
+                .Where(p => p.Id == id)
+                .Include(p => p.Companies)
+                .Include(p => p.Skills)
+                .FirstOrDefaultAsync();
 
-            if (profile == null)
-                throw new Exception("Interviewer profile not found.");
-
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Id == id);
-
-            if (user == null)
-                throw new Exception("User not found.");
-
-            return new InterviewerProfileDto
-            {
-                Id = profile.Id,
-                FullName = user.FullName,
-                Email = user.Email,
-                ProfilePicture = user.ProfilePicture,
-                CVUrl = profile.CVUrl,
-                PortfolioUrl = profile.PortfolioUrl,
-                Specializations = profile.Specializations,
-                ProgrammingLanguages = profile.ProgrammingLanguages,
-                Company = profile.Company,
-                CurrentAmount = profile.CurrentAmount,
-                ExperienceYears = profile.ExperienceYears,
-                Bio = profile.Bio,
-                Status = profile.Status
-            };
+            return profile;
         }
-
-
 
         public async Task UpdateInterviewerProfileAsync(InterviewerUpdateDto updatedProfile)
         {
@@ -81,9 +58,9 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
                 throw new Exception("User not found.");
 
             existingProfile.PortfolioUrl = updatedProfile.PortfolioUrl;
-            existingProfile.Specializations = updatedProfile.Specializations;
-            existingProfile.ProgrammingLanguages = updatedProfile.ProgrammingLanguages;
-            existingProfile.Company = updatedProfile.Company;
+            //existingProfile.Specializations = updatedProfile.Specializations;
+            //existingProfile.ProgrammingLanguages = updatedProfile.ProgrammingLanguages;
+            //existingProfile.Companies = updatedProfile.;
             existingProfile.CurrentAmount = updatedProfile.CurrentAmount;
             existingProfile.ExperienceYears = updatedProfile.ExperienceYears;
             existingProfile.Bio = updatedProfile.Bio;

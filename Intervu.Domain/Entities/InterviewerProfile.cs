@@ -15,13 +15,6 @@ namespace Intervu.Domain.Entities
 
         public string? PortfolioUrl { get; set; }
 
-        /// <summary>
-        /// e.g. Backend, Frontend, ... stored as text or CSV/JSON
-        /// </summary>
-        public string Specializations { get; set; }
-
-        public string ProgrammingLanguages { get; set; }
-
         public int CurrentAmount { get; set; }
 
         public int ExperienceYears { get; set; }
