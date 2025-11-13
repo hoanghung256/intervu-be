@@ -41,6 +41,9 @@ namespace Intervu.API
             builder.Services.AddControllers(options =>
             {
                 options.Conventions.Add(new LowercaseControllerRouteConvention());
+            }).AddNewtonsoftJson(options =>
+            {
+                options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
             });
 
             // --- SWAGGER CONFIGURATION ---
