@@ -10,8 +10,8 @@ namespace Intervu.Application.Interfaces.UseCases.InterviewerProfile
 {
     public interface IViewInterviewProfile
     {
-        Task<InterviewerProfileDto> ViewOwnProfileAsync(int id);
+        Task<InterviewerProfileDto?> ViewOwnProfileAsync(int id);
 
-        Task<InterviewerViewDto> ViewProfileForIntervieweeAsync(int id);
+        Task<InterviewerViewDto?> ViewProfileForIntervieweeAsync(int id);
     }
 }

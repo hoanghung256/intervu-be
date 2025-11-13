@@ -11,7 +11,7 @@ namespace Intervu.Application.Interfaces.Repositories
     public interface IInterviewerProfileRepository : IRepositoryBase<InterviewerProfile>
     {
         Task<InterviewerProfile> GetProfileAsync();
-        Task<InterviewerProfileDto> GetProfileByIdAsync(int id);
+        Task<InterviewerProfile?> GetProfileByIdAsync(int id);
         Task CreateInterviewerProfile(InterviewerProfile interviewerProfile);
         Task UpdateInterviewerProfileAsync(InterviewerUpdateDto updatedProfile);
         void DeleteInterviewerProfile(int id);
