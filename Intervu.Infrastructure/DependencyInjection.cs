@@ -25,6 +25,7 @@ namespace Intervu.Infrastructure
             services.AddScoped<IInterviewRoomRepository, InterviewRoomRepository>();
             services.AddScoped<IInterviewerProfileRepository, InterviewerProfileRepository>();
             services.AddScoped<ICompanyRepository, CompanyRepository>();
+            services.AddScoped<ISkillRepository, SkillRepository>();
 
             return services;
         }
