@@ -33,6 +33,7 @@ namespace Intervu.Application
             services.AddScoped<IUpdateInterviewProfile, UpdateInterviewerProfile>();
             services.AddScoped<IViewInterviewProfile, ViewInterviewerProfile>();
             services.AddScoped<IDeleteInterviewerProfile, DeleteInterviewerProfile>();
+            services.AddScoped<IGetAllInterviewers, GetAllInterviewers>();
 
             return services;
         }

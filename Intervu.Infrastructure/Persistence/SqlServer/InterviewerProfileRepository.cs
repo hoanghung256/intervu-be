@@ -1,4 +1,5 @@
-﻿using Intervu.Application.DTOs.Interviewer;
+﻿using Intervu.Application.Common;
+using Intervu.Application.DTOs.Interviewer;
 using Intervu.Application.Interfaces.Repositories;
 using Intervu.Domain.Entities;
 using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
@@ -43,6 +44,31 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             return profile;
         }
 
+        public async Task<PagedResult<InterviewerProfile>> GetPagedInterviewerProfilesAsync(int page, int pageSize)
+        {
+            var query = _context.InterviewerProfiles.AsQueryable()
+                .Include(i => i.Companies)
+                .Include(i => i.Skills)
+                .AsQueryable();
+
+            var totalItems = query.Count();
+            
+            var items = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new PagedResult<InterviewerProfile>(items, totalItems, pageSize, page);
+        }
+        public async Task<IEnumerable<InterviewerProfile>> GetAllInterviewerProfilesAsync()
+        {
+            var profiles = await _context.InterviewerProfiles
+                .Include(p => p.Companies)
+                .Include(p => p.Skills)
+                .ToListAsync();
+            return profiles;
+        }
+
         public async Task UpdateInterviewerProfileAsync(InterviewerUpdateDto updatedProfile)
         {
             var existingProfile = await _context.InterviewerProfiles
@@ -73,7 +99,6 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
 
             await _context.SaveChangesAsync();
         }
-
 
     }
 }

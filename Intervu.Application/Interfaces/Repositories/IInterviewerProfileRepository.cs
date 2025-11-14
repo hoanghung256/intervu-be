@@ -1,4 +1,5 @@
-﻿using Intervu.Application.DTOs.Interviewer;
+﻿using Intervu.Application.Common;
+using Intervu.Application.DTOs.Interviewer;
 using Intervu.Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -15,6 +16,7 @@ namespace Intervu.Application.Interfaces.Repositories
         Task CreateInterviewerProfile(InterviewerProfile interviewerProfile);
         Task UpdateInterviewerProfileAsync(InterviewerUpdateDto updatedProfile);
         void DeleteInterviewerProfile(int id);
+        Task<PagedResult<InterviewerProfile>> GetPagedInterviewerProfilesAsync(int pageNumber, int pageSize);
 
     }
 }

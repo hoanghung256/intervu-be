@@ -345,9 +345,8 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 CVUrl = "https://example.com/cv-bob.pdf",
                 PortfolioUrl = "https://portfolio.example.com/bob",
                 ExperienceYears = 8,
-                Status = InterviewerProfileStatus.Pending,
                 CurrentAmount = 0,
-                Bio = "Senior Backend Engineer with real interview experience",
+                Bio = "Senior Backend Engineer with real interview experience"
             },
             new InterviewerProfile
             {
@@ -356,8 +355,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 PortfolioUrl = "https://portfolio.example.com/john",
                 ExperienceYears = 6,
                 CurrentAmount = 0,
-                Bio = "Fullstack Engineer previously at Uber",
-                Status = InterviewerProfileStatus.Approved
+                Bio = "Fullstack Engineer previously at Uber"
             },
             new InterviewerProfile
             {
@@ -366,8 +364,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 PortfolioUrl = "https://portfolio.example.com/sarah",
                 ExperienceYears = 7,
                 CurrentAmount = 0,
-                Bio = "Senior Frontend Engineer focusing on UI/UX interviews",
-                Status = InterviewerProfileStatus.Approved
+                Bio = "Senior Frontend Engineer focusing on UI/UX interviews"
             }
             );
 
