@@ -17,15 +17,40 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
         {
         }
 
-        public async Task CreateInterviewerProfile(InterviewerProfile interviewerProfile)
+        public async Task CreateInterviewerProfile(InterviewerCreateDto dto)
         {
-            throw new NotImplementedException();
+            var profile = new InterviewerProfile
+            {
+                Id = dto.Id,
+                CurrentAmount = 0,
+                ExperienceYears = dto.ExperienceYears,
+                Status = dto.Status,
+                Companies = [],
+                Skills = []
+            };
+
+            if (dto.CompanyIds?.Any() == true)
+            {
+                var companies = await _context.Companies
+                    .Where(c => dto.CompanyIds.Contains(c.Id))
+                    .ToListAsync();
+
+                profile.Companies = companies;
+            }
+
+            if (dto.SkillIds?.Any() == true)
+            {
+                var skills = await _context.Skills
+                    .Where(s => dto.SkillIds.Contains(s.Id))
+                    .ToListAsync();
+
+                profile.Skills = skills;
+            }
+
+            await _context.InterviewerProfiles.AddAsync(profile);
+            await _context.SaveChangesAsync();
         }
 
-        public void DeleteInterviewerProfile(int id)
-        {
-            throw new NotImplementedException();
-        }
 
         public async Task<InterviewerProfile> GetProfileAsync()
         {
@@ -46,6 +71,8 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
         public async Task UpdateInterviewerProfileAsync(InterviewerUpdateDto updatedProfile)
         {
             var existingProfile = await _context.InterviewerProfiles
+                .Include(p => p.Companies)
+                .Include(p => p.Skills)
                 .FirstOrDefaultAsync(p => p.Id == updatedProfile.Id);
 
             if (existingProfile == null)
@@ -58,22 +85,35 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
                 throw new Exception("User not found.");
 
             existingProfile.PortfolioUrl = updatedProfile.PortfolioUrl;
-            //existingProfile.Specializations = updatedProfile.Specializations;
-            //existingProfile.ProgrammingLanguages = updatedProfile.ProgrammingLanguages;
-            //existingProfile.Companies = updatedProfile.;
             existingProfile.CurrentAmount = updatedProfile.CurrentAmount;
             existingProfile.ExperienceYears = updatedProfile.ExperienceYears;
             existingProfile.Bio = updatedProfile.Bio;
-            existingProfile.Status = updatedProfile.Status;
+
+
+            var newCompanies = await _context.Companies
+                .Where(c => updatedProfile.CompanyIds.Contains(c.Id))
+                .ToListAsync();
+
+            existingProfile.Companies.Clear();
+            foreach (var c in newCompanies)
+                existingProfile.Companies.Add(c);
+
+
+            var newSkills = await _context.Skills
+                .Where(s => updatedProfile.SkillIds.Contains(s.Id))
+                .ToListAsync();
+
+            existingProfile.Skills.Clear();
+            foreach (var s in newSkills)
+                existingProfile.Skills.Add(s);
+
 
             existingUser.FullName = updatedProfile.FullName;
             existingUser.Email = updatedProfile.Email;
-            existingUser.Password = updatedProfile.Password;
             existingUser.ProfilePicture = updatedProfile.ProfilePicture;
 
             await _context.SaveChangesAsync();
         }
-
 
     }
 }

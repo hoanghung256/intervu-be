@@ -30,7 +30,7 @@ namespace Intervu.Application.UseCases.InterviewerProfile
 
             _mapper.Map(interviewerUpdateDto, existing);
 
-            _repo.UpdateAsync(existing);
+            await _repo.UpdateInterviewerProfileAsync(interviewerUpdateDto);
 
             await _repo.SaveChangesAsync();
 
@@ -39,12 +39,12 @@ namespace Intervu.Application.UseCases.InterviewerProfile
 
         public async Task<InterviewerViewDto> UpdateInterviewStatus(int id, InterviewerProfileStatus status)
         {
-            Domain.Entities.InterviewerProfile profile = await _repo.GetByIdAsync(id);
+            Domain.Entities.InterviewerProfile? profile = await _repo.GetByIdAsync(id);
             if (profile == null)
-                return null;
+                throw new Exception("Profile not found!");
             profile.Status = status;
             await _repo.SaveChangesAsync();
-            return profile != null ? _mapper.Map<InterviewerViewDto>(profile) : null;
+            return _mapper.Map<InterviewerViewDto>(profile);
         }
     }
 }

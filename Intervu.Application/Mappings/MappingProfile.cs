@@ -30,25 +30,25 @@ namespace Intervu.Application.Mappings
                 .ForMember(dest => dest.Status, opt => opt.Ignore());
 
             // Interview mappings
-            CreateMap<InterviewerProfile, InterviewerProfileDto>().ReverseMap();
-            CreateMap<InterviewerProfile, InterviewerViewDto>().ReverseMap();
+            CreateMap<InterviewerProfile, InterviewerProfileDto>().ForMember(dest => dest.User, opt => opt.Ignore()).ReverseMap();
+            CreateMap<InterviewerProfile, InterviewerViewDto>().ForMember(dest => dest.User, opt => opt.Ignore()).ReverseMap();
             CreateMap<InterviewerProfile, InterviewerCreateDto>().ReverseMap();
             CreateMap<InterviewerProfile, InterviewerUpdateDto>().ReverseMap();
 
-            CreateMap<InterviewerCreateDto, InterviewerProfileDto>().ReverseMap();
-            CreateMap<User, InterviewerCreateDto>().ReverseMap();
-            CreateMap<User, InterviewerUpdateDto>().ReverseMap();
-            CreateMap<User, InterviewerViewDto>().ReverseMap();
-            CreateMap<User, InterviewerProfileDto>().ReverseMap();
-            CreateMap<InterviewerUpdateDto, InterviewerProfileDto>().ReverseMap();
+            //CreateMap<InterviewerCreateDto, InterviewerProfileDto>().ReverseMap();
+            //CreateMap<User, InterviewerCreateDto>().ReverseMap();
+            //CreateMap<User, InterviewerUpdateDto>().ReverseMap();
+            //CreateMap<User, InterviewerViewDto>().ReverseMap();
+            //CreateMap<User, InterviewerProfileDto>().ReverseMap();
+            //CreateMap<InterviewerUpdateDto, InterviewerProfileDto>().ReverseMap();
 
-            CreateMap<InterviewerProfile, InterviewerUpdateDto>().ReverseMap()
-                .ForMember(dest => dest.Status, opt => opt.Ignore()); // Prevent overwriting Status
+            //CreateMap<InterviewerProfile, InterviewerUpdateDto>().ReverseMap()
+            //    .ForMember(dest => dest.Status, opt => opt.Ignore()); // Prevent overwriting Status
 
-            CreateMap<InterviewerUpdateDto, User>()
-                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))
-                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
-                .ForMember(dest => dest.ProfilePicture, opt => opt.MapFrom(src => src.ProfilePicture)).ReverseMap();
+            //CreateMap<InterviewerUpdateDto, User>()
+            //    .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))
+            //    .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
+            //    .ForMember(dest => dest.ProfilePicture, opt => opt.MapFrom(src => src.ProfilePicture)).ReverseMap();
 
             CreateMap<Company, CompanyDto>().ReverseMap();
             CreateMap<Skill, SkillDto>().ReverseMap();

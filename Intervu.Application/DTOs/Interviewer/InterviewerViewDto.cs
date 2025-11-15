@@ -1,21 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using AutoMapper.Configuration.Annotations;
+using Intervu.Application.DTOs.Company;
+using Intervu.Application.DTOs.Skill;
+using Intervu.Application.DTOs.User;
+using Intervu.Domain.Entities.Constants;
 
 namespace Intervu.Application.DTOs.Interviewer
 {
     public class InterviewerViewDto
     {
-        public string FullName { get; set; }
-        public string Email { get; set; }
-        public string? ProfilePicture { get; set; }
+        public int Id { get; set; }
+        [Ignore]
+        public UserDto User { get; set; }
+
         public string? PortfolioUrl { get; set; }
-        public string Specializations { get; set; }
-        public string ProgrammingLanguages { get; set; }
-        public string Company { get; set; }
-        public int ExperienceYears { get; set; }
-        public string Bio { get; set; }
+
+        public int? ExperienceYears { get; set; }
+
+        public string? Bio { get; set; }
+
+        public ICollection<CompanyDto> Companies { get; set; } = new List<CompanyDto>();
+
+        public ICollection<SkillDto> Skills { get; set; } = new List<SkillDto>();
     }
 }
