@@ -138,7 +138,12 @@ namespace Intervu.API
                 options.AddPolicy(name: CorsPolicies.DevCorsPolicy, policy =>
                 {
                     string? currentIpV4 = GetLocalIPv4();
-                    policy.WithOrigins("https://localhost:5173", "http://localhost:5173", $"https://{currentIpV4}:5173")
+                    policy.WithOrigins(
+                              "http://localhost:5173", 
+                              "https://localhost:5173",
+                              $"http://{currentIpV4}:5173",
+                              $"https://{currentIpV4}:5173"
+                          )
                           .AllowAnyHeader()
                           .AllowAnyMethod()
                           .AllowCredentials();

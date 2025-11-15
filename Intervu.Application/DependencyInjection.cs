@@ -9,6 +9,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Intervu.Application.Interfaces.UseCases.Interviewer;
 using Intervu.Application.UseCases.InterviewerProfile;
 using Intervu.Application.Interfaces.UseCases.InterviewerProfile;
+using Intervu.Application.Interfaces.UseCases.Company;
+using Intervu.Application.UseCases.Company;
+using Intervu.Application.Interfaces.UseCases.Skill;
+using Intervu.Application.UseCases.Skill;
 
 namespace Intervu.Application
 {
@@ -33,6 +37,9 @@ namespace Intervu.Application
             services.AddScoped<IUpdateInterviewProfile, UpdateInterviewerProfile>();
             services.AddScoped<IViewInterviewProfile, ViewInterviewerProfile>();
             services.AddScoped<IDeleteInterviewerProfile, DeleteInterviewerProfile>();
+            services.AddScoped<IGetAllInterviewers, GetAllInterviewers>();
+            services.AddScoped<IGetAllCompanies, GetAllCompanies>();
+            services.AddScoped<IGetAllSkills, GetAllSkills>();
 
             return services;
         }

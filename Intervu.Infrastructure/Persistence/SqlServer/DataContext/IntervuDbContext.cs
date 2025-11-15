@@ -347,7 +347,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 ExperienceYears = 8,
                 Status = InterviewerProfileStatus.Enable,
                 CurrentAmount = 0,
-                Bio = "Senior Backend Engineer with real interview experience",
+                Bio = "Senior Backend Engineer with real interview experience"
             },
             new InterviewerProfile
             {
