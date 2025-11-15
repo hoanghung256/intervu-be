@@ -1,4 +1,5 @@
 ﻿using Asp.Versioning;
+using Intervu.Application.DTOs.Interviewer;
 using Intervu.Application.Interfaces.UseCases.InterviewerProfile;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,9 +18,18 @@ namespace Intervu.API.Controllers.v1.Interviewer
 
         // [GET] api/interviewers?pageNumber=1&pageSize=10
         [HttpGet]
-        public async Task<IActionResult> GetAllInterviewers([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetAllInterviewers([FromQuery] int page = 1, [FromQuery] int pageSize = 24, [FromQuery] int? companyId = null, [FromQuery] int? skillId = null, [FromQuery] string? searchTerm = "")
         {
-            var pagedResult = await _getAllInterviewers.ExecuteAsync(page, pageSize);
+            var request = new GetInterviewerFilterRequest
+            {
+                Search = searchTerm,
+                CompanyId = companyId,
+                SkillId = skillId,
+                Page = page,
+                PageSize = pageSize
+            };
+
+            var pagedResult = await _getAllInterviewers.ExecuteAsync(request);
             return Ok(new
             {
                 success = true,

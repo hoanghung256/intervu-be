@@ -16,7 +16,7 @@ namespace Intervu.Application.Interfaces.Repositories
         Task CreateInterviewerProfile(InterviewerProfile interviewerProfile);
         Task UpdateInterviewerProfileAsync(InterviewerUpdateDto updatedProfile);
         void DeleteInterviewerProfile(int id);
-        Task<PagedResult<InterviewerProfile>> GetPagedInterviewerProfilesAsync(int pageNumber, int pageSize);
+        Task<PagedResult<InterviewerProfile>> GetPagedInterviewerProfilesAsync(GetInterviewerFilterRequest request);
 
     }
 }

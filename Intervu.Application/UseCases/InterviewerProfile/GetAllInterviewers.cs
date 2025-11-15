@@ -26,9 +26,9 @@ namespace Intervu.Application.UseCases.InterviewerProfile
             _mapper = mapper;
         }
 
-        public async Task<PagedResult<InterviewerProfileDto>> ExecuteAsync(int page, int pageSize)
+        public async Task<PagedResult<InterviewerProfileDto>> ExecuteAsync(GetInterviewerFilterRequest request)
         {
-            PagedResult<Domain.Entities.InterviewerProfile> result = await _interviewerProfileRepo.GetPagedInterviewerProfilesAsync(page, pageSize);
+            PagedResult<Domain.Entities.InterviewerProfile> result = await _interviewerProfileRepo.GetPagedInterviewerProfilesAsync(request);
 
             List<InterviewerProfileDto> dtoList = _mapper.Map<List<InterviewerProfileDto>>(result.Items);
 

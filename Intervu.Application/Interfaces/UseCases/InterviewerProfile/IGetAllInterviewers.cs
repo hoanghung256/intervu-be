@@ -10,6 +10,6 @@ namespace Intervu.Application.Interfaces.UseCases.InterviewerProfile
 {
     public interface IGetAllInterviewers
     {
-        Task<PagedResult<InterviewerProfileDto>> ExecuteAsync(int page, int pageSize);
+        Task<PagedResult<InterviewerProfileDto>> ExecuteAsync(GetInterviewerFilterRequest request);
     }
 }
