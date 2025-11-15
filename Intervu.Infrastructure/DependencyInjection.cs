@@ -10,6 +10,7 @@ using Intervu.Infrastructure.ExternalServices.FirebaseStorageService;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.Repositories;
 using Intervu.Infrastructure.Persistence.SqlServer;
+using PayOS;
 
 namespace Intervu.Infrastructure
 {
@@ -49,8 +50,29 @@ namespace Intervu.Infrastructure
 
             //services.AddSingleton(StorageClient.Create(credential));
             //services.AddSingleton(bucketName);
-            services.AddTransient<IMailService, EmailService>();
+            services.AddSingleton<IMailService, EmailService>();
             //services.AddTransient<IFileService, FirebaseStorageService>();
+            services.AddSingleton(sp =>
+            {
+                var payosConfig = configuration.GetSection("PayOS");
+                var clientId = payosConfig["ClientId"];
+                var apiKey = payosConfig["ApiKey"];
+                var checkSumKey = payosConfig["ChecksumKey"];
+
+                if (payosConfig == null || clientId == null || apiKey == null || checkSumKey == null)
+                {
+                    throw new ArgumentException("Not found PayOS config");
+                }
+
+                var client = new PayOSClient(new PayOSOptions
+                {
+                    ClientId = clientId,
+                    ApiKey = apiKey,
+                    ChecksumKey = checkSumKey
+                });
+                return client;
+            });
+            services.AddSingleton<IPaymentService, PayOSPaymentService>();
 
             return services;
         }
