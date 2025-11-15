@@ -23,10 +23,8 @@ namespace Intervu.Application.UseCases.InterviewerProfile
 
         public async Task<InterviewerProfileDto> CreateInterviewRequest(InterviewerCreateDto interviewerCreateDto)
         {
-            Domain.Entities.InterviewerProfile profile = _mapper.Map<Domain.Entities.InterviewerProfile>(interviewerCreateDto);
-            await _repo.AddAsync(profile);
-            await _repo.SaveChangesAsync();
-            return profile != null ? _mapper.Map<InterviewerProfileDto>(profile) : null;
+            await _repo.CreateInterviewerProfile(interviewerCreateDto);
+            return _mapper.Map<InterviewerProfileDto>(interviewerCreateDto);
         }
     }
 }

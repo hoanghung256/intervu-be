@@ -17,17 +17,13 @@ namespace Intervu.Application.UseCases.InterviewerProfile
             _repo = repo;
         }
 
-        public Task<bool> DeleteInterviewerProfileAsync(int id)
+        public async Task DeleteInterviewProfile(int id)
         {
-            throw new NotImplementedException();
-        }
-
-        public void DeleteInterviewProfile(int id)
-        {
-            var profile = _repo.GetByIdAsync(id);
+            Domain.Entities.InterviewerProfile? profile = await _repo.GetProfileByIdAsync(id);
             if (profile == null)
-                return;
-            _repo.DeleteInterviewerProfile(id);
+                throw new Exception("Profile not found.");
+            _repo.DeleteAsync(profile);
+            await _repo.SaveChangesAsync();
         }
     }
 }
