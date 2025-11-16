@@ -5,14 +5,29 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
 
-namespace Intervu.Infrastructure.Migrations
+namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
 {
     /// <inheritdoc />
-    public partial class InitCreate : Migration
+    public partial class UpdateDb13Nov : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "Companies",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Website = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    LogoPath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Companies", x => x.Id);
+                });
+
             migrationBuilder.CreateTable(
                 name: "Notifications",
                 columns: table => new
@@ -26,6 +41,20 @@ namespace Intervu.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Notifications", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Skills",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Skills", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -74,14 +103,11 @@ namespace Intervu.Infrastructure.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false),
                     CVUrl = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false),
-                    PortfolioUrl = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false),
-                    Specializations = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ProgrammingLanguages = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Company = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    PortfolioUrl = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: true),
                     CurrentAmount = table.Column<int>(type: "int", nullable: false),
                     ExperienceYears = table.Column<int>(type: "int", nullable: false),
                     Bio = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    IsVerified = table.Column<bool>(type: "bit", nullable: false)
+                    Status = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -170,16 +196,64 @@ namespace Intervu.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "InterviewerCompanies",
+                columns: table => new
+                {
+                    InterviewerProfilesId = table.Column<int>(type: "int", nullable: false),
+                    CompaniesId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_InterviewerCompanies", x => new { x.InterviewerProfilesId, x.CompaniesId });
+                    table.ForeignKey(
+                        name: "FK_InterviewerCompanies_Companies_CompaniesId",
+                        column: x => x.CompaniesId,
+                        principalTable: "Companies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_InterviewerCompanies_InterviewerProfiles_InterviewerProfilesId",
+                        column: x => x.InterviewerProfilesId,
+                        principalTable: "InterviewerProfiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "InterviewerSkills",
+                columns: table => new
+                {
+                    InterviewerProfilesId = table.Column<int>(type: "int", nullable: false),
+                    SkillsId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_InterviewerSkills", x => new { x.InterviewerProfilesId, x.SkillsId });
+                    table.ForeignKey(
+                        name: "FK_InterviewerSkills_InterviewerProfiles_InterviewerProfilesId",
+                        column: x => x.InterviewerProfilesId,
+                        principalTable: "InterviewerProfiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_InterviewerSkills_Skills_SkillsId",
+                        column: x => x.SkillsId,
+                        principalTable: "Skills",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "InterviewRooms",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    StudentId = table.Column<int>(type: "int", nullable: false),
-                    InterviewerId = table.Column<int>(type: "int", nullable: false),
-                    ScheduledTime = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    DurationMinutes = table.Column<int>(type: "int", nullable: false),
-                    VideoCallRoomUrl = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
+                    StudentId = table.Column<int>(type: "int", nullable: true),
+                    InterviewerId = table.Column<int>(type: "int", nullable: true),
+                    ScheduledTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DurationMinutes = table.Column<int>(type: "int", nullable: true),
+                    VideoCallRoomUrl = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -237,18 +311,59 @@ namespace Intervu.Infrastructure.Migrations
                 });
 
             migrationBuilder.InsertData(
+                table: "Companies",
+                columns: new[] { "Id", "LogoPath", "Name", "Website" },
+                values: new object[,]
+                {
+                    { 1, "logos/google.png", "Google", "https://google.com" },
+                    { 2, "logos/meta.png", "Meta", "https://meta.com" },
+                    { 3, "logos/amazon.png", "Amazon", "https://amazon.com" },
+                    { 4, "logos/microsoft.png", "Microsoft", "https://microsoft.com" },
+                    { 5, "logos/netflix.png", "Netflix", "https://netflix.com" },
+                    { 6, "logos/tiktok.png", "TikTok", "https://tiktok.com" },
+                    { 7, "logos/apple.png", "Apple", "https://apple.com" },
+                    { 8, "logos/uber.png", "Uber", "https://uber.com" },
+                    { 9, "logos/spotify.png", "Spotify", "https://spotify.com" },
+                    { 10, "logos/stripe.png", "Stripe", "https://stripe.com" }
+                });
+
+            migrationBuilder.InsertData(
                 table: "Notifications",
                 columns: new[] { "Id", "CreatedAt", "Message", "Title" },
                 values: new object[] { 1, new DateTime(2025, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Welcome to Intervu platform", "Welcome" });
+
+            migrationBuilder.InsertData(
+                table: "Skills",
+                columns: new[] { "Id", "Description", "Name" },
+                values: new object[,]
+                {
+                    { 1, null, "C#" },
+                    { 2, null, "Java" },
+                    { 3, null, "JavaScript" },
+                    { 4, null, "TypeScript" },
+                    { 5, null, "React" },
+                    { 6, null, "Node.js" },
+                    { 7, null, "SQL" },
+                    { 8, null, "MongoDB" },
+                    { 9, null, "AWS" },
+                    { 10, null, "Azure" },
+                    { 11, null, "System Design" },
+                    { 12, null, "Microservices" },
+                    { 13, null, "Docker" },
+                    { 14, null, "Kubernetes" },
+                    { 15, null, "Machine Learning" }
+                });
 
             migrationBuilder.InsertData(
                 table: "Users",
                 columns: new[] { "Id", "Email", "FullName", "Password", "ProfilePicture", "Role", "Status" },
                 values: new object[,]
                 {
-                    { 1, "alice@example.com", "Alice Student", "hashedpassword", null, 0, 0 },
-                    { 2, "bob@example.com", "Bob Interviewer", "hashedpassword", null, 1, 0 },
-                    { 3, "admin@example.com", "Admin", "hashedpassword", null, 2, 0 }
+                    { 1, "alice@example.com", "Alice Student", "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=", null, 0, 0 },
+                    { 2, "bob@example.com", "Bob Interviewer", "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=", null, 1, 0 },
+                    { 3, "admin@example.com", "Admin", "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=", null, 2, 0 },
+                    { 5, "john.doe@example.com", "John Doe", "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=", null, 1, 0 },
+                    { 6, "sarah.lee@example.com", "Sarah Lee", "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=", null, 1, 0 }
                 });
 
             migrationBuilder.InsertData(
@@ -258,8 +373,13 @@ namespace Intervu.Infrastructure.Migrations
 
             migrationBuilder.InsertData(
                 table: "InterviewerProfiles",
-                columns: new[] { "Id", "Bio", "CVUrl", "Company", "CurrentAmount", "ExperienceYears", "IsVerified", "PortfolioUrl", "ProgrammingLanguages", "Specializations" },
-                values: new object[] { 2, "Senior software engineer", "https://example.com/cv-bob.pdf", "Tech Co", 0, 8, true, "https://portfolio.example.com/bob", "C#, JavaScript", "Backend, System Design" });
+                columns: new[] { "Id", "Bio", "CVUrl", "CurrentAmount", "ExperienceYears", "PortfolioUrl", "Status" },
+                values: new object[,]
+                {
+                    { 2, "Senior Backend Engineer with real interview experience", "https://example.com/cv-bob.pdf", 0, 8, "https://portfolio.example.com/bob", 0 },
+                    { 5, "Fullstack Engineer previously at Uber", "https://example.com/cv-john.pdf", 0, 6, "https://portfolio.example.com/john", 1 },
+                    { 6, "Senior Frontend Engineer focusing on UI/UX interviews", "https://example.com/cv-sarah.pdf", 0, 7, "https://portfolio.example.com/sarah", 1 }
+                });
 
             migrationBuilder.InsertData(
                 table: "NotificationReceives",
@@ -282,6 +402,43 @@ namespace Intervu.Infrastructure.Migrations
                 values: new object[] { 1, new DateTime(2025, 11, 1, 10, 0, 0, 0, DateTimeKind.Unspecified), 2, false, new DateTime(2025, 11, 1, 9, 0, 0, 0, DateTimeKind.Unspecified) });
 
             migrationBuilder.InsertData(
+                table: "InterviewerCompanies",
+                columns: new[] { "CompaniesId", "InterviewerProfilesId" },
+                values: new object[,]
+                {
+                    { 1, 2 },
+                    { 4, 2 },
+                    { 10, 2 },
+                    { 3, 5 },
+                    { 6, 5 },
+                    { 8, 5 },
+                    { 2, 6 },
+                    { 7, 6 },
+                    { 9, 6 }
+                });
+
+            migrationBuilder.InsertData(
+                table: "InterviewerSkills",
+                columns: new[] { "InterviewerProfilesId", "SkillsId" },
+                values: new object[,]
+                {
+                    { 2, 1 },
+                    { 2, 7 },
+                    { 2, 11 },
+                    { 2, 12 },
+                    { 2, 13 },
+                    { 5, 3 },
+                    { 5, 4 },
+                    { 5, 9 },
+                    { 5, 12 },
+                    { 5, 14 },
+                    { 6, 3 },
+                    { 6, 4 },
+                    { 6, 5 },
+                    { 6, 15 }
+                });
+
+            migrationBuilder.InsertData(
                 table: "Payments",
                 columns: new[] { "Id", "Amount", "InterviewRoomId", "IntervieweeId", "InterviewerId", "PaymentMethod", "Status", "TransactionDate" },
                 values: new object[] { 1, 50.00m, 1, 1, 2, "Card", 0, new DateTime(2025, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified) });
@@ -300,6 +457,16 @@ namespace Intervu.Infrastructure.Migrations
                 name: "IX_InterviewerAvailabilities_InterviewerId",
                 table: "InterviewerAvailabilities",
                 column: "InterviewerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InterviewerCompanies_CompaniesId",
+                table: "InterviewerCompanies",
+                column: "CompaniesId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InterviewerSkills_SkillsId",
+                table: "InterviewerSkills",
+                column: "SkillsId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_InterviewRooms_InterviewerId",
@@ -348,10 +515,22 @@ namespace Intervu.Infrastructure.Migrations
                 name: "InterviewerAvailabilities");
 
             migrationBuilder.DropTable(
+                name: "InterviewerCompanies");
+
+            migrationBuilder.DropTable(
+                name: "InterviewerSkills");
+
+            migrationBuilder.DropTable(
                 name: "NotificationReceives");
 
             migrationBuilder.DropTable(
                 name: "Payments");
+
+            migrationBuilder.DropTable(
+                name: "Companies");
+
+            migrationBuilder.DropTable(
+                name: "Skills");
 
             migrationBuilder.DropTable(
                 name: "Notifications");

@@ -9,11 +9,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace Intervu.Infrastructure.Migrations
+namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
 {
     [DbContext(typeof(IntervuDbContext))]
-    [Migration("20251029091433_UpdateInterviewRoom")]
-    partial class UpdateInterviewRoom
+    [Migration("20251113100310_UpdateDb13Nov")]
+    partial class UpdateDb13Nov
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,255 @@ namespace Intervu.Infrastructure.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("InterviewerCompanies", b =>
+                {
+                    b.Property<int>("InterviewerProfilesId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CompaniesId")
+                        .HasColumnType("int");
+
+                    b.HasKey("InterviewerProfilesId", "CompaniesId");
+
+                    b.HasIndex("CompaniesId");
+
+                    b.ToTable("InterviewerCompanies", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            InterviewerProfilesId = 2,
+                            CompaniesId = 1
+                        },
+                        new
+                        {
+                            InterviewerProfilesId = 2,
+                            CompaniesId = 4
+                        },
+                        new
+                        {
+                            InterviewerProfilesId = 2,
+                            CompaniesId = 10
+                        },
+                        new
+                        {
+                            InterviewerProfilesId = 5,
+                            CompaniesId = 8
+                        },
+                        new
+                        {
+                            InterviewerProfilesId = 5,
+                            CompaniesId = 3
+                        },
+                        new
+                        {
+                            InterviewerProfilesId = 5,
+                            CompaniesId = 6
+                        },
+                        new
+                        {
+                            InterviewerProfilesId = 6,
+                            CompaniesId = 7
+                        },
+                        new
+                        {
+                            InterviewerProfilesId = 6,
+                            CompaniesId = 9
+                        },
+                        new
+                        {
+                            InterviewerProfilesId = 6,
+                            CompaniesId = 2
+                        });
+                });
+
+            modelBuilder.Entity("InterviewerSkills", b =>
+                {
+                    b.Property<int>("InterviewerProfilesId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SkillsId")
+                        .HasColumnType("int");
+
+                    b.HasKey("InterviewerProfilesId", "SkillsId");
+
+                    b.HasIndex("SkillsId");
+
+                    b.ToTable("InterviewerSkills", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            InterviewerProfilesId = 2,
+                            SkillsId = 1
+                        },
+                        new
+                        {
+                            InterviewerProfilesId = 2,
+                            SkillsId = 7
+                        },
+                        new
+                        {
+                            InterviewerProfilesId = 2,
+                            SkillsId = 11
+                        },
+                        new
+                        {
+                            InterviewerProfilesId = 2,
+                            SkillsId = 12
+                        },
+                        new
+                        {
+                            InterviewerProfilesId = 2,
+                            SkillsId = 13
+                        },
+                        new
+                        {
+                            InterviewerProfilesId = 5,
+                            SkillsId = 3
+                        },
+                        new
+                        {
+                            InterviewerProfilesId = 5,
+                            SkillsId = 4
+                        },
+                        new
+                        {
+                            InterviewerProfilesId = 5,
+                            SkillsId = 12
+                        },
+                        new
+                        {
+                            InterviewerProfilesId = 5,
+                            SkillsId = 9
+                        },
+                        new
+                        {
+                            InterviewerProfilesId = 5,
+                            SkillsId = 14
+                        },
+                        new
+                        {
+                            InterviewerProfilesId = 6,
+                            SkillsId = 3
+                        },
+                        new
+                        {
+                            InterviewerProfilesId = 6,
+                            SkillsId = 4
+                        },
+                        new
+                        {
+                            InterviewerProfilesId = 6,
+                            SkillsId = 5
+                        },
+                        new
+                        {
+                            InterviewerProfilesId = 6,
+                            SkillsId = 15
+                        });
+                });
+
+            modelBuilder.Entity("Intervu.Domain.Entities.Company", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("LogoPath")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Website")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Companies", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            LogoPath = "logos/google.png",
+                            Name = "Google",
+                            Website = "https://google.com"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            LogoPath = "logos/meta.png",
+                            Name = "Meta",
+                            Website = "https://meta.com"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            LogoPath = "logos/amazon.png",
+                            Name = "Amazon",
+                            Website = "https://amazon.com"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            LogoPath = "logos/microsoft.png",
+                            Name = "Microsoft",
+                            Website = "https://microsoft.com"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            LogoPath = "logos/netflix.png",
+                            Name = "Netflix",
+                            Website = "https://netflix.com"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            LogoPath = "logos/tiktok.png",
+                            Name = "TikTok",
+                            Website = "https://tiktok.com"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            LogoPath = "logos/apple.png",
+                            Name = "Apple",
+                            Website = "https://apple.com"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            LogoPath = "logos/uber.png",
+                            Name = "Uber",
+                            Website = "https://uber.com"
+                        },
+                        new
+                        {
+                            Id = 9,
+                            LogoPath = "logos/spotify.png",
+                            Name = "Spotify",
+                            Website = "https://spotify.com"
+                        },
+                        new
+                        {
+                            Id = 10,
+                            LogoPath = "logos/stripe.png",
+                            Name = "Stripe",
+                            Website = "https://stripe.com"
+                        });
+                });
 
             modelBuilder.Entity("Intervu.Domain.Entities.Feedback", b =>
                 {
@@ -211,32 +460,18 @@ namespace Intervu.Infrastructure.Migrations
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
 
-                    b.Property<string>("Company")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
                     b.Property<int>("CurrentAmount")
                         .HasColumnType("int");
 
                     b.Property<int>("ExperienceYears")
                         .HasColumnType("int");
 
-                    b.Property<bool>("IsVerified")
-                        .HasColumnType("bit");
-
                     b.Property<string>("PortfolioUrl")
-                        .IsRequired()
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
 
-                    b.Property<string>("ProgrammingLanguages")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Specializations")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -246,15 +481,32 @@ namespace Intervu.Infrastructure.Migrations
                         new
                         {
                             Id = 2,
-                            Bio = "Senior software engineer",
+                            Bio = "Senior Backend Engineer with real interview experience",
                             CVUrl = "https://example.com/cv-bob.pdf",
-                            Company = "Tech Co",
                             CurrentAmount = 0,
                             ExperienceYears = 8,
-                            IsVerified = true,
                             PortfolioUrl = "https://portfolio.example.com/bob",
-                            ProgrammingLanguages = "C#, JavaScript",
-                            Specializations = "Backend, System Design"
+                            Status = 0
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Bio = "Fullstack Engineer previously at Uber",
+                            CVUrl = "https://example.com/cv-john.pdf",
+                            CurrentAmount = 0,
+                            ExperienceYears = 6,
+                            PortfolioUrl = "https://portfolio.example.com/john",
+                            Status = 1
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Bio = "Senior Frontend Engineer focusing on UI/UX interviews",
+                            CVUrl = "https://example.com/cv-sarah.pdf",
+                            CurrentAmount = 0,
+                            ExperienceYears = 7,
+                            PortfolioUrl = "https://portfolio.example.com/sarah",
+                            Status = 1
                         });
                 });
 
@@ -369,6 +621,104 @@ namespace Intervu.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Intervu.Domain.Entities.Skill", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Skills", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "C#"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "Java"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "JavaScript"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Name = "TypeScript"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Name = "React"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Name = "Node.js"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Name = "SQL"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            Name = "MongoDB"
+                        },
+                        new
+                        {
+                            Id = 9,
+                            Name = "AWS"
+                        },
+                        new
+                        {
+                            Id = 10,
+                            Name = "Azure"
+                        },
+                        new
+                        {
+                            Id = 11,
+                            Name = "System Design"
+                        },
+                        new
+                        {
+                            Id = 12,
+                            Name = "Microservices"
+                        },
+                        new
+                        {
+                            Id = 13,
+                            Name = "Docker"
+                        },
+                        new
+                        {
+                            Id = 14,
+                            Name = "Kubernetes"
+                        },
+                        new
+                        {
+                            Id = 15,
+                            Name = "Machine Learning"
+                        });
+                });
+
             modelBuilder.Entity("Intervu.Domain.Entities.User", b =>
                 {
                     b.Property<int>("Id")
@@ -412,10 +762,28 @@ namespace Intervu.Infrastructure.Migrations
                     b.HasData(
                         new
                         {
+                            Id = 5,
+                            Email = "john.doe@example.com",
+                            FullName = "John Doe",
+                            Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
+                            Role = 1,
+                            Status = 0
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Email = "sarah.lee@example.com",
+                            FullName = "Sarah Lee",
+                            Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
+                            Role = 1,
+                            Status = 0
+                        },
+                        new
+                        {
                             Id = 1,
                             Email = "alice@example.com",
                             FullName = "Alice Student",
-                            Password = "hashedpassword",
+                            Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
                             Role = 0,
                             Status = 0
                         },
@@ -424,7 +792,7 @@ namespace Intervu.Infrastructure.Migrations
                             Id = 2,
                             Email = "bob@example.com",
                             FullName = "Bob Interviewer",
-                            Password = "hashedpassword",
+                            Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
                             Role = 1,
                             Status = 0
                         },
@@ -433,10 +801,40 @@ namespace Intervu.Infrastructure.Migrations
                             Id = 3,
                             Email = "admin@example.com",
                             FullName = "Admin",
-                            Password = "hashedpassword",
+                            Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
                             Role = 2,
                             Status = 0
                         });
+                });
+
+            modelBuilder.Entity("InterviewerCompanies", b =>
+                {
+                    b.HasOne("Intervu.Domain.Entities.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompaniesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Intervu.Domain.Entities.InterviewerProfile", null)
+                        .WithMany()
+                        .HasForeignKey("InterviewerProfilesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("InterviewerSkills", b =>
+                {
+                    b.HasOne("Intervu.Domain.Entities.InterviewerProfile", null)
+                        .WithMany()
+                        .HasForeignKey("InterviewerProfilesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Intervu.Domain.Entities.Skill", null)
+                        .WithMany()
+                        .HasForeignKey("SkillsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.Feedback", b =>
