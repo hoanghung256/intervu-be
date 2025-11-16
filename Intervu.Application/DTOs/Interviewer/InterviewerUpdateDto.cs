@@ -17,8 +17,8 @@ namespace Intervu.Application.DTOs.Interviewer
         public string Email { get; set; }
         public string? ProfilePicture { get; set; }
         public string? PortfolioUrl { get; set; }
-        public int CurrentAmount { get; set; }
-        public int ExperienceYears { get; set; }
+        public int? CurrentAmount { get; set; }
+        public int? ExperienceYears { get; set; }
 
         public string? Bio { get; set; }
 

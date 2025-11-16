@@ -11,9 +11,9 @@ namespace Intervu.Application.DTOs.Interviewer
     {
         public int Id { get; set; }
 
-        public int CurrentAmount { get; set; }
+        public int? CurrentAmount { get; set; }
 
-        public int ExperienceYears { get; set; }
+        public int? ExperienceYears { get; set; }
 
         /// <summary>
         /// Created automatically pending status 

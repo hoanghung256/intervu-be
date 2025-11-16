@@ -58,6 +58,11 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             throw new NotImplementedException();
         }
 
+        public void DeleteInterviewerProfile(int id)
+        {
+            throw new NotImplementedException();
+        }
+
         public async Task<InterviewerProfile?> GetProfileByIdAsync(int id)
         {
             InterviewerProfile? profile = await _context.InterviewerProfiles
