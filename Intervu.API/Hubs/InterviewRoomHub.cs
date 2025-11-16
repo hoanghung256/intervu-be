@@ -118,5 +118,21 @@ namespace Intervu.API.Hubs
         {
             await Clients.OthersInGroup(roomId).SendAsync("ReceiveLanguage", language, initialCode);
         }
+
+        /// <summary>
+        /// Broadcasts questions to all users in the room.
+        /// </summary>
+        public async Task SendQuestions(string roomId, List<string> questions)
+        {
+            await Clients.Group(roomId).SendAsync("ReceiveQuestions", questions);
+        }
+
+        /// <summary>
+        /// Broadcasts whiteboard text to all users in the room.
+        /// </summary>
+        public async Task SendWhiteboardText(string roomId, string text)
+        {
+            await Clients.Group(roomId).SendAsync("ReceiveWhiteboardText", text);
+        }
     }
 }
