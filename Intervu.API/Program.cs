@@ -142,7 +142,9 @@ namespace Intervu.API
                               "http://localhost:5173", 
                               "https://localhost:5173",
                               $"http://{currentIpV4}:5173",
-                              $"https://{currentIpV4}:5173"
+                              $"https://{currentIpV4}:5173",
+                              "https://scrupleless-aliana-unbreachable.ngrok-free.dev", 
+                              "https://scrupleless-aliana-unbreachable.ngrok-free.dev:5173"
                           )
                           .AllowAnyHeader()
                           .AllowAnyMethod()
