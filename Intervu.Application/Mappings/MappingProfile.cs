@@ -36,6 +36,7 @@ namespace Intervu.Application.Mappings
             CreateMap<InterviewerProfile, InterviewerUpdateDto>().ReverseMap();
 
             CreateMap<InterviewerProfileDto, InterviewerCreateDto>().ReverseMap();
+            CreateMap<User, InterviewerCreateDto>().ReverseMap();
 
             CreateMap<Company, CompanyDto>().ReverseMap();
             CreateMap<Skill, SkillDto>().ReverseMap();

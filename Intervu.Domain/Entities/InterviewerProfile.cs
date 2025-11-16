@@ -12,6 +12,7 @@ namespace Intervu.Domain.Entities
         /// </summary>
         /// 
 
+        public User User { get; set; } 
         public string? PortfolioUrl { get; set; } = string.Empty;
 
         public int? CurrentAmount { get; set; }
@@ -21,6 +22,7 @@ namespace Intervu.Domain.Entities
         public string Bio { get; set; } = string.Empty;
 
         public InterviewerProfileStatus Status { get; set; }
+
         
         public ICollection<Company> Companies { get; set; } = new List<Company>();
         

@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
 {
     [DbContext(typeof(IntervuDbContext))]
-    [Migration("20251116101924_UpdateDb16Nov")]
+    [Migration("20251116113620_UpdateDb16Nov")]
     partial class UpdateDb16Nov
     {
         /// <inheritdoc />
@@ -873,11 +873,13 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
 
             modelBuilder.Entity("Intervu.Domain.Entities.InterviewerProfile", b =>
                 {
-                    b.HasOne("Intervu.Domain.Entities.User", null)
+                    b.HasOne("Intervu.Domain.Entities.User", "User")
                         .WithOne()
                         .HasForeignKey("Intervu.Domain.Entities.InterviewerProfile", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.NotificationReceive", b =>
