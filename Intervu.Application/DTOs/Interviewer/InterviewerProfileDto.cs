@@ -7,7 +7,7 @@ namespace Intervu.Application.DTOs.Interviewer
 {
     public class InterviewerProfileDto : InterviewerViewDto
     {
-        public int CurrentAmount { get; set; }
+        public int? CurrentAmount { get; set; }
 
         public InterviewerProfileStatus Status { get; set; }
     }

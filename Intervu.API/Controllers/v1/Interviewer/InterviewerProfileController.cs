@@ -1,9 +1,11 @@
 ﻿using Asp.Versioning;
 using AutoMapper;
+using Intervu.API.Utils.Constant;
 using Intervu.Application.DTOs.Interviewer;
 using Intervu.Application.Interfaces.UseCases.Interviewer;
 using Intervu.Application.Interfaces.UseCases.InterviewerProfile;
 using Intervu.Domain.Entities.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -28,6 +30,7 @@ namespace Intervu.API.Controllers.v1.Interviewer
         }
 
         //[GET] api/interviewerprofile/{id}
+        [Authorize(Policy = AuthorizationPolicies.Interviewer)]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetOwnInterviewerProfile([FromRoute] int id)
         {
@@ -54,6 +57,7 @@ namespace Intervu.API.Controllers.v1.Interviewer
         }
 
         //[GET] api/interviewerprofile/interviewee/{id}/profile
+        [Authorize(Policy = AuthorizationPolicies.Interviewee)]
         [HttpGet("{id}/profile")]
         public async Task<IActionResult> GetProfileByInterviewee([FromRoute] int id)
         {
@@ -80,6 +84,7 @@ namespace Intervu.API.Controllers.v1.Interviewer
         }
 
         //[POST] api/interviewerprofile
+        [Authorize(Policy = AuthorizationPolicies.Admin)]
         [HttpPost]
         public async Task<IActionResult> CreateInterviewerProfile([FromBody] InterviewerCreateDto request)
         {
@@ -101,6 +106,7 @@ namespace Intervu.API.Controllers.v1.Interviewer
         }
 
         // [PUT] api/interviewer-profile/{id}
+        [Authorize(Policy = AuthorizationPolicies.Interviewer)]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateInterviewerProfile([FromRoute] int id, [FromBody] InterviewerUpdateDto request)
         {
@@ -127,6 +133,7 @@ namespace Intervu.API.Controllers.v1.Interviewer
         }
 
         // [PUT] api/interviewer-profile/{id}/status
+        [Authorize(Policy = AuthorizationPolicies.Admin)]
         [HttpPut("{id}/status")]
         public async Task<IActionResult> UpdateInterviewerStatus([FromRoute] int id, [FromBody] InterviewerProfileStatus status)
         {
@@ -152,6 +159,7 @@ namespace Intervu.API.Controllers.v1.Interviewer
         }
 
         // [DELETE] api/interviewer-profile/{id}
+        [Authorize(Policy = AuthorizationPolicies.Admin)]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteInterviewerProfile([FromRoute] int id)
         {
