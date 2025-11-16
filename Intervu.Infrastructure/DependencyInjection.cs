@@ -3,14 +3,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Intervu.Infrastructure.ExternalServices;
-using Google.Apis.Auth.OAuth2;
-using FirebaseAdmin;
-using Google.Cloud.Storage.V1;
-using Intervu.Infrastructure.ExternalServices.FirebaseStorageService;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.Repositories;
 using Intervu.Infrastructure.Persistence.SqlServer;
 using PayOS;
+using Intervu.Infrastructure.ExternalServices.PayOSPaymentService;
 
 namespace Intervu.Infrastructure
 {
@@ -54,24 +51,26 @@ namespace Intervu.Infrastructure
             //services.AddTransient<IFileService, FirebaseStorageService>();
             services.AddSingleton(sp =>
             {
-                var payosConfig = configuration.GetSection("PayOS");
-                var clientId = payosConfig["ClientId"];
-                var apiKey = payosConfig["ApiKey"];
-                var checkSumKey = payosConfig["ChecksumKey"];
+                PayOSOptions? options = sp.GetRequiredService<IConfiguration>()
+                   .GetSection("PayOS:Payment")
+                   .Get<PayOSOptions>();
 
-                if (payosConfig == null || clientId == null || apiKey == null || checkSumKey == null)
-                {
-                    throw new ArgumentException("Not found PayOS config");
-                }
+                if (options == null || string.IsNullOrEmpty(options.ClientId) || string.IsNullOrEmpty(options.ApiKey) || string.IsNullOrEmpty(options.ChecksumKey)) throw new ArgumentException("Not found PayOS config");
 
-                var client = new PayOSClient(new PayOSOptions
-                {
-                    ClientId = clientId,
-                    ApiKey = apiKey,
-                    ChecksumKey = checkSumKey
-                });
-                return client;
+                return new PaymentClient(options);
             });
+
+            services.AddSingleton(sp =>
+            {
+                PayOSOptions? options = sp.GetRequiredService<IConfiguration>()
+                   .GetSection("PayOS:Payout")
+                   .Get<PayOSOptions>();
+
+                if (options == null || string.IsNullOrEmpty(options.ClientId) || string.IsNullOrEmpty(options.ApiKey) || string.IsNullOrEmpty(options.ChecksumKey)) throw new ArgumentException("Not found PayOS config");
+
+                return new PayoutClient(options);
+            });
+
             services.AddSingleton<IPaymentService, PayOSPaymentService>();
 
             return services;
