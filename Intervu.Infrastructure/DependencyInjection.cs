@@ -71,7 +71,16 @@ namespace Intervu.Infrastructure
                 return new PayoutClient(options);
             });
 
-            services.AddSingleton<IPaymentService, PayOSPaymentService>();
+            services.AddSingleton<IPaymentService>(sp =>
+            {
+                var paymentClient = sp.GetRequiredService<PaymentClient>();
+                var payoutClient = sp.GetRequiredService<PayoutClient>();
+
+                string returnUrl = configuration["PayOS:Payment:ReturnEndpoint"]!;
+                string cancelUrl = configuration["PayOS:Payment:CancelEndpoint"]!;
+
+                return new PayOSPaymentService(paymentClient, payoutClient, returnUrl, cancelUrl);
+            });
 
             return services;
         }

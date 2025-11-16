@@ -1,6 +1,4 @@
 ﻿using Intervu.Application.Interfaces.ExternalServices;
-using Intervu.Infrastructure.ExternalServices.PayOSPaymentService.Interfaces;
-using PayOS;
 using PayOS.Models.V1.Payouts;
 using PayOS.Models.V2.PaymentRequests;
 
@@ -10,11 +8,15 @@ namespace Intervu.Infrastructure.ExternalServices.PayOSPaymentService
     {
         private readonly PaymentClient _paymentClient;
         private readonly PayoutClient _payoutClient;
+        private readonly string _returnUrl;
+        private readonly string _cancelUrl;
 
-        public PayOSPaymentService(PaymentClient paymentClient, PayoutClient payoutClient) 
+        public PayOSPaymentService(PaymentClient paymentClient, PayoutClient payoutClient, string returnUrl, string cancelUrl) 
         {
             _paymentClient = paymentClient;
             _payoutClient = payoutClient;
+            _returnUrl = returnUrl;
+            _cancelUrl = cancelUrl;
         }
 
         public async Task<string> CreatePaymentOrderAsync(int? orderCode, int ammount, string description)
@@ -24,8 +26,8 @@ namespace Intervu.Infrastructure.ExternalServices.PayOSPaymentService
                 OrderCode = orderCode ?? CreateOrderCode(),
                 Amount = ammount,
                 Description = description,
-                ReturnUrl = "https://your-url.com",
-                CancelUrl = "https://your-url.com",
+                ReturnUrl = _returnUrl,
+                CancelUrl = _cancelUrl,
                 ExpiredAt = DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeSeconds()
             };
 
@@ -48,9 +50,21 @@ namespace Intervu.Infrastructure.ExternalServices.PayOSPaymentService
             return true;
         }
 
-        public Task<bool> VerifyPaymentAsync(string paymentId, string orderId, string signature)
+        //public Task<bool> VerifyPaymentAsync(PayOSWebhookPayload payload)
+        //{
+        //    int orderCode = payload.Data!.OrderCode;
+        //    string status = payload.Data!.Status!;
+
+        //    Console.WriteLine($"order Code {orderCode} {status}");
+
+        //    bool isSuccess = status.Equals("paid", StringComparison.OrdinalIgnoreCase);
+
+        //    return Task.FromResult(isSuccess);
+        //}
+
+        public async Task RegisterWebhooks()
         {
-            throw new NotImplementedException();
+            await _paymentClient.Client.Webhooks.ConfirmAsync("https://pn3tc7bj-7118.asse.devtunnels.ms/weatherforecast/payos-webhook-test");
         }
 
         private int CreateOrderCode()
