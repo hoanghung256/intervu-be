@@ -870,11 +870,13 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
 
             modelBuilder.Entity("Intervu.Domain.Entities.InterviewerProfile", b =>
                 {
-                    b.HasOne("Intervu.Domain.Entities.User", null)
+                    b.HasOne("Intervu.Domain.Entities.User", "User")
                         .WithOne()
                         .HasForeignKey("Intervu.Domain.Entities.InterviewerProfile", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.NotificationReceive", b =>
