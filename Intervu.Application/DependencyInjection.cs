@@ -9,6 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Intervu.Application.Interfaces.UseCases.Interviewer;
 using Intervu.Application.UseCases.InterviewerProfile;
 using Intervu.Application.Interfaces.UseCases.InterviewerProfile;
+using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Services.CodeGeneration;
 
 namespace Intervu.Application
 {
@@ -21,6 +23,10 @@ namespace Intervu.Application
 
             // Register Services
             services.AddScoped<JwtService>();
+            services.AddSingleton<RoomManagerService>();
+            services.AddSingleton<ICodeGenerationService, CSharpCodeGenerationService>();
+            services.AddSingleton<ICodeGenerationService, JavaScriptCodeGenerationService>();
+            services.AddSingleton<ICodeGenerationService, JavaCodeGenerationService>();
 
             // Auth UseCases
             services.AddTransient<ILoginUseCase, LoginUseCase>();
