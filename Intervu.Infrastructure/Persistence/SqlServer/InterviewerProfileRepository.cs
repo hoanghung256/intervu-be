@@ -156,5 +156,9 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             await _context.SaveChangesAsync();
         }
 
+        public void DeleteInterviewerProfile(int id)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -13,6 +13,8 @@ using Intervu.Application.Interfaces.UseCases.Company;
 using Intervu.Application.UseCases.Company;
 using Intervu.Application.Interfaces.UseCases.Skill;
 using Intervu.Application.UseCases.Skill;
+using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Services.CodeGeneration;
 
 namespace Intervu.Application
 {
@@ -25,6 +27,10 @@ namespace Intervu.Application
 
             // Register Services
             services.AddScoped<JwtService>();
+            services.AddSingleton<RoomManagerService>();
+            services.AddSingleton<ICodeGenerationService, CSharpCodeGenerationService>();
+            services.AddSingleton<ICodeGenerationService, JavaScriptCodeGenerationService>();
+            services.AddSingleton<ICodeGenerationService, JavaCodeGenerationService>();
 
             // Auth UseCases
             services.AddTransient<ILoginUseCase, LoginUseCase>();

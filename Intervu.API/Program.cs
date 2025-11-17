@@ -187,7 +187,7 @@ namespace Intervu.API
                 });
 
                 app.UseCors(CorsPolicies.DevCorsPolicy);
-            } 
+            }
             else
             {
                 app.UseCors(CorsPolicies.ProdCorsPolicy);
