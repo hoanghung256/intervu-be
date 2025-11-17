@@ -53,6 +53,16 @@ namespace Intervu.Infrastructure
             //services.AddSingleton(bucketName);
             services.AddTransient<IMailService, EmailService>();
             //services.AddTransient<IFileService, FirebaseStorageService>();
+            services.AddScoped<CodeExecutionService>();
+
+            //Add HttpClient to call from API
+            services.AddHttpClient("CodeExecutionClient", (sp, client) =>
+            {
+                var config = sp.GetRequiredService<IConfiguration>();
+                string baseUrl = config["ApiClients:CodeExecution"];
+
+                client.BaseAddress = new Uri(baseUrl);
+            });
 
             return services;
         }
