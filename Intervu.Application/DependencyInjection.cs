@@ -13,6 +13,8 @@ using Intervu.Application.Interfaces.UseCases.Company;
 using Intervu.Application.UseCases.Company;
 using Intervu.Application.Interfaces.UseCases.Skill;
 using Intervu.Application.UseCases.Skill;
+using Intervu.Application.Interfaces.UseCases.Availability;
+using Intervu.Application.UseCases.Availability;
 
 namespace Intervu.Application
 {
@@ -40,6 +42,7 @@ namespace Intervu.Application
             services.AddScoped<IGetAllInterviewers, GetAllInterviewers>();
             services.AddScoped<IGetAllCompanies, GetAllCompanies>();
             services.AddScoped<IGetAllSkills, GetAllSkills>();
+            services.AddScoped<IGetInterviewerAvailabilities, GetInterviewerAvailabilities>();
 
             return services;
         }
