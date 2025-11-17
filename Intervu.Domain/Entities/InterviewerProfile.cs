@@ -11,17 +11,18 @@ namespace Intervu.Domain.Entities
         /// EntityBase.Id will be used as InterviewerId
         /// </summary>
         /// 
-        public string CVUrl { get; set; } = string.Empty;
 
+        public User User { get; set; } 
         public string? PortfolioUrl { get; set; } = string.Empty;
 
-        public int CurrentAmount { get; set; }
+        public int? CurrentAmount { get; set; }
 
-        public int ExperienceYears { get; set; }
+        public int? ExperienceYears { get; set; }
 
         public string Bio { get; set; } = string.Empty;
 
         public InterviewerProfileStatus Status { get; set; }
+
         
         public ICollection<Company> Companies { get; set; } = new List<Company>();
         

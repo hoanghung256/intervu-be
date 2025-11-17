@@ -4,6 +4,7 @@ using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
 {
     [DbContext(typeof(IntervuDbContext))]
-    partial class IntervuDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251116113620_UpdateDb16Nov")]
+    partial class UpdateDb16Nov
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
