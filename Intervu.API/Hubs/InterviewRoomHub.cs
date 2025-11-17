@@ -21,6 +21,9 @@ namespace Intervu.API.Hubs
         // A static dictionary to track connections per room
         private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, bool>> _roomConnections = new();
 
+        private static Dictionary<string, string> UserConnectionMap = new();
+        private static Dictionary<string, HashSet<string>> RoomUsers = new();
+
         public InterviewRoomHub(CodeExecutionService codeExecutionService,
             ILogger<InterviewRoomHub> logger,
             RoomManagerService roomManager,
@@ -32,8 +35,7 @@ namespace Intervu.API.Hubs
             _codeGenerationServices = codeGenerationServices.ToDictionary(s => s.Language, StringComparer.OrdinalIgnoreCase);
         }
 
-        private static Dictionary<string, string> UserConnectionMap = new();
-        private static Dictionary<string, HashSet<string>> RoomUsers = new();
+        
 
         public override async Task OnConnectedAsync()
         {
@@ -108,6 +110,21 @@ namespace Intervu.API.Hubs
 
             await Groups.AddToGroupAsync(Context.ConnectionId, room);
 
+            // Track room membership
+            if (!RoomUsers.ContainsKey(room))
+            {
+                RoomUsers[room] = new HashSet<string>();
+            }
+
+            // Get existing peers before adding new user
+            var existingPeers = RoomUsers[room].ToList();
+
+            // Add new user to room
+            RoomUsers[room].Add(Context.ConnectionId);
+
+            // Send existing peers to the new user
+            await Clients.Caller.SendAsync("ExistingPeers", existingPeers);
+
             // Get the current state for the room
             var roomState = _roomManager.GetOrCreateRoomState(room);
 
@@ -136,7 +153,18 @@ namespace Intervu.API.Hubs
                     _roomManager.ScheduleRoomCleanup(room);
                 }
             }
+
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, room);
+            // Remove from room tracking
+            if (RoomUsers.ContainsKey(room))
+            {
+                RoomUsers[room].Remove(Context.ConnectionId);
+                if (RoomUsers[room].Count == 0)
+                {
+                    RoomUsers.Remove(room);
+                }
+            }
+
             await Clients.Group(room).SendAsync("UserLeft", Context.ConnectionId);
         }
 
