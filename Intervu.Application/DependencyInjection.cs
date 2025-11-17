@@ -15,6 +15,7 @@ using Intervu.Application.Interfaces.UseCases.Skill;
 using Intervu.Application.UseCases.Skill;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Services.CodeGeneration;
+using Intervu.Application.Interfaces.UseCases.InterviewRoom.InterviewRoom;
 
 namespace Intervu.Application
 {
@@ -38,6 +39,8 @@ namespace Intervu.Application
             // ----- InterviewRoom ----
             services.AddScoped<ICreateInterviewRoom, CreateInterviewRoom>();
             services.AddScoped<IGetRoomHistory, GetRoomHistory>();
+            services.AddScoped<IUpdateRoom, UpdateRoom>();
+            services.AddScoped<IGetCurrentRoom, GetCurrentRoom>();
             // ----- InterviewerProfile ----
             services.AddScoped<ICreateInterviewProfile, CreateInterviewerProfile>();
             services.AddScoped<IUpdateInterviewProfile, UpdateInterviewerProfile>();

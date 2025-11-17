@@ -35,7 +35,7 @@ namespace Intervu.API.Hubs
             _codeGenerationServices = codeGenerationServices.ToDictionary(s => s.Language, StringComparer.OrdinalIgnoreCase);
         }
 
-        
+
 
         public override async Task OnConnectedAsync()
         {
@@ -126,16 +126,10 @@ namespace Intervu.API.Hubs
             await Clients.Caller.SendAsync("ExistingPeers", existingPeers);
 
             // Get the current state for the room
-            var roomState = _roomManager.GetOrCreateRoomState(room);
+            var roomState = await _roomManager.GetOrCreateRoomStateAsync(room);
 
-            // Send the existing state ONLY to the newly joined client (the "Caller")
-            await Clients.Caller.SendAsync("ReceiveLanguage", roomState.CurrentLanguage, roomState.CurrentCode);
-            await Clients.Caller.SendAsync("ReceiveProblem", roomState.ProblemDescription, roomState.ProblemShortName, roomState.TestCases);
-
-            //_logger.LogInformation("Language: " + roomState.CurrentLanguage);
-            //_logger.LogInformation("Code: " + roomState.CurrentCode);
-            //_logger.LogInformation("Description: " + roomState.ProblemDescription);
-            _logger.LogInformation("TestCases: " + string.Join(", ", roomState.TestCases));
+            // Send the entire state to the newly joined user. This is correct.
+            await Clients.Caller.SendAsync("ReceiveFullState", roomState);
 
             await Clients.Group(room).SendAsync("UserJoined", Context.ConnectionId);
             _logger.LogInformation("Client {ConnectionId} joined room {RoomId}", Context.ConnectionId, room);
@@ -186,27 +180,42 @@ namespace Intervu.API.Hubs
         /// <summary>
         /// Broadcasts code changes to other users in the same room.
         /// </summary>
-        public async Task SendCode(string room, string code)
+        public async Task SendCode(string room, string code, string language)
         {
-            // Update the state in the manager
-            var roomState = _roomManager.GetOrCreateRoomState(room);
+            var roomState = await _roomManager.GetOrCreateRoomStateAsync(room);
             _logger.LogInformation("Code updated for room {RoomId}", room);
-            roomState.CurrentCode = code;
-            await Clients.OthersInGroup(room).SendAsync("ReceiveCode", code);
+
+            // Ensure we're updating the code for the correct language
+            if (roomState.LanguageCodes.ContainsKey(language))
+            {
+                roomState.LanguageCodes[language] = code;
+            }
+            else
+            {
+                roomState.LanguageCodes.Add(language, code);
+            }
+
+            // Send only the updated code and its language to others
+            await Clients.OthersInGroup(room).SendAsync("ReceiveCode", code, language);
         }
 
         /// <summary>
         /// Broadcasts the selected programming language and initial code to other users in the room.
         /// </summary>
-        public async Task SendLanguage(string roomId, string language, string initialCode)
+        public async Task SendLanguage(string roomId, string language)
         {
             // Update the state in the manager
-            var roomState = _roomManager.GetOrCreateRoomState(roomId);
+            var roomState = await _roomManager.GetOrCreateRoomStateAsync(roomId);
             _logger.LogInformation("Language updated for room {RoomId}", roomId);
             roomState.CurrentLanguage = language;
-            roomState.CurrentCode = initialCode;
 
-            await Clients.OthersInGroup(roomId).SendAsync("ReceiveLanguage", language, initialCode);
+            // Get the code for the new language. If it doesn't exist, send an empty string.
+            // The frontend will handle populating it with example code.
+            var codeForNewLang = roomState.LanguageCodes.ContainsKey(language)
+                ? roomState.LanguageCodes[language]
+                : string.Empty;
+
+            await Clients.OthersInGroup(roomId).SendAsync("ReceiveLanguage", language, codeForNewLang);
         }
 
         /// <summary>
@@ -217,7 +226,7 @@ namespace Intervu.API.Hubs
         /// <param name="language">The programming language of the code.</param>
         public async Task RunCode(string roomId, string code, string language)
         {
-            var roomState = _roomManager.GetOrCreateRoomState(roomId);
+            var roomState = await _roomManager.GetOrCreateRoomStateAsync(roomId);
 
             // If a shortName exists, run in "Test Case Mode"
             if (!string.IsNullOrEmpty(roomState.ProblemShortName) &&
@@ -317,7 +326,7 @@ namespace Intervu.API.Hubs
         public async Task SendProblem(string roomId, string description, string shortName, object[] testCases)
         {
             // Update the state in the manager
-            var roomState = _roomManager.GetOrCreateRoomState(roomId);
+            var roomState = await _roomManager.GetOrCreateRoomStateAsync(roomId);
             roomState.ProblemDescription = description;
             roomState.ProblemShortName = shortName;
             roomState.TestCases = testCases;
@@ -336,7 +345,7 @@ namespace Intervu.API.Hubs
                 if (!string.IsNullOrEmpty(generatedCode))
                 {
                     // Update the code in the room state as well
-                    roomState.CurrentCode = generatedCode;
+                    roomState.LanguageCodes[roomState.CurrentLanguage] = generatedCode;
                     // Send the new code to all clients in the room
                     await Clients.Group(roomId).SendAsync("ReceiveCode", generatedCode);
                 }
