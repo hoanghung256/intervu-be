@@ -10,10 +10,9 @@ namespace Intervu.Domain.Abstractions.Entities
     /*
     * For entity that requires date tracking functionality only.
     */
-    public abstract class EntityAudit<T> : EntityBase<T>, IAuditable
+    public abstract class EntityDateTracking<T> : EntityBase<T>, IDateTracking
     {
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
-        public bool IsDeleted { get; set; }
     }
 }
