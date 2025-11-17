@@ -39,7 +39,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
                 };
 
                 await _context.Users.AddAsync(user);
-                await _context.SaveChangesAsync(); 
+                await _context.SaveChangesAsync();
             }
 
             var profile = new InterviewerProfile
@@ -57,7 +57,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
                 var companies = await _context.Companies
                     .Where(c => dto.CompanyIds.Contains(c.Id))
                     .ToListAsync();
-                foreach(var company in companies)
+                foreach (var company in companies)
                 {
                     profile.Companies.Add(company);
                 }
@@ -124,7 +124,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             }
 
             var totalItems = query.Count();
-            
+
             var items = await query
                 .Skip((request.Page - 1) * request.PageSize)
                 .Take(request.PageSize)
@@ -186,11 +186,6 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             existingUser.ProfilePicture = updatedProfile.ProfilePicture;
 
             await _context.SaveChangesAsync();
-        }
-
-        public void DeleteInterviewerProfile(int id)
-        {
-            throw new NotImplementedException();
         }
     }
 }
