@@ -21,16 +21,40 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
         {
             var query = _dbContext.InterviewerAvailabilities.AsQueryable();
 
-            var result = await query.Where(x => x.InterviewerId == intervewerId)
-                .Where(x => x.StartTime.Month == month)
-                .Where(x => x.StartTime.Year == year)
-                .ToListAsync();
+            var filtered = query.Where(x => x.InterviewerId == intervewerId);
+
+            if (month > 0 && year > 0)
+            {
+                filtered = filtered.Where(x => x.StartTime.Month == month && x.StartTime.Year == year);
+            }
+            else if (month > 0)
+            {
+                filtered = filtered.Where(x => x.StartTime.Month == month);
+            }
+            else if (year > 0)
+            {
+                filtered = filtered.Where(x => x.StartTime.Year == year);
+            }
+
+            var result = await filtered.ToListAsync();
             return result;
         }
 
-        public Task<bool> IsInterviewerAvailableAsync(int interviewerId, DateTimeOffset startTime, DateTimeOffset endTime)
+        public async Task<bool> IsInterviewerAvailableAsync(int interviewerId, DateTimeOffset startTime, DateTimeOffset endTime)
         {
-            throw new NotImplementedException();
+            // return true if no overlapping availability or booking exists
+            var overlaps = await _dbContext.InterviewerAvailabilities
+                .Where(x => x.InterviewerId == interviewerId)
+                .Where(x => !(x.EndTime <= startTime.UtcDateTime || x.StartTime >= endTime.UtcDateTime))
+                .AnyAsync();
+            return !overlaps;
+        }
+
+        public async Task<int> CreateInterviewerAvailabilityAsync(InterviewerAvailability availability)
+        {
+            _dbContext.InterviewerAvailabilities.Add(availability);
+            await _dbContext.SaveChangesAsync();
+            return availability.Id;
         }
     }
 }

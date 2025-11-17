@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Intervu.Application.DTOs.Availability;
 using Intervu.Application.DTOs.Company;
 using Intervu.Application.DTOs.Interviewer;
 using Intervu.Application.DTOs.Skill;
@@ -39,6 +40,11 @@ namespace Intervu.Application.Mappings
 
             CreateMap<Company, CompanyDto>().ReverseMap();
             CreateMap<Skill, SkillDto>().ReverseMap();
+
+            // Availability mappings
+            CreateMap<InterviewerAvailabilityCreateDto, InterviewerAvailability>()
+                .ForMember(dest => dest.IsBooked, opt => opt.MapFrom(src => false))
+                .ForMember(dest => dest.Id, opt => opt.Ignore());
         }
     }
 }

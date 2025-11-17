@@ -11,5 +11,6 @@ namespace Intervu.Application.Interfaces.Repositories
     {
         Task<bool> IsInterviewerAvailableAsync(int interviewerId, DateTimeOffset startTime, DateTimeOffset endTime);
         Task<IEnumerable<InterviewerAvailability>> GetInterviewerAvailabilitiesByMonthAsync (int intervewerId, int month = 0, int year = 0);
+        Task<int> CreateInterviewerAvailabilityAsync(InterviewerAvailability availability);
     }
 }

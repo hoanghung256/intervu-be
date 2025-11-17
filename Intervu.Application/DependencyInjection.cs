@@ -43,6 +43,7 @@ namespace Intervu.Application
             services.AddScoped<IGetAllCompanies, GetAllCompanies>();
             services.AddScoped<IGetAllSkills, GetAllSkills>();
             services.AddScoped<IGetInterviewerAvailabilities, GetInterviewerAvailabilities>();
+            services.AddScoped<ICreateInterviewerAvailability, CreateInterviewerAvailability>();
 
             return services;
         }
