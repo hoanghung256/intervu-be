@@ -45,6 +45,10 @@ namespace Intervu.Application.Mappings
             CreateMap<InterviewerAvailabilityCreateDto, InterviewerAvailability>()
                 .ForMember(dest => dest.IsBooked, opt => opt.MapFrom(src => false))
                 .ForMember(dest => dest.Id, opt => opt.Ignore());
+
+            CreateMap<InterviewerAvailabilityUpdateDto, InterviewerAvailability>()
+                .ForMember(dest => dest.IsBooked, opt => opt.Ignore())
+                .ForMember(dest => dest.InterviewerId, opt => opt.Ignore());
         }
     }
 }

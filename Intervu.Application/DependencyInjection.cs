@@ -44,6 +44,8 @@ namespace Intervu.Application
             services.AddScoped<IGetAllSkills, GetAllSkills>();
             services.AddScoped<IGetInterviewerAvailabilities, GetInterviewerAvailabilities>();
             services.AddScoped<ICreateInterviewerAvailability, CreateInterviewerAvailability>();
+            services.AddScoped<IDeleteInterviewerAvailability, DeleteInterviewerAvailability>();
+            services.AddScoped<IUpdateInterviewerAvailability, UpdateInterviewerAvailability>();
 
             return services;
         }

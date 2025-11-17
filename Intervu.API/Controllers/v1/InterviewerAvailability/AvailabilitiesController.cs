@@ -12,11 +12,15 @@ namespace Intervu.API.Controllers.v1.InterviewerAvailability
     {
         private readonly IGetInterviewerAvailabilities _getInterviewerAvailabilities;
         private readonly ICreateInterviewerAvailability _createInterviewerAvailability;
+        private readonly IDeleteInterviewerAvailability _deleteInterviewerAvailability;
+        private readonly IUpdateInterviewerAvailability _updateInterviewerAvailability;
 
-        public AvailabilitiesController(IGetInterviewerAvailabilities getInterviewerAvailabilities, ICreateInterviewerAvailability createInterviewerAvailability)
+        public AvailabilitiesController(IGetInterviewerAvailabilities getInterviewerAvailabilities, ICreateInterviewerAvailability createInterviewerAvailability, IDeleteInterviewerAvailability deleteInterviewerAvailability, IUpdateInterviewerAvailability updateInterviewerAvailability)
         {
             _getInterviewerAvailabilities = getInterviewerAvailabilities;
             _createInterviewerAvailability = createInterviewerAvailability;
+            _deleteInterviewerAvailability = deleteInterviewerAvailability;
+            _updateInterviewerAvailability = updateInterviewerAvailability;
         }
         [HttpGet("{interviewerId}")]
         public async Task<IActionResult> GetInterviewerAvailabilities(int interviewerId, [FromQuery] int month = 0, [FromQuery] int year = 0)
@@ -37,6 +41,34 @@ namespace Intervu.API.Controllers.v1.InterviewerAvailability
             {
                 var id = await _createInterviewerAvailability.ExecuteAsync(request);
                 return Ok(new { success = true, message = "Created", data = new { id } });
+            }
+            catch (System.Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpDelete("{availabilityId}")]
+        public async Task<IActionResult> DeleteInterviewerAvailability(int availabilityId)
+        {
+            try
+            {
+                await _deleteInterviewerAvailability.ExecuteAsync(availabilityId);
+                return Ok(new { success = true, message = "Deleted" });
+            }
+            catch (System.Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpPut("{availabilityId}")]
+        public async Task<IActionResult> UpdateInterviewerAvailability(int availabilityId, [FromBody] InterviewerAvailabilityUpdateDto request)
+        {
+            try
+            {
+                await _updateInterviewerAvailability.ExecuteAsync(availabilityId, request);
+                return Ok(new { success = true, message = "Updated" });
             }
             catch (System.Exception ex)
             {

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Intervu.Application.DTOs.Availability;
 using Intervu.Application.Interfaces.Repositories;
 using Intervu.Domain.Entities;
 using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
@@ -55,6 +56,31 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             _dbContext.InterviewerAvailabilities.Add(availability);
             await _dbContext.SaveChangesAsync();
             return availability.Id;
+        }
+
+        public async Task<bool> DeleteInterviewerAvailabilityAsync(int availabilityId)
+        {
+            var availability = await _dbContext.InterviewerAvailabilities.FindAsync(availabilityId);
+            if (availability == null)
+                return false;
+
+            _dbContext.InterviewerAvailabilities.Remove(availability);
+            await _dbContext.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> UpdateInterviewerAvailabilityAsync(int availabilityId, InterviewerAvailabilityUpdateDto dto)
+        {
+            var availability = await _dbContext.InterviewerAvailabilities.FindAsync(availabilityId);
+            if (availability == null)
+                return false;
+
+            availability.StartTime = dto.StartTime;
+            availability.EndTime = dto.EndTime;
+
+            _dbContext.InterviewerAvailabilities.Update(availability);
+            await _dbContext.SaveChangesAsync();
+            return true;
         }
     }
 }
