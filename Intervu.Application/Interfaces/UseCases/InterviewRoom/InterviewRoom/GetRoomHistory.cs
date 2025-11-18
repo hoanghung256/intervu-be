@@ -8,7 +8,7 @@ namespace Intervu.Application.UseCases.InterviewRoom
     {
         private readonly IInterviewRoomRepository _repo;
 
-        public GetRoomHistory(IInterviewRoomRepository repo) 
+        public GetRoomHistory(IInterviewRoomRepository repo)
         {
             _repo = repo;
         }

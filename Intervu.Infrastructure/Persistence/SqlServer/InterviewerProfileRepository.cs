@@ -20,14 +20,36 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
 
         public async Task CreateInterviewerProfile(InterviewerCreateDto dto)
         {
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto), "DTO cannot be null");
+
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Email == dto.Email);
+
+            if (user == null)
+            {
+                user = new User
+                {
+                    FullName = dto.FullName,
+                    Email = dto.Email,
+                    Password = dto.Password,
+                    Role = dto.Role,
+                    ProfilePicture = dto.ProfilePicture,
+                    Status = dto.Status
+                };
+
+                await _context.Users.AddAsync(user);
+                await _context.SaveChangesAsync();
+            }
+
             var profile = new InterviewerProfile
             {
-                Id = dto.Id,
-                CurrentAmount = 0,
-                ExperienceYears = dto.ExperienceYears,
-                Status = dto.Status,
-                Companies = [],
-                Skills = []
+                CurrentAmount = dto.CurrentAmount ?? 0,
+                ExperienceYears = dto.ExperienceYears ?? 0,
+                Status = dto.StatusProfile,
+                User = user,
+                Companies = new List<Company>(),
+                Skills = new List<Skill>()
             };
 
             if (dto.CompanyIds?.Any() == true)
@@ -35,8 +57,10 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
                 var companies = await _context.Companies
                     .Where(c => dto.CompanyIds.Contains(c.Id))
                     .ToListAsync();
-
-                profile.Companies = companies;
+                foreach (var company in companies)
+                {
+                    profile.Companies.Add(company);
+                }
             }
 
             if (dto.SkillIds?.Any() == true)
@@ -44,13 +68,16 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
                 var skills = await _context.Skills
                     .Where(s => dto.SkillIds.Contains(s.Id))
                     .ToListAsync();
-
-                profile.Skills = skills;
+                foreach (var skill in skills)
+                {
+                    profile.Skills.Add(skill);
+                }
             }
 
             await _context.InterviewerProfiles.AddAsync(profile);
             await _context.SaveChangesAsync();
         }
+
 
 
         public async Task<InterviewerProfile> GetProfileAsync()
@@ -97,7 +124,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             }
 
             var totalItems = query.Count();
-            
+
             var items = await query
                 .Skip((request.Page - 1) * request.PageSize)
                 .Take(request.PageSize)
@@ -160,6 +187,5 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
 
             await _context.SaveChangesAsync();
         }
-
     }
 }

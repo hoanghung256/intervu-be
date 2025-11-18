@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
 {
     /// <inheritdoc />
-    public partial class UpdateDb13Nov : Migration
+    public partial class UpdateDb18Nov : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -80,10 +80,10 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false),
-                    CVUrl = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
-                    PortfolioUrl = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
-                    Skills = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Bio = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CVUrl = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    PortfolioUrl = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    Skills = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Bio = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CurrentAmount = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -102,10 +102,9 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false),
-                    CVUrl = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false),
                     PortfolioUrl = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: true),
-                    CurrentAmount = table.Column<int>(type: "int", nullable: false),
-                    ExperienceYears = table.Column<int>(type: "int", nullable: false),
+                    CurrentAmount = table.Column<int>(type: "int", nullable: true),
+                    ExperienceYears = table.Column<int>(type: "int", nullable: true),
                     Bio = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false)
                 },
@@ -254,6 +253,11 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                     ScheduledTime = table.Column<DateTime>(type: "datetime2", nullable: true),
                     DurationMinutes = table.Column<int>(type: "int", nullable: true),
                     VideoCallRoomUrl = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    CurrentLanguage = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    LanguageCodes = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ProblemDescription = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ProblemShortName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    TestCases = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -373,12 +377,12 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
 
             migrationBuilder.InsertData(
                 table: "InterviewerProfiles",
-                columns: new[] { "Id", "Bio", "CVUrl", "CurrentAmount", "ExperienceYears", "PortfolioUrl", "Status" },
+                columns: new[] { "Id", "Bio", "CurrentAmount", "ExperienceYears", "PortfolioUrl", "Status" },
                 values: new object[,]
                 {
-                    { 2, "Senior Backend Engineer with real interview experience", "https://example.com/cv-bob.pdf", 0, 8, "https://portfolio.example.com/bob", 0 },
-                    { 5, "Fullstack Engineer previously at Uber", "https://example.com/cv-john.pdf", 0, 6, "https://portfolio.example.com/john", 1 },
-                    { 6, "Senior Frontend Engineer focusing on UI/UX interviews", "https://example.com/cv-sarah.pdf", 0, 7, "https://portfolio.example.com/sarah", 1 }
+                    { 2, "Senior Backend Engineer with real interview experience", 0, 8, "https://portfolio.example.com/bob", 0 },
+                    { 5, "Fullstack Engineer previously at Uber", 0, 6, "https://portfolio.example.com/john", 0 },
+                    { 6, "Senior Frontend Engineer focusing on UI/UX interviews", 0, 7, "https://portfolio.example.com/sarah", 0 }
                 });
 
             migrationBuilder.InsertData(
@@ -393,8 +397,12 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
 
             migrationBuilder.InsertData(
                 table: "InterviewRooms",
-                columns: new[] { "Id", "DurationMinutes", "InterviewerId", "ScheduledTime", "Status", "StudentId", "VideoCallRoomUrl" },
-                values: new object[] { 1, 60, 2, new DateTime(2025, 11, 1, 9, 0, 0, 0, DateTimeKind.Unspecified), 0, 1, "https://meet.example/room1" });
+                columns: new[] { "Id", "CurrentLanguage", "DurationMinutes", "InterviewerId", "LanguageCodes", "ProblemDescription", "ProblemShortName", "ScheduledTime", "Status", "StudentId", "TestCases", "VideoCallRoomUrl" },
+                values: new object[,]
+                {
+                    { 1, null, 60, 2, null, null, null, new DateTime(2025, 11, 1, 9, 0, 0, 0, DateTimeKind.Unspecified), 0, 1, null, "https://meet.example/room1" },
+                    { 2, "java", 60, 2, "{\"java\":\"\"}", "Given an array of integers, return indices of the two numbers that add up to a target.", "TwoSum", new DateTime(2025, 12, 5, 14, 30, 0, 0, DateTimeKind.Unspecified), 0, 1, "[{\"inputs\":[{\"name\":\"nums\",\"value\":\"[2,7,11,15]\"},{\"name\":\"target\",\"value\":\"9\"}],\"expectedOutputs\":[\"[0,1]\"]},{\"inputs\":[{\"name\":\"nums\",\"value\":\"[3,2,4]\"},{\"name\":\"target\",\"value\":\"6\"}],\"expectedOutputs\":[\"[1,2]\"]}]", "https://meet.example.com/room2" }
+                });
 
             migrationBuilder.InsertData(
                 table: "InterviewerAvailabilities",
