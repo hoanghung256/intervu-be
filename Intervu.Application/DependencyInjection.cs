@@ -20,6 +20,8 @@ using Intervu.Application.Services.CodeGeneration;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom.InterviewRoom;
 using Intervu.Application.Interfaces.UseCases.Feedbacks;
 using Intervu.Application.UseCases.Feedbacks;
+using Intervu.Application.Interfaces.UseCases.UserProfile;
+using Intervu.Application.UseCases.UserProfile;
 
 namespace Intervu.Application
 {
@@ -61,6 +63,11 @@ namespace Intervu.Application
             services.AddScoped<ICreateInterviewerAvailability, CreateInterviewerAvailability>();
             services.AddScoped<IDeleteInterviewerAvailability, DeleteInterviewerAvailability>();
             services.AddScoped<IUpdateInterviewerAvailability, UpdateInterviewerAvailability>();
+            // ----- UserProfile ----
+            services.AddScoped<IGetUserProfile, GetUserProfile>();
+            services.AddScoped<IUpdateUserProfile, UpdateUserProfile>();
+            services.AddScoped<IChangePassword, ChangePassword>();
+            services.AddScoped<IUpdateProfilePicture, UpdateProfilePicture>();
 
             return services;
         }
