@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using Intervu.Application.DTOs.Availability;
@@ -28,14 +30,44 @@ namespace Intervu.Application.UseCases.Availability
             // prevent creating in the past
             if (dto.EndTime <= DateTime.UtcNow) throw new ArgumentException("Cannot create availability in the past");
 
-            // check overlap
-            var startOffset = new DateTimeOffset(dto.StartTime);
-            var endOffset = new DateTimeOffset(dto.EndTime);
-            bool isAvailable = await _repo.IsInterviewerAvailableAsync(dto.InterviewerId, startOffset, endOffset);
-            if (!isAvailable) throw new InvalidOperationException("Interviewer has overlapping availability or existing booking");
+            // Validate times are on the hour (minute = 0)
+            if (dto.StartTime.Minute != 0 || dto.StartTime.Second != 0)
+                throw new ArgumentException("Start time must be on the hour (e.g., 09:00, 14:00)");
+            if (dto.EndTime.Minute != 0 || dto.EndTime.Second != 0)
+                throw new ArgumentException("End time must be on the hour (e.g., 09:00, 14:00)");
 
-            var entity = _mapper.Map<InterviewerAvailability>(dto);
-            var id = await _repo.CreateInterviewerAvailabilityAsync(entity);
+            // Calculate duration in hours
+            var duration = (dto.EndTime - dto.StartTime).TotalHours;
+            if (duration < 1)
+                throw new ArgumentException("Availability must be at least 1 hour");
+
+            // Split into 1-hour slots
+            var slots = new List<InterviewerAvailability>();
+            int numSlots = (int)duration;
+
+            for (int i = 0; i < numSlots; i++)
+            {
+                var slotStart = dto.StartTime.AddHours(i);
+                var slotEnd = slotStart.AddHours(1);
+
+                // Check overlap for each slot
+                var startOffset = new DateTimeOffset(slotStart);
+                var endOffset = new DateTimeOffset(slotEnd);
+                bool isAvailable = await _repo.IsInterviewerAvailableAsync(dto.InterviewerId, startOffset, endOffset);
+                if (!isAvailable)
+                    throw new InvalidOperationException($"Time slot {slotStart:HH:mm} - {slotEnd:HH:mm} conflicts with existing availability");
+
+                slots.Add(new InterviewerAvailability
+                {
+                    InterviewerId = dto.InterviewerId,
+                    StartTime = slotStart,
+                    EndTime = slotEnd,
+                    IsBooked = false
+                });
+            }
+
+            // Bulk insert all slots
+            var id = await _repo.CreateMultipleInterviewerAvailabilitiesAsync(slots);
             return id;
         }
     }

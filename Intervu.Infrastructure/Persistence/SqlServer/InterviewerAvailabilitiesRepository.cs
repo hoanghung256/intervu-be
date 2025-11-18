@@ -58,6 +58,13 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             return availability.Id;
         }
 
+        public async Task<int> CreateMultipleInterviewerAvailabilitiesAsync(List<InterviewerAvailability> availabilities)
+        {
+            _dbContext.InterviewerAvailabilities.AddRange(availabilities);
+            await _dbContext.SaveChangesAsync();
+            return availabilities.First().Id;
+        }
+
         public async Task<bool> DeleteInterviewerAvailabilityAsync(int availabilityId)
         {
             var availability = await _dbContext.InterviewerAvailabilities.FindAsync(availabilityId);
