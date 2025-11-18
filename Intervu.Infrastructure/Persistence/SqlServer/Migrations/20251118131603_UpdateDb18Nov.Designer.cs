@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
 {
     [DbContext(typeof(IntervuDbContext))]
-    [Migration("20251117180630_UpdateDb18Nov")]
+    [Migration("20251118131603_UpdateDb18Nov")]
     partial class UpdateDb18Nov
     {
         /// <inheritdoc />
@@ -290,6 +290,9 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("InterviewRoomId")
+                        .HasColumnType("int");
+
                     b.Property<int>("InterviewerId")
                         .HasColumnType("int");
 
@@ -300,6 +303,9 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("InterviewRoomId")
+                        .IsUnique();
 
                     b.HasIndex("InterviewerId");
 
@@ -313,6 +319,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                             Id = 1,
                             AIAnalysis = "{}",
                             Comments = "Great answers and communication.",
+                            InterviewRoomId = 1,
                             InterviewerId = 2,
                             Rating = 5,
                             StudentId = 1
@@ -859,6 +866,12 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
 
             modelBuilder.Entity("Intervu.Domain.Entities.Feedback", b =>
                 {
+                    b.HasOne("Intervu.Domain.Entities.InterviewRoom", null)
+                        .WithOne()
+                        .HasForeignKey("Intervu.Domain.Entities.Feedback", "InterviewRoomId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Intervu.Domain.Entities.InterviewerProfile", null)
                         .WithMany()
                         .HasForeignKey("InterviewerId")

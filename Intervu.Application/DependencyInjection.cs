@@ -16,6 +16,8 @@ using Intervu.Application.UseCases.Skill;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Services.CodeGeneration;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom.InterviewRoom;
+using Intervu.Application.Interfaces.UseCases.Feedbacks;
+using Intervu.Application.UseCases.Feedbacks;
 
 namespace Intervu.Application
 {
@@ -49,6 +51,10 @@ namespace Intervu.Application
             services.AddScoped<IGetAllInterviewers, GetAllInterviewers>();
             services.AddScoped<IGetAllCompanies, GetAllCompanies>();
             services.AddScoped<IGetAllSkills, GetAllSkills>();
+            // ----- Feedback ----
+            services.AddScoped<IGetFeedbacks, GetFeedbacks>();
+            services.AddScoped<ICreateFeedback, CreateFeedback>();
+            services.AddScoped<IUpdateFeedback, UpdateFeedback>();
 
             return services;
         }
