@@ -13,6 +13,8 @@ using Intervu.Application.Interfaces.UseCases.Company;
 using Intervu.Application.UseCases.Company;
 using Intervu.Application.Interfaces.UseCases.Skill;
 using Intervu.Application.UseCases.Skill;
+using Intervu.Application.Interfaces.UseCases.Availability;
+using Intervu.Application.UseCases.Availability;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Services.CodeGeneration;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom.InterviewRoom;
@@ -49,6 +51,10 @@ namespace Intervu.Application
             services.AddScoped<IGetAllInterviewers, GetAllInterviewers>();
             services.AddScoped<IGetAllCompanies, GetAllCompanies>();
             services.AddScoped<IGetAllSkills, GetAllSkills>();
+            services.AddScoped<IGetInterviewerAvailabilities, GetInterviewerAvailabilities>();
+            services.AddScoped<ICreateInterviewerAvailability, CreateInterviewerAvailability>();
+            services.AddScoped<IDeleteInterviewerAvailability, DeleteInterviewerAvailability>();
+            services.AddScoped<IUpdateInterviewerAvailability, UpdateInterviewerAvailability>();
 
             return services;
         }
