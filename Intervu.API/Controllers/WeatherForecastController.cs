@@ -1,4 +1,7 @@
+using Intervu.Application.Interfaces.ExternalServices;
 using Microsoft.AspNetCore.Mvc;
+using PayOS.Exceptions;
+using PayOS.Models.Webhooks;
 
 namespace Intervu.API.Controllers
 {
@@ -12,22 +15,55 @@ namespace Intervu.API.Controllers
         };
 
         private readonly ILogger<WeatherForecastController> _logger;
+        private readonly IPaymentService _paymentService;
 
-        public WeatherForecastController(ILogger<WeatherForecastController> logger)
+        public WeatherForecastController(ILogger<WeatherForecastController> logger, IPaymentService paymentService)
         {
             _logger = logger;
+            _paymentService = paymentService;
         }
 
-        [HttpGet(Name = "GetWeatherForecast")]
-        public IEnumerable<WeatherForecast> Get()
+        [HttpGet]
+        public async Task<IActionResult> GetCheckOutUrl()
         {
-            return Enumerable.Range(1, 5).Select(index => new WeatherForecast
+            string checkoutUrl = await _paymentService.CreatePaymentOrderAsync(null, 2000, "hello");
+            return Ok(new { checkoutUrl });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CreateSpendOrder()
+        {
+            try
             {
-                Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                TemperatureC = Random.Shared.Next(-20, 55),
-                Summary = Summaries[Random.Shared.Next(Summaries.Length)]
-            })
-            .ToArray();
+                var result = await _paymentService.CreateSpendOrderAsync(2000, "NUKL", "970436", "1026869673");
+                return Ok(result);
+                //return Ok();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, ex.Message);
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpPost("payos-webhook-test")]
+        public IActionResult VerifyOrder(Webhook payload)
+        {
+            Console.WriteLine($"Webhook run at {DateTime.Now}, status = {payload.Code}");
+            return Ok(payload.Code);
+        }
+
+        [HttpGet("register")]
+        public async Task<IActionResult> RegisterAsync()
+        {
+            try
+            {
+                await _paymentService.RegisterWebhooks();
+                return Ok("Registered");
+            } catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }
