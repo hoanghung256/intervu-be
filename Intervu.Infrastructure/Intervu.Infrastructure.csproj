@@ -31,4 +31,8 @@
     <ProjectReference Include="..\Intervu.Domain\Intervu.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Persistence\SqlServer\Migrations\" />
+  </ItemGroup>
+
 </Project>

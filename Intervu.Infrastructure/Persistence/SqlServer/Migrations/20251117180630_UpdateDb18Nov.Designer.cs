@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
 {
     [DbContext(typeof(IntervuDbContext))]
-    [Migration("20251116113620_UpdateDb16Nov")]
-    partial class UpdateDb16Nov
+    [Migration("20251117180630_UpdateDb18Nov")]
+    partial class UpdateDb18Nov
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -327,11 +327,25 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("CurrentLanguage")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<int?>("DurationMinutes")
                         .HasColumnType("int");
 
                     b.Property<int?>("InterviewerId")
                         .HasColumnType("int");
+
+                    b.Property<string>("LanguageCodes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProblemDescription")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProblemShortName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<DateTime?>("ScheduledTime")
                         .HasColumnType("datetime2");
@@ -341,6 +355,9 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
 
                     b.Property<int?>("StudentId")
                         .HasColumnType("int");
+
+                    b.Property<string>("TestCases")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("VideoCallRoomUrl")
                         .HasMaxLength(1000)
@@ -364,6 +381,21 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                             Status = 0,
                             StudentId = 1,
                             VideoCallRoomUrl = "https://meet.example/room1"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CurrentLanguage = "java",
+                            DurationMinutes = 60,
+                            InterviewerId = 2,
+                            LanguageCodes = "{\"java\":\"\"}",
+                            ProblemDescription = "Given an array of integers, return indices of the two numbers that add up to a target.",
+                            ProblemShortName = "TwoSum",
+                            ScheduledTime = new DateTime(2025, 12, 5, 14, 30, 0, 0, DateTimeKind.Unspecified),
+                            Status = 0,
+                            StudentId = 1,
+                            TestCases = "[{\"inputs\":[{\"name\":\"nums\",\"value\":\"[2,7,11,15]\"},{\"name\":\"target\",\"value\":\"9\"}],\"expectedOutputs\":[\"[0,1]\"]},{\"inputs\":[{\"name\":\"nums\",\"value\":\"[3,2,4]\"},{\"name\":\"target\",\"value\":\"6\"}],\"expectedOutputs\":[\"[1,2]\"]}]",
+                            VideoCallRoomUrl = "https://meet.example.com/room2"
                         });
                 });
 

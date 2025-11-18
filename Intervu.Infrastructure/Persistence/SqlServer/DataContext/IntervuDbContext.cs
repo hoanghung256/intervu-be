@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Linq.Expressions;
+using System.Text.Json;
 using System.Threading.Tasks.Dataflow;
 
 namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
@@ -140,6 +141,29 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 b.Property(x => x.DurationMinutes);
                 b.Property(x => x.VideoCallRoomUrl).HasMaxLength(1000);
                 b.Property(x => x.Status).IsRequired();
+
+                // JSON converters for complex properties
+                var jsonOptions = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    WriteIndented = false
+                };
+
+                b.Property(x => x.LanguageCodes)
+                    .HasConversion(
+                        v => JsonSerializer.Serialize(v, jsonOptions),
+                        v => JsonSerializer.Deserialize<Dictionary<string, string>>(v, jsonOptions))
+                    .HasColumnType("nvarchar(max)");
+
+                b.Property(x => x.TestCases)
+                    .HasConversion(
+                        v => JsonSerializer.Serialize(v, jsonOptions),
+                        v => JsonSerializer.Deserialize<object[]>(v, jsonOptions))
+                    .HasColumnType("nvarchar(max)");
+
+                b.Property(x => x.CurrentLanguage).HasMaxLength(50);
+                b.Property(x => x.ProblemDescription).HasColumnType("nvarchar(max)");
+                b.Property(x => x.ProblemShortName).HasMaxLength(200);
 
                 b.HasOne<IntervieweeProfile>()
                  .WithMany()
@@ -388,6 +412,49 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 DurationMinutes = 60,
                 VideoCallRoomUrl = "https://meet.example/room1",
                 Status = InterviewRoomStatus.Scheduled
+            });
+
+            modelBuilder.Entity<InterviewRoom>().HasData(new InterviewRoom
+            {
+                Id = 2,
+                StudentId = 1,
+                InterviewerId = 2,
+                ScheduledTime = new DateTime(2025, 12, 5, 14, 30, 0),
+                DurationMinutes = 60,
+                VideoCallRoomUrl = "https://meet.example.com/room2",
+                Status = InterviewRoomStatus.Scheduled,
+
+                CurrentLanguage = "java",
+
+                LanguageCodes = new Dictionary<string, string>
+                {
+                    { "java", "" },
+                },
+
+                ProblemShortName = "TwoSum",
+                ProblemDescription = "Given an array of integers, return indices of the two numbers that add up to a target.",
+
+                TestCases = new object[]
+                {
+                    new
+                    {
+                        inputs = new[]
+                        {
+                            new { name = "nums", value = "[2,7,11,15]" },
+                            new { name = "target", value = "9" }
+                        },
+                        expectedOutputs = new[] { "[0,1]" }
+                    },
+                    new
+                    {
+                        inputs = new[]
+                        {
+                            new { name = "nums", value = "[3,2,4]" },
+                            new { name = "target", value = "6" }
+                        },
+                        expectedOutputs = new[] { "[1,2]" }
+                    }
+                }
             });
 
             modelBuilder.Entity<Payment>().HasData(new Payment
