@@ -161,5 +161,27 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             await _context.SaveChangesAsync();
         }
 
+        public async Task<PagedResult<InterviewerProfile>> GetPagedInterviewerProfilesAsync(int page, int pageSize)
+        {
+            var query = _context.InterviewerProfiles
+                .Include(i => i.Companies)
+                .Include(i => i.Skills)
+                .AsQueryable();
+
+            var totalItems = await query.CountAsync();
+
+            var items = await query
+                .OrderByDescending(i => i.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new PagedResult<InterviewerProfile>(items, totalItems, pageSize, page);
+        }
+
+        public async Task<int> GetTotalInterviewersCountAsync()
+        {
+            return await _context.InterviewerProfiles.CountAsync();
+        }
     }
 }
