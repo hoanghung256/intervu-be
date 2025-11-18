@@ -29,23 +29,22 @@ namespace Intervu.Application.UseCases.InterviewerProfile
             Domain.Entities.InterviewerProfile? profileData = await _interviewerProfileRepository.GetProfileByIdAsync(id);
             if (profileData == null) return null;
 
-            InterviewerProfileDto result = new InterviewerProfileDto
-            {
-                Id = profileData.Id,
-                User = _mapper.Map<UserDto>(userData),
-                CVUrl = profileData.CVUrl,
-                PortfolioUrl = profileData.PortfolioUrl,
-                Companies = _mapper.Map<List<CompanyDto>>(profileData.Companies),
-                Skills = _mapper.Map<List<SkillDto>>(profileData.Skills),
-            };
+            InterviewerProfileDto result = _mapper.Map<InterviewerProfileDto>(profileData);
+
+            result.User = _mapper.Map<UserDto>(userData);
 
             return result;
         }
 
         public async Task<InterviewerViewDto?> ViewProfileForIntervieweeAsync(int id)
         {
-            var profile = await _interviewerProfileRepository.GetByIdAsync(id);
-            return profile != null ? _mapper.Map<InterviewerViewDto>(profile) : throw new Exception("Profile not found!");
+            Domain.Entities.User? userData = await _userRepository.GetByIdAsync(id);
+            if (userData == null) return null;
+
+            Domain.Entities.InterviewerProfile? profile = await _interviewerProfileRepository.GetProfileByIdAsync(id);
+            InterviewerViewDto result = _mapper.Map<InterviewerViewDto>(profile);
+            result.User = _mapper.Map<UserDto>(userData);
+            return result;
         }
     }
 }

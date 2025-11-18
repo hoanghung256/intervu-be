@@ -1,14 +1,19 @@
-﻿using Intervu.Application.DTOs.Interviewer;
+﻿using Asp.Versioning;
+using AutoMapper;
+using Intervu.API.Utils.Constant;
+using Intervu.Application.DTOs.Interviewer;
 using Intervu.Application.Interfaces.UseCases.Interviewer;
 using Intervu.Application.Interfaces.UseCases.InterviewerProfile;
 using Intervu.Domain.Entities.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Intervu.API.Controllers.v1.Interviewer
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [ApiVersion("1.0")]
+    [Route("api/v{version:apiVersion}/interviewer-profile")]
     public class InterviewerProfileController : ControllerBase
     {
         private readonly ICreateInterviewProfile _createInterviewProfile;
@@ -25,106 +30,151 @@ namespace Intervu.API.Controllers.v1.Interviewer
         }
 
         //[GET] api/interviewerprofile/{id}
+        [Authorize(Policy = AuthorizationPolicies.Interviewer)]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetOwnInterviewerProfile([FromRoute] int id)
         {
-            var profile = await _getInterviewProfile.ViewOwnProfileAsync(id);
+            string msg = "Get profile successfully!";
+            try
+            {
+                var profile = await _getInterviewProfile.ViewOwnProfileAsync(id);
+                return Ok(new
+                {
+                    success = true,
+                    message = msg,
+                    data = profile
+                });
+            }
+            catch(Exception ex)
+            {
+                msg = ex.Message;
+            }
             return Ok(new
             {
                 success = true,
-                message = "Success",
-                data = profile
+                message = msg,
             });
         }
 
         //[GET] api/interviewerprofile/interviewee/{id}/profile
+        [Authorize(Policy = AuthorizationPolicies.Interviewee)]
         [HttpGet("{id}/profile")]
         public async Task<IActionResult> GetProfileByInterviewee([FromRoute] int id)
         {
-            var profile = await _getInterviewProfile.ViewProfileForIntervieweeAsync(id);
+            string msg = "Get profile successfully!";
+            try
+            {
+                var profile = await _getInterviewProfile.ViewProfileForIntervieweeAsync(id);
+                return Ok(new
+                {
+                    success = true,
+                    message = msg,
+                    data = profile
+                });
+            }
+            catch (Exception ex)
+            {
+                msg = ex.Message;
+            }
             return Ok(new
             {
                 success = true,
-                message = "Success",
-                data = profile
+                message = msg,
             });
         }
 
         //[POST] api/interviewerprofile
+        [Authorize(Policy = AuthorizationPolicies.Admin)]
         [HttpPost]
         public async Task<IActionResult> CreateInterviewerProfile([FromBody] InterviewerCreateDto request)
         {
-            await _createInterviewProfile.CreateInterviewRequest(request);
+            
+            string msg = "Profile created successfully";
+            try
+            {
+                await _createInterviewProfile.CreateInterviewRequest(request);
+            }
+            catch (Exception ex)
+            {
+                msg = ex.Message;
+            }
             return Ok(new
             {
                 success = true,
-                message = "Profile created successfully",
-
+                message = msg
             });
         }
 
-        // [PUT] api/interviewerprofile/{id}
+        // [PUT] api/interviewer-profile/{id}
+        [Authorize(Policy = AuthorizationPolicies.Interviewer)]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateInterviewerProfile([FromRoute] int id, [FromBody] InterviewerUpdateDto request)
         {
-            InterviewerProfileDto profile = await _getInterviewProfile.ViewOwnProfileAsync(id);
-            if (profile == null)
+            string msg = "Profile update successfully!";
+            try
             {
-                return BadRequest(new
+                InterviewerProfileDto? profile = await _getInterviewProfile.ViewOwnProfileAsync(id);
+                profile = await _updateInterviewProfile.UpdateInterviewProfile(id, request);
+                return Ok(new
                 {
-                    success = false,
-                    message = "Id in URL does not match Id in body"
+                    success = true,
+                    message = "Profile updated successfully"
                 });
             }
-
-            profile = await _updateInterviewProfile.UpdateInterviewProfile(id, request);
+            catch(Exception ex)
+            {
+                msg = ex.Message;
+            }
             return Ok(new
             {
                 success = true,
-                message = "Profile updated successfully"
+                message = msg
             });
         }
 
-        // [PUT] api/interviewerprofile/{id}/status
+        // [PUT] api/interviewer-profile/{id}/status
+        [Authorize(Policy = AuthorizationPolicies.Admin)]
         [HttpPut("{id}/status")]
         public async Task<IActionResult> UpdateInterviewerStatus([FromRoute] int id, [FromBody] InterviewerProfileStatus status)
         {
-            InterviewerViewDto profile = await _updateInterviewProfile.UpdateInterviewStatus(id, status);
-            if (profile == null)
+            string msg = "Profile status update successfully";
+            try
             {
-                return NotFound(new
+                InterviewerViewDto profile = await _updateInterviewProfile.UpdateInterviewStatus(id, status);
+                return Ok(new
                 {
-                    success = false,
-                    message = "Interviewer profile not found"
+                    success = true,
+                    message = "Status updated successfully"
                 });
             }
-
+            catch(Exception ex)
+            {
+                msg = ex.Message;
+            }
             return Ok(new
             {
                 success = true,
-                message = "Status updated successfully"
+                message = msg
             });
         }
 
-        // [DELETE] api/interviewerprofile/{id}
+        // [DELETE] api/interviewer-profile/{id}
+        [Authorize(Policy = AuthorizationPolicies.Admin)]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteInterviewerProfile([FromRoute] int id)
         {
-            var profile = await _getInterviewProfile.ViewOwnProfileAsync(id);
-            if (profile == null)
+            string msg = "Profile deleted successfully";
+            try
             {
-                return NotFound(new
-                {
-                    success = false,
-                    message = "Interviewer profile not found"
-                });
+                await _deleteInterviewerProfile.DeleteInterviewProfile(id);
+            } catch (Exception ex)
+            {
+                msg = ex.Message;
             }
-
-            _deleteInterviewerProfile.DeleteInterviewerProfileAsync(id);
             return Ok(new
             {
                 success = true,
-                message = "Profile deleted successfully"
+                message = msg
             });
         }
     }

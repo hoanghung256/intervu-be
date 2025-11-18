@@ -8,8 +8,7 @@ namespace Intervu.Domain.Entities.Constants
 {
     public enum InterviewerProfileStatus
     {
-        Pending,
-        Approved,
-        Rejected
+        Enable,
+        Disable
     }
 }

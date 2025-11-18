@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Linq.Expressions;
+using System.Text.Json;
 using System.Threading.Tasks.Dataflow;
 
 namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
@@ -74,18 +75,19 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                  .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // InterviewerProfile (one-to-one with User, shared PK)
+
             modelBuilder.Entity<InterviewerProfile>(b =>
             {
                 b.ToTable("InterviewerProfiles");
                 b.HasKey(x => x.Id);
-                b.Property(x => x.CVUrl).HasMaxLength(4000);
-                b.Property(x => x.PortfolioUrl).HasMaxLength(4000);
-                //b.Property(x => x.Specializations).HasColumnType("nvarchar(max)");
-                //b.Property(x => x.ProgrammingLanguages).HasColumnType("nvarchar(max)");
-                b.Property(x => x.Bio).HasColumnType("nvarchar(max)");
 
-                b.HasOne<User>()
+                b.Property(x => x.PortfolioUrl).HasMaxLength(4000);
+                b.Property(x => x.Bio).HasColumnType("nvarchar(max)");
+                b.Property(x => x.CurrentAmount);
+                b.Property(x => x.ExperienceYears);
+                b.Property(x => x.Status).IsRequired();
+
+                b.HasOne(x => x.User)
                  .WithOne()
                  .HasForeignKey<InterviewerProfile>(p => p.Id)
                  .OnDelete(DeleteBehavior.Cascade);
@@ -115,6 +117,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                      });
             });
 
+
             // InterviewerAvailability (many availabilities per interviewer)
             modelBuilder.Entity<InterviewerAvailability>(b =>
             {
@@ -138,6 +141,29 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 b.Property(x => x.DurationMinutes);
                 b.Property(x => x.VideoCallRoomUrl).HasMaxLength(1000);
                 b.Property(x => x.Status).IsRequired();
+
+                // JSON converters for complex properties
+                var jsonOptions = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    WriteIndented = false
+                };
+
+                b.Property(x => x.LanguageCodes)
+                    .HasConversion(
+                        v => JsonSerializer.Serialize(v, jsonOptions),
+                        v => JsonSerializer.Deserialize<Dictionary<string, string>>(v, jsonOptions))
+                    .HasColumnType("nvarchar(max)");
+
+                b.Property(x => x.TestCases)
+                    .HasConversion(
+                        v => JsonSerializer.Serialize(v, jsonOptions),
+                        v => JsonSerializer.Deserialize<object[]>(v, jsonOptions))
+                    .HasColumnType("nvarchar(max)");
+
+                b.Property(x => x.CurrentLanguage).HasMaxLength(50);
+                b.Property(x => x.ProblemDescription).HasColumnType("nvarchar(max)");
+                b.Property(x => x.ProblemShortName).HasMaxLength(200);
 
                 b.HasOne<IntervieweeProfile>()
                  .WithMany()
@@ -334,32 +360,29 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
             new InterviewerProfile
             {
                 Id = 2,
-                CVUrl = "https://example.com/cv-bob.pdf",
                 PortfolioUrl = "https://portfolio.example.com/bob",
                 ExperienceYears = 8,
-                Status = InterviewerProfileStatus.Pending,
+                Status = InterviewerProfileStatus.Enable,
                 CurrentAmount = 0,
-                Bio = "Senior Backend Engineer with real interview experience",
+                Bio = "Senior Backend Engineer with real interview experience"
             },
             new InterviewerProfile
             {
                 Id = 5,
-                CVUrl = "https://example.com/cv-john.pdf",
                 PortfolioUrl = "https://portfolio.example.com/john",
                 ExperienceYears = 6,
                 CurrentAmount = 0,
                 Bio = "Fullstack Engineer previously at Uber",
-                Status = InterviewerProfileStatus.Approved
+                Status = InterviewerProfileStatus.Enable
             },
             new InterviewerProfile
             {
                 Id = 6,
-                CVUrl = "https://example.com/cv-sarah.pdf",
                 PortfolioUrl = "https://portfolio.example.com/sarah",
                 ExperienceYears = 7,
                 CurrentAmount = 0,
                 Bio = "Senior Frontend Engineer focusing on UI/UX interviews",
-                Status = InterviewerProfileStatus.Approved
+                Status = InterviewerProfileStatus.Enable
             }
             );
 

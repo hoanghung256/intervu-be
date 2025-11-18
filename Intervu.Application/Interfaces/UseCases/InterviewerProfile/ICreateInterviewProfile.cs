@@ -10,5 +10,6 @@ namespace Intervu.Application.Interfaces.UseCases.Interviewer
     public interface ICreateInterviewProfile
     {
         Task<InterviewerProfileDto> CreateInterviewRequest(InterviewerCreateDto interviewerCreateDto);
+
     }
 }

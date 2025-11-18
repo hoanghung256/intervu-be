@@ -22,6 +22,9 @@ namespace Intervu.Infrastructure
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IInterviewRoomRepository, InterviewRoomRepository>();
             services.AddScoped<IInterviewerProfileRepository, InterviewerProfileRepository>();
+            services.AddScoped<ICompanyRepository, CompanyRepository>();
+            services.AddScoped<ISkillRepository, SkillRepository>();
+            services.AddScoped<IInterviewerAvailabilitiesRepository, InterviewerAvailabilitiesRepository>();
 
             return services;
         }
@@ -80,6 +83,15 @@ namespace Intervu.Infrastructure
                 string cancelUrl = configuration["PayOS:Payment:CancelEndpoint"]!;
 
                 return new PayOSPaymentService(paymentClient, payoutClient, returnUrl, cancelUrl);
+            services.AddScoped<CodeExecutionService>();
+
+            //Add HttpClient to call from API
+            services.AddHttpClient("CodeExecutionClient", (sp, client) =>
+            {
+                var config = sp.GetRequiredService<IConfiguration>();
+                string baseUrl = config["ApiClients:CodeExecution"];
+
+                client.BaseAddress = new Uri(baseUrl);
             });
 
             return services;

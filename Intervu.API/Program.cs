@@ -61,6 +61,26 @@ namespace Intervu.API
                     Title = "Intervu API",
                     Version = "v2"
                 });
+                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
+                {
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer",
+                    BearerFormat = "JWT",
+                    In = ParameterLocation.Header,
+                    Description = "JWT Authorization header using the Bearer scheme. \r\n\r\n Enter 'Bearer' [space] and then your token in the text input below.\r\n\r\nExample: \"Bearer 1safsfsdfdfd\"",
+                });
+                options.AddSecurityRequirement(new OpenApiSecurityRequirement {
+                    {
+                        new OpenApiSecurityScheme {
+                            Reference = new OpenApiReference {
+                                Type = ReferenceType.SecurityScheme,
+                                    Id = "Bearer"
+                            }
+                        },
+                        new string[] {}
+                    }
+                });
             });
 
             // --- CUSTOM SERVICES ---
@@ -138,7 +158,14 @@ namespace Intervu.API
                 options.AddPolicy(name: CorsPolicies.DevCorsPolicy, policy =>
                 {
                     string? currentIpV4 = GetLocalIPv4();
-                    policy.WithOrigins("https://localhost:5173", $"https://{currentIpV4}:5173")
+                    policy.WithOrigins(
+                              "http://localhost:5173",
+                              "https://localhost:5173",
+                              $"http://{currentIpV4}:5173",
+                              $"https://{currentIpV4}:5173",
+                              "https://scrupleless-aliana-unbreachable.ngrok-free.dev",
+                              "https://scrupleless-aliana-unbreachable.ngrok-free.dev:5173"
+                          )
                           .AllowAnyHeader()
                           .AllowAnyMethod()
                           .AllowCredentials();
@@ -180,7 +207,7 @@ namespace Intervu.API
                 });
 
                 app.UseCors(CorsPolicies.DevCorsPolicy);
-            } 
+            }
             else
             {
                 app.UseCors(CorsPolicies.ProdCorsPolicy);
