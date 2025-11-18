@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
 {
     [DbContext(typeof(IntervuDbContext))]
-    [Migration("20251117171550_ReInitital18Nov")]
+    [Migration("20251118135225_ReInitital18Nov")]
     partial class ReInitital18Nov
     {
         /// <inheritdoc />
@@ -290,6 +290,9 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("InterviewRoomId")
+                        .HasColumnType("int");
+
                     b.Property<int>("InterviewerId")
                         .HasColumnType("int");
 
@@ -300,6 +303,9 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("InterviewRoomId")
+                        .IsUnique();
 
                     b.HasIndex("InterviewerId");
 
@@ -313,6 +319,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                             Id = 1,
                             AIAnalysis = "{}",
                             Comments = "Great answers and communication.",
+                            InterviewRoomId = 1,
                             InterviewerId = 2,
                             Rating = 5,
                             StudentId = 1
@@ -327,11 +334,25 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("CurrentLanguage")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<int?>("DurationMinutes")
                         .HasColumnType("int");
 
                     b.Property<int?>("InterviewerId")
                         .HasColumnType("int");
+
+                    b.Property<string>("LanguageCodes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProblemDescription")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProblemShortName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<DateTime?>("ScheduledTime")
                         .HasColumnType("datetime2");
@@ -341,6 +362,9 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
 
                     b.Property<int?>("StudentId")
                         .HasColumnType("int");
+
+                    b.Property<string>("TestCases")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("VideoCallRoomUrl")
                         .HasMaxLength(1000)
@@ -373,11 +397,9 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Bio")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("CVUrl")
-                        .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
@@ -385,12 +407,10 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("PortfolioUrl")
-                        .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("Skills")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -455,15 +475,10 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("CVUrl")
-                        .IsRequired()
-                        .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
-
-                    b.Property<int>("CurrentAmount")
+                    b.Property<int?>("CurrentAmount")
                         .HasColumnType("int");
 
-                    b.Property<int>("ExperienceYears")
+                    b.Property<int?>("ExperienceYears")
                         .HasColumnType("int");
 
                     b.Property<string>("PortfolioUrl")
@@ -482,7 +497,6 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                         {
                             Id = 2,
                             Bio = "Senior Backend Engineer with real interview experience",
-                            CVUrl = "https://example.com/cv-bob.pdf",
                             CurrentAmount = 0,
                             ExperienceYears = 8,
                             PortfolioUrl = "https://portfolio.example.com/bob",
@@ -492,21 +506,19 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                         {
                             Id = 5,
                             Bio = "Fullstack Engineer previously at Uber",
-                            CVUrl = "https://example.com/cv-john.pdf",
                             CurrentAmount = 0,
                             ExperienceYears = 6,
                             PortfolioUrl = "https://portfolio.example.com/john",
-                            Status = 1
+                            Status = 0
                         },
                         new
                         {
                             Id = 6,
                             Bio = "Senior Frontend Engineer focusing on UI/UX interviews",
-                            CVUrl = "https://example.com/cv-sarah.pdf",
                             CurrentAmount = 0,
                             ExperienceYears = 7,
                             PortfolioUrl = "https://portfolio.example.com/sarah",
-                            Status = 1
+                            Status = 0
                         });
                 });
 
@@ -839,6 +851,12 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
 
             modelBuilder.Entity("Intervu.Domain.Entities.Feedback", b =>
                 {
+                    b.HasOne("Intervu.Domain.Entities.InterviewRoom", null)
+                        .WithOne()
+                        .HasForeignKey("Intervu.Domain.Entities.Feedback", "InterviewRoomId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Intervu.Domain.Entities.InterviewerProfile", null)
                         .WithMany()
                         .HasForeignKey("InterviewerId")
@@ -885,11 +903,13 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
 
             modelBuilder.Entity("Intervu.Domain.Entities.InterviewerProfile", b =>
                 {
-                    b.HasOne("Intervu.Domain.Entities.User", null)
+                    b.HasOne("Intervu.Domain.Entities.User", "User")
                         .WithOne()
                         .HasForeignKey("Intervu.Domain.Entities.InterviewerProfile", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.NotificationReceive", b =>

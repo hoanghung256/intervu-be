@@ -84,6 +84,8 @@ namespace Intervu.Infrastructure
                 string cancelUrl = configuration["PayOS:Payment:CancelEndpoint"]!;
 
                 return new PayOSPaymentService(paymentClient, payoutClient, returnUrl, cancelUrl);
+            });
+
             services.AddScoped<CodeExecutionService>();
 
             //Add HttpClient to call from API
