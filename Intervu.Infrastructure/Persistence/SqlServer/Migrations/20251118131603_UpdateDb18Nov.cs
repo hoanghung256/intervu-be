@@ -144,35 +144,6 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Feedbacks",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    InterviewerId = table.Column<int>(type: "int", nullable: false),
-                    StudentId = table.Column<int>(type: "int", nullable: false),
-                    Rating = table.Column<int>(type: "int", nullable: false),
-                    Comments = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    AIAnalysis = table.Column<string>(type: "nvarchar(max)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Feedbacks", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Feedbacks_IntervieweeProfiles_StudentId",
-                        column: x => x.StudentId,
-                        principalTable: "IntervieweeProfiles",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Feedbacks_InterviewerProfiles_InterviewerId",
-                        column: x => x.InterviewerId,
-                        principalTable: "InterviewerProfiles",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "InterviewerAvailabilities",
                 columns: table => new
                 {
@@ -271,6 +242,42 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_InterviewRooms_InterviewerProfiles_InterviewerId",
+                        column: x => x.InterviewerId,
+                        principalTable: "InterviewerProfiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Feedbacks",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    InterviewerId = table.Column<int>(type: "int", nullable: false),
+                    StudentId = table.Column<int>(type: "int", nullable: false),
+                    InterviewRoomId = table.Column<int>(type: "int", nullable: false),
+                    Rating = table.Column<int>(type: "int", nullable: false),
+                    Comments = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    AIAnalysis = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Feedbacks", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Feedbacks_InterviewRooms_InterviewRoomId",
+                        column: x => x.InterviewRoomId,
+                        principalTable: "InterviewRooms",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Feedbacks_IntervieweeProfiles_StudentId",
+                        column: x => x.StudentId,
+                        principalTable: "IntervieweeProfiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Feedbacks_InterviewerProfiles_InterviewerId",
                         column: x => x.InterviewerId,
                         principalTable: "InterviewerProfiles",
                         principalColumn: "Id",
@@ -391,11 +398,6 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                 values: new object[] { 1, 1 });
 
             migrationBuilder.InsertData(
-                table: "Feedbacks",
-                columns: new[] { "Id", "AIAnalysis", "Comments", "InterviewerId", "Rating", "StudentId" },
-                values: new object[] { 1, "{}", "Great answers and communication.", 2, 5, 1 });
-
-            migrationBuilder.InsertData(
                 table: "InterviewRooms",
                 columns: new[] { "Id", "CurrentLanguage", "DurationMinutes", "InterviewerId", "LanguageCodes", "ProblemDescription", "ProblemShortName", "ScheduledTime", "Status", "StudentId", "TestCases", "VideoCallRoomUrl" },
                 values: new object[,]
@@ -447,6 +449,11 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                 });
 
             migrationBuilder.InsertData(
+                table: "Feedbacks",
+                columns: new[] { "Id", "AIAnalysis", "Comments", "InterviewRoomId", "InterviewerId", "Rating", "StudentId" },
+                values: new object[] { 1, "{}", "Great answers and communication.", 1, 2, 5, 1 });
+
+            migrationBuilder.InsertData(
                 table: "Payments",
                 columns: new[] { "Id", "Amount", "InterviewRoomId", "IntervieweeId", "InterviewerId", "PaymentMethod", "Status", "TransactionDate" },
                 values: new object[] { 1, 50.00m, 1, 1, 2, "Card", 0, new DateTime(2025, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified) });
@@ -455,6 +462,12 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                 name: "IX_Feedbacks_InterviewerId",
                 table: "Feedbacks",
                 column: "InterviewerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Feedbacks_InterviewRoomId",
+                table: "Feedbacks",
+                column: "InterviewRoomId",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Feedbacks_StudentId",

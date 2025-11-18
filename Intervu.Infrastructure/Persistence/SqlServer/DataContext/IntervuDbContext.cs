@@ -185,6 +185,13 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 b.Property(x => x.Comments).HasColumnType("nvarchar(max)");
                 b.Property(x => x.AIAnalysis).HasColumnType("nvarchar(max)");
 
+                b.Property<int>("InterviewRoomId").IsRequired();
+
+                b.HasOne<InterviewRoom>()
+                 .WithOne()
+                 .HasForeignKey<Feedback>("InterviewRoomId")
+                 .OnDelete(DeleteBehavior.Restrict);
+
                 b.HasOne<InterviewerProfile>()
                  .WithMany()
                  .HasForeignKey(x => x.InterviewerId)
@@ -434,6 +441,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 Id = 1,
                 InterviewerId = 2,
                 StudentId = 1,
+                InterviewRoomId = 1,
                 Rating = 5,
                 Comments = "Great answers and communication.",
                 AIAnalysis = "{}"

@@ -1,4 +1,7 @@
-﻿using Intervu.Application.Interfaces.UseCases.InterviewRoom;
+﻿using Intervu.Application.DTOs.Feedback;
+using Intervu.Application.Interfaces.UseCases.Feedbacks;
+using Intervu.Application.Interfaces.UseCases.InterviewRoom;
+using Intervu.Domain.Entities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
@@ -24,7 +27,7 @@ namespace Intervu.Application.Services
             ProblemDescription = string.Empty;
             LanguageCodes = new Dictionary<string, string>();
             ProblemShortName = string.Empty;
-            TestCases = new object[0];
+            TestCases = Array.Empty<object>();
         }
     }
 
@@ -79,10 +82,13 @@ namespace Intervu.Application.Services
 
                 var getCurrentRoom = scope.ServiceProvider.GetRequiredService<IGetCurrentRoom>();
                 var updateRoom = scope.ServiceProvider.GetRequiredService<IUpdateRoom>();
+                var getFeedbacks = scope.ServiceProvider.GetRequiredService<IGetFeedbacks>();
+                var createFeedback = scope.ServiceProvider.GetRequiredService<ICreateFeedback>();
                 _roomStates.TryGetValue(roomId, out var roomState);
 
                 if (roomState != null)
                 {
+                    //Save room progress
                     var room = await getCurrentRoom.ExecuteAsync(int.Parse(roomId));
                     if (room != null)
                     {
@@ -92,6 +98,26 @@ namespace Intervu.Application.Services
                         room.ProblemShortName = roomState.ProblemShortName;
                         room.TestCases = roomState.TestCases;
                         await updateRoom.ExecuteAsync(room);
+                    }
+                    //Create feedback
+                    GetFeedbackRequest request = new GetFeedbackRequest
+                    {
+                        StudentId = room.StudentId.Value,
+                    };
+                    var feedbacks = await getFeedbacks.ExecuteAsync(request);
+                    var filterFeedbacks = feedbacks.Items.Where(f => f.InterviewerId == room.InterviewerId.Value).ToList();
+                    if (filterFeedbacks.Count == 0)
+                    {
+                        Feedback feedback = new Feedback
+                        {
+                            InterviewerId = room.InterviewerId.Value,
+                            StudentId = room.StudentId.Value,
+                            InterviewRoomId = room.Id,
+                            Rating = 0,
+                            Comments = "",
+                            AIAnalysis = ""
+                        };
+                        await createFeedback.ExecuteAsync(feedback);
                     }
                 }
                 if (_roomStates.TryRemove(roomId, out RoomState _))
