@@ -82,8 +82,8 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             if (availability == null)
                 return false;
 
-            availability.StartTime = dto.StartTime;
-            availability.EndTime = dto.EndTime;
+            availability.StartTime = dto.StartTime.UtcDateTime;
+            availability.EndTime = dto.EndTime.UtcDateTime;
 
             _dbContext.InterviewerAvailabilities.Update(availability);
             await _dbContext.SaveChangesAsync();

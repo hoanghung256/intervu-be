@@ -29,8 +29,15 @@ namespace Intervu.Application.UseCases.Availability
             if (dto.EndTime <= dto.StartTime)
                 throw new ArgumentException("EndTime must be greater than StartTime");
 
-            // prevent updating to the past
-            if (dto.EndTime <= DateTime.UtcNow)
+            // Validate times are on the hour (minute = 0)
+            if (dto.StartTime.Minute != 0 || dto.StartTime.Second != 0)
+                throw new ArgumentException("Start time must be on the hour (e.g., 09:00, 14:00)");
+            if (dto.EndTime.Minute != 0 || dto.EndTime.Second != 0)
+                throw new ArgumentException("End time must be on the hour (e.g., 09:00, 14:00)");
+
+            // Prevent updating to the past - proper UTC comparison with DateTimeOffset
+            var utcNow = DateTimeOffset.UtcNow;
+            if (dto.EndTime <= utcNow)
                 throw new ArgumentException("Cannot update availability to a time in the past");
 
             var updated = await _repo.UpdateInterviewerAvailabilityAsync(availabilityId, dto);
