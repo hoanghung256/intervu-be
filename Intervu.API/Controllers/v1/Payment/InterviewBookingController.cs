@@ -107,24 +107,24 @@ namespace Intervu.API.Controllers.v1.Payment
                     int roomId = await _createInterviewRoom.ExecuteAsync(intervieweeId, interviewerId, avai.StartTime);
 
                     // Get full details for email
-                    var interviewer = await _getInterviewerDetails.ExecuteAsync(interviewerId);
-                    var interviewee = await _getIntervieweeDetails.ExecuteAsync(intervieweeId);
+                    //var interviewer = await _getInterviewerDetails.ExecuteAsync(interviewerId);
+                    //var interviewee = await _getIntervieweeDetails.ExecuteAsync(intervieweeId);
 
-                    var mailDto = new SendBookingConfirmationEmailDto
-                    {
-                        To = interviewee.Email,
-                        CandidateName = interviewee.FullName,
-                        InterviewerName = interviewer.FullName,
-                        InterviewDate = avai.StartTime.Date,
-                        InterviewTime = avai.StartTime.ToString("HH:mm") + " UTC",
-                        Position = "Software Engineer",
-                        Duration = (int)(avai.EndTime - avai.StartTime).TotalMinutes,
-                        BookingID = "BK-" + DateTime.UtcNow.ToString("yyyyMMdd") + "-" + transaction.Id.ToString("D6"),
-                        JoinLink = $"https://intervu.com/room/{roomId}",
-                        RescheduleLink = $"https://intervu.com/booking/{transaction.Id}/reschedule"
-                    };
+                    //var mailDto = new SendBookingConfirmationEmailDto
+                    //{
+                    //    To = interviewee.Email,
+                    //    CandidateName = interviewee.FullName,
+                    //    InterviewerName = interviewer.FullName,
+                    //    InterviewDate = avai.StartTime.Date,
+                    //    InterviewTime = avai.StartTime.ToString("HH:mm") + " UTC",
+                    //    Position = "Software Engineer",
+                    //    Duration = (int)(avai.EndTime - avai.StartTime).TotalMinutes,
+                    //    BookingID = "BK-" + DateTime.UtcNow.ToString("yyyyMMdd") + "-" + transaction.Id.ToString("D6"),
+                    //    JoinLink = $"https://intervu.com/room/{roomId}",
+                    //    RescheduleLink = $"https://intervu.com/booking/{transaction.Id}/reschedule"
+                    //};
 
-                    await _sendBookingConfirmationEmail.ExecuteAsync(mailDto);
+                    //await _sendBookingConfirmationEmail.ExecuteAsync(mailDto);
                 }
                 return Ok();
             } catch (Exception ex)
