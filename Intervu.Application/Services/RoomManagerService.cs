@@ -140,5 +140,31 @@ namespace Intervu.Application.Services
             _roomTimers[roomId] = timer;
             _logger.LogInformation("Room '{RoomId}' is empty. Scheduled for cleanup in {ExpiryValue} {ExpiryUnit}.", roomId, value, unit);
         }
+
+        private readonly Dictionary<int, InterviewRoom> _rooms = new();
+
+        public IReadOnlyCollection<InterviewRoom> Rooms => _rooms.Values;
+
+        public void SetAll(IEnumerable<InterviewRoom> rooms)
+        {
+            _rooms.Clear();
+            foreach (var room in rooms)
+                _rooms[room.Id] = room;
+        }
+
+        public void Add(InterviewRoom room)
+        {
+            _rooms[room.Id] = room;
+        }
+
+        public void Update(InterviewRoom room)
+        {
+            _rooms[room.Id] = room;
+        }
+
+        public void Remove(int id)
+        {
+            _rooms.Remove(id);
+        }
     }
 }

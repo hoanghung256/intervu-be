@@ -24,5 +24,10 @@ namespace Intervu.Application.UseCases.InterviewRoom
                 return await _repo.GetListByInterviewerId(userId);
             }
         }
+
+        public async Task<IEnumerable<Domain.Entities.InterviewRoom>> ExecuteAsync()
+        {
+            return await _repo.GetList();
+        }
     }
 }

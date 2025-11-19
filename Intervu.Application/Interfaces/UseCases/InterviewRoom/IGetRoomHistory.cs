@@ -5,5 +5,6 @@ namespace Intervu.Application.Interfaces.UseCases.InterviewRoom
     public interface IGetRoomHistory
     {
         Task<IEnumerable<Domain.Entities.InterviewRoom>> ExecuteAsync(UserRole role, int userId);
+        Task<IEnumerable<Domain.Entities.InterviewRoom>> ExecuteAsync();
     }
 }
