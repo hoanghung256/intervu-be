@@ -518,6 +518,14 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                     b.Property<int>("Id")
                         .HasColumnType("int");
 
+                    b.Property<string>("BankAccountNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BankBinNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Bio")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -543,6 +551,8 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                         new
                         {
                             Id = 2,
+                            BankAccountNumber = "",
+                            BankBinNumber = "",
                             Bio = "Senior Backend Engineer with real interview experience",
                             CurrentAmount = 0,
                             ExperienceYears = 8,
@@ -552,6 +562,8 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                         new
                         {
                             Id = 5,
+                            BankAccountNumber = "",
+                            BankBinNumber = "",
                             Bio = "Fullstack Engineer previously at Uber",
                             CurrentAmount = 0,
                             ExperienceYears = 6,
@@ -561,6 +573,8 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                         new
                         {
                             Id = 6,
+                            BankAccountNumber = "",
+                            BankBinNumber = "",
                             Bio = "Senior Frontend Engineer focusing on UI/UX interviews",
                             CurrentAmount = 0,
                             ExperienceYears = 7,

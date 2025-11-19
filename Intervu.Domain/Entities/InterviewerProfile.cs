@@ -21,6 +21,10 @@ namespace Intervu.Domain.Entities
 
         public string Bio { get; set; } = string.Empty;
 
+        public string BankBinNumber { get; set; } = string.Empty;
+
+        public string BankAccountNumber { get; set; } = string.Empty;
+
         public InterviewerProfileStatus Status { get; set; }
 
         

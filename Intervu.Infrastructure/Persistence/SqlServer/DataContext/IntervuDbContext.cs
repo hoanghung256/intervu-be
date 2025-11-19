@@ -84,6 +84,8 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 b.Property(x => x.PortfolioUrl).HasMaxLength(4000);
                 b.Property(x => x.Bio).HasColumnType("nvarchar(max)");
                 b.Property(x => x.CurrentAmount);
+                b.Property(x => x.BankBinNumber);
+                b.Property(x => x.BankAccountNumber);
                 b.Property(x => x.ExperienceYears);
                 b.Property(x => x.Status).IsRequired();
 
