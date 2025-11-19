@@ -41,23 +41,37 @@ namespace Intervu.Infrastructure
 
         public static IServiceCollection AddInfrastructureExternalServices(this IServiceCollection services, IConfiguration configuration)
         {
+            var firebaseSection = configuration.GetSection("Firebase");
+            var bucketName = firebaseSection["StorageBucket"];
+            var credentialPath = firebaseSection["CredentialPath"];
             // Temporarily disable Firebase until credentials are configured
             //var firebaseSection = configuration.GetSection("Firebase");
             //var bucketName = firebaseSection["StorageBucket"];
             //var credentialPath = firebaseSection["CredentialPath"];
 
-            //if (string.IsNullOrEmpty(credentialPath))
-            //    throw new Exception("Firebase CredentialJson is missing in secrets.json");
+            if (string.IsNullOrEmpty(credentialPath))
+                throw new Exception("Firebase CredentialJson is missing in secrets.json");
 
-            //var credential = GoogleCredential.FromJson(credentialPath);
+            var credential = GoogleCredential.FromJson(credentialPath);
 
-            //if (FirebaseApp.DefaultInstance == null)
-            //{
-            //    FirebaseApp.Create(new AppOptions
-            //    {
-            //        Credential = credential
-            //    });
-            //}
+            if (FirebaseApp.DefaultInstance == null)
+            {
+                FirebaseApp.Create(new AppOptions
+                {
+                    Credential = credential
+                });
+            }
+
+            services.AddSingleton(StorageClient.Create(credential));
+
+            services.AddSingleton<string>(sp => bucketName);
+
+            services.AddTransient<IFileService>(sp =>
+            {
+                var storageClient = sp.GetRequiredService<StorageClient>();
+                var bucket = sp.GetRequiredService<string>();
+                return new FirebaseStorageService(storageClient, bucket);
+            });
 
             //services.AddSingleton(StorageClient.Create(credential));
             //services.AddSingleton(bucketName);

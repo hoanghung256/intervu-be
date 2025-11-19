@@ -34,23 +34,31 @@ namespace Intervu.Infrastructure.ExternalServices.FirebaseStorageService
         {
             try
             {
-                fileName = $"{Guid.NewGuid()}{Path.GetExtension(fileName)}";
-                var objectName = $"{FolderName}/{fileName}";
+                var objectName = $"{FolderName}/{Guid.NewGuid()}{Path.GetExtension(fileName)}";
 
-                await _storage.UploadObjectAsync(new Google.Apis.Storage.v1.Data.Object
+                var downloadToken = Guid.NewGuid().ToString();
+
+                var storageObject = new Google.Apis.Storage.v1.Data.Object
                 {
                     Bucket = _bucketName,
-                    Name = objectName
-                }, stream);
+                    Name = objectName,
+                    ContentType = "image/png",
+                    Metadata = new Dictionary<string, string>
+            {
+                { "firebaseStorageDownloadTokens", downloadToken }
+            }
+                };
 
-                var url = $"https://storage.googleapis.com/{_bucketName}/{objectName}";
-                Console.WriteLine($"Bucket: {_bucketName}");
-                return objectName;
+                await _storage.UploadObjectAsync(storageObject, stream);
+
+                return $"{objectName}|{downloadToken}";
             }
             catch (Exception ex)
             {
-                throw new Exception($"Error deleting file: {ex.Message}", ex);
+                throw new Exception($"Error uploading file: {ex.Message}", ex);
             }
         }
+
+
     }
 }
