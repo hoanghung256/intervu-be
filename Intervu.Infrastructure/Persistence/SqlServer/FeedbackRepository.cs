@@ -50,5 +50,12 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             UpdateAsync(updatedFeedback);
             await SaveChangesAsync();
         }
+
+        public async Task<List<Feedback>> GetFeedbacksByInterviewRoomIdAsync(int interviewRoomId)
+        {
+            return await _context.Feedbacks
+                .Where(f => f.InterviewRoomId == interviewRoomId)
+                .ToListAsync();
+        }
     }
 }
