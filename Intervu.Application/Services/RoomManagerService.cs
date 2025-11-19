@@ -36,13 +36,22 @@ namespace Intervu.Application.Services
         private readonly ILogger<RoomManagerService> _logger;
         private readonly ConcurrentDictionary<string, RoomState> _roomStates = new();
         private readonly ConcurrentDictionary<string, Timer> _roomTimers = new();
-        private readonly TimeSpan _roomExpiryTime = TimeSpan.FromMinutes(1);
+        private readonly TimeSpan _roomExpiryTime = TimeSpan.FromSeconds(30);
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly double value;
+        private readonly string unit;
 
         public RoomManagerService(IServiceScopeFactory scopeFactory, ILogger<RoomManagerService> logger)
         {
             _scopeFactory = scopeFactory;
             _logger = logger;
+            (value, unit) = _roomExpiryTime switch
+            {
+                { Seconds: > 0 } when _roomExpiryTime.Seconds == _roomExpiryTime.TotalSeconds => (_roomExpiryTime.TotalSeconds, "seconds"),
+                { Minutes: > 0 } when _roomExpiryTime.Minutes == _roomExpiryTime.TotalMinutes => (_roomExpiryTime.TotalMinutes, "minutes"),
+                { Hours: > 0 } when _roomExpiryTime.Hours == _roomExpiryTime.TotalHours => (_roomExpiryTime.TotalHours, "hours"),
+                _ => (_roomExpiryTime.TotalSeconds, "seconds")
+            };
         }
 
         // Gets the state for a room, creating it if it doesn't exist.
@@ -105,7 +114,7 @@ namespace Intervu.Application.Services
                         StudentId = room.StudentId.Value,
                     };
                     var feedbacks = await getFeedbacks.ExecuteAsync(request);
-                    var filterFeedbacks = feedbacks.Items.Where(f => f.InterviewerId == room.InterviewerId.Value).ToList();
+                    var filterFeedbacks = feedbacks.Items.Where(f => f.InterviewRoomId == room.Id).ToList();
                     if (filterFeedbacks.Count == 0)
                     {
                         Feedback feedback = new Feedback
@@ -122,14 +131,40 @@ namespace Intervu.Application.Services
                 }
                 if (_roomStates.TryRemove(roomId, out RoomState _))
                 {
-                    _logger.LogInformation("Room '{RoomId}' has been inactive for {ExpiryTime} minutes and its state has been cleared.", roomId, _roomExpiryTime.Minutes);
+                    _logger.LogInformation("Room '{RoomId}' has been inactive for {ExpiryValue} {ExpiryUnit} and its state has been cleared.", roomId, value, unit);
                 }
                 _roomTimers.TryRemove(roomId, out var removedTimer);
                 removedTimer?.Dispose();
             }, null, _roomExpiryTime, Timeout.InfiniteTimeSpan);
 
             _roomTimers[roomId] = timer;
-            _logger.LogInformation("Room '{RoomId}' is empty. Scheduled for cleanup in {ExpiryTime} minutes.", roomId, _roomExpiryTime.Minutes);
+            _logger.LogInformation("Room '{RoomId}' is empty. Scheduled for cleanup in {ExpiryValue} {ExpiryUnit}.", roomId, value, unit);
+        }
+
+        private readonly Dictionary<int, InterviewRoom> _rooms = new();
+
+        public IReadOnlyCollection<InterviewRoom> Rooms => _rooms.Values;
+
+        public void SetAll(IEnumerable<InterviewRoom> rooms)
+        {
+            _rooms.Clear();
+            foreach (var room in rooms)
+                _rooms[room.Id] = room;
+        }
+
+        public void Add(InterviewRoom room)
+        {
+            _rooms[room.Id] = room;
+        }
+
+        public void Update(InterviewRoom room)
+        {
+            _rooms[room.Id] = room;
+        }
+
+        public void Remove(int id)
+        {
+            _rooms.Remove(id);
         }
     }
 }

@@ -17,11 +17,12 @@ using Intervu.Application.Interfaces.UseCases.Availability;
 using Intervu.Application.UseCases.Availability;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Services.CodeGeneration;
-using Intervu.Application.Interfaces.UseCases.InterviewRoom.InterviewRoom;
 using Intervu.Application.Interfaces.UseCases.Feedbacks;
 using Intervu.Application.UseCases.Feedbacks;
 using Intervu.Application.Interfaces.UseCases.UserProfile;
 using Intervu.Application.UseCases.UserProfile;
+using Intervu.Application.Interfaces.UseCases.InterviewBooking;
+using Intervu.Application.UseCases.InterviewBooking;
 
 namespace Intervu.Application
 {
@@ -59,15 +60,24 @@ namespace Intervu.Application
             services.AddScoped<IGetFeedbacks, GetFeedbacks>();
             services.AddScoped<ICreateFeedback, CreateFeedback>();
             services.AddScoped<IUpdateFeedback, UpdateFeedback>();
+
+            // ----- Available ----
             services.AddScoped<IGetInterviewerAvailabilities, GetInterviewerAvailabilities>();
             services.AddScoped<ICreateInterviewerAvailability, CreateInterviewerAvailability>();
             services.AddScoped<IDeleteInterviewerAvailability, DeleteInterviewerAvailability>();
             services.AddScoped<IUpdateInterviewerAvailability, UpdateInterviewerAvailability>();
+          
             // ----- UserProfile ----
             services.AddScoped<IGetUserProfile, GetUserProfile>();
             services.AddScoped<IUpdateUserProfile, UpdateUserProfile>();
             services.AddScoped<IChangePassword, ChangePassword>();
             services.AddScoped<IUpdateProfilePicture, UpdateProfilePicture>();
+            services.AddScoped<IUpdateAvailabilityStatus, UpdateAvailabilityStatus>();
+
+            // ----- Interview Booking ---
+            services.AddScoped<ICreateBookingCheckoutUrl, CreateBookingCheckoutUrl>();
+            services.AddScoped<IUpdateBookingStatus, UpdateBookingStatus>();
+            services.AddScoped<IGetInterviewBooking, GetInterviewBooking>();
 
             return services;
         }

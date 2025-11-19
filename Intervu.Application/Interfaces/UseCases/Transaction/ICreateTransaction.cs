@@ -4,6 +4,6 @@ namespace Intervu.Application.Interfaces.UseCases.Transaction
 {
     public interface ICreateTransaction
     {
-        Task ExecuteAsync(int userId, int payosOrderCode, int amount, TransactionType type);
+        Task ExecuteAsync(int userId, int avaiability, int amount, TransactionType type);
     }
 }

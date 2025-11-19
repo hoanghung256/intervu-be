@@ -46,7 +46,7 @@ namespace Intervu.API.Controllers.v1
         {
             int roomId = createRoomDto.interviewerId == null 
                 ? await _createRoom.ExecuteAsync(createRoomDto.intervieweeId) 
-                : await _createRoom.ExecuteAsync(createRoomDto.intervieweeId, createRoomDto.interviewerId);
+                : await _createRoom.ExecuteAsync(createRoomDto.intervieweeId, createRoomDto.interviewerId, DateTime.Now.AddDays(1));
 
             return Ok(new
             {

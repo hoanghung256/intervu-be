@@ -31,6 +31,7 @@ namespace Intervu.Infrastructure
             services.AddScoped<ISkillRepository, SkillRepository>();
             services.AddScoped<IFeedbackRepository, FeedbackRepository>();
             services.AddScoped<IInterviewerAvailabilitiesRepository, InterviewerAvailabilitiesRepository>();
+            services.AddScoped<ITransactionRepository, TransactionRepository>();
 
             return services;
         }
@@ -105,6 +106,9 @@ namespace Intervu.Infrastructure
 
                 client.BaseAddress = new Uri(baseUrl);
             });
+
+            services.AddHostedService<InterviewRoomCache>();
+            services.AddHostedService<InterviewMonitorService>();
 
             return services;
         }

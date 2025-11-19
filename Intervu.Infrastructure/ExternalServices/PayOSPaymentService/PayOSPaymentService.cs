@@ -1,12 +1,13 @@
 ﻿using Intervu.Application.Interfaces.ExternalServices;
 using PayOS.Models.V1.Payouts;
 using PayOS.Models.V2.PaymentRequests;
+using PayOS.Models.Webhooks;
 
 namespace Intervu.Infrastructure.ExternalServices.PayOSPaymentService
 {
     public class PayOSPaymentService : IPaymentService
     {
-        private readonly PaymentClient _paymentClient;
+        public readonly PaymentClient _paymentClient;
         private readonly PayoutClient _payoutClient;
         private readonly string _returnUrl;
         private readonly string _cancelUrl;
@@ -19,15 +20,15 @@ namespace Intervu.Infrastructure.ExternalServices.PayOSPaymentService
             _cancelUrl = cancelUrl;
         }
 
-        public async Task<string> CreatePaymentOrderAsync(int? orderCode, int ammount, string description)
+        public async Task<string> CreatePaymentOrderAsync(int? orderCode, int ammount, string description, string returnUrl)
         {
             var paymentRequest = new CreatePaymentLinkRequest
             {
                 OrderCode = orderCode ?? CreateOrderCode(),
                 Amount = ammount,
                 Description = description,
-                ReturnUrl = _returnUrl,
-                CancelUrl = _cancelUrl,
+                ReturnUrl = returnUrl,
+                CancelUrl = returnUrl,
                 ExpiredAt = DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeSeconds()
             };
 
@@ -50,21 +51,25 @@ namespace Intervu.Infrastructure.ExternalServices.PayOSPaymentService
             return true;
         }
 
-        //public Task<bool> VerifyPaymentAsync(PayOSWebhookPayload payload)
-        //{
-        //    int orderCode = payload.Data!.OrderCode;
-        //    string status = payload.Data!.Status!;
+        public bool VerifyPaymentAsync(object payload)
+        {
+            if (payload is not Webhook payloadCasting) return false;
 
-        //    Console.WriteLine($"order Code {orderCode} {status}");
+            //WebhookData webhookData = await _paymentClient.Client.Webhooks.VerifyAsync(payloadCasting);
 
-        //    bool isSuccess = status.Equals("paid", StringComparison.OrdinalIgnoreCase);
+            string? calculated = _paymentClient.Client.Crypto.CreateSignatureFromObject(payloadCasting.Data, _paymentClient.Client.ChecksumKey);
 
-        //    return Task.FromResult(isSuccess);
-        //}
+            if (!string.IsNullOrEmpty(calculated) && !string.IsNullOrEmpty(payloadCasting.Signature))
+            {
+                return true;
+            }
+
+            return false;
+        }
 
         public async Task RegisterWebhooks()
         {
-            await _paymentClient.Client.Webhooks.ConfirmAsync("https://pn3tc7bj-7118.asse.devtunnels.ms/weatherforecast/payos-webhook-test");
+            await _paymentClient.Client.Webhooks.ConfirmAsync("https://pn3tc7bj-7118.asse.devtunnels.ms/api/v1/interview-booking/webhook");
         }
 
         private int CreateOrderCode()

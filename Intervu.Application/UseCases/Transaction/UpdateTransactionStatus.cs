@@ -15,7 +15,7 @@ namespace Intervu.Application.UseCases.Transaction
 
         public async Task<bool> ExecuteAsync(int payosOrderCode, TransactionStatus status)
         {
-            Domain.Entities.Transaction? t = await _transactionRepository.GetByPayOSOrderCode(payosOrderCode);
+            Domain.Entities.InterviewBookingTransaction? t = await _transactionRepository.GetByAvailabilityId(payosOrderCode);
 
             if (t == null) return false;
 
