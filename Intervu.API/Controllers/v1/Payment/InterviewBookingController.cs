@@ -15,6 +15,7 @@ using Intervu.Application.Interfaces.UseCases.Interviewee;
 using Microsoft.AspNetCore.Mvc;
 using PayOS.Models.Webhooks;
 using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace Intervu.API.Controllers.v1.Payment
 {
@@ -56,7 +57,7 @@ namespace Intervu.API.Controllers.v1.Payment
         }
 
         [HttpPost]
-        [Authorize(Policy = AuthorizationPolicies.Interviewee)]
+        [Authorize]
         public async Task<IActionResult> CreatePaymentUrl([FromBody] InterviewBookingRequest request)
         {
             try
