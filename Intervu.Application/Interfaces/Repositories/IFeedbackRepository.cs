@@ -14,6 +14,7 @@ namespace Intervu.Application.Interfaces.Repositories
     {
         Task<PagedResult<Feedback>> GetFeedbacksByStudentIdAsync(GetFeedbackRequest request);
         Task<Feedback?> GetFeedbackByIdAsync(int id);
+        Task<List<Feedback>> GetFeedbacksByInterviewRoomIdAsync(int interviewRoomId);
         Task CreateFeedbackAsync(Feedback feedback);
         Task UpdateFeedbackAsync(Feedback updatedFeedback);
     }
