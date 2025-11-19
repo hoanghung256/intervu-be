@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
 {
     /// <inheritdoc />
-    public partial class UpdateDb18Nov : Migration
+    public partial class ResetDB19Nov : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -73,6 +73,29 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Users", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "InterviewBookingTransaction",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    InterviewerAvailabilityId = table.Column<int>(type: "int", nullable: false),
+                    Amount = table.Column<int>(type: "int", nullable: false),
+                    Type = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_InterviewBookingTransaction", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_InterviewBookingTransaction_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -141,35 +164,6 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Feedbacks",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    InterviewerId = table.Column<int>(type: "int", nullable: false),
-                    StudentId = table.Column<int>(type: "int", nullable: false),
-                    Rating = table.Column<int>(type: "int", nullable: false),
-                    Comments = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    AIAnalysis = table.Column<string>(type: "nvarchar(max)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Feedbacks", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Feedbacks_IntervieweeProfiles_StudentId",
-                        column: x => x.StudentId,
-                        principalTable: "IntervieweeProfiles",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Feedbacks_InterviewerProfiles_InterviewerId",
-                        column: x => x.InterviewerId,
-                        principalTable: "InterviewerProfiles",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -278,36 +272,35 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Payments",
+                name: "Feedbacks",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    InterviewRoomId = table.Column<int>(type: "int", nullable: false),
-                    IntervieweeId = table.Column<int>(type: "int", nullable: false),
                     InterviewerId = table.Column<int>(type: "int", nullable: false),
-                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    PaymentMethod = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    TransactionDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Status = table.Column<int>(type: "int", nullable: false)
+                    StudentId = table.Column<int>(type: "int", nullable: false),
+                    InterviewRoomId = table.Column<int>(type: "int", nullable: false),
+                    Rating = table.Column<int>(type: "int", nullable: false),
+                    Comments = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    AIAnalysis = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Payments", x => x.Id);
+                    table.PrimaryKey("PK_Feedbacks", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Payments_InterviewRooms_InterviewRoomId",
+                        name: "FK_Feedbacks_InterviewRooms_InterviewRoomId",
                         column: x => x.InterviewRoomId,
                         principalTable: "InterviewRooms",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_Payments_IntervieweeProfiles_IntervieweeId",
-                        column: x => x.IntervieweeId,
+                        name: "FK_Feedbacks_IntervieweeProfiles_StudentId",
+                        column: x => x.StudentId,
                         principalTable: "IntervieweeProfiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_Payments_InterviewerProfiles_InterviewerId",
+                        name: "FK_Feedbacks_InterviewerProfiles_InterviewerId",
                         column: x => x.InterviewerId,
                         principalTable: "InterviewerProfiles",
                         principalColumn: "Id",
@@ -371,6 +364,15 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                 });
 
             migrationBuilder.InsertData(
+                table: "InterviewBookingTransaction",
+                columns: new[] { "Id", "Amount", "InterviewerAvailabilityId", "Status", "Type", "UserId" },
+                values: new object[,]
+                {
+                    { 1, 1000, 1, 1, 0, 1 },
+                    { 2, 500, 1, 1, 1, 2 }
+                });
+
+            migrationBuilder.InsertData(
                 table: "IntervieweeProfiles",
                 columns: new[] { "Id", "Bio", "CVUrl", "CurrentAmount", "PortfolioUrl", "Skills" },
                 values: new object[] { 1, "Aspiring backend developer.", "https://example.com/cv-alice.pdf", 0, "https://portfolio.example.com/alice", "[C#, SQL]" });
@@ -391,18 +393,9 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                 values: new object[] { 1, 1 });
 
             migrationBuilder.InsertData(
-                table: "Feedbacks",
-                columns: new[] { "Id", "AIAnalysis", "Comments", "InterviewerId", "Rating", "StudentId" },
-                values: new object[] { 1, "{}", "Great answers and communication.", 2, 5, 1 });
-
-            migrationBuilder.InsertData(
                 table: "InterviewRooms",
                 columns: new[] { "Id", "CurrentLanguage", "DurationMinutes", "InterviewerId", "LanguageCodes", "ProblemDescription", "ProblemShortName", "ScheduledTime", "Status", "StudentId", "TestCases", "VideoCallRoomUrl" },
-                values: new object[,]
-                {
-                    { 1, null, 60, 2, null, null, null, new DateTime(2025, 11, 1, 9, 0, 0, 0, DateTimeKind.Unspecified), 0, 1, null, "https://meet.example/room1" },
-                    { 2, "java", 60, 2, "{\"java\":\"\"}", "Given an array of integers, return indices of the two numbers that add up to a target.", "TwoSum", new DateTime(2025, 12, 5, 14, 30, 0, 0, DateTimeKind.Unspecified), 0, 1, "[{\"inputs\":[{\"name\":\"nums\",\"value\":\"[2,7,11,15]\"},{\"name\":\"target\",\"value\":\"9\"}],\"expectedOutputs\":[\"[0,1]\"]},{\"inputs\":[{\"name\":\"nums\",\"value\":\"[3,2,4]\"},{\"name\":\"target\",\"value\":\"6\"}],\"expectedOutputs\":[\"[1,2]\"]}]", "https://meet.example.com/room2" }
-                });
+                values: new object[] { 1, null, 60, 2, null, null, null, new DateTime(2025, 11, 1, 9, 0, 0, 0, DateTimeKind.Unspecified), 0, 1, null, "https://meet.example/room1" });
 
             migrationBuilder.InsertData(
                 table: "InterviewerAvailabilities",
@@ -447,9 +440,9 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                 });
 
             migrationBuilder.InsertData(
-                table: "Payments",
-                columns: new[] { "Id", "Amount", "InterviewRoomId", "IntervieweeId", "InterviewerId", "PaymentMethod", "Status", "TransactionDate" },
-                values: new object[] { 1, 50.00m, 1, 1, 2, "Card", 0, new DateTime(2025, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified) });
+                table: "Feedbacks",
+                columns: new[] { "Id", "AIAnalysis", "Comments", "InterviewRoomId", "InterviewerId", "Rating", "StudentId" },
+                values: new object[] { 1, "{}", "Great answers and communication.", 1, 2, 5, 1 });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Feedbacks_InterviewerId",
@@ -457,9 +450,20 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                 column: "InterviewerId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Feedbacks_InterviewRoomId",
+                table: "Feedbacks",
+                column: "InterviewRoomId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Feedbacks_StudentId",
                 table: "Feedbacks",
                 column: "StudentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InterviewBookingTransaction_UserId",
+                table: "InterviewBookingTransaction",
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_InterviewerAvailabilities_InterviewerId",
@@ -492,21 +496,6 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                 column: "ReceiverId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Payments_IntervieweeId",
-                table: "Payments",
-                column: "IntervieweeId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Payments_InterviewerId",
-                table: "Payments",
-                column: "InterviewerId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Payments_InterviewRoomId",
-                table: "Payments",
-                column: "InterviewRoomId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Users_Email",
                 table: "Users",
                 column: "Email",
@@ -518,6 +507,9 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
         {
             migrationBuilder.DropTable(
                 name: "Feedbacks");
+
+            migrationBuilder.DropTable(
+                name: "InterviewBookingTransaction");
 
             migrationBuilder.DropTable(
                 name: "InterviewerAvailabilities");
@@ -532,7 +524,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                 name: "NotificationReceives");
 
             migrationBuilder.DropTable(
-                name: "Payments");
+                name: "InterviewRooms");
 
             migrationBuilder.DropTable(
                 name: "Companies");
@@ -542,9 +534,6 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
 
             migrationBuilder.DropTable(
                 name: "Notifications");
-
-            migrationBuilder.DropTable(
-                name: "InterviewRooms");
 
             migrationBuilder.DropTable(
                 name: "IntervieweeProfiles");

@@ -12,6 +12,8 @@ namespace Intervu.Domain.Entities
 
         public int StudentId { get; set; }
 
+        public int InterviewRoomId { get; set; }
+
         public int Rating { get; set; }
 
         public string Comments { get; set; }

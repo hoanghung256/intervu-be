@@ -287,6 +287,9 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("InterviewRoomId")
+                        .HasColumnType("int");
+
                     b.Property<int>("InterviewerId")
                         .HasColumnType("int");
 
@@ -297,6 +300,9 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("InterviewRoomId")
+                        .IsUnique();
 
                     b.HasIndex("InterviewerId");
 
@@ -310,9 +316,60 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                             Id = 1,
                             AIAnalysis = "{}",
                             Comments = "Great answers and communication.",
+                            InterviewRoomId = 1,
                             InterviewerId = 2,
                             Rating = 5,
                             StudentId = 1
+                        });
+                });
+
+            modelBuilder.Entity("Intervu.Domain.Entities.InterviewBookingTransaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Amount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("InterviewerAvailabilityId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("InterviewBookingTransaction", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Amount = 1000,
+                            InterviewerAvailabilityId = 1,
+                            Status = 1,
+                            Type = 0,
+                            UserId = 1
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Amount = 500,
+                            InterviewerAvailabilityId = 1,
+                            Status = 1,
+                            Type = 1,
+                            UserId = 2
                         });
                 });
 
@@ -378,21 +435,6 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                             Status = 0,
                             StudentId = 1,
                             VideoCallRoomUrl = "https://meet.example/room1"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            CurrentLanguage = "java",
-                            DurationMinutes = 60,
-                            InterviewerId = 2,
-                            LanguageCodes = "{\"java\":\"\"}",
-                            ProblemDescription = "Given an array of integers, return indices of the two numbers that add up to a target.",
-                            ProblemShortName = "TwoSum",
-                            ScheduledTime = new DateTime(2025, 12, 5, 14, 30, 0, 0, DateTimeKind.Unspecified),
-                            Status = 0,
-                            StudentId = 1,
-                            TestCases = "[{\"inputs\":[{\"name\":\"nums\",\"value\":\"[2,7,11,15]\"},{\"name\":\"target\",\"value\":\"9\"}],\"expectedOutputs\":[\"[0,1]\"]},{\"inputs\":[{\"name\":\"nums\",\"value\":\"[3,2,4]\"},{\"name\":\"target\",\"value\":\"6\"}],\"expectedOutputs\":[\"[1,2]\"]}]",
-                            VideoCallRoomUrl = "https://meet.example.com/room2"
                         });
                 });
 
@@ -580,61 +622,6 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                         {
                             NotificationId = 1,
                             ReceiverId = 1
-                        });
-                });
-
-            modelBuilder.Entity("Intervu.Domain.Entities.Payment", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("InterviewRoomId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("IntervieweeId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("InterviewerId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("PaymentMethod")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("TransactionDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("InterviewRoomId");
-
-                    b.HasIndex("IntervieweeId");
-
-                    b.HasIndex("InterviewerId");
-
-                    b.ToTable("Payments", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Amount = 50.00m,
-                            InterviewRoomId = 1,
-                            IntervieweeId = 1,
-                            InterviewerId = 2,
-                            PaymentMethod = "Card",
-                            Status = 0,
-                            TransactionDate = new DateTime(2025, 10, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
                         });
                 });
 
@@ -856,6 +843,12 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
 
             modelBuilder.Entity("Intervu.Domain.Entities.Feedback", b =>
                 {
+                    b.HasOne("Intervu.Domain.Entities.InterviewRoom", null)
+                        .WithOne()
+                        .HasForeignKey("Intervu.Domain.Entities.Feedback", "InterviewRoomId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Intervu.Domain.Entities.InterviewerProfile", null)
                         .WithMany()
                         .HasForeignKey("InterviewerId")
@@ -866,6 +859,15 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                         .WithMany()
                         .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Intervu.Domain.Entities.InterviewBookingTransaction", b =>
+                {
+                    b.HasOne("Intervu.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
@@ -923,27 +925,6 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                         .WithMany()
                         .HasForeignKey("ReceiverId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Intervu.Domain.Entities.Payment", b =>
-                {
-                    b.HasOne("Intervu.Domain.Entities.InterviewRoom", null)
-                        .WithMany()
-                        .HasForeignKey("InterviewRoomId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Intervu.Domain.Entities.IntervieweeProfile", null)
-                        .WithMany()
-                        .HasForeignKey("IntervieweeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Intervu.Domain.Entities.InterviewerProfile", null)
-                        .WithMany()
-                        .HasForeignKey("InterviewerId")
-                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 #pragma warning restore 612, 618

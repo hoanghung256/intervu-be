@@ -27,7 +27,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
         public DbSet<InterviewerAvailability> InterviewerAvailabilities { get; set; }
         public DbSet<InterviewRoom> InterviewRooms { get; set; }
         public DbSet<Feedback> Feedbacks { get; set; }
-        public DbSet<Payment> Payments { get; set; }
+        public DbSet<InterviewBookingTransaction> InterviewBookingTransaction { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<NotificationReceive> NotificationReceives { get; set; }
         public DbSet<Company> Companies { get; set; }
@@ -185,6 +185,13 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 b.Property(x => x.Comments).HasColumnType("nvarchar(max)");
                 b.Property(x => x.AIAnalysis).HasColumnType("nvarchar(max)");
 
+                b.Property<int>("InterviewRoomId").IsRequired();
+
+                b.HasOne<InterviewRoom>()
+                 .WithOne()
+                 .HasForeignKey<Feedback>("InterviewRoomId")
+                 .OnDelete(DeleteBehavior.Restrict);
+
                 b.HasOne<InterviewerProfile>()
                  .WithMany()
                  .HasForeignKey(x => x.InterviewerId)
@@ -196,30 +203,22 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                  .OnDelete(DeleteBehavior.Restrict);
             });
 
-            // Payment
-            modelBuilder.Entity<Payment>(b =>
+            // Transaction
+            modelBuilder.Entity<InterviewBookingTransaction>(b =>
             {
-                b.ToTable("Payments");
+                b.ToTable("InterviewBookingTransaction");
                 b.HasKey(x => x.Id);
-                b.Property(x => x.Amount).HasColumnType("decimal(18,2)").IsRequired();
-                b.Property(x => x.PaymentMethod).HasMaxLength(200);
-                b.Property(x => x.TransactionDate).IsRequired();
+                b.Property(x => x.Amount).IsRequired();
+                //b.Property(x => x.CreatedAt).IsRequired();
+                //b.Property(x => x.UpdatedAt).IsRequired();
+                b.Property(x => x.InterviewerAvailabilityId).IsRequired();
+                b.Property(x => x.Type).IsRequired();
                 b.Property(x => x.Status).IsRequired();
 
-                b.HasOne<InterviewRoom>()
+                b.HasOne<User>()
                  .WithMany()
-                 .HasForeignKey(x => x.InterviewRoomId)
+                 .HasForeignKey(x => x.UserId)
                  .OnDelete(DeleteBehavior.Cascade);
-
-                b.HasOne<IntervieweeProfile>()
-                 .WithMany()
-                 .HasForeignKey(x => x.IntervieweeId)
-                 .OnDelete(DeleteBehavior.Restrict);
-
-                b.HasOne<InterviewerProfile>()
-                 .WithMany()
-                 .HasForeignKey(x => x.InterviewerId)
-                 .OnDelete(DeleteBehavior.Restrict);
             });
 
             // Notification
@@ -414,59 +413,27 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 Status = InterviewRoomStatus.Scheduled
             });
 
-            modelBuilder.Entity<InterviewRoom>().HasData(new InterviewRoom
-            {
-                Id = 2,
-                StudentId = 1,
-                InterviewerId = 2,
-                ScheduledTime = new DateTime(2025, 12, 5, 14, 30, 0),
-                DurationMinutes = 60,
-                VideoCallRoomUrl = "https://meet.example.com/room2",
-                Status = InterviewRoomStatus.Scheduled,
-
-                CurrentLanguage = "java",
-
-                LanguageCodes = new Dictionary<string, string>
-                {
-                    { "java", "" },
-                },
-
-                ProblemShortName = "TwoSum",
-                ProblemDescription = "Given an array of integers, return indices of the two numbers that add up to a target.",
-
-                TestCases = new object[]
-                {
-                    new
-                    {
-                        inputs = new[]
-                        {
-                            new { name = "nums", value = "[2,7,11,15]" },
-                            new { name = "target", value = "9" }
-                        },
-                        expectedOutputs = new[] { "[0,1]" }
-                    },
-                    new
-                    {
-                        inputs = new[]
-                        {
-                            new { name = "nums", value = "[3,2,4]" },
-                            new { name = "target", value = "6" }
-                        },
-                        expectedOutputs = new[] { "[1,2]" }
-                    }
-                }
-            });
-
-            modelBuilder.Entity<Payment>().HasData(new Payment
+            modelBuilder.Entity<InterviewBookingTransaction>().HasData(new InterviewBookingTransaction
             {
                 Id = 1,
-                InterviewRoomId = 1,
-                IntervieweeId = 1,
-                InterviewerId = 2,
-                Amount = 50.00m,
-                PaymentMethod = "Card",
-                TransactionDate = new DateTime(2025, 10, 1),
-                Status = PaymentStatus.Pending
+                UserId = 1,
+                InterviewerAvailabilityId = 1,
+                Amount = 1000,
+                Type = TransactionType.Payment,
+                Status = TransactionStatus.Paid,
+                //CreatedAt = new DateTime(2025, 11, 17, 0, 0, 0),
+                //UpdatedAt = new DateTime(2025, 11, 17, 0, 0, 0)
+            },
+            new InterviewBookingTransaction
+            {
+                Id = 2,
+                UserId = 2,
+                InterviewerAvailabilityId = 1,
+                Amount = 500,
+                Type = TransactionType.Payout,
+                Status = TransactionStatus.Paid,
+                //CreatedAt = new DateTime(2025, 11, 17, 0, 0, 0),
+                //UpdatedAt = new DateTime(2025, 11, 17, 0, 0, 0)
             });
 
             modelBuilder.Entity<Feedback>().HasData(new Feedback
@@ -474,6 +441,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 Id = 1,
                 InterviewerId = 2,
                 StudentId = 1,
+                InterviewRoomId = 1,
                 Rating = 5,
                 Comments = "Great answers and communication.",
                 AIAnalysis = "{}"
@@ -586,7 +554,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
         private void UpdateTimestamps()
         {
             var entries = ChangeTracker.Entries()
-                .Where(e => e.Entity is EntityAudit<Guid> || e.Entity is EntityAudit<int> || e.Entity is EntityAuditSoftDelete<Guid> || e.Entity is EntityAuditSoftDelete<int>);
+                .Where(e => e.Entity is EntityDateTracking<Guid> || e.Entity is EntityDateTracking<int> || e.Entity is EntityAuditable<Guid> || e.Entity is EntityAuditable<int>);
 
             foreach (var entry in entries)
             {

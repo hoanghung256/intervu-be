@@ -96,6 +96,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
                 .Where(p => p.Id == id)
                 .Include(p => p.Companies)
                 .Include(p => p.Skills)
+                .Include(p => p.User)
                 .FirstOrDefaultAsync();
 
             return profile;
