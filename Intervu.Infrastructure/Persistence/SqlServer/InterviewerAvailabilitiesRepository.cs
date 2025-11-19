@@ -90,5 +90,11 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             await _dbContext.SaveChangesAsync();
             return true;
         }
+
+        public Task<InterviewerAvailability?> GetAsync(int interviewerId, DateTime startTime)
+        {
+            return _dbContext.InterviewerAvailabilities
+                .FirstOrDefaultAsync(a => a.InterviewerId == interviewerId && a.StartTime == startTime);
+        }
     }
 }

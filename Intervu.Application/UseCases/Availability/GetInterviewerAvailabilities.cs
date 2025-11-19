@@ -20,5 +20,10 @@ namespace Intervu.Application.UseCases.Availability
         {
             return _interviewerAvailabilitiesRepository.GetInterviewerAvailabilitiesByMonthAsync(intervewerId, month, year);
         }
+
+        public Task<InterviewerAvailability> GetAsync(int interviewerId, DateTime startTime)
+        {
+            return _interviewerAvailabilitiesRepository.GetAsync(interviewerId, startTime);
+        }
     }
 }

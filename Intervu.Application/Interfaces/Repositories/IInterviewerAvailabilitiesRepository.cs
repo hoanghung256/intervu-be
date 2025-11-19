@@ -16,5 +16,7 @@ namespace Intervu.Application.Interfaces.Repositories
         Task<int> CreateMultipleInterviewerAvailabilitiesAsync(List<InterviewerAvailability> availabilities);
         Task<bool> DeleteInterviewerAvailabilityAsync(int availabilityId);
         Task<bool> UpdateInterviewerAvailabilityAsync(int availabilityId, InterviewerAvailabilityUpdateDto dto);
+
+        Task<InterviewerAvailability?> GetAsync(int interviewerId, DateTime startTime);
     }
 }

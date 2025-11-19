@@ -31,10 +31,21 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 UserId = intervieweeId,
                 Amount = interviewer.CurrentAmount ?? 0,
                 Status = Domain.Entities.Constants.TransactionStatus.Created,
+                Type = Domain.Entities.Constants.TransactionType.Payment,
+                InterviewerAvailabilityId = interviewerAvailabilityId,
+            };
+
+            Domain.Entities.InterviewBookingTransaction t2 = new()
+            {
+                UserId = interviewerId,
+                Amount = interviewer.CurrentAmount ?? 0,
+                Status = Domain.Entities.Constants.TransactionStatus.Created,
+                Type = Domain.Entities.Constants.TransactionType.Payout,
                 InterviewerAvailabilityId = interviewerAvailabilityId,
             };
 
             await _transactionRepository.AddAsync(t);
+            await _transactionRepository.AddAsync(t2);
             await _transactionRepository.SaveChangesAsync();
 
             string checkoutUrl = await _paymentService.CreatePaymentOrderAsync(

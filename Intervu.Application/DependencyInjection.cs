@@ -87,6 +87,7 @@ namespace Intervu.Application
             services.AddScoped<ICreateBookingCheckoutUrl, CreateBookingCheckoutUrl>();
             services.AddScoped<IUpdateBookingStatus, UpdateBookingStatus>();
             services.AddScoped<IGetInterviewBooking, GetInterviewBooking>();
+            services.AddScoped<IPayoutForInterviewerAfterInterview, PayoutForInterviewerAfterInterview>();
 
             // ----- Interviewer & Interviewee Details ---
             services.AddScoped<IGetInterviewerDetails, GetInterviewerDetails>();
