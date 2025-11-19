@@ -419,7 +419,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 UserId = 1,
                 InterviewerAvailabilityId = 1,
                 Amount = 1000,
-                Type = TransactionType.Payment, 
+                Type = TransactionType.Payment,
                 Status = TransactionStatus.Paid,
                 //CreatedAt = new DateTime(2025, 11, 17, 0, 0, 0),
                 //UpdatedAt = new DateTime(2025, 11, 17, 0, 0, 0)
