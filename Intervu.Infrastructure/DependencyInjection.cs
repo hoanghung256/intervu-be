@@ -10,6 +10,8 @@ using Intervu.Infrastructure.ExternalServices.FirebaseStorageService;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.Repositories;
 using Intervu.Infrastructure.Persistence.SqlServer;
+using Intervu.Infrastructure.ExternalServices.EmailServices;
+using Intervu.Application.Interfaces.ExternalServices.Email;
 
 namespace Intervu.Infrastructure
 {
@@ -52,7 +54,8 @@ namespace Intervu.Infrastructure
 
             //services.AddSingleton(StorageClient.Create(credential));
             //services.AddSingleton(bucketName);
-            services.AddTransient<IMailService, EmailService>();
+            services.AddTransient<IEmailService, ExternalServices.EmailServices.EmailService>();
+            services.AddScoped<IEmailTemplateService, EmailTemplateService>();
             //services.AddTransient<IFileService, FirebaseStorageService>();
             services.AddScoped<CodeExecutionService>();
 

@@ -3,10 +3,8 @@ using Intervu.Application.Services;
 using Intervu.Application.UseCases.Authentication;
 using Intervu.Application.Interfaces.UseCases.Authentication;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
-using Intervu.Application.UseCases.InterviewRoom;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Intervu.Application.Interfaces.UseCases.Interviewer;
 using Intervu.Application.UseCases.InterviewerProfile;
 using Intervu.Application.Interfaces.UseCases.InterviewerProfile;
 using Intervu.Application.Interfaces.UseCases.Company;
@@ -18,6 +16,8 @@ using Intervu.Application.UseCases.Availability;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Services.CodeGeneration;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom.InterviewRoom;
+using Intervu.Application.Interfaces.UseCases.Email;
+using Intervu.Application.UseCases.Email;
 
 namespace Intervu.Application
 {
@@ -55,6 +55,8 @@ namespace Intervu.Application
             services.AddScoped<ICreateInterviewerAvailability, CreateInterviewerAvailability>();
             services.AddScoped<IDeleteInterviewerAvailability, DeleteInterviewerAvailability>();
             services.AddScoped<IUpdateInterviewerAvailability, UpdateInterviewerAvailability>();
+            // ----- Email ----
+            services.AddScoped<ISendBookingConfirmationEmail, SendBookingConfirmationEmail>();
 
             return services;
         }
