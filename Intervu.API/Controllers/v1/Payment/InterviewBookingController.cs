@@ -4,6 +4,8 @@ using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.UseCases.Availability;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
+using Intervu.Application.UseCases.InterviewBooking;
+using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -22,14 +24,22 @@ namespace Intervu.API.Controllers.v1.Payment
         private readonly ICreateInterviewRoom _createInterviewRoom;
         private readonly IUpdateAvailabilityStatus _updateAvailabilityStatus;
         private readonly IUpdateBookingStatus _updateBookingStatus;
+        private readonly IGetInterviewBooking _getInterviewBooking;
 
-        public InterviewBookingController(ICreateBookingCheckoutUrl createBookingCheckoutUrl, IPaymentService paymentService, ICreateInterviewRoom createInterviewRoom, IUpdateAvailabilityStatus updateAvailabilityStatus, IUpdateBookingStatus updateBookingStatus) 
+        public InterviewBookingController(
+            ICreateBookingCheckoutUrl createBookingCheckoutUrl,
+            IPaymentService paymentService,
+            ICreateInterviewRoom createInterviewRoom,
+            IUpdateAvailabilityStatus updateAvailabilityStatus,
+            IGetInterviewBooking getInterviewBooking,
+            IUpdateBookingStatus updateBookingStatus)
         {
             _createBookingCheckoutUrl = createBookingCheckoutUrl;
             _paymentService = paymentService;
             _createInterviewRoom = createInterviewRoom;
             _updateAvailabilityStatus = updateAvailabilityStatus;
             _updateBookingStatus = updateBookingStatus;
+            _getInterviewBooking = getInterviewBooking;
         }
 
         [HttpPost]
@@ -40,7 +50,7 @@ namespace Intervu.API.Controllers.v1.Payment
             {
                 int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId);
 
-                string checkOutUrl = await _createBookingCheckoutUrl.ExecuteAsync(userId, request.InterviewerId, request.InterviewerAvailabilityId);
+                string checkOutUrl = await _createBookingCheckoutUrl.ExecuteAsync(userId, request.InterviewerId, request.InterviewerAvailabilityId, request.ReturnUrl);
 
                 return Ok(new
                 {
@@ -67,7 +77,7 @@ namespace Intervu.API.Controllers.v1.Payment
             try
             {
                 bool isPaid = _paymentService.VerifyPaymentAsync(payload);
-                int orderId = (int) payload.Data.OrderCode;
+                int orderId = (int)payload.Data.OrderCode;
 
                 if (isPaid)
                 {
@@ -104,11 +114,25 @@ namespace Intervu.API.Controllers.v1.Payment
                 return BadRequest(ex.Message);
             }
         }
+
+        [HttpGet("{orderCode}")]
+        // Note that orderCode of PayOS is InterviewBookingTransaction.Id in DB
+        public async Task<IActionResult> GetTransaction([FromRoute] int orderCode)
+        {
+            InterviewBookingTransaction? t = await _getInterviewBooking.ExecuteAsync(orderCode);
+            return Ok(new
+            {
+                success = true,
+                data = t
+            });
+        }
     }
 
     public class InterviewBookingRequest
     {
         public int InterviewerId { get; set; }
         public int InterviewerAvailabilityId { get; set; }
+
+        public string ReturnUrl { get; set; } = string.Empty;
     }
 }

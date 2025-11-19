@@ -2,7 +2,6 @@
 using PayOS.Models.V1.Payouts;
 using PayOS.Models.V2.PaymentRequests;
 using PayOS.Models.Webhooks;
-using PayOS.Resources.Webhooks;
 
 namespace Intervu.Infrastructure.ExternalServices.PayOSPaymentService
 {
@@ -21,15 +20,15 @@ namespace Intervu.Infrastructure.ExternalServices.PayOSPaymentService
             _cancelUrl = cancelUrl;
         }
 
-        public async Task<string> CreatePaymentOrderAsync(int? orderCode, int ammount, string description)
+        public async Task<string> CreatePaymentOrderAsync(int? orderCode, int ammount, string description, string returnUrl)
         {
             var paymentRequest = new CreatePaymentLinkRequest
             {
                 OrderCode = orderCode ?? CreateOrderCode(),
                 Amount = ammount,
                 Description = description,
-                ReturnUrl = _returnUrl,
-                CancelUrl = _cancelUrl,
+                ReturnUrl = returnUrl,
+                CancelUrl = returnUrl,
                 ExpiredAt = DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeSeconds()
             };
 

@@ -23,7 +23,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
         {
             var query = _dbContext.InterviewerAvailabilities.AsQueryable();
 
-            var filtered = query.Where(x => x.InterviewerId == intervewerId);
+            var filtered = query.Where(x => x.InterviewerId == intervewerId && x.IsBooked == false);
 
             if (month > 0 && year > 0)
             {

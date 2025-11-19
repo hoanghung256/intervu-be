@@ -17,7 +17,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
             _transactionRepository = transactionRepository;
         }
 
-        public async Task<string> ExecuteAsync(int intervieweeId, int interviewerId, int interviewerAvailabilityId)
+        public async Task<string> ExecuteAsync(int intervieweeId, int interviewerId, int interviewerAvailabilityId, string returnUrl)
         {
             var interviewer = await _interviewerProfileRepository.GetProfileByIdAsync(interviewerId);
 
@@ -40,7 +40,8 @@ namespace Intervu.Application.UseCases.InterviewBooking
             string checkoutUrl = await _paymentService.CreatePaymentOrderAsync(
                 t.Id,
                 t.Amount,
-                $"Book interview"
+                $"Book interview",
+                returnUrl
             );
 
             return checkoutUrl;

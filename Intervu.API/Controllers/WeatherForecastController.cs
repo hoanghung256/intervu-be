@@ -26,7 +26,7 @@ namespace Intervu.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetCheckOutUrl()
         {
-            string checkoutUrl = await _paymentService.CreatePaymentOrderAsync(null, 2000, "hello");
+            string checkoutUrl = await _paymentService.CreatePaymentOrderAsync(null, 2000, "hello", "hellooo");
             return Ok(new { checkoutUrl });
         }
 

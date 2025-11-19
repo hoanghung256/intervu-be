@@ -2,6 +2,6 @@
 {
     public interface ICreateBookingCheckoutUrl
     {
-        Task<string> ExecuteAsync(int intervieweeId, int interviewerId, int interviewerAvailabilityId);
+        Task<string> ExecuteAsync(int intervieweeId, int interviewerId, int interviewerAvailabilityId, string returnUrl);
     }
 }
