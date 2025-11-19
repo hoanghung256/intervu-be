@@ -52,19 +52,19 @@ namespace Intervu.Infrastructure
             if (string.IsNullOrEmpty(credentialPath))
                 throw new Exception("Firebase CredentialJson is missing in secrets.json");
 
-            var credential = GoogleCredential.FromJson(credentialPath);
+            //var credential = GoogleCredential.FromJson(credentialPath);
 
-            if (FirebaseApp.DefaultInstance == null)
-            {
-                FirebaseApp.Create(new AppOptions
-                {
-                    Credential = credential
-                });
-            }
+            //if (FirebaseApp.DefaultInstance == null)
+            //{
+            //    FirebaseApp.Create(new AppOptions
+            //    {
+            //        Credential = credential
+            //    });
+            //}
 
-            services.AddSingleton(StorageClient.Create(credential));
+            //services.AddSingleton(StorageClient.Create(credential));
 
-            services.AddSingleton<string>(sp => bucketName);
+            //services.AddSingleton<string>(sp => bucketName);
 
             services.AddTransient<IFileService>(sp =>
             {
