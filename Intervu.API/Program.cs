@@ -217,6 +217,14 @@ namespace Intervu.API
 
             app.UseHttpsRedirection();
 
+            // Add Cross-Origin-Opener-Policy header for Google auth popup
+            app.Use(async (context, next) =>
+            {
+                context.Response.Headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups";
+                context.Response.Headers["Cross-Origin-Embedder-Policy"] = "require-corp";
+                await next();
+            });
+
             app.UseAuthentication();
             app.UseAuthorization();
             app.MapControllers();
