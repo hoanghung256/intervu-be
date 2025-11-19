@@ -15,29 +15,53 @@ namespace Intervu.Infrastructure.ExternalServices.EmailServices
 
         public EmailTemplateService(IConfiguration configuration)
         {
-            // Get base directory of the running application (e.g., bin/Debug/net8.0)
+            // Strategy 1: Check for configured path (production deployment)
+            var configPath = configuration["EmailSettings:TemplatesPath"];
+            if (!string.IsNullOrEmpty(configPath) && Directory.Exists(configPath))
+            {
+                _templatesPath = configPath;
+                return;
+            }
+
+            // Strategy 2: Look in base directory for EmailTemplates folder (production deployment - templates copied to output)
             var baseDirectory = AppContext.BaseDirectory;
-            
-            // Navigate up from bin/Debug/net8.0 to solution root
-            // bin/Debug/net8.0 -> bin -> Debug -> Intervu.API -> SolutionRoot
-            var solutionRoot = Directory.GetParent(baseDirectory)?.Parent?.Parent?.Parent?.Parent?.FullName;
-            
-            if (solutionRoot == null)
-                throw new InvalidOperationException("Could not determine solution root directory.");
-            
-            // Build path to EmailTemplates folder in Infrastructure project
-            // Structure: SolutionRoot/Intervu.Infrastructure/ExternalServices/EmailServices/EmailTemplates
-            _templatesPath = Path.Combine(
-                solutionRoot, 
-                "Intervu.Infrastructure", 
-                "ExternalServices", 
-                "EmailServices", 
-                "EmailTemplates"
+            var localTemplatesPath = Path.Combine(baseDirectory, "EmailTemplates");
+            if (Directory.Exists(localTemplatesPath))
+            {
+                _templatesPath = localTemplatesPath;
+                return;
+            }
+
+            // Strategy 3: Navigate up from bin folder to find Infrastructure project (development)
+            // Development structure: bin/Debug/net8.0 -> bin -> Debug -> Intervu.API -> SolutionRoot
+            var currentDir = new DirectoryInfo(baseDirectory);
+            for (int i = 0; i < 5; i++)
+            {
+                currentDir = currentDir.Parent;
+                if (currentDir == null) break;
+
+                var infrastructurePath = Path.Combine(
+                    currentDir.FullName,
+                    "Intervu.Infrastructure",
+                    "ExternalServices",
+                    "EmailServices",
+                    "EmailTemplates"
+                );
+
+                if (Directory.Exists(infrastructurePath))
+                {
+                    _templatesPath = infrastructurePath;
+                    return;
+                }
+            }
+
+            // If all strategies fail, throw exception
+            throw new DirectoryNotFoundException(
+                $"Email templates directory not found. Searched locations:\n" +
+                $"1. Config path: {configPath ?? "(not configured)"}\n" +
+                $"2. Base directory: {localTemplatesPath}\n" +
+                $"3. Infrastructure project path (from base: {baseDirectory})"
             );
-            
-            // Validate that the templates directory exists
-            if (!Directory.Exists(_templatesPath))
-                throw new DirectoryNotFoundException($"Email templates directory not found at: {_templatesPath}");
         }
         public async Task<string> LoadTemplateAsync(string templateName, Dictionary<string, string> placeholders)
         {
