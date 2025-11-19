@@ -60,9 +60,10 @@ namespace Intervu.Infrastructure
 
             //services.AddSingleton(StorageClient.Create(credential));
             //services.AddSingleton(bucketName);
-            services.AddTransient<IEmailService, ExternalServices.EmailServices.EmailService>();
+            services.AddScoped<IEmailService, ExternalServices.EmailServices.EmailService>();
             services.AddScoped<IEmailTemplateService, EmailTemplateService>();
             services.AddSingleton<IMailService, ExternalServices.EmailService>();
+            //services.AddSingleton<IMailService, ExternalServices.EmailService>();
             //services.AddTransient<IFileService, FirebaseStorageService>();
             
             // Temporary stub for IFileService - replace with Firebase when ready

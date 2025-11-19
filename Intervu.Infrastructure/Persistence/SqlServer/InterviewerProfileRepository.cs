@@ -162,6 +162,8 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             existingProfile.CurrentAmount = updatedProfile.CurrentAmount;
             existingProfile.ExperienceYears = updatedProfile.ExperienceYears;
             existingProfile.Bio = updatedProfile.Bio;
+            existingProfile.BankBinNumber = updatedProfile.BankBinNumber ?? string.Empty;
+            existingProfile.BankAccountNumber = updatedProfile.BankAccountNumber ?? string.Empty;
 
 
             var newCompanies = await _context.Companies
