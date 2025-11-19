@@ -137,6 +137,7 @@ namespace Intervu.API.Hubs
 
         public async Task LeaveRoom(string room)
         {
+            _logger.LogInformation("Client {ConnectionId} leave room {RoomId}", Context.ConnectionId, room);
             if (_roomConnections.TryGetValue(room, out var connections))
             {
                 connections.TryRemove(Context.ConnectionId, out _);
@@ -182,8 +183,8 @@ namespace Intervu.API.Hubs
         /// </summary>
         public async Task SendCode(string room, string code, string language)
         {
-            var roomState = await _roomManager.GetOrCreateRoomStateAsync(room);
             _logger.LogInformation("Code updated for room {RoomId}", room);
+            var roomState = await _roomManager.GetOrCreateRoomStateAsync(room);
 
             // Ensure we're updating the code for the correct language
             if (roomState.LanguageCodes.ContainsKey(language))

@@ -98,7 +98,7 @@ namespace Intervu.Infrastructure
                 client.BaseAddress = new Uri(baseUrl);
             });
 
-            services.AddHostedService<InterviewRoomCache>();
+            services.AddHostedService<InterviewRoomCacheLoader>();
             services.AddHostedService<InterviewMonitorService>();
 
             return services;

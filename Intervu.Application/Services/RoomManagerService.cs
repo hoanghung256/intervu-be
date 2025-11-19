@@ -40,11 +40,13 @@ namespace Intervu.Application.Services
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly double value;
         private readonly string unit;
+        private readonly InterviewRoomCache _cache;
 
-        public RoomManagerService(IServiceScopeFactory scopeFactory, ILogger<RoomManagerService> logger)
+        public RoomManagerService(IServiceScopeFactory scopeFactory, ILogger<RoomManagerService> logger, InterviewRoomCache cache)
         {
             _scopeFactory = scopeFactory;
             _logger = logger;
+            _cache = cache;
             (value, unit) = _roomExpiryTime switch
             {
                 { Seconds: > 0 } when _roomExpiryTime.Seconds == _roomExpiryTime.TotalSeconds => (_roomExpiryTime.TotalSeconds, "seconds"),
@@ -64,10 +66,11 @@ namespace Intervu.Application.Services
                 timer.Dispose();
                 _logger.LogInformation("Re-activated room '{RoomId}' and cancelled expiry timer.", roomId);
             }
-            using var scope = _scopeFactory.CreateScope();
+            //using var scope = _scopeFactory.CreateScope();
 
-            var getCurrentRoom = scope.ServiceProvider.GetRequiredService<IGetCurrentRoom>();
-            Domain.Entities.InterviewRoom interviewRoom = await getCurrentRoom.ExecuteAsync(int.Parse(roomId));
+            //var getCurrentRoom = scope.ServiceProvider.GetRequiredService<IGetCurrentRoom>();
+            //Domain.Entities.InterviewRoom interviewRoom = await getCurrentRoom.ExecuteAsync(int.Parse(roomId));
+            InterviewRoom interviewRoom = _cache.Rooms.SingleOrDefault(r => r.Id == int.Parse(roomId));
             return _roomStates.GetOrAdd(roomId, _ =>
             {
                 _logger.LogInformation("Creating new in-memory state for room '{RoomId}'.", roomId);
@@ -75,9 +78,9 @@ namespace Intervu.Application.Services
                 {
                     CurrentLanguage = interviewRoom.CurrentLanguage ?? "java",
                     LanguageCodes = interviewRoom.LanguageCodes ?? new Dictionary<string, string>(),
-                    ProblemDescription = interviewRoom.ProblemDescription,
-                    ProblemShortName = interviewRoom.ProblemShortName,
-                    TestCases = interviewRoom.TestCases
+                    ProblemDescription = interviewRoom.ProblemDescription ?? "",
+                    ProblemShortName = interviewRoom.ProblemShortName ?? "",
+                    TestCases = interviewRoom.TestCases ?? Array.Empty<object>()
                 };
             });
         }
@@ -89,7 +92,7 @@ namespace Intervu.Application.Services
             {
                 using var scope = _scopeFactory.CreateScope();
 
-                var getCurrentRoom = scope.ServiceProvider.GetRequiredService<IGetCurrentRoom>();
+                //var getCurrentRoom = scope.ServiceProvider.GetRequiredService<IGetCurrentRoom>();
                 var updateRoom = scope.ServiceProvider.GetRequiredService<IUpdateRoom>();
                 var getFeedbacks = scope.ServiceProvider.GetRequiredService<IGetFeedbacks>();
                 var createFeedback = scope.ServiceProvider.GetRequiredService<ICreateFeedback>();
@@ -98,7 +101,8 @@ namespace Intervu.Application.Services
                 if (roomState != null)
                 {
                     //Save room progress
-                    var room = await getCurrentRoom.ExecuteAsync(int.Parse(roomId));
+                    //var room = await getCurrentRoom.ExecuteAsync(int.Parse(roomId));
+                    InterviewRoom room = _cache.Rooms.SingleOrDefault(r => r.Id == int.Parse(roomId));
                     if (room != null)
                     {
                         room.CurrentLanguage = roomState.CurrentLanguage;
@@ -139,32 +143,6 @@ namespace Intervu.Application.Services
 
             _roomTimers[roomId] = timer;
             _logger.LogInformation("Room '{RoomId}' is empty. Scheduled for cleanup in {ExpiryValue} {ExpiryUnit}.", roomId, value, unit);
-        }
-
-        private readonly Dictionary<int, InterviewRoom> _rooms = new();
-
-        public IReadOnlyCollection<InterviewRoom> Rooms => _rooms.Values;
-
-        public void SetAll(IEnumerable<InterviewRoom> rooms)
-        {
-            _rooms.Clear();
-            foreach (var room in rooms)
-                _rooms[room.Id] = room;
-        }
-
-        public void Add(InterviewRoom room)
-        {
-            _rooms[room.Id] = room;
-        }
-
-        public void Update(InterviewRoom room)
-        {
-            _rooms[room.Id] = room;
-        }
-
-        public void Remove(int id)
-        {
-            _rooms.Remove(id);
         }
     }
 }
