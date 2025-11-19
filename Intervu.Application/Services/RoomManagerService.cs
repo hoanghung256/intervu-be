@@ -78,8 +78,8 @@ namespace Intervu.Application.Services
                 {
                     CurrentLanguage = interviewRoom.CurrentLanguage ?? "java",
                     LanguageCodes = interviewRoom.LanguageCodes ?? new Dictionary<string, string>(),
-                    ProblemDescription = interviewRoom.ProblemDescription ?? "",
-                    ProblemShortName = interviewRoom.ProblemShortName ?? "",
+                    ProblemDescription = interviewRoom.ProblemDescription ?? string.Empty,
+                    ProblemShortName = interviewRoom.ProblemShortName ?? string.Empty,
                     TestCases = interviewRoom.TestCases ?? Array.Empty<object>()
                 };
             });

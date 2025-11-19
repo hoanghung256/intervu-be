@@ -227,6 +227,7 @@ namespace Intervu.API.Hubs
         /// <param name="language">The programming language of the code.</param>
         public async Task RunCode(string roomId, string code, string language)
         {
+            _logger.LogInformation("Run Code for room {RoomId}", roomId);
             var roomState = await _roomManager.GetOrCreateRoomStateAsync(roomId);
 
             // If a shortName exists, run in "Test Case Mode"
