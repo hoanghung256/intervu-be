@@ -57,7 +57,7 @@ namespace Intervu.API.Controllers.v1.Interviewer
         }
 
         //[GET] api/interviewerprofile/interviewee/{id}/profile
-        [Authorize(Policy = AuthorizationPolicies.Interviewee)]
+        //[Authorize(Policy = AuthorizationPolicies.Interviewee)]
         [HttpGet("{id}/profile")]
         public async Task<IActionResult> GetProfileByInterviewee([FromRoute] int id)
         {

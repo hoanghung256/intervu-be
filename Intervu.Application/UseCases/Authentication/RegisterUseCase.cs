@@ -5,17 +5,20 @@ using Intervu.Application.Interfaces.UseCases.Authentication;
 using Intervu.Application.Services;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
+using Intervu.Application.Interfaces.Repositories;
 
 namespace Intervu.Application.UseCases.Authentication
 {
     public class RegisterUseCase : IRegisterUseCase
     {
         private readonly IUserRepository _userRepository;
+        private readonly IIntervieweeProfileRepository _intervieweeProfileRepository;
         private readonly IMapper _mapper;
 
-        public RegisterUseCase(IUserRepository userRepository, IMapper mapper)
+        public RegisterUseCase(IUserRepository userRepository, IIntervieweeProfileRepository intervieweeProfileRepository, IMapper mapper)
         {
             _userRepository = userRepository;
+            _intervieweeProfileRepository = intervieweeProfileRepository;
             _mapper = mapper;
         }
 
@@ -50,6 +53,25 @@ namespace Intervu.Application.UseCases.Authentication
 
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
+
+            // Create IntervieweeProfile if role is Interviewee
+            if (user.Role == UserRole.Interviewee)
+            {
+                var profile = new IntervieweeProfile
+                {
+                    // Shared PK with User
+                    // Id is set by EF when adding, but for shared key we ensure FK equals User.Id
+                    Id = user.Id,
+                    CVUrl = "",
+                    PortfolioUrl = "",
+                    Skills = "[]",
+                    Bio = "",
+                    CurrentAmount = 0
+                };
+
+                await _intervieweeProfileRepository.AddAsync(profile);
+                await _intervieweeProfileRepository.SaveChangesAsync();
+            }
 
             return true;
         }

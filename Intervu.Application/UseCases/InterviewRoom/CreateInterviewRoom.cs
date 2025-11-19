@@ -7,9 +7,9 @@ namespace Intervu.Application.UseCases.InterviewRoom
     public class CreateInterviewRoom : ICreateInterviewRoom
     {
         private readonly IInterviewRoomRepository _interviewRoomRepo;
-        private readonly RoomManagerService _cache;
+        private readonly InterviewRoomCache _cache;
 
-        public CreateInterviewRoom(IInterviewRoomRepository interviewRoomRepo, RoomManagerService cache)
+        public CreateInterviewRoom(IInterviewRoomRepository interviewRoomRepo, InterviewRoomCache cache)
         {
             _interviewRoomRepo = interviewRoomRepo;
             _cache = cache;

@@ -15,19 +15,29 @@ namespace Intervu.Infrastructure.ExternalServices.EmailServices
 
         public EmailTemplateService(IConfiguration configuration)
         {
-            // Get the path from config, or use default
-            var configPath = configuration["EmailSettings:TemplatesPath"];
+            // Get base directory of the running application (e.g., bin/Debug/net8.0)
+            var baseDirectory = AppContext.BaseDirectory;
             
-            if (Path.IsPathRooted(configPath))
-            {
-                // If it's an absolute path, use it directly
-                _templatesPath = configPath;
-            }
-            else
-            {
-                // Otherwise, combine with base directory
-                _templatesPath = Path.Combine(AppContext.BaseDirectory, configPath ?? "EmailTemplates");
-            }
+            // Navigate up from bin/Debug/net8.0 to solution root
+            // bin/Debug/net8.0 -> bin -> Debug -> Intervu.API -> SolutionRoot
+            var solutionRoot = Directory.GetParent(baseDirectory)?.Parent?.Parent?.Parent?.Parent?.FullName;
+            
+            if (solutionRoot == null)
+                throw new InvalidOperationException("Could not determine solution root directory.");
+            
+            // Build path to EmailTemplates folder in Infrastructure project
+            // Structure: SolutionRoot/Intervu.Infrastructure/ExternalServices/EmailServices/EmailTemplates
+            _templatesPath = Path.Combine(
+                solutionRoot, 
+                "Intervu.Infrastructure", 
+                "ExternalServices", 
+                "EmailServices", 
+                "EmailTemplates"
+            );
+            
+            // Validate that the templates directory exists
+            if (!Directory.Exists(_templatesPath))
+                throw new DirectoryNotFoundException($"Email templates directory not found at: {_templatesPath}");
         }
         public async Task<string> LoadTemplateAsync(string templateName, Dictionary<string, string> placeholders)
         {

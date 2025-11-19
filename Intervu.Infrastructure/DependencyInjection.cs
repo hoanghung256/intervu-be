@@ -29,6 +29,7 @@ namespace Intervu.Infrastructure
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IInterviewRoomRepository, InterviewRoomRepository>();
             services.AddScoped<IInterviewerProfileRepository, InterviewerProfileRepository>();
+            services.AddScoped<IIntervieweeProfileRepository, IntervieweeProfileRepository>();
             services.AddScoped<ICompanyRepository, CompanyRepository>();
             services.AddScoped<ISkillRepository, SkillRepository>();
             services.AddScoped<IFeedbackRepository, FeedbackRepository>();
@@ -40,13 +41,16 @@ namespace Intervu.Infrastructure
 
         public static IServiceCollection AddInfrastructureExternalServices(this IServiceCollection services, IConfiguration configuration)
         {
+            var firebaseSection = configuration.GetSection("Firebase");
+            var bucketName = firebaseSection["StorageBucket"];
+            var credentialPath = firebaseSection["CredentialPath"];
             // Temporarily disable Firebase until credentials are configured
             //var firebaseSection = configuration.GetSection("Firebase");
             //var bucketName = firebaseSection["StorageBucket"];
             //var credentialPath = firebaseSection["CredentialPath"];
 
-            //if (string.IsNullOrEmpty(credentialPath))
-            //    throw new Exception("Firebase CredentialJson is missing in secrets.json");
+            if (string.IsNullOrEmpty(credentialPath))
+                throw new Exception("Firebase CredentialJson is missing in secrets.json");
 
             //var credential = GoogleCredential.FromJson(credentialPath);
 
@@ -59,9 +63,21 @@ namespace Intervu.Infrastructure
             //}
 
             //services.AddSingleton(StorageClient.Create(credential));
+
+            //services.AddSingleton<string>(sp => bucketName);
+
+            services.AddTransient<IFileService>(sp =>
+            {
+                var storageClient = sp.GetRequiredService<StorageClient>();
+                var bucket = sp.GetRequiredService<string>();
+                return new FirebaseStorageService(storageClient, bucket);
+            });
+
+            //services.AddSingleton(StorageClient.Create(credential));
             //services.AddSingleton(bucketName);
             services.AddScoped<IEmailService, ExternalServices.EmailServices.EmailService>();
             services.AddScoped<IEmailTemplateService, EmailTemplateService>();
+            services.AddSingleton<IMailService, ExternalServices.EmailService>();
             //services.AddSingleton<IMailService, ExternalServices.EmailService>();
             //services.AddTransient<IFileService, FirebaseStorageService>();
             
@@ -111,7 +127,7 @@ namespace Intervu.Infrastructure
                 client.BaseAddress = new Uri(baseUrl);
             });
 
-            services.AddHostedService<InterviewRoomCache>();
+            services.AddHostedService<InterviewRoomCacheLoader>();
             services.AddHostedService<InterviewMonitorService>();
 
             return services;

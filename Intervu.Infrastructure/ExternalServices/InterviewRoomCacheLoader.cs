@@ -12,12 +12,12 @@ using System.Threading.Tasks;
 
 namespace Intervu.Infrastructure.ExternalServices
 {
-    public class InterviewRoomCache : IHostedService
+    public class InterviewRoomCacheLoader : IHostedService
     {
         private readonly IServiceProvider _services;
-        private readonly RoomManagerService _cache;
+        private readonly InterviewRoomCache _cache;
 
-        public InterviewRoomCache(IServiceProvider services, RoomManagerService cache)
+        public InterviewRoomCacheLoader(IServiceProvider services, InterviewRoomCache cache)
         {
             _services = services;
             _cache = cache;
