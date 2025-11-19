@@ -51,5 +51,38 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
         {
             return await _context.Users.CountAsync();
         }
+        
+        public async Task<bool> UpdateProfileAsync(int userId, string fullName)
+        {
+            var user = await GetByIdAsync(userId);
+            if (user == null) return false;
+
+            user.FullName = fullName;
+            UpdateAsync(user);
+            await SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> UpdatePasswordAsync(int userId, string hashedPassword)
+        {
+            var user = await GetByIdAsync(userId);
+            if (user == null) return false;
+
+            user.Password = hashedPassword;
+            UpdateAsync(user);
+            await SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<string?> UpdateProfilePictureAsync(int userId, string profilePictureUrl)
+        {
+            var user = await GetByIdAsync(userId);
+            if (user == null) return null;
+
+            user.ProfilePicture = profilePictureUrl;
+            UpdateAsync(user);
+            await SaveChangesAsync();
+            return profilePictureUrl;
+        }
     }
 }

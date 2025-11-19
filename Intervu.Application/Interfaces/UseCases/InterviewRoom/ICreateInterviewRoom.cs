@@ -9,6 +9,6 @@ namespace Intervu.Application.Interfaces.UseCases.InterviewRoom
     public interface ICreateInterviewRoom
     {
         Task<int> ExecuteAsync(int interveweeId);
-        Task<int> ExecuteAsync(int interveweeId, int interviewerId);
+        Task<int> ExecuteAsync(int interveweeId, int interviewerId, DateTime scheduledTime);
     }
 }

@@ -22,6 +22,10 @@ namespace Intervu.Application.DTOs.Interviewer
 
         public string? Bio { get; set; }
 
+        public string? BankBinNumber { get; set; }
+
+        public string? BankAccountNumber { get; set; }
+
         public List<int> CompanyIds { get; set; }
 
         public List<int> SkillIds { get; set; }

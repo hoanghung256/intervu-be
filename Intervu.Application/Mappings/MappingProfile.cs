@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Intervu.Application.DTOs.Admin;
+using Intervu.Application.DTOs.Availability;
 using Intervu.Application.DTOs.Company;
 using Intervu.Application.DTOs.Interviewer;
 using Intervu.Application.DTOs.Skill;
@@ -37,6 +38,7 @@ namespace Intervu.Application.Mappings
             CreateMap<InterviewerProfile, InterviewerUpdateDto>().ReverseMap();
 
             CreateMap<InterviewerProfileDto, InterviewerCreateDto>().ReverseMap();
+            CreateMap<User, InterviewerCreateDto>().ReverseMap();
 
             CreateMap<Company, DTOs.Company.CompanyDto>().ReverseMap();
             CreateMap<Skill, SkillDto>().ReverseMap();
@@ -47,6 +49,14 @@ namespace Intervu.Application.Mappings
             CreateMap<Payment, PaymentDto>();
             CreateMap<Feedback, FeedbackDto>();
             // InterviewerAdminDto is manually mapped in use case to include User data
+            // Availability mappings
+            CreateMap<InterviewerAvailabilityCreateDto, InterviewerAvailability>()
+                .ForMember(dest => dest.IsBooked, opt => opt.MapFrom(src => false))
+                .ForMember(dest => dest.Id, opt => opt.Ignore());
+
+            CreateMap<InterviewerAvailabilityUpdateDto, InterviewerAvailability>()
+                .ForMember(dest => dest.IsBooked, opt => opt.Ignore())
+                .ForMember(dest => dest.InterviewerId, opt => opt.Ignore());
         }
     }
 }

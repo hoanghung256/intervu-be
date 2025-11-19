@@ -18,6 +18,16 @@ namespace Intervu.Domain.Entities
 
         public string? VideoCallRoomUrl { get; set; }
 
+        public string? CurrentLanguage { get; set; }
+
+        public Dictionary<string, string>? LanguageCodes { get; set; }
+
+        public string? ProblemDescription { get; set; }
+
+        public string? ProblemShortName { get; set; }
+
+        public object[]? TestCases { get; set; }
+
         /// <summary>
         /// Scheduled, Completed, Cancelled, No-Show
         /// </summary>
