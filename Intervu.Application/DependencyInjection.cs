@@ -42,6 +42,7 @@ namespace Intervu.Application
             // Register Services
             services.AddScoped<JwtService>();
             services.AddSingleton<RoomManagerService>();
+            services.AddSingleton<InterviewRoomCache>();
             services.AddSingleton<ICodeGenerationService, CSharpCodeGenerationService>();
             services.AddSingleton<ICodeGenerationService, JavaScriptCodeGenerationService>();
             services.AddSingleton<ICodeGenerationService, JavaCodeGenerationService>();

@@ -13,10 +13,10 @@ namespace Intervu.Infrastructure.ExternalServices
 {
     public class InterviewMonitorService : BackgroundService
     {
-        private readonly RoomManagerService _cache;
+        private readonly InterviewRoomCache _cache;
         private readonly IServiceProvider _services;
 
-        public InterviewMonitorService(RoomManagerService cache, IServiceProvider services)
+        public InterviewMonitorService(InterviewRoomCache cache, IServiceProvider services)
         {
             _cache = cache;
             _services = services;

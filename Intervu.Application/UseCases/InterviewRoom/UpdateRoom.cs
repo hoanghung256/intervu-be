@@ -12,9 +12,9 @@ namespace Intervu.Application.UseCases.InterviewRoom
     public class UpdateRoom : IUpdateRoom
     {
         private readonly IInterviewRoomRepository _repo;
-        private readonly RoomManagerService _cache;
+        private readonly InterviewRoomCache _cache;
 
-        public UpdateRoom(IInterviewRoomRepository repo, RoomManagerService cache)
+        public UpdateRoom(IInterviewRoomRepository repo, InterviewRoomCache cache)
         {
             _repo = repo;
             _cache = cache;
