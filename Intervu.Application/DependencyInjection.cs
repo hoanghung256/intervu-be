@@ -15,7 +15,7 @@ using Intervu.Application.Interfaces.UseCases.Availability;
 using Intervu.Application.UseCases.Availability;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Services.CodeGeneration;
-using Intervu.Application.Interfaces.UseCases.InterviewRoom.InterviewRoom;
+using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Intervu.Application.Interfaces.UseCases.Email;
 using Intervu.Application.UseCases.Email;
 using Intervu.Application.Interfaces.UseCases.Feedbacks;
@@ -24,6 +24,8 @@ using Intervu.Application.Interfaces.UseCases.UserProfile;
 using Intervu.Application.UseCases.UserProfile;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
 using Intervu.Application.UseCases.InterviewBooking;
+using Intervu.Application.UseCases.InterviewRoom;
+using Intervu.Application.Interfaces.UseCases.Interviewer;
 
 namespace Intervu.Application
 {
