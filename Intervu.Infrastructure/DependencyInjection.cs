@@ -44,10 +44,6 @@ namespace Intervu.Infrastructure
             var firebaseSection = configuration.GetSection("Firebase");
             var bucketName = firebaseSection["StorageBucket"];
             var credentialPath = firebaseSection["CredentialPath"];
-            // Temporarily disable Firebase until credentials are configured
-            //var firebaseSection = configuration.GetSection("Firebase");
-            //var bucketName = firebaseSection["StorageBucket"];
-            //var credentialPath = firebaseSection["CredentialPath"];
 
             if (string.IsNullOrEmpty(credentialPath))
                 throw new Exception("Firebase CredentialJson is missing in secrets.json");
@@ -79,10 +75,9 @@ namespace Intervu.Infrastructure
             services.AddScoped<IEmailTemplateService, EmailTemplateService>();
             services.AddSingleton<IMailService, ExternalServices.EmailService>();
             //services.AddSingleton<IMailService, ExternalServices.EmailService>();
-            //services.AddTransient<IFileService, FirebaseStorageService>();
-            
+            services.AddTransient<IFileService, FirebaseStorageService>();
+
             // Temporary stub for IFileService - replace with Firebase when ready
-            services.AddTransient<IFileService, TempFileService>();
             services.AddSingleton(sp =>
             {
                 PayOSOptions? options = sp.GetRequiredService<IConfiguration>()
