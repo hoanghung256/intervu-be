@@ -8,6 +8,11 @@ using Intervu.Application.Interfaces.Repositories;
 using Intervu.Infrastructure.Persistence.SqlServer;
 using PayOS;
 using Intervu.Infrastructure.ExternalServices.PayOSPaymentService;
+using Google.Apis.Auth.OAuth2;
+using Google.Cloud.Storage.V1;
+using Firebase.Storage;
+using FirebaseAdmin;
+using Intervu.Infrastructure.ExternalServices.FirebaseStorageService;
 
 namespace Intervu.Infrastructure
 {
@@ -33,6 +38,7 @@ namespace Intervu.Infrastructure
 
         public static IServiceCollection AddInfrastructureExternalServices(this IServiceCollection services, IConfiguration configuration)
         {
+            // Temporarily disable Firebase until credentials are configured
             //var firebaseSection = configuration.GetSection("Firebase");
             //var bucketName = firebaseSection["StorageBucket"];
             //var credentialPath = firebaseSection["CredentialPath"];
@@ -54,6 +60,9 @@ namespace Intervu.Infrastructure
             //services.AddSingleton(bucketName);
             services.AddSingleton<IMailService, EmailService>();
             //services.AddTransient<IFileService, FirebaseStorageService>();
+            
+            // Temporary stub for IFileService - replace with Firebase when ready
+            services.AddTransient<IFileService, TempFileService>();
             services.AddSingleton(sp =>
             {
                 PayOSOptions? options = sp.GetRequiredService<IConfiguration>()
