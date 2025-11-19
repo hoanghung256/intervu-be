@@ -10,8 +10,8 @@ namespace Intervu.Infrastructure.ExternalServices.FirebaseStorageService
         private readonly StorageClient _storage;
         private readonly string _bucketName;
         private readonly string FolderName = "uploads";
-        public FirebaseStorageService(StorageClient storage, string bucketName) 
-        { 
+        public FirebaseStorageService(StorageClient storage, string bucketName)
+        {
             _storage = storage;
             _bucketName = bucketName;
         }
