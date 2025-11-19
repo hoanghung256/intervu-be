@@ -10,5 +10,9 @@ namespace Intervu.Application.DTOs.Interviewer
         public int? CurrentAmount { get; set; }
 
         public InterviewerProfileStatus Status { get; set; }
+
+        public string? BankBinNumber { get; set; }
+
+        public string? BankAccountNumber { get; set; }
     }
 }
