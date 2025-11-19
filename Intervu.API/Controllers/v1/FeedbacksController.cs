@@ -2,6 +2,7 @@
 using Intervu.API.Utils.Constant;
 using Intervu.Application.Interfaces.UseCases.Feedbacks;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
+using Intervu.Application.Interfaces.Repositories;
 using Intervu.Domain.Entities.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -22,12 +23,21 @@ namespace Intervu.API.Controllers.v1
         private readonly IGetFeedbacks _getFeedbacks;
         private readonly IUpdateFeedback _updateFeedback;
         private readonly ICreateFeedback _createFeedback;
+        private readonly IFeedbackRepository _feedbackRepository;
+        private readonly IUserRepository _userRepository;
 
-        public FeedbacksController(IGetFeedbacks getFeedbacks, IUpdateFeedback updateFeedback, ICreateFeedback createFeedback)
+        public FeedbacksController(
+            IGetFeedbacks getFeedbacks, 
+            IUpdateFeedback updateFeedback, 
+            ICreateFeedback createFeedback,
+            IFeedbackRepository feedbackRepository,
+            IUserRepository userRepository)
         {
             _getFeedbacks = getFeedbacks;
             _updateFeedback = updateFeedback;
             _createFeedback = createFeedback;
+            _feedbackRepository = feedbackRepository;
+            _userRepository = userRepository;
         }
 
         [Authorize(Policy = AuthorizationPolicies.Interviewee)]
@@ -92,6 +102,53 @@ namespace Intervu.API.Controllers.v1
                 success = true,
                 message = "Feedback user successful",
             });
+        }
+
+        [Authorize(Policy = AuthorizationPolicies.InterviewOrAdmin)]
+        [HttpGet("interview-room/{interviewRoomId}")]
+        public async Task<IActionResult> GetFeedbacksByInterviewRoom([FromRoute] int interviewRoomId)
+        {
+            try
+            {
+                var feedbacks = await _feedbackRepository.GetFeedbacksByInterviewRoomIdAsync(interviewRoomId);
+                
+                var result = new List<object>();
+                foreach (var feedback in feedbacks)
+                {
+                    var student = await _userRepository.GetByIdAsync(feedback.StudentId);
+                    var interviewer = await _userRepository.GetByIdAsync(feedback.InterviewerId);
+
+                    result.Add(new
+                    {
+                        id = feedback.Id,
+                        interviewerId = feedback.InterviewerId,
+                        studentId = feedback.StudentId,
+                        interviewRoomId = feedback.InterviewRoomId,
+                        rating = feedback.Rating,
+                        comments = feedback.Comments ?? "",
+                        aiAnalysis = feedback.AIAnalysis ?? "",
+                        studentName = student?.FullName ?? "Unknown",
+                        studentEmail = student?.Email ?? "Unknown",
+                        interviewerName = interviewer?.FullName ?? "Unknown",
+                        interviewerEmail = interviewer?.Email ?? "Unknown"
+                    });
+                }
+                
+                return Ok(new
+                {
+                    success = true,
+                    message = "Feedbacks retrieved successfully",
+                    data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = $"Error: {ex.Message}"
+                });
+            }
         }
 
 #if DEBUG

@@ -27,7 +27,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
         public DbSet<InterviewerAvailability> InterviewerAvailabilities { get; set; }
         public DbSet<InterviewRoom> InterviewRooms { get; set; }
         public DbSet<Feedback> Feedbacks { get; set; }
-        public DbSet<Transaction> Transactions { get; set; }
+        public DbSet<InterviewBookingTransaction> InterviewBookingTransaction { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<NotificationReceive> NotificationReceives { get; set; }
         public DbSet<Company> Companies { get; set; }
@@ -84,6 +84,8 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 b.Property(x => x.PortfolioUrl).HasMaxLength(4000);
                 b.Property(x => x.Bio).HasColumnType("nvarchar(max)");
                 b.Property(x => x.CurrentAmount);
+                b.Property(x => x.BankBinNumber);
+                b.Property(x => x.BankAccountNumber);
                 b.Property(x => x.ExperienceYears);
                 b.Property(x => x.Status).IsRequired();
 
@@ -204,20 +206,20 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
             });
 
             // Transaction
-            modelBuilder.Entity<Transaction>(b =>
+            modelBuilder.Entity<InterviewBookingTransaction>(b =>
             {
-                b.ToTable("Transactions");
+                b.ToTable("InterviewBookingTransaction");
                 b.HasKey(x => x.Id);
                 b.Property(x => x.Amount).IsRequired();
-                b.Property(x => x.CreatedAt).IsRequired();
-                b.Property(x => x.UpdatedAt).IsRequired();
-                b.Property(x => x.PayOSOrderCode).IsRequired();
+                //b.Property(x => x.CreatedAt).IsRequired();
+                //b.Property(x => x.UpdatedAt).IsRequired();
+                b.Property(x => x.InterviewerAvailabilityId).IsRequired();
                 b.Property(x => x.Type).IsRequired();
                 b.Property(x => x.Status).IsRequired();
 
                 b.HasOne<User>()
                  .WithMany()
-                 .HasForeignKey(x => x.Id)
+                 .HasForeignKey(x => x.UserId)
                  .OnDelete(DeleteBehavior.Cascade);
             });
 
@@ -413,27 +415,27 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 Status = InterviewRoomStatus.Scheduled
             });
 
-            modelBuilder.Entity<Transaction>().HasData(new Transaction
+            modelBuilder.Entity<InterviewBookingTransaction>().HasData(new InterviewBookingTransaction
             {
                 Id = 1,
                 UserId = 1,
-                PayOSOrderCode = 123456,
+                InterviewerAvailabilityId = 1,
                 Amount = 1000,
-                Type = TransactionType.Payment, 
+                Type = TransactionType.Payment,
                 Status = TransactionStatus.Paid,
-                CreatedAt = new DateTime(2025, 11, 17, 0, 0, 0),
-                UpdatedAt = new DateTime(2025, 11, 17, 0, 0, 0)
+                //CreatedAt = new DateTime(2025, 11, 17, 0, 0, 0),
+                //UpdatedAt = new DateTime(2025, 11, 17, 0, 0, 0)
             },
-            new Transaction
+            new InterviewBookingTransaction
             {
                 Id = 2,
                 UserId = 2,
-                PayOSOrderCode = 1234567,
+                InterviewerAvailabilityId = 1,
                 Amount = 500,
                 Type = TransactionType.Payout,
                 Status = TransactionStatus.Paid,
-                CreatedAt = new DateTime(2025, 11, 17, 0, 0, 0),
-                UpdatedAt = new DateTime(2025, 11, 17, 0, 0, 0)
+                //CreatedAt = new DateTime(2025, 11, 17, 0, 0, 0),
+                //UpdatedAt = new DateTime(2025, 11, 17, 0, 0, 0)
             });
 
             modelBuilder.Entity<Feedback>().HasData(new Feedback

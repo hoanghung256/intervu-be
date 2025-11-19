@@ -2,8 +2,8 @@
 
 namespace Intervu.Application.Interfaces.Repositories
 {
-    public interface ITransactionRepository : IRepositoryBase<Transaction>
+    public interface ITransactionRepository : IRepositoryBase<InterviewBookingTransaction>
     {
-        Task<Transaction?> GetByPayOSOrderCode(int payosOrderCode);
+        Task<InterviewBookingTransaction?> GetByAvailabilityId(int id);
     }
 }

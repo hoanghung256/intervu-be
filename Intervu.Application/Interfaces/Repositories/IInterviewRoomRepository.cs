@@ -11,5 +11,6 @@ namespace Intervu.Application.Interfaces.Repositories
     {
         Task<IEnumerable<InterviewRoom>> GetListByIntervieweeId(int intervieweeId);
         Task<IEnumerable<InterviewRoom>> GetListByInterviewerId(int interviewerId);
+        Task<IEnumerable<InterviewRoom>> GetList();
     }
 }

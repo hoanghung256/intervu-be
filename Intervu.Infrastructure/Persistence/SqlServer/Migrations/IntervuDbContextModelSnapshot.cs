@@ -323,6 +323,56 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Intervu.Domain.Entities.InterviewBookingTransaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Amount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("InterviewerAvailabilityId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("InterviewBookingTransaction", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Amount = 1000,
+                            InterviewerAvailabilityId = 1,
+                            Status = 1,
+                            Type = 0,
+                            UserId = 1
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Amount = 500,
+                            InterviewerAvailabilityId = 1,
+                            Status = 1,
+                            Type = 1,
+                            UserId = 2
+                        });
+                });
+
             modelBuilder.Entity("Intervu.Domain.Entities.InterviewRoom", b =>
                 {
                     b.Property<int>("Id")
@@ -468,6 +518,14 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                     b.Property<int>("Id")
                         .HasColumnType("int");
 
+                    b.Property<string>("BankAccountNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BankBinNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Bio")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -493,6 +551,8 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                         new
                         {
                             Id = 2,
+                            BankAccountNumber = "",
+                            BankBinNumber = "",
                             Bio = "Senior Backend Engineer with real interview experience",
                             CurrentAmount = 0,
                             ExperienceYears = 8,
@@ -502,6 +562,8 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                         new
                         {
                             Id = 5,
+                            BankAccountNumber = "",
+                            BankBinNumber = "",
                             Bio = "Fullstack Engineer previously at Uber",
                             CurrentAmount = 0,
                             ExperienceYears = 6,
@@ -511,6 +573,8 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                         new
                         {
                             Id = 6,
+                            BankAccountNumber = "",
+                            BankBinNumber = "",
                             Bio = "Senior Frontend Engineer focusing on UI/UX interviews",
                             CurrentAmount = 0,
                             ExperienceYears = 7,
@@ -673,61 +737,6 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Intervu.Domain.Entities.Transaction", b =>
-                {
-                    b.Property<int>("Id")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Amount")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("PayOSOrderCode")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Transactions", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Amount = 1000,
-                            CreatedAt = new DateTime(2025, 11, 17, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            PayOSOrderCode = 123456,
-                            Status = 1,
-                            Type = 0,
-                            UpdatedAt = new DateTime(2025, 11, 17, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            UserId = 1
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Amount = 500,
-                            CreatedAt = new DateTime(2025, 11, 17, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            PayOSOrderCode = 1234567,
-                            Status = 1,
-                            Type = 1,
-                            UpdatedAt = new DateTime(2025, 11, 17, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            UserId = 2
-                        });
-                });
-
             modelBuilder.Entity("Intervu.Domain.Entities.User", b =>
                 {
                     b.Property<int>("Id")
@@ -867,6 +876,15 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Intervu.Domain.Entities.InterviewBookingTransaction", b =>
+                {
+                    b.HasOne("Intervu.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Intervu.Domain.Entities.InterviewRoom", b =>
                 {
                     b.HasOne("Intervu.Domain.Entities.InterviewerProfile", null)
@@ -920,15 +938,6 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
                     b.HasOne("Intervu.Domain.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("ReceiverId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Intervu.Domain.Entities.Transaction", b =>
-                {
-                    b.HasOne("Intervu.Domain.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

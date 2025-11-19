@@ -10,15 +10,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Intervu.Infrastructure.Persistence.SqlServer
 {
-    public class TransactionRepository : RepositoryBase<Transaction>, ITransactionRepository
+    public class TransactionRepository : RepositoryBase<InterviewBookingTransaction>, ITransactionRepository
     {
         public TransactionRepository(IntervuDbContext context) : base(context)
         {
         }
 
-        public async Task<Transaction?> GetByPayOSOrderCode(int payosOrderCode)
+        public async Task<InterviewBookingTransaction?> GetByAvailabilityId(int id)
         {
-            return await _context.Transactions.FirstOrDefaultAsync(t => t.PayOSOrderCode == payosOrderCode);
+            return await _context.InterviewBookingTransaction.FirstOrDefaultAsync(t => t.InterviewerAvailabilityId == id);
         }
     }
 }

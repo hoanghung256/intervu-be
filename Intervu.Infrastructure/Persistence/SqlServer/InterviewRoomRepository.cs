@@ -28,5 +28,10 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
         {
             return await _context.InterviewRooms.Where(r => r.InterviewerId == interviewerId).ToListAsync();
         }
+
+        public async Task<IEnumerable<InterviewRoom>> GetList()
+        {
+            return await _context.InterviewRooms.ToListAsync();
+        }
     }
 }
