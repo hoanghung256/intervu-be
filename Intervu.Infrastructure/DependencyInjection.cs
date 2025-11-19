@@ -41,30 +41,25 @@ namespace Intervu.Infrastructure
 
         public static IServiceCollection AddInfrastructureExternalServices(this IServiceCollection services, IConfiguration configuration)
         {
-            var firebaseSection = configuration.GetSection("Firebase");
-            var bucketName = firebaseSection["StorageBucket"];
-            var credentialPath = firebaseSection["CredentialPath"];
-            // Temporarily disable Firebase until credentials are configured
-            //var firebaseSection = configuration.GetSection("Firebase");
-            //var bucketName = firebaseSection["StorageBucket"];
-            //var credentialPath = firebaseSection["CredentialPath"];
+            var firebaseConfigJson = configuration["Firebase:CredentialPath"];
+            var bucketName = configuration["Firebase:StorageBucket"];
 
-            if (string.IsNullOrEmpty(credentialPath))
-                throw new Exception("Firebase CredentialJson is missing in secrets.json");
+            if (string.IsNullOrWhiteSpace(firebaseConfigJson))
+                throw new ArgumentNullException(nameof(firebaseConfigJson), "Firebase credential JSON is missing.");
 
-            //var credential = GoogleCredential.FromJson(credentialPath);
+            GoogleCredential credential = GoogleCredential.FromJson(firebaseConfigJson);
 
-            //if (FirebaseApp.DefaultInstance == null)
-            //{
-            //    FirebaseApp.Create(new AppOptions
-            //    {
-            //        Credential = credential
-            //    });
-            //}
+            if (FirebaseApp.DefaultInstance == null)
+            {
+                FirebaseApp.Create(new AppOptions
+                {
+                    Credential = credential
+                });
+            }
 
-            //services.AddSingleton(StorageClient.Create(credential));
+            services.AddSingleton(StorageClient.Create(credential));
 
-            //services.AddSingleton<string>(sp => bucketName);
+            services.AddSingleton<string>(sp => bucketName);
 
             services.AddTransient<IFileService>(sp =>
             {
@@ -79,10 +74,7 @@ namespace Intervu.Infrastructure
             services.AddScoped<IEmailTemplateService, EmailTemplateService>();
             services.AddSingleton<IMailService, ExternalServices.EmailService>();
             //services.AddSingleton<IMailService, ExternalServices.EmailService>();
-            //services.AddTransient<IFileService, FirebaseStorageService>();
-            
-            // Temporary stub for IFileService - replace with Firebase when ready
-            services.AddTransient<IFileService, TempFileService>();
+
             services.AddSingleton(sp =>
             {
                 PayOSOptions? options = sp.GetRequiredService<IConfiguration>()
