@@ -1,11 +1,12 @@
 ﻿using Intervu.Application.Interfaces.Repositories;
+using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Intervu.Application.Interfaces.UseCases.InterviewRoom.InterviewRoom
+namespace Intervu.Application.UseCases.InterviewRoom
 {
     public class UpdateRoom : IUpdateRoom
     {

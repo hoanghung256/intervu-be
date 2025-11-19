@@ -11,13 +11,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Intervu.Infrastructure.Persistence.SqlServer
 {
-    public class InterviewerAvailabilitiesRepository : IInterviewerAvailabilitiesRepository
+    public class InterviewerAvailabilitiesRepository : RepositoryBase<InterviewerAvailability>, IInterviewerAvailabilitiesRepository
     {
         private readonly IntervuDbContext _dbContext;
-        public InterviewerAvailabilitiesRepository(IntervuDbContext dbContext)
+        public InterviewerAvailabilitiesRepository(IntervuDbContext dbContext) :base(dbContext)
         {
             _dbContext = dbContext;
         }
+
         public async Task<IEnumerable<InterviewerAvailability>> GetInterviewerAvailabilitiesByMonthAsync(int intervewerId, int month = 0, int year = 0)
         {
             var query = _dbContext.InterviewerAvailabilities.AsQueryable();

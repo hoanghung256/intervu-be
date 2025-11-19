@@ -17,8 +17,4 @@
     <ProjectReference Include="..\Intervu.Domain\Intervu.Domain.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Interfaces\UseCases\NewFolder\" />
-  </ItemGroup>
-
 </Project>

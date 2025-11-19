@@ -24,14 +24,16 @@ namespace Intervu.Application.UseCases.InterviewRoom
             return room.Id;
         }
 
-        public async Task<int> ExecuteAsync(int interveweeId, int interviewerId)
+        public async Task<int> ExecuteAsync(int interveweeId, int interviewerId, DateTime scheduledTime)
         {
-            // Check if interveweeId and interviewerId are valid and exists
-
+            // TODO: interveweeId and interviewerId are valid and exists
             Domain.Entities.InterviewRoom room = new()
             {
                 StudentId = interveweeId,
-                InterviewerId = interviewerId
+                InterviewerId = interviewerId,
+                ScheduledTime = scheduledTime,
+                Status = Domain.Entities.Constants.InterviewRoomStatus.Scheduled,
+                DurationMinutes = 60
             };
             await _interviewRoomRepo.AddAsync(room);
             await _interviewRoomRepo.SaveChangesAsync();
