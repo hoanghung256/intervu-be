@@ -6,6 +6,8 @@ using Intervu.Infrastructure.ExternalServices;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.Repositories;
 using Intervu.Infrastructure.Persistence.SqlServer;
+using Intervu.Infrastructure.ExternalServices.EmailServices;
+using Intervu.Application.Interfaces.ExternalServices.Email;
 using PayOS;
 using Intervu.Infrastructure.ExternalServices.PayOSPaymentService;
 using Google.Apis.Auth.OAuth2;
@@ -58,6 +60,8 @@ namespace Intervu.Infrastructure
 
             //services.AddSingleton(StorageClient.Create(credential));
             //services.AddSingleton(bucketName);
+            services.AddTransient<IEmailService, ExternalServices.EmailServices.EmailService>();
+            services.AddScoped<IEmailTemplateService, EmailTemplateService>();
             services.AddSingleton<IMailService, EmailService>();
             //services.AddTransient<IFileService, FirebaseStorageService>();
             
