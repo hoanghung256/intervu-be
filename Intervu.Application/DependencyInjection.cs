@@ -7,10 +7,12 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Intervu.Application.UseCases.InterviewerProfile;
 using Intervu.Application.Interfaces.UseCases.InterviewerProfile;
-using Intervu.Application.Interfaces.UseCases.Company;
-using Intervu.Application.UseCases.Company;
+using CompanyInterfaces = Intervu.Application.Interfaces.UseCases.Company;
+using CompanyUseCases = Intervu.Application.UseCases.Company;
 using Intervu.Application.Interfaces.UseCases.Skill;
 using Intervu.Application.UseCases.Skill;
+using Intervu.Application.Interfaces.UseCases.Admin;
+using AdminUseCases = Intervu.Application.UseCases.Admin;
 using Intervu.Application.Interfaces.UseCases.Availability;
 using Intervu.Application.UseCases.Availability;
 using Intervu.Application.Interfaces.ExternalServices;
@@ -61,8 +63,15 @@ namespace Intervu.Application
             services.AddScoped<IViewInterviewProfile, ViewInterviewerProfile>();
             services.AddScoped<IDeleteInterviewerProfile, DeleteInterviewerProfile>();
             services.AddScoped<IGetAllInterviewers, GetAllInterviewers>();
-            services.AddScoped<IGetAllCompanies, GetAllCompanies>();
+            services.AddScoped<CompanyInterfaces.IGetAllCompanies, CompanyUseCases.GetAllCompanies>();
             services.AddScoped<IGetAllSkills, GetAllSkills>();
+            // ----- Admin ----
+            services.AddScoped<IGetDashboardStats, AdminUseCases.GetDashboardStats>();
+            services.AddScoped<IGetAllUsersForAdmin, AdminUseCases.GetAllUsers>();
+            services.AddScoped<IGetAllCompaniesForAdmin, AdminUseCases.GetAllCompanies>();
+            services.AddScoped<IGetAllPayments, AdminUseCases.GetAllPayments>();
+            services.AddScoped<IGetAllFeedbacks, AdminUseCases.GetAllFeedbacks>();
+            services.AddScoped<IGetAllInterviewersForAdmin, AdminUseCases.GetAllInterviewersForAdmin>();
             // ----- Feedback ----
             services.AddScoped<IGetFeedbacks, GetFeedbacks>();
             services.AddScoped<ICreateFeedback, CreateFeedback>();

@@ -1,4 +1,4 @@
-﻿using Azure.Core;
+using Azure.Core;
 using Intervu.Application.Common;
 using Intervu.Application.DTOs.Feedback;
 using Intervu.Application.Interfaces.Repositories;
@@ -19,6 +19,15 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
         {
         }
 
+        public async Task<PagedResult<Feedback>> GetPagedFeedbacksAsync(int page, int pageSize)
+        {
+            var query = _context.Feedbacks.AsQueryable();
+            .Skip((request.Page - 1) * request.PageSize)
+            .Take(request.PageSize)
+                .ToListAsync();
+
+            return new PagedResult<Feedback>(items, totalItems, request.PageSize, request.Page);
+        }
         public async Task CreateFeedbackAsync(Feedback feedback)
         {
             await AddAsync(feedback);
@@ -38,12 +47,26 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             var totalItems = await query.CountAsync();
 
             var items = await query
-            .Skip((request.Page - 1) * request.PageSize)
-            .Take(request.PageSize)
+                .OrderByDescending(f => f.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
 
-            return new PagedResult<Feedback>(items, totalItems, request.PageSize, request.Page);
+            return new PagedResult<Feedback>(items, totalItems, pageSize, page);
         }
+
+        public async Task<int> GetTotalFeedbacksCountAsync()
+        {
+            return await _context.Feedbacks.CountAsync();
+        }
+
+        public async Task<double> GetAverageRatingAsync()
+        {
+            if (!await _context.Feedbacks.AnyAsync())
+                return 0;
+
+            return await _context.Feedbacks.AverageAsync(f => f.Rating);
+}
 
         public async Task UpdateFeedbackAsync(Feedback updatedFeedback)
         {

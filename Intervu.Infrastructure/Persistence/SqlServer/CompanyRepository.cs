@@ -31,5 +31,10 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
 
             return new PagedResult<Company>(items, totalItems, pageSize, page);
         }
+
+        public async Task<int> GetTotalCompaniesCountAsync()
+        {
+            return await _context.Companies.CountAsync();
+        }
     }
 }
