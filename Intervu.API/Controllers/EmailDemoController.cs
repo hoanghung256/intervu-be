@@ -52,8 +52,8 @@ namespace Intervu.API.Controllers
             {
                 var sampleDto = new SendBookingConfirmationEmailDto
                 {
-                    To = "anhnqde180064@fpt.edu.vn",
-                    CandidateName = "Quoc Anh",
+                    To = "hunghvde180038@fpt.edu.vn",
+                    CandidateName = "Hoang Vu Hung",
                     InterviewerName = "Chau Tinh Tri",
                     InterviewDate = DateTime.Now.AddDays(2),
                     InterviewTime = "14:00 UTC",

@@ -26,6 +26,9 @@ using Intervu.Application.Interfaces.UseCases.InterviewBooking;
 using Intervu.Application.UseCases.InterviewBooking;
 using Intervu.Application.UseCases.InterviewRoom;
 using Intervu.Application.Interfaces.UseCases.Interviewer;
+using Intervu.Application.UseCases.Interviewer;
+using Intervu.Application.Interfaces.UseCases.Interviewee;
+using Intervu.Application.UseCases.Interviewee;
 
 namespace Intervu.Application
 {
@@ -83,6 +86,10 @@ namespace Intervu.Application
             services.AddScoped<ICreateBookingCheckoutUrl, CreateBookingCheckoutUrl>();
             services.AddScoped<IUpdateBookingStatus, UpdateBookingStatus>();
             services.AddScoped<IGetInterviewBooking, GetInterviewBooking>();
+
+            // ----- Interviewer & Interviewee Details ---
+            services.AddScoped<IGetInterviewerDetails, GetInterviewerDetails>();
+            services.AddScoped<IGetIntervieweeDetails, GetIntervieweeDetails>();
 
             return services;
         }
