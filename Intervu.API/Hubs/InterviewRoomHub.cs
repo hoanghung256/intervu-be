@@ -17,6 +17,7 @@ namespace Intervu.API.Hubs
         private readonly ILogger<InterviewRoomHub> _logger;
         private readonly RoomManagerService _roomManager;
         private readonly IReadOnlyDictionary<string, ICodeGenerationService> _codeGenerationServices;
+        private readonly InterviewRoomCache _cache;
 
         // A static dictionary to track connections per room
         private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, bool>> _roomConnections = new();
@@ -27,12 +28,14 @@ namespace Intervu.API.Hubs
         public InterviewRoomHub(CodeExecutionService codeExecutionService,
             ILogger<InterviewRoomHub> logger,
             RoomManagerService roomManager,
-            IEnumerable<ICodeGenerationService> codeGenerationServices)
+            IEnumerable<ICodeGenerationService> codeGenerationServices,
+            InterviewRoomCache cache)
         {
             _codeExecutionService = codeExecutionService;
             _logger = logger;
             _roomManager = roomManager;
             _codeGenerationServices = codeGenerationServices.ToDictionary(s => s.Language, StringComparer.OrdinalIgnoreCase);
+            _cache = cache;
         }
 
 
@@ -104,11 +107,20 @@ namespace Intervu.API.Hubs
 
         public async Task JoinRoom(string room)
         {
+            // Get the current state for the room
+            var roomState = await _roomManager.GetOrCreateRoomStateAsync(room);
+
+            // Send the entire state to the newly joined user. This is correct.
+            await Clients.Caller.SendAsync("ReceiveFullState", roomState);
+
+            await Groups.AddToGroupAsync(Context.ConnectionId, room);
+
+            await Clients.Group(room).SendAsync("UserJoined", Context.ConnectionId);
+
+            if (await isRoomCompleted(room)) return;
             // Add connection to our tracker
             var roomConnectionIds = _roomConnections.GetOrAdd(room, new ConcurrentDictionary<string, bool>());
             roomConnectionIds.TryAdd(Context.ConnectionId, true);
-
-            await Groups.AddToGroupAsync(Context.ConnectionId, room);
 
             // Track room membership
             if (!RoomUsers.ContainsKey(room))
@@ -125,13 +137,6 @@ namespace Intervu.API.Hubs
             // Send existing peers to the new user
             await Clients.Caller.SendAsync("ExistingPeers", existingPeers);
 
-            // Get the current state for the room
-            var roomState = await _roomManager.GetOrCreateRoomStateAsync(room);
-
-            // Send the entire state to the newly joined user. This is correct.
-            await Clients.Caller.SendAsync("ReceiveFullState", roomState);
-
-            await Clients.Group(room).SendAsync("UserJoined", Context.ConnectionId);
             _logger.LogInformation("Client {ConnectionId} joined room {RoomId}", Context.ConnectionId, room);
         }
 
@@ -183,6 +188,7 @@ namespace Intervu.API.Hubs
         /// </summary>
         public async Task SendCode(string room, string code, string language)
         {
+            if (await isRoomCompleted(room)) return;
             _logger.LogInformation("Code updated for room {RoomId}", room);
             var roomState = await _roomManager.GetOrCreateRoomStateAsync(room);
 
@@ -206,6 +212,7 @@ namespace Intervu.API.Hubs
         public async Task SendLanguage(string roomId, string language)
         {
             // Update the state in the manager
+            if (await isRoomCompleted(roomId)) return;
             var roomState = await _roomManager.GetOrCreateRoomStateAsync(roomId);
             _logger.LogInformation("Language updated for room {RoomId}", roomId);
             roomState.CurrentLanguage = language;
@@ -327,6 +334,7 @@ namespace Intervu.API.Hubs
         /// </summary>
         public async Task SendProblem(string roomId, string description, string shortName, object[] testCases)
         {
+            if (await isRoomCompleted(roomId)) return;
             // Update the state in the manager
             var roomState = await _roomManager.GetOrCreateRoomStateAsync(roomId);
             roomState.ProblemDescription = description;
@@ -352,6 +360,17 @@ namespace Intervu.API.Hubs
                     await Clients.Group(roomId).SendAsync("ReceiveCode", generatedCode);
                 }
             }
+        }
+
+        public async Task<bool> isRoomCompleted(string roomId)
+        {
+            var room = _cache.Rooms.SingleOrDefault(r => r.Id == int.Parse(roomId));
+            if (room != null && room.Status == Domain.Entities.Constants.InterviewRoomStatus.Completed)
+            {
+                _logger.LogInformation("Room is completed for id: " + roomId);
+                return true;
+            }
+            return false;
         }
     }
 
