@@ -109,5 +109,6 @@ namespace Intervu.API.Controllers
             return Ok("Avatar deleted successfully.");
         }
 
+
     }
 }
