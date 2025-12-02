@@ -1,4 +1,4 @@
-﻿namespace Intervu.Domain.Abstractions.Entities.Interfaces
+﻿namespace Intervu.Domain.Abstractions.Entity.Interfaces
 {
     public interface IEntityBase<T>
     {

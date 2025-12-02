@@ -4,10 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
-using Intervu.Application.Common;
+using Intervu.Application.DTOs.Common;
 using Intervu.Application.DTOs.Company;
-using Intervu.Application.Interfaces.Repositories;
 using Intervu.Application.Interfaces.UseCases.Company;
+using Intervu.Domain.Repositories;
 
 namespace Intervu.Application.UseCases.Company
 {
@@ -22,13 +22,13 @@ namespace Intervu.Application.UseCases.Company
         }
         public async Task<PagedResult<CompanyDto>> ExecuteAsync(int page, int pageSize)
         {
-            var result = await _companyRepository.GetPagedCompaniesAsync(page, pageSize);
+            var (items, total) = await _companyRepository.GetPagedCompaniesAsync(page, pageSize);
             return new PagedResult<CompanyDto>
             (
-                _mapper.Map<List<CompanyDto>>(result.Items),
-                result.TotalItems,
-                result.PageSize,
-                result.CurrentPage
+                _mapper.Map<List<CompanyDto>>(items),
+                total,
+                pageSize,
+                page
             );
         }
     }

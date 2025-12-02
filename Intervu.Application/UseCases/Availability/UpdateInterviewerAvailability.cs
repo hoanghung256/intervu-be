@@ -2,9 +2,9 @@ using System;
 using System.Threading.Tasks;
 using AutoMapper;
 using Intervu.Application.DTOs.Availability;
-using Intervu.Application.Interfaces.Repositories;
 using Intervu.Application.Interfaces.UseCases.Availability;
 using Intervu.Domain.Entities;
+using Intervu.Domain.Repositories;
 
 namespace Intervu.Application.UseCases.Availability
 {
@@ -40,7 +40,7 @@ namespace Intervu.Application.UseCases.Availability
             if (dto.EndTime <= utcNow)
                 throw new ArgumentException("Cannot update availability to a time in the past");
 
-            var updated = await _repo.UpdateInterviewerAvailabilityAsync(availabilityId, dto);
+            var updated = await _repo.UpdateInterviewerAvailabilityAsync(availabilityId, dto.StartTime, dto.EndTime);
             if (!updated)
                 throw new InvalidOperationException($"Availability with ID {availabilityId} not found or could not be updated");
 

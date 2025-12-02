@@ -3,8 +3,8 @@ using Intervu.Application.DTOs.Company;
 using Intervu.Application.DTOs.Interviewer;
 using Intervu.Application.DTOs.Skill;
 using Intervu.Application.DTOs.User;
-using Intervu.Application.Interfaces.Repositories;
 using Intervu.Application.Interfaces.UseCases.InterviewerProfile;
+using Intervu.Domain.Repositories;
 
 namespace Intervu.Application.UseCases.InterviewerProfile
 {

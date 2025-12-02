@@ -4,9 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using Intervu.Application.DTOs.Availability;
-using Intervu.Application.Interfaces.Repositories;
 using Intervu.Application.Interfaces.UseCases.Availability;
 using Intervu.Domain.Entities;
+using Intervu.Domain.Repositories;
 
 namespace Intervu.Application.UseCases.Availability
 {

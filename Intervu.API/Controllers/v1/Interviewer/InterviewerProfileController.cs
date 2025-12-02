@@ -2,7 +2,6 @@
 using AutoMapper;
 using Intervu.API.Utils.Constant;
 using Intervu.Application.DTOs.Interviewer;
-using Intervu.Application.Interfaces.UseCases.Interviewer;
 using Intervu.Application.Interfaces.UseCases.InterviewerProfile;
 using Intervu.Domain.Entities.Constants;
 using Microsoft.AspNetCore.Authorization;

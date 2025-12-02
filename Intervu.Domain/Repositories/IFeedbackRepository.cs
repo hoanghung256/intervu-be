@@ -1,18 +1,15 @@
-﻿using Intervu.Application.DTOs.Interviewer;
-using Intervu.Domain.Entities;
-using Intervu.Application.Common;
+﻿using Intervu.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Intervu.Application.DTOs.Feedback;
 
-namespace Intervu.Application.Interfaces.Repositories
+namespace Intervu.Domain.Repositories
 {
     public interface IFeedbackRepository : IRepositoryBase<Feedback>
     {
-        Task<PagedResult<Feedback>> GetFeedbacksByStudentIdAsync(GetFeedbackRequest request);
+        Task<(IReadOnlyList<Feedback> Items, int TotalCount)> GetFeedbacksByStudentIdAsync(int studentId, int page, int pageSize);
         Task<Feedback?> GetFeedbackByIdAsync(int id);
         Task<List<Feedback>> GetFeedbacksByInterviewRoomIdAsync(int interviewRoomId);
         Task CreateFeedbackAsync(Feedback feedback);

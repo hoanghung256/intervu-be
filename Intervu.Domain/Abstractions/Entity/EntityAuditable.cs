@@ -1,10 +1,11 @@
-﻿using System;
+﻿using Intervu.Domain.Abstractions.Entity.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Intervu.Domain.Abstractions.Entities.Interfaces
+namespace Intervu.Domain.Abstractions.Entity
 {
     /*
     * For entity that requires both date tracking and soft delete functionality.

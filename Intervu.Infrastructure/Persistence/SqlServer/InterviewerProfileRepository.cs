@@ -1,13 +1,10 @@
-﻿using Intervu.Application.Common;
-using Intervu.Application.DTOs.Interviewer;
-using Intervu.Application.Interfaces.Repositories;
-using Intervu.Domain.Entities;
+﻿using Intervu.Domain.Entities;
+using Intervu.Domain.Repositories;
 using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Intervu.Infrastructure.Persistence.SqlServer
@@ -18,67 +15,34 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
         {
         }
 
-        public async Task CreateInterviewerProfile(InterviewerCreateDto dto)
+        public async Task CreateInterviewerProfile(InterviewerProfile profile)
         {
-            if (dto == null)
-                throw new ArgumentNullException(nameof(dto), "DTO cannot be null");
+            if (profile == null)
+                throw new ArgumentNullException(nameof(profile), "Profile cannot be null");
 
             var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Email == dto.Email);
+                .FirstOrDefaultAsync(u => u.Email == profile.User.Email);
 
             if (user == null)
             {
                 user = new User
                 {
-                    FullName = dto.FullName,
-                    Email = dto.Email,
-                    Password = dto.Password,
-                    Role = dto.Role,
-                    ProfilePicture = dto.ProfilePicture,
-                    Status = dto.Status
+                    FullName = profile.User.FullName,
+                    Email = profile.User.Email,
+                    Password = profile.User.Password,
+                    Role = profile.User.Role,
+                    ProfilePicture = profile.User.ProfilePicture,
+                    Status = profile.User.Status
                 };
 
                 await _context.Users.AddAsync(user);
                 await _context.SaveChangesAsync();
             }
 
-            var profile = new InterviewerProfile
-            {
-                CurrentAmount = dto.CurrentAmount ?? 0,
-                ExperienceYears = dto.ExperienceYears ?? 0,
-                Status = dto.StatusProfile,
-                User = user,
-                Companies = new List<Company>(),
-                Skills = new List<Skill>()
-            };
-
-            if (dto.CompanyIds?.Any() == true)
-            {
-                var companies = await _context.Companies
-                    .Where(c => dto.CompanyIds.Contains(c.Id))
-                    .ToListAsync();
-                foreach (var company in companies)
-                {
-                    profile.Companies.Add(company);
-                }
-            }
-
-            if (dto.SkillIds?.Any() == true)
-            {
-                var skills = await _context.Skills
-                    .Where(s => dto.SkillIds.Contains(s.Id))
-                    .ToListAsync();
-                foreach (var skill in skills)
-                {
-                    profile.Skills.Add(skill);
-                }
-            }
-
+            profile.User = user;
             await _context.InterviewerProfiles.AddAsync(profile);
             await _context.SaveChangesAsync();
         }
-
-
 
         public async Task<InterviewerProfile> GetProfileAsync()
         {
@@ -102,91 +66,65 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             return profile;
         }
 
-        public async Task<PagedResult<InterviewerProfile>> GetPagedInterviewerProfilesAsync(GetInterviewerFilterRequest request)
+        public async Task<(IReadOnlyList<InterviewerProfile> Items, int TotalCount)> GetPagedInterviewerProfilesAsync(string? search, int? skillId, int? companyId, int page, int pageSize)
         {
-            var query = _context.InterviewerProfiles.AsQueryable()
+            var query = _context.InterviewerProfiles
                 .Include(i => i.Companies)
                 .Include(i => i.Skills)
                 .AsQueryable();
 
-            if (!string.IsNullOrEmpty(request.Search))
+            if (!string.IsNullOrEmpty(search))
             {
-                query = query.Where(i => i.Bio.Contains(request.Search));
+                query = query.Where(i => i.Bio.Contains(search));
             }
 
-            if (request.SkillId.HasValue)
+            if (skillId.HasValue)
             {
-                query = query.Where(x => x.Skills.Any(c => c.Id == request.SkillId.Value));
+                query = query.Where(x => x.Skills.Any(c => c.Id == skillId.Value));
             }
 
-            if (request.CompanyId.HasValue)
+            if (companyId.HasValue)
             {
-                query = query.Where(x => x.Companies.Any(c => c.Id == request.CompanyId.Value));
+                query = query.Where(x => x.Companies.Any(c => c.Id == companyId.Value));
             }
 
-            var totalItems = query.Count();
+            var totalItems = await query.CountAsync();
 
             var items = await query
-                .Skip((request.Page - 1) * request.PageSize)
-                .Take(request.PageSize)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
 
-            return new PagedResult<InterviewerProfile>(items, totalItems, request.PageSize, request.Page);
-        }
-        public async Task<IEnumerable<InterviewerProfile>> GetAllInterviewerProfilesAsync()
-        {
-            var profiles = await _context.InterviewerProfiles
-                .Include(p => p.Companies)
-                .Include(p => p.Skills)
-                .ToListAsync();
-            return profiles;
+            return (items, totalItems);
         }
 
-        public async Task UpdateInterviewerProfileAsync(InterviewerUpdateDto updatedProfile)
+        public async Task UpdateInterviewerProfileAsync(InterviewerProfile updatedProfile)
         {
             var existingProfile = await _context.InterviewerProfiles
                 .Include(p => p.Companies)
                 .Include(p => p.Skills)
+                .Include(p => p.User)
                 .FirstOrDefaultAsync(p => p.Id == updatedProfile.Id);
 
             if (existingProfile == null)
                 throw new Exception("Interviewer profile not found.");
 
-            var existingUser = await _context.Users
-                .FirstOrDefaultAsync(u => u.Id == updatedProfile.Id);
-
-            if (existingUser == null)
-                throw new Exception("User not found.");
-
             existingProfile.PortfolioUrl = updatedProfile.PortfolioUrl;
             existingProfile.CurrentAmount = updatedProfile.CurrentAmount;
             existingProfile.ExperienceYears = updatedProfile.ExperienceYears;
             existingProfile.Bio = updatedProfile.Bio;
-            existingProfile.BankBinNumber = updatedProfile.BankBinNumber ?? string.Empty;
-            existingProfile.BankAccountNumber = updatedProfile.BankAccountNumber ?? string.Empty;
+            existingProfile.BankBinNumber = updatedProfile.BankBinNumber;
+            existingProfile.BankAccountNumber = updatedProfile.BankAccountNumber;
 
+            existingProfile.Companies = updatedProfile.Companies ?? new List<Company>();
+            existingProfile.Skills = updatedProfile.Skills ?? new List<Skill>();
 
-            var newCompanies = await _context.Companies
-                .Where(c => updatedProfile.CompanyIds.Contains(c.Id))
-                .ToListAsync();
-
-            existingProfile.Companies.Clear();
-            foreach (var c in newCompanies)
-                existingProfile.Companies.Add(c);
-
-
-            var newSkills = await _context.Skills
-                .Where(s => updatedProfile.SkillIds.Contains(s.Id))
-                .ToListAsync();
-
-            existingProfile.Skills.Clear();
-            foreach (var s in newSkills)
-                existingProfile.Skills.Add(s);
-
-
-            existingUser.FullName = updatedProfile.FullName;
-            existingUser.Email = updatedProfile.Email;
-            existingUser.ProfilePicture = updatedProfile.ProfilePicture;
+            if (existingProfile.User != null && updatedProfile.User != null)
+            {
+                existingProfile.User.FullName = updatedProfile.User.FullName;
+                existingProfile.User.Email = updatedProfile.User.Email;
+                existingProfile.User.ProfilePicture = updatedProfile.User.ProfilePicture;
+            }
 
             await _context.SaveChangesAsync();
         }

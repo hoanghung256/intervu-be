@@ -25,7 +25,7 @@ namespace Intervu.Infrastructure.ExternalServices.EmailServices
 
             // Strategy 2: Look in base directory for EmailTemplates folder (production deployment - templates copied to output)
             var baseDirectory = AppContext.BaseDirectory;
-            var localTemplatesPath = Path.Combine(baseDirectory, "EmailTemplates");
+            var localTemplatesPath = Path.Combine(baseDirectory, "ExternalServices", "EmailServices", "Templates");
             if (Directory.Exists(localTemplatesPath))
             {
                 _templatesPath = localTemplatesPath;

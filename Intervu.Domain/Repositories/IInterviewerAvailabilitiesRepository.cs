@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Intervu.Application.DTOs.Availability;
 using Intervu.Domain.Entities;
 
-namespace Intervu.Application.Interfaces.Repositories
+namespace Intervu.Domain.Repositories
 {
     public interface IInterviewerAvailabilitiesRepository : IRepositoryBase<InterviewerAvailability>
     {
@@ -15,7 +14,7 @@ namespace Intervu.Application.Interfaces.Repositories
         Task<int> CreateInterviewerAvailabilityAsync(InterviewerAvailability availability);
         Task<int> CreateMultipleInterviewerAvailabilitiesAsync(List<InterviewerAvailability> availabilities);
         Task<bool> DeleteInterviewerAvailabilityAsync(int availabilityId);
-        Task<bool> UpdateInterviewerAvailabilityAsync(int availabilityId, InterviewerAvailabilityUpdateDto dto);
+        Task<bool> UpdateInterviewerAvailabilityAsync(int availabilityId, DateTimeOffset startTime, DateTimeOffset endTime);
 
         Task<InterviewerAvailability?> GetAsync(int interviewerId, DateTime startTime);
     }

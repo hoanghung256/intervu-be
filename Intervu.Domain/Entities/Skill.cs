@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Intervu.Domain.Abstractions.Entities;
+using Intervu.Domain.Abstractions.Entity;
 
 namespace Intervu.Domain.Entities
 {

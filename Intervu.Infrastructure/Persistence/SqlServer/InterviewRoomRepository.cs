@@ -1,5 +1,5 @@
-﻿using Intervu.Application.Interfaces.Repositories;
-using Intervu.Domain.Entities;
+﻿using Intervu.Domain.Entities;
+using Intervu.Domain.Repositories;
 using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
 using Microsoft.EntityFrameworkCore;
 using System;

@@ -1,10 +1,10 @@
 ﻿using Intervu.Application.Interfaces.ExternalServices;
-using Intervu.Application.Interfaces.Repositories;
 using Intervu.Application.Interfaces.UseCases.Availability;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
 using Intervu.Application.UseCases.Availability;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
+using Intervu.Domain.Repositories;
 
 namespace Intervu.Application.UseCases.InterviewBooking
 {
@@ -41,6 +41,9 @@ namespace Intervu.Application.UseCases.InterviewBooking
 
             if (t.Status == TransactionStatus.Created)
             {
+                // Skip payouts with non-positive amount
+                if (t.Amount <= 0) return;
+
                 await _paymentService.CreateSpendOrderAsync(
                     t.Amount,
                     $"PAYOUT",

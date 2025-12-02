@@ -4,7 +4,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Intervu.Infrastructure.ExternalServices;
 using Intervu.Application.Interfaces.ExternalServices;
-using Intervu.Application.Interfaces.Repositories;
 using Intervu.Infrastructure.Persistence.SqlServer;
 using Intervu.Infrastructure.ExternalServices.EmailServices;
 using Intervu.Application.Interfaces.ExternalServices.Email;
@@ -15,6 +14,7 @@ using Google.Cloud.Storage.V1;
 using Firebase.Storage;
 using FirebaseAdmin;
 using Intervu.Infrastructure.ExternalServices.FirebaseStorageService;
+using Intervu.Domain.Repositories;
 
 namespace Intervu.Infrastructure
 {

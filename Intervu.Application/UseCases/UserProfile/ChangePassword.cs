@@ -1,7 +1,7 @@
 using Intervu.Application.DTOs.User;
-using Intervu.Application.Interfaces.Repositories;
 using Intervu.Application.Interfaces.UseCases.UserProfile;
-using Intervu.Application.Services;
+using Intervu.Application.Utils;
+using Intervu.Domain.Repositories;
 using System.Threading.Tasks;
 
 namespace Intervu.Application.UseCases.UserProfile

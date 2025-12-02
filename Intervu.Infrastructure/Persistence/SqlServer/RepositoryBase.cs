@@ -1,5 +1,5 @@
-﻿using Intervu.Application.Interfaces.Repositories;
-using Intervu.Domain.Abstractions.Entities.Interfaces;
+﻿using Intervu.Domain.Abstractions.Entity.Interfaces;
+using Intervu.Domain.Repositories;
 using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
 
 namespace Intervu.Infrastructure.Persistence.SqlServer

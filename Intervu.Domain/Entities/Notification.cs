@@ -1,4 +1,4 @@
-using Intervu.Domain.Abstractions.Entities;
+using Intervu.Domain.Abstractions.Entity;
 using System;
 
 namespace Intervu.Domain.Entities

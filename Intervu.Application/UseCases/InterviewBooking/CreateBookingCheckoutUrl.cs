@@ -1,6 +1,6 @@
 ﻿using Intervu.Application.Interfaces.ExternalServices;
-using Intervu.Application.Interfaces.Repositories;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
+using Intervu.Domain.Repositories;
 
 namespace Intervu.Application.UseCases.InterviewBooking
 {

@@ -4,9 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Intervu.Domain.Entities;
-using Microsoft.AspNetCore.Http;
 
-namespace Intervu.Application.Interfaces.Repositories
+namespace Intervu.Domain.Repositories
 {
     public interface IUserRepository : IRepositoryBase<User>
     {

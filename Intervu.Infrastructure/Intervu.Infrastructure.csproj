@@ -34,15 +34,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="ExternalServices\EmailServices\Templates\" />
     <Folder Include="Persistence\SqlServer\Migrations\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <!-- Copy EmailTemplates folder to output directory -->
-    <None Include="ExternalServices\EmailServices\EmailTemplates\**\*.*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>EmailTemplates\%(RecursiveDir)%(Filename)%(Extension)</Link>
-    </None>
   </ItemGroup>
 
 </Project>

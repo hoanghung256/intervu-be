@@ -1,6 +1,6 @@
-﻿using Intervu.Application.Interfaces.Repositories;
-using Intervu.Application.Interfaces.UseCases.Feedbacks;
+﻿using Intervu.Application.Interfaces.UseCases.Feedbacks;
 using Intervu.Domain.Entities;
+using Intervu.Domain.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Linq;

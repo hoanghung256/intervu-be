@@ -39,6 +39,12 @@ namespace Intervu.Infrastructure.ExternalServices.PayOSPaymentService
 
         public async Task<bool> CreateSpendOrderAsync(int amount, string description, string targetBankId, string targetBankAccountNumber)
         {
+            // Guard: Do not call external API with non-positive amounts
+            if (amount <= 0)
+            {
+                return false;
+            }
+
             var payoutRequest = new PayoutRequest
             {
                 Amount = amount,
@@ -46,9 +52,18 @@ namespace Intervu.Infrastructure.ExternalServices.PayOSPaymentService
                 ToAccountNumber = targetBankAccountNumber,
                 ToBin = targetBankId
             };
-            await _payoutClient.Client.Payouts.CreateAsync(payoutRequest);
 
-            return true;
+            try
+            {
+                await _payoutClient.Client.Payouts.CreateAsync(payoutRequest);
+                return true;
+            }
+            catch (Exception)
+            {
+                // Swallow external API exception here so background services don't crash the host.
+                // Higher-level code can react to a `false` return value if needed.
+                return false;
+            }
         }
 
         public bool VerifyPaymentAsync(object payload)

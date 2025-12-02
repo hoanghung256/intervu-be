@@ -1,6 +1,6 @@
 ﻿using Intervu.Domain.Entities;
 
-namespace Intervu.Application.Interfaces.Repositories
+namespace Intervu.Domain.Repositories
 {
     public interface ITransactionRepository : IRepositoryBase<InterviewBookingTransaction>
     {

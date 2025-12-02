@@ -1,7 +1,8 @@
 ﻿using AutoMapper;
 using Intervu.Application.DTOs.Interviewer;
-using Intervu.Application.Interfaces.Repositories;
-using Intervu.Application.Interfaces.UseCases.Interviewer;
+using Intervu.Application.Interfaces.UseCases.InterviewerProfile;
+using Intervu.Domain.Entities;
+using Intervu.Domain.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,8 +24,9 @@ namespace Intervu.Application.UseCases.InterviewerProfile
 
         public async Task<InterviewerProfileDto> CreateInterviewRequest(InterviewerCreateDto interviewerCreateDto)
         {
-            await _repo.CreateInterviewerProfile(interviewerCreateDto);
-            return _mapper.Map<InterviewerProfileDto>(interviewerCreateDto);
+            var profile = _mapper.Map<Domain.Entities.InterviewerProfile>(interviewerCreateDto);
+            await _repo.CreateInterviewerProfile(profile);
+            return _mapper.Map<InterviewerProfileDto>(profile);
         }
     }
 }

@@ -1,8 +1,6 @@
 ﻿using Azure.Core;
-using Intervu.Application.Common;
-using Intervu.Application.DTOs.Feedback;
-using Intervu.Application.Interfaces.Repositories;
 using Intervu.Domain.Entities;
+using Intervu.Domain.Repositories;
 using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -31,18 +29,18 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
         }
 
 
-        public async Task<PagedResult<Feedback>> GetFeedbacksByStudentIdAsync(GetFeedbackRequest request)
+        public async Task<(IReadOnlyList<Feedback> Items, int TotalCount)> GetFeedbacksByStudentIdAsync(int studentId, int page, int pageSize)
         {
-            var query = _context.Feedbacks.Where(f => f.StudentId == request.StudentId).AsQueryable();
+            var query = _context.Feedbacks.Where(f => f.StudentId == studentId).AsQueryable();
 
             var totalItems = await query.CountAsync();
 
             var items = await query
-            .Skip((request.Page - 1) * request.PageSize)
-            .Take(request.PageSize)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
                 .ToListAsync();
 
-            return new PagedResult<Feedback>(items, totalItems, request.PageSize, request.Page);
+            return (items, totalItems);
         }
 
         public async Task UpdateFeedbackAsync(Feedback updatedFeedback)

@@ -1,11 +1,10 @@
 ﻿using AutoMapper;
 using Intervu.Application.DTOs.User;
-using Intervu.Application.Interfaces.Repositories;
 using Intervu.Application.Interfaces.UseCases.Authentication;
-using Intervu.Application.Services;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
-using Intervu.Application.Interfaces.Repositories;
+using Intervu.Application.Utils;
+using Intervu.Domain.Repositories;
 
 namespace Intervu.Application.UseCases.Authentication
 {
