@@ -1,5 +1,6 @@
 ﻿using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Intervu.Application.Services;
+using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,7 +27,7 @@ namespace Intervu.Infrastructure.ExternalServices
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             using var scope = _services.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<IntervuDbContext>();
+            var db = scope.ServiceProvider.GetRequiredService<IntervuPostgreDbContext>();
 
             var rooms = await db.InterviewRooms.ToListAsync(cancellationToken);
             _cache.SetAll(rooms);

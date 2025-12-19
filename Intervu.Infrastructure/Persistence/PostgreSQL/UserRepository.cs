@@ -1,18 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Intervu.Domain.Entities;
+﻿using Intervu.Domain.Entities;
 using Intervu.Domain.Repositories;
-using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
+using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Microsoft.EntityFrameworkCore;
 
-namespace Intervu.Infrastructure.Persistence.SqlServer
+namespace Intervu.Infrastructure.Persistence.PostgreSQL
 {
     public class UserRepository : RepositoryBase<User>, IUserRepository
     {
-        public UserRepository(IntervuDbContext context) : base(context)
+        public UserRepository(IntervuPostgreDbContext context) : base(context)
         {
         }
 
