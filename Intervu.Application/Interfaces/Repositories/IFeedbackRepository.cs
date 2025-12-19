@@ -1,7 +1,7 @@
 using Intervu.Application.Common;
 using Intervu.Domain.Entities;
 using System.Threading.Tasks;
-﻿using Intervu.Application.DTOs.Interviewer;
+using Intervu.Application.DTOs.Interviewer;
 using Intervu.Domain.Entities;
 using Intervu.Application.Common;
 using System;

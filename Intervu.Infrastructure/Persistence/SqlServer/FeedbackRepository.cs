@@ -21,12 +21,12 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
 
         public async Task<PagedResult<Feedback>> GetPagedFeedbacksAsync(int page, int pageSize)
         {
-            var query = _context.Feedbacks.AsQueryable();
-            .Skip((request.Page - 1) * request.PageSize)
-            .Take(request.PageSize)
+            var query = await _context.Feedbacks.AsQueryable()
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
                 .ToListAsync();
 
-            return new PagedResult<Feedback>(items, totalItems, request.PageSize, request.Page);
+            return new PagedResult<Feedback>(query, query.Count, pageSize, page);
         }
         public async Task CreateFeedbackAsync(Feedback feedback)
         {
@@ -43,16 +43,12 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
         public async Task<PagedResult<Feedback>> GetFeedbacksByStudentIdAsync(GetFeedbackRequest request)
         {
             var query = _context.Feedbacks.Where(f => f.StudentId == request.StudentId).AsQueryable();
-
             var totalItems = await query.CountAsync();
-
             var items = await query
-                .OrderByDescending(f => f.Id)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
+            .Skip((request.Page - 1) * request.PageSize)
+            .Take(request.PageSize)
                 .ToListAsync();
-
-            return new PagedResult<Feedback>(items, totalItems, pageSize, page);
+            return new PagedResult<Feedback>(items, totalItems, request.PageSize, request.Page);
         }
 
         public async Task<int> GetTotalFeedbacksCountAsync()
@@ -66,7 +62,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
                 return 0;
 
             return await _context.Feedbacks.AverageAsync(f => f.Rating);
-}
+        }
 
         public async Task UpdateFeedbackAsync(Feedback updatedFeedback)
         {

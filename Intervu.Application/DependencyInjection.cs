@@ -69,7 +69,7 @@ namespace Intervu.Application
             services.AddScoped<IGetDashboardStats, AdminUseCases.GetDashboardStats>();
             services.AddScoped<IGetAllUsersForAdmin, AdminUseCases.GetAllUsers>();
             services.AddScoped<IGetAllCompaniesForAdmin, AdminUseCases.GetAllCompanies>();
-            services.AddScoped<IGetAllPayments, AdminUseCases.GetAllPayments>();
+            //services.AddScoped<IGetAllPayments, AdminUseCases.GetAllPayments>();
             services.AddScoped<IGetAllFeedbacks, AdminUseCases.GetAllFeedbacks>();
             services.AddScoped<IGetAllInterviewersForAdmin, AdminUseCases.GetAllInterviewersForAdmin>();
             // ----- Feedback ----
@@ -84,7 +84,7 @@ namespace Intervu.Application
             services.AddScoped<IUpdateInterviewerAvailability, UpdateInterviewerAvailability>();
             // ----- Email ----
             services.AddScoped<ISendBookingConfirmationEmail, SendBookingConfirmationEmail>();
-          
+
             // ----- UserProfile ----
             services.AddScoped<IGetUserProfile, GetUserProfile>();
             services.AddScoped<IUpdateUserProfile, UpdateUserProfile>();

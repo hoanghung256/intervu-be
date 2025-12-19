@@ -13,7 +13,6 @@ namespace Intervu.API.Controllers.v1
         private readonly IGetDashboardStats _getDashboardStats;
         private readonly IGetAllUsersForAdmin _getAllUsers;
         private readonly IGetAllCompaniesForAdmin _getAllCompanies;
-        private readonly IGetAllPayments _getAllPayments;
         private readonly IGetAllFeedbacks _getAllFeedbacks;
         private readonly IGetAllInterviewersForAdmin _getAllInterviewers;
 
@@ -21,14 +20,12 @@ namespace Intervu.API.Controllers.v1
             IGetDashboardStats getDashboardStats,
             IGetAllUsersForAdmin getAllUsers,
             IGetAllCompaniesForAdmin getAllCompanies,
-            IGetAllPayments getAllPayments,
             IGetAllFeedbacks getAllFeedbacks,
             IGetAllInterviewersForAdmin getAllInterviewers)
         {
             _getDashboardStats = getDashboardStats;
             _getAllUsers = getAllUsers;
             _getAllCompanies = getAllCompanies;
-            _getAllPayments = getAllPayments;
             _getAllFeedbacks = getAllFeedbacks;
             _getAllInterviewers = getAllInterviewers;
         }
@@ -81,17 +78,17 @@ namespace Intervu.API.Controllers.v1
         /// <summary>
         /// Get all payments with pagination
         /// </summary>
-        [HttpGet("payments")]
-        public async Task<IActionResult> GetAllPayments([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
-        {
-            var payments = await _getAllPayments.ExecuteAsync(page, pageSize);
-            return Ok(new
-            {
-                success = true,
-                message = "Success",
-                data = payments
-            });
-        }
+        //[HttpGet("payments")]
+        //public async Task<IActionResult> GetAllPayments([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        //{
+        //    var payments = await _getAllPayments.ExecuteAsync(page, pageSize);
+        //    return Ok(new
+        //    {
+        //        success = true,
+        //        message = "Success",
+        //        data = payments
+        //    });
+        //}
 
         /// <summary>
         /// Get all feedbacks with pagination

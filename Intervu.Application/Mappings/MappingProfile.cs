@@ -46,7 +46,7 @@ namespace Intervu.Application.Mappings
             // Admin mappings
             CreateMap<User, DTOs.Admin.UserDto>();
             CreateMap<Company, DTOs.Admin.CompanyDto>();
-            CreateMap<Payment, PaymentDto>();
+            //CreateMap<Payment, PaymentDto>();
             CreateMap<Feedback, FeedbackDto>();
             // InterviewerAdminDto is manually mapped in use case to include User data
             // Availability mappings
