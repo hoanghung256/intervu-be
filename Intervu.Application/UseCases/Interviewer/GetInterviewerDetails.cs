@@ -1,6 +1,6 @@
-using Intervu.Application.Interfaces.Repositories;
 using Intervu.Application.Interfaces.UseCases.Interviewer;
 using Intervu.Domain.Entities;
+using Intervu.Domain.Repositories;
 using System;
 using System.Threading.Tasks;
 

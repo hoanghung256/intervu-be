@@ -1,5 +1,5 @@
-﻿using Intervu.Application.Interfaces.Repositories;
-using Intervu.Application.Interfaces.UseCases.InterviewerProfile;
+﻿using Intervu.Application.Interfaces.UseCases.InterviewerProfile;
+using Intervu.Domain.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Linq;

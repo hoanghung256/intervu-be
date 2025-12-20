@@ -4,12 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
-using Intervu.Application.Common;
+using Intervu.Application.DTOs.Common;
 using Intervu.Application.DTOs.Interviewer;
 using Intervu.Application.DTOs.User;
-using Intervu.Application.Interfaces.Repositories;
 using Intervu.Application.Interfaces.UseCases.InterviewerProfile;
 using Intervu.Domain.Entities;
+using Intervu.Domain.Repositories;
 
 namespace Intervu.Application.UseCases.InterviewerProfile
 {
@@ -28,9 +28,15 @@ namespace Intervu.Application.UseCases.InterviewerProfile
 
         public async Task<PagedResult<InterviewerProfileDto>> ExecuteAsync(GetInterviewerFilterRequest request)
         {
-            PagedResult<Domain.Entities.InterviewerProfile> result = await _interviewerProfileRepo.GetPagedInterviewerProfilesAsync(request);
+            var (items, total) = await _interviewerProfileRepo.GetPagedInterviewerProfilesAsync(
+                request.Search,
+                request.SkillId,
+                request.CompanyId,
+                request.Page,
+                request.PageSize
+            );
 
-            List<InterviewerProfileDto> dtoList = _mapper.Map<List<InterviewerProfileDto>>(result.Items);
+            List<InterviewerProfileDto> dtoList = _mapper.Map<List<InterviewerProfileDto>>(items);
 
             foreach (InterviewerProfileDto i in dtoList)
             {
@@ -41,9 +47,9 @@ namespace Intervu.Application.UseCases.InterviewerProfile
             return new PagedResult<InterviewerProfileDto>
             (
                 dtoList,
-                result.TotalItems,
-                result.PageSize,
-                result.CurrentPage
+                total,
+                request.PageSize,
+                request.Page
             );
         }
     }

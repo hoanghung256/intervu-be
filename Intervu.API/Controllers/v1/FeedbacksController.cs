@@ -2,7 +2,6 @@
 using Intervu.API.Utils.Constant;
 using Intervu.Application.Interfaces.UseCases.Feedbacks;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
-using Intervu.Application.Interfaces.Repositories;
 using Intervu.Domain.Entities.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -12,6 +11,7 @@ using System.Security.Claims;
 using Intervu.Application.DTOs.Feedback;
 using Intervu.Domain.Entities;
 using System.Threading.Tasks;
+using Intervu.Domain.Repositories;
 
 namespace Intervu.API.Controllers.v1
 {

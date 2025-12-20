@@ -1,8 +1,9 @@
 ﻿using AutoMapper;
 using Intervu.Application.DTOs.Interviewer;
-using Intervu.Application.Interfaces.Repositories;
 using Intervu.Application.Interfaces.UseCases.InterviewerProfile;
 using Intervu.Domain.Entities.Constants;
+using Intervu.Domain.Entities;
+using Intervu.Domain.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,7 +31,7 @@ namespace Intervu.Application.UseCases.InterviewerProfile
 
             _mapper.Map(interviewerUpdateDto, existing);
 
-            await _repo.UpdateInterviewerProfileAsync(interviewerUpdateDto);
+            await _repo.UpdateInterviewerProfileAsync(existing);
 
             await _repo.SaveChangesAsync();
 

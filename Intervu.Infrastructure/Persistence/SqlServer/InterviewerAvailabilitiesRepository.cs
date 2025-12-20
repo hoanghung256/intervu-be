@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Intervu.Application.DTOs.Availability;
-using Intervu.Application.Interfaces.Repositories;
 using Intervu.Domain.Entities;
+using Intervu.Domain.Repositories;
 using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
 using Microsoft.EntityFrameworkCore;
 
@@ -77,18 +76,24 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             return true;
         }
 
-        public async Task<bool> UpdateInterviewerAvailabilityAsync(int availabilityId, InterviewerAvailabilityUpdateDto dto)
+        public async Task<bool> UpdateInterviewerAvailabilityAsync(int availabilityId, DateTimeOffset startTime, DateTimeOffset endTime)
         {
             var availability = await _dbContext.InterviewerAvailabilities.FindAsync(availabilityId);
             if (availability == null)
                 return false;
 
-            availability.StartTime = dto.StartTime.UtcDateTime;
-            availability.EndTime = dto.EndTime.UtcDateTime;
+            availability.StartTime = startTime.UtcDateTime;
+            availability.EndTime = endTime.UtcDateTime;
 
             _dbContext.InterviewerAvailabilities.Update(availability);
             await _dbContext.SaveChangesAsync();
             return true;
+        }
+
+        public Task<InterviewerAvailability?> GetAsync(int interviewerId, DateTime startTime)
+        {
+            return _dbContext.InterviewerAvailabilities
+                .FirstOrDefaultAsync(a => a.InterviewerId == interviewerId && a.StartTime == startTime);
         }
     }
 }

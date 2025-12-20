@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Intervu.Application.Interfaces.UseCases.Interviewer
+namespace Intervu.Application.Interfaces.UseCases.InterviewerProfile
 {
     public interface ICreateInterviewProfile
     {

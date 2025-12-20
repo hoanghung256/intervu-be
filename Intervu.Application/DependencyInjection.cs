@@ -31,6 +31,8 @@ using Intervu.Application.Interfaces.UseCases.Interviewer;
 using Intervu.Application.UseCases.Interviewer;
 using Intervu.Application.Interfaces.UseCases.Interviewee;
 using Intervu.Application.UseCases.Interviewee;
+using Intervu.Application.Utils;
+using Intervu.Application.UseCases.Admin;
 
 namespace Intervu.Application
 {
@@ -96,6 +98,7 @@ namespace Intervu.Application
             services.AddScoped<ICreateBookingCheckoutUrl, CreateBookingCheckoutUrl>();
             services.AddScoped<IUpdateBookingStatus, UpdateBookingStatus>();
             services.AddScoped<IGetInterviewBooking, GetInterviewBooking>();
+            services.AddScoped<IPayoutForInterviewerAfterInterview, PayoutForInterviewerAfterInterview>();
 
             // ----- Interviewer & Interviewee Details ---
             services.AddScoped<IGetInterviewerDetails, GetInterviewerDetails>();

@@ -1,16 +1,11 @@
-using Intervu.Application.Interfaces.Repositories;
-using Intervu.Application.Services;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Asp.Versioning;
 using Google.Apis.Auth;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http;
-using System.Threading.Tasks;
-using System.Linq;
 using Microsoft.AspNetCore.Authorization;
-using System;
-using System.Collections.Generic;
+using Intervu.Domain.Repositories;
+using Intervu.Application.Utils;
 
 namespace Intervu.API.Controllers.v1
 {
@@ -103,7 +98,7 @@ namespace Intervu.API.Controllers.v1
                 {
                     FullName = string.IsNullOrEmpty(name) ? email!.Split('@')[0] : name!,
                     Email = email!,
-                    Password = Intervu.Application.Services.PasswordHashHandler.HashPassword(System.Guid.NewGuid().ToString()),
+                    Password = PasswordHashHandler.HashPassword(System.Guid.NewGuid().ToString()),
                     Role = UserRole.Interviewee,
                     Status = UserStatus.Active,
                     ProfilePicture = picture

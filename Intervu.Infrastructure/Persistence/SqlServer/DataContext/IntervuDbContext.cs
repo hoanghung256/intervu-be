@@ -1,5 +1,4 @@
-﻿using Intervu.Domain.Abstractions.Entities;
-using Intervu.Domain.Abstractions.Entities.Interfaces;
+﻿using Intervu.Domain.Abstractions.Entity;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Microsoft.EntityFrameworkCore;

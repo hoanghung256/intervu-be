@@ -1,6 +1,5 @@
-using Intervu.Application.Common;
 using Intervu.Application.DTOs.Admin;
-using System.Threading.Tasks;
+using Intervu.Application.DTOs.Common;
 
 namespace Intervu.Application.Interfaces.UseCases.Admin
 {

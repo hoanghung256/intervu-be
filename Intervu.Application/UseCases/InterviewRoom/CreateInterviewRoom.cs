@@ -1,6 +1,6 @@
-﻿using Intervu.Application.Interfaces.Repositories;
-using Intervu.Application.Interfaces.UseCases.InterviewRoom;
+﻿using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Intervu.Application.Services;
+using Intervu.Domain.Repositories;
 
 namespace Intervu.Application.UseCases.InterviewRoom
 {

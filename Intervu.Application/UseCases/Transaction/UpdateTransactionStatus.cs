@@ -1,6 +1,6 @@
-﻿using Intervu.Application.Interfaces.Repositories;
-using Intervu.Application.Interfaces.UseCases.Transaction;
+﻿using Intervu.Application.Interfaces.UseCases.Transaction;
 using Intervu.Domain.Entities.Constants;
+using Intervu.Domain.Repositories;
 
 namespace Intervu.Application.UseCases.Transaction
 {

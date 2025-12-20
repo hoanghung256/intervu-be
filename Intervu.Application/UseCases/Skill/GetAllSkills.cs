@@ -4,10 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
-using Intervu.Application.Common;
+using Intervu.Application.DTOs.Common;
 using Intervu.Application.DTOs.Skill;
-using Intervu.Application.Interfaces.Repositories;
 using Intervu.Application.Interfaces.UseCases.Skill;
+using Intervu.Domain.Repositories;
 
 namespace Intervu.Application.UseCases.Skill
 {
@@ -22,13 +22,13 @@ namespace Intervu.Application.UseCases.Skill
         }
         public async Task<PagedResult<SkillDto>> ExecuteAsync(int page, int pageSize)
         {
-            var result = await _skillRepository.GetPagedSkillsAsync(page, pageSize);
+            var (items, total) = await _skillRepository.GetPagedSkillsAsync(page, pageSize);
             return new PagedResult<SkillDto>
             (
-                _mapper.Map<List<SkillDto>>(result.Items),
-                result.TotalItems,
-                result.PageSize,
-                result.CurrentPage
+                _mapper.Map<List<SkillDto>>(items),
+                total,
+                pageSize,
+                page
             );
         }
     }

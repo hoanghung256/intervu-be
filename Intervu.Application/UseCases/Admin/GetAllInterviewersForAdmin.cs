@@ -1,7 +1,7 @@
 using AutoMapper;
-using Intervu.Application.Common;
+using Intervu.Application.DTOs.Common;
 using Intervu.Application.DTOs.Admin;
-using Intervu.Application.Interfaces.Repositories;
+using Intervu.Domain.Repositories;
 using Intervu.Application.Interfaces.UseCases.Admin;
 using System;
 using System.Collections.Generic;
@@ -25,7 +25,13 @@ namespace Intervu.Application.UseCases.Admin
 
         public async Task<PagedResult<InterviewerAdminDto>> ExecuteAsync(int page, int pageSize)
         {
-            var pagedInterviewers = await _interviewerProfileRepository.GetPagedInterviewerProfilesAsync(page, pageSize);
+            var pagedInterviewers = await _interviewerProfileRepository.GetPagedInterviewerProfilesAsync(
+                search: null,
+                skillId: null,
+                companyId: null,
+                page: page,
+                pageSize: pageSize
+            );
 
             var interviewerDtos = new List<InterviewerAdminDto>();
 
@@ -49,7 +55,7 @@ namespace Intervu.Application.UseCases.Admin
                 });
             }
 
-            return new PagedResult<InterviewerAdminDto>(interviewerDtos, pagedInterviewers.TotalItems, pageSize, page);
+            return new PagedResult<InterviewerAdminDto>(interviewerDtos, pagedInterviewers.TotalCount, pageSize, page);
         }
     }
 }

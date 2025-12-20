@@ -3,13 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Intervu.Application.Common;
 using Intervu.Domain.Entities;
 
-namespace Intervu.Application.Interfaces.Repositories
+namespace Intervu.Domain.Repositories
 {
     public interface ISkillRepository
     {
-        Task<PagedResult<Skill>> GetPagedSkillsAsync(int page, int pageSize);
+        Task<(IReadOnlyList<Skill> Items, int TotalCount)> GetPagedSkillsAsync(int page, int pageSize);
     }
 }

@@ -1,6 +1,6 @@
 ﻿using System.Security.Cryptography;
 
-namespace Intervu.Application.Services
+namespace Intervu.Application.Utils
 {
     public class PasswordHashHandler
     {

@@ -1,5 +1,8 @@
-﻿using Intervu.Application.Services;
+﻿using Intervu.Application.Interfaces.UseCases.InterviewBooking;
+using Intervu.Application.Services;
+using Intervu.Application.UseCases.InterviewBooking;
 using Intervu.Domain.Entities.Constants;
+using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -27,15 +30,17 @@ namespace Intervu.Infrastructure.ExternalServices
             while (!stoppingToken.IsCancellationRequested)
             {
                 var now = DateTime.UtcNow;
+                using var scope = _services.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<IntervuPostgreDbContext>();
 
-                var roomsToUpdate = _cache.Rooms
+                var roomsToUpdate = db.InterviewRooms
                 .Where(room => room.Status == InterviewRoomStatus.Scheduled &&
                                room.ScheduledTime.HasValue &&
                                room.ScheduledTime.Value <= now.AddMinutes(5) &&
                                room.ScheduledTime.Value > now)
                 .ToList();
 
-                var roomsToEnd = _cache.Rooms
+                var roomsToEnd = db.InterviewRooms
                 .Where(room => room.Status == InterviewRoomStatus.Ongoing &&
                                room.ScheduledTime.HasValue &&
                                now >= room.ScheduledTime.Value
@@ -45,8 +50,6 @@ namespace Intervu.Infrastructure.ExternalServices
 
                 if (roomsToUpdate.Any())
                 {
-                    using var scope = _services.CreateScope();
-                    var db = scope.ServiceProvider.GetRequiredService<IntervuDbContext>();
 
                     foreach (var room in roomsToUpdate)
                     {
@@ -65,14 +68,17 @@ namespace Intervu.Infrastructure.ExternalServices
 
                 if (roomsToEnd.Any())
                 {
-                    using var scope = _services.CreateScope();
-                    var db = scope.ServiceProvider.GetRequiredService<IntervuDbContext>();
+                    //using var scope = _services.CreateScope();
+                    //var db = scope.ServiceProvider.GetRequiredService<IntervuDbContext>();
+                    var payout = scope.ServiceProvider.GetRequiredService<Intervu.Application.Interfaces.UseCases.InterviewBooking.IPayoutForInterviewerAfterInterview>();
 
                     foreach (var room in roomsToEnd)
                     {
                         // Update status in DB
                         room.Status = InterviewRoomStatus.Completed;
                         db.InterviewRooms.Update(room);
+
+                        await payout.ExecuteAsync(room.Id);
 
                         // Update status in cache
                         _cache.Update(room);

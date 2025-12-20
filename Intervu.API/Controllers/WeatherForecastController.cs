@@ -35,9 +35,9 @@ namespace Intervu.API.Controllers
         {
             try
             {
-                var result = await _paymentService.CreateSpendOrderAsync(2000, "NUKL", "970436", "1026869673");
-                return Ok(result);
-                //return Ok();
+                //var result = await _paymentService.CreateSpendOrderAsync(2000, "NUKL", "970436", "1026869673");
+                //return Ok(result);
+                return Ok();
             }
             catch (Exception ex)
             {

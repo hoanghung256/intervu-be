@@ -4,7 +4,7 @@ using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
-namespace Intervu.Application.Services
+namespace Intervu.Application.Utils
 {
     public class JwtService
     {

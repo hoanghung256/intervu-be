@@ -1,11 +1,8 @@
-﻿using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Intervu.Infrastructure.ExternalServices;
 using Intervu.Application.Interfaces.ExternalServices;
-using Intervu.Application.Interfaces.Repositories;
-using Intervu.Infrastructure.Persistence.SqlServer;
 using Intervu.Infrastructure.ExternalServices.EmailServices;
 using Intervu.Application.Interfaces.ExternalServices.Email;
 using PayOS;
@@ -15,6 +12,10 @@ using Google.Cloud.Storage.V1;
 using Firebase.Storage;
 using FirebaseAdmin;
 using Intervu.Infrastructure.ExternalServices.FirebaseStorageService;
+using Intervu.Domain.Repositories;
+using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
+using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
+using Intervu.Infrastructure.Persistence.PostgreSQL;
 
 namespace Intervu.Infrastructure
 {
@@ -22,8 +23,12 @@ namespace Intervu.Infrastructure
     {
         public static IServiceCollection AddPersistenceSqlServer(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddDbContextPool<IntervuDbContext>(options =>
-                options.UseSqlServer(configuration.GetConnectionString("SqlDefeaultConnection")));
+            //services.AddDbContextPool<IntervuDbContext>(options =>
+                //options.UseSqlServer(configuration.GetConnectionString("SqlDefeaultConnection")));
+
+            // PostgreSQL
+            services.AddDbContextPool<IntervuPostgreDbContext>(options => 
+                options.UseNpgsql(configuration.GetConnectionString("PostgreSqlDefaultConnection")));
 
             // Register your repositories here
             services.AddScoped<IUserRepository, UserRepository>();
@@ -32,34 +37,35 @@ namespace Intervu.Infrastructure
             services.AddScoped<IIntervieweeProfileRepository, IntervieweeProfileRepository>();
             services.AddScoped<ICompanyRepository, CompanyRepository>();
             services.AddScoped<ISkillRepository, SkillRepository>();
-            services.AddScoped<IPaymentRepository, PaymentRepository>();
+            //services.AddScoped<IPaymentRepository, PaymentRepository>();
             services.AddScoped<IInterviewerAvailabilitiesRepository, InterviewerAvailabilitiesRepository>();
             services.AddScoped<ITransactionRepository, TransactionRepository>();
+            services.AddScoped<IFeedbackRepository, FeedbackRepository>();
 
             return services;
         }
 
         public static IServiceCollection AddInfrastructureExternalServices(this IServiceCollection services, IConfiguration configuration)
         {
-            var firebaseConfigJson = configuration["Firebase:CredentialPath"];
-            var bucketName = configuration["Firebase:StorageBucket"];
+            //var firebaseConfigJson = configuration["Firebase:CredentialPath"];
+            //var bucketName = configuration["Firebase:StorageBucket"];
 
-            if (string.IsNullOrWhiteSpace(firebaseConfigJson))
-                throw new ArgumentNullException(nameof(firebaseConfigJson), "Firebase credential JSON is missing.");
+            //if (string.IsNullOrWhiteSpace(firebaseConfigJson))
+            //    throw new ArgumentNullException(nameof(firebaseConfigJson), "Firebase credential JSON is missing.");
 
-            GoogleCredential credential = GoogleCredential.FromJson(firebaseConfigJson);
+            //GoogleCredential credential = GoogleCredential.FromJson(firebaseConfigJson);
 
-            if (FirebaseApp.DefaultInstance == null)
-            {
-                FirebaseApp.Create(new AppOptions
-                {
-                    Credential = credential
-                });
-            }
+            //if (FirebaseApp.DefaultInstance == null)
+            //{
+            //    FirebaseApp.Create(new AppOptions
+            //    {
+            //        Credential = credential
+            //    });
+            //}
 
-            services.AddSingleton(StorageClient.Create(credential));
+            //services.AddSingleton(StorageClient.Create(credential));
 
-            services.AddSingleton<string>(sp => bucketName);
+            //services.AddSingleton<string>(sp => bucketName);
 
             services.AddTransient<IFileService>(sp =>
             {
@@ -70,9 +76,9 @@ namespace Intervu.Infrastructure
 
             //services.AddSingleton(StorageClient.Create(credential));
             //services.AddSingleton(bucketName);
-            services.AddScoped<IEmailService, ExternalServices.EmailServices.EmailService>();
+            services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<IEmailTemplateService, EmailTemplateService>();
-            services.AddSingleton<IMailService, ExternalServices.EmailService>();
+            //services.AddSingleton<IMailService, EmailService>();
             //services.AddSingleton<IMailService, ExternalServices.EmailService>();
 
             services.AddSingleton(sp =>

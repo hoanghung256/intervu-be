@@ -1,6 +1,6 @@
 using Intervu.Application.Interfaces.ExternalServices;
-using Intervu.Application.Interfaces.Repositories;
 using Intervu.Application.Interfaces.UseCases.UserProfile;
+using Intervu.Domain.Repositories;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.IO;

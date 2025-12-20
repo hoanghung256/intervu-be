@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Intervu.Domain.Abstractions.Entities.Interfaces
+namespace Intervu.Domain.Abstractions.Entity.Interfaces
 {
     public interface ISoftDelete
     {

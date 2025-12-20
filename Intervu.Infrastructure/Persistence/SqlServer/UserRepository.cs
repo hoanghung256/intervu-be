@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Intervu.Application.Common;
-using Intervu.Application.Interfaces.Repositories;
 using Intervu.Domain.Entities;
+using Intervu.Domain.Repositories;
 using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,15 +23,15 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
 
         public async Task<User?> GetByEmailAndPasswordAsync(string email, string password)
         {
-            return await _context.Users.FirstOrDefaultAsync<User>(u => u.Email.ToLower() == email.ToLower() && u.Password == password);
+            return await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower() && u.Password == password);
         }
 
         public async Task<User?> GetByEmailAsync(string email)
         {
-            return await _context.Users.FirstOrDefaultAsync<User>(u => u.Email.ToLower() == email.ToLower());
+            return await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
         }
 
-        public async Task<PagedResult<User>> GetPagedUsersAsync(int page, int pageSize)
+        public async Task<(IReadOnlyList<User> Items, int TotalCount)> GetPagedUsersAsync(int page, int pageSize)
         {
             var query = _context.Users.AsQueryable();
 
@@ -44,7 +43,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
                 .Take(pageSize)
                 .ToListAsync();
 
-            return new PagedResult<User>(items, totalItems, pageSize, page);
+            return (items, totalItems);
         }
 
         public async Task<int> GetTotalUsersCountAsync()
