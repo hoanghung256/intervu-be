@@ -1,17 +1,14 @@
 ﻿using Intervu.Domain.Entities;
 using Intervu.Domain.Repositories;
-using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
+using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Microsoft.EntityFrameworkCore;
 
-namespace Intervu.Infrastructure.Persistence.SqlServer
+namespace Intervu.Infrastructure.Persistence.PostgreSQL
 {
-    public class CompanyRepository : ICompanyRepository
+    public class CompanyRepository(IntervuPostgreDbContext context) : ICompanyRepository
     {
-        private readonly IntervuDbContext _context;
-        public CompanyRepository(IntervuDbContext context)
-        {
-            _context = context;
-        }
+        private readonly IntervuPostgreDbContext _context = context;
+
         public async Task<(IReadOnlyList<Company> Items, int TotalCount)> GetPagedCompaniesAsync(int page, int pageSize)
         {
             var query = _context.Companies.AsQueryable();

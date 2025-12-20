@@ -1,10 +1,8 @@
-﻿using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Intervu.Infrastructure.ExternalServices;
 using Intervu.Application.Interfaces.ExternalServices;
-using Intervu.Infrastructure.Persistence.SqlServer;
 using Intervu.Infrastructure.ExternalServices.EmailServices;
 using Intervu.Application.Interfaces.ExternalServices.Email;
 using PayOS;
@@ -15,6 +13,9 @@ using Firebase.Storage;
 using FirebaseAdmin;
 using Intervu.Infrastructure.ExternalServices.FirebaseStorageService;
 using Intervu.Domain.Repositories;
+using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
+using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
+using Intervu.Infrastructure.Persistence.PostgreSQL;
 
 namespace Intervu.Infrastructure
 {
@@ -22,8 +23,12 @@ namespace Intervu.Infrastructure
     {
         public static IServiceCollection AddPersistenceSqlServer(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddDbContextPool<IntervuDbContext>(options =>
-                options.UseSqlServer(configuration.GetConnectionString("SqlDefeaultConnection")));
+            //services.AddDbContextPool<IntervuDbContext>(options =>
+                //options.UseSqlServer(configuration.GetConnectionString("SqlDefeaultConnection")));
+
+            // PostgreSQL
+            services.AddDbContextPool<IntervuPostgreDbContext>(options => 
+                options.UseNpgsql(configuration.GetConnectionString("PostgreSqlDefaultConnection")));
 
             // Register your repositories here
             services.AddScoped<IUserRepository, UserRepository>();

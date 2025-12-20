@@ -2,6 +2,7 @@
 using Intervu.Application.Services;
 using Intervu.Application.UseCases.InterviewBooking;
 using Intervu.Domain.Entities.Constants;
+using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -30,7 +31,7 @@ namespace Intervu.Infrastructure.ExternalServices
             {
                 var now = DateTime.UtcNow;
                 using var scope = _services.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<IntervuDbContext>();
+                var db = scope.ServiceProvider.GetRequiredService<IntervuPostgreDbContext>();
 
                 var roomsToUpdate = db.InterviewRooms
                 .Where(room => room.Status == InterviewRoomStatus.Scheduled &&
