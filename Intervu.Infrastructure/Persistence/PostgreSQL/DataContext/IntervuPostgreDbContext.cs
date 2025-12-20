@@ -44,7 +44,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                     .AddEnvironmentVariables()
                     .Build();
 
-                var connectionString = configuration.GetConnectionString("PostgreSqlDefeaultConnection");
+                var connectionString = configuration.GetConnectionString("PostgreSqlDefaultConnection");
 
                 optionsBuilder.UseNpgsql(connectionString);
             }

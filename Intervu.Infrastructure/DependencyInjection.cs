@@ -28,7 +28,7 @@ namespace Intervu.Infrastructure
 
             // PostgreSQL
             services.AddDbContextPool<IntervuPostgreDbContext>(options => 
-                options.UseNpgsql(configuration.GetConnectionString("PostgreSqlDefeaultConnection")));
+                options.UseNpgsql(configuration.GetConnectionString("PostgreSqlDefaultConnection")));
 
             // Register your repositories here
             services.AddScoped<IUserRepository, UserRepository>();
