@@ -37,8 +37,14 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
                   ?? "Production";
 
+                var basePath = Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    "..",
+                    "Intervu.Api"
+                );
+
                 var configuration = new ConfigurationBuilder()
-                    .SetBasePath(Directory.GetCurrentDirectory())
+                    .SetBasePath(basePath)
                     .AddJsonFile("appsettings.json", optional: false)
                     .AddJsonFile($"appsettings.{env}.json", optional: false)
                     .AddEnvironmentVariables()
