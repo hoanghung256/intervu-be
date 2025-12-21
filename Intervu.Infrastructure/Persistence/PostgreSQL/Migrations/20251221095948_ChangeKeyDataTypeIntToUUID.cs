@@ -1,6 +1,5 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -9,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 {
     /// <inheritdoc />
-    public partial class InitSupabase : Migration
+    public partial class ChangeKeyDataTypeIntToUUID : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -18,8 +17,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 name: "Companies",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     Website = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
                     LogoPath = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false)
@@ -33,8 +31,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 name: "Notifications",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Title = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     Message = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
@@ -48,8 +45,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 name: "Skills",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     Description = table.Column<string>(type: "text", nullable: true)
                 },
@@ -62,8 +58,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 name: "Users",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     FullName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     Email = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     Password = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
@@ -80,10 +75,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 name: "InterviewBookingTransaction",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserId = table.Column<int>(type: "integer", nullable: false),
-                    InterviewerAvailabilityId = table.Column<int>(type: "integer", nullable: false),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    InterviewerAvailabilityId = table.Column<Guid>(type: "uuid", nullable: false),
                     Amount = table.Column<int>(type: "integer", nullable: false),
                     Type = table.Column<int>(type: "integer", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false)
@@ -103,7 +97,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 name: "IntervieweeProfiles",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     CVUrl = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     PortfolioUrl = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     Skills = table.Column<string>(type: "text", nullable: true),
@@ -125,7 +119,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 name: "InterviewerProfiles",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     PortfolioUrl = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: true),
                     CurrentAmount = table.Column<int>(type: "integer", nullable: true),
                     ExperienceYears = table.Column<int>(type: "integer", nullable: true),
@@ -149,8 +143,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 name: "NotificationReceives",
                 columns: table => new
                 {
-                    NotificationId = table.Column<int>(type: "integer", nullable: false),
-                    ReceiverId = table.Column<int>(type: "integer", nullable: false)
+                    NotificationId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ReceiverId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -173,9 +167,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 name: "InterviewerAvailabilities",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    InterviewerId = table.Column<int>(type: "integer", nullable: false),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    InterviewerId = table.Column<Guid>(type: "uuid", nullable: false),
                     StartTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     EndTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsBooked = table.Column<bool>(type: "boolean", nullable: false)
@@ -195,8 +188,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 name: "InterviewerCompanies",
                 columns: table => new
                 {
-                    InterviewerProfilesId = table.Column<int>(type: "integer", nullable: false),
-                    CompaniesId = table.Column<int>(type: "integer", nullable: false)
+                    InterviewerProfilesId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CompaniesId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -219,8 +212,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 name: "InterviewerSkills",
                 columns: table => new
                 {
-                    InterviewerProfilesId = table.Column<int>(type: "integer", nullable: false),
-                    SkillsId = table.Column<int>(type: "integer", nullable: false)
+                    InterviewerProfilesId = table.Column<Guid>(type: "uuid", nullable: false),
+                    SkillsId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -243,10 +236,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 name: "InterviewRooms",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    StudentId = table.Column<int>(type: "integer", nullable: true),
-                    InterviewerId = table.Column<int>(type: "integer", nullable: true),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    StudentId = table.Column<Guid>(type: "uuid", nullable: true),
+                    InterviewerId = table.Column<Guid>(type: "uuid", nullable: true),
                     ScheduledTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     DurationMinutes = table.Column<int>(type: "integer", nullable: true),
                     VideoCallRoomUrl = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
@@ -278,11 +270,10 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 name: "Feedbacks",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    InterviewerId = table.Column<int>(type: "integer", nullable: false),
-                    StudentId = table.Column<int>(type: "integer", nullable: false),
-                    InterviewRoomId = table.Column<int>(type: "integer", nullable: false),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    InterviewerId = table.Column<Guid>(type: "uuid", nullable: false),
+                    StudentId = table.Column<Guid>(type: "uuid", nullable: false),
+                    InterviewRoomId = table.Column<Guid>(type: "uuid", nullable: false),
                     Rating = table.Column<int>(type: "integer", nullable: false),
                     Comments = table.Column<string>(type: "text", nullable: false),
                     AIAnalysis = table.Column<string>(type: "text", nullable: false)
@@ -315,43 +306,43 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 columns: new[] { "Id", "LogoPath", "Name", "Website" },
                 values: new object[,]
                 {
-                    { 1, "logos/google.png", "Google", "https://google.com" },
-                    { 2, "logos/meta.png", "Meta", "https://meta.com" },
-                    { 3, "logos/amazon.png", "Amazon", "https://amazon.com" },
-                    { 4, "logos/microsoft.png", "Microsoft", "https://microsoft.com" },
-                    { 5, "logos/netflix.png", "Netflix", "https://netflix.com" },
-                    { 6, "logos/tiktok.png", "TikTok", "https://tiktok.com" },
-                    { 7, "logos/apple.png", "Apple", "https://apple.com" },
-                    { 8, "logos/uber.png", "Uber", "https://uber.com" },
-                    { 9, "logos/spotify.png", "Spotify", "https://spotify.com" },
-                    { 10, "logos/stripe.png", "Stripe", "https://stripe.com" }
+                    { new Guid("11111111-1111-4111-8111-111111111111"), "logos/google.png", "Google", "https://google.com" },
+                    { new Guid("22222222-2222-4222-8222-222222222222"), "logos/meta.png", "Meta", "https://meta.com" },
+                    { new Guid("33333333-3333-4333-8333-333333333333"), "logos/amazon.png", "Amazon", "https://amazon.com" },
+                    { new Guid("44444444-4444-4444-8444-444444444444"), "logos/microsoft.png", "Microsoft", "https://microsoft.com" },
+                    { new Guid("55555555-5555-4555-8555-555555555555"), "logos/netflix.png", "Netflix", "https://netflix.com" },
+                    { new Guid("66666666-6666-4666-8666-666666666666"), "logos/tiktok.png", "TikTok", "https://tiktok.com" },
+                    { new Guid("77777777-7777-4777-8777-777777777777"), "logos/apple.png", "Apple", "https://apple.com" },
+                    { new Guid("88888888-8888-4888-8888-888888888888"), "logos/uber.png", "Uber", "https://uber.com" },
+                    { new Guid("99999999-9999-4999-8999-999999999999"), "logos/spotify.png", "Spotify", "https://spotify.com" },
+                    { new Guid("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"), "logos/stripe.png", "Stripe", "https://stripe.com" }
                 });
 
             migrationBuilder.InsertData(
                 table: "Notifications",
                 columns: new[] { "Id", "CreatedAt", "Message", "Title" },
-                values: new object[] { 1, new DateTime(2025, 10, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Welcome to Intervu platform", "Welcome" });
+                values: new object[] { new Guid("0a1b2c3d-4e5f-4a6b-8c9d-0e1f2a3b4c20"), new DateTime(2025, 10, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Welcome to Intervu platform", "Welcome" });
 
             migrationBuilder.InsertData(
                 table: "Skills",
                 columns: new[] { "Id", "Description", "Name" },
                 values: new object[,]
                 {
-                    { 1, null, "C#" },
-                    { 2, null, "Java" },
-                    { 3, null, "JavaScript" },
-                    { 4, null, "TypeScript" },
-                    { 5, null, "React" },
-                    { 6, null, "Node.js" },
-                    { 7, null, "SQL" },
-                    { 8, null, "MongoDB" },
-                    { 9, null, "AWS" },
-                    { 10, null, "Azure" },
-                    { 11, null, "System Design" },
-                    { 12, null, "Microservices" },
-                    { 13, null, "Docker" },
-                    { 14, null, "Kubernetes" },
-                    { 15, null, "Machine Learning" }
+                    { new Guid("01010101-0101-4101-8101-010101010101"), null, "Node.js" },
+                    { new Guid("02020202-0202-4202-8202-020202020202"), null, "SQL" },
+                    { new Guid("03030303-0303-4303-8303-030303030303"), null, "MongoDB" },
+                    { new Guid("04040404-0404-4404-8404-040404040404"), null, "AWS" },
+                    { new Guid("05050505-0505-4505-8505-050505050505"), null, "Azure" },
+                    { new Guid("06060606-0606-4606-8606-060606060606"), null, "System Design" },
+                    { new Guid("07070707-0707-4707-8707-070707070707"), null, "Microservices" },
+                    { new Guid("08080808-0808-4808-8808-080808080808"), null, "Docker" },
+                    { new Guid("09090909-0909-4909-8909-090909090909"), null, "Kubernetes" },
+                    { new Guid("0a0a0a0a-0a0a-4a0a-8a0a-0a0a0a0a0a0a"), null, "Machine Learning" },
+                    { new Guid("b1b1b1b1-b1b1-41b1-81b1-b1b1b1b1b1b1"), null, "C#" },
+                    { new Guid("c2c2c2c2-c2c2-42c2-82c2-c2c2c2c2c2c2"), null, "Java" },
+                    { new Guid("d3d3d3d3-d3d3-43d3-83d3-d3d3d3d3d3d3"), null, "JavaScript" },
+                    { new Guid("e4e4e4e4-e4e4-44e4-84e4-e4e4e4e4e4e4"), null, "TypeScript" },
+                    { new Guid("f5f5f5f5-f5f5-45f5-85f5-f5f5f5f5f5f5"), null, "React" }
                 });
 
             migrationBuilder.InsertData(
@@ -359,11 +350,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 columns: new[] { "Id", "Email", "FullName", "Password", "ProfilePicture", "Role", "Status" },
                 values: new object[,]
                 {
-                    { 1, "alice@example.com", "Alice Student", "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=", null, 0, 0 },
-                    { 2, "bob@example.com", "Bob Interviewer", "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=", null, 1, 0 },
-                    { 3, "admin@example.com", "Admin", "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=", null, 2, 0 },
-                    { 5, "john.doe@example.com", "John Doe", "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=", null, 1, 0 },
-                    { 6, "sarah.lee@example.com", "Sarah Lee", "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=", null, 1, 0 }
+                    { new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"), "alice@example.com", "Alice Student", "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=", null, 0, 0 },
+                    { new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), "bob@example.com", "Bob Interviewer", "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=", null, 1, 0 },
+                    { new Guid("2f8c7a6b-6d5e-4e2f-8c7a-9d6e5c4b3a33"), "admin@example.com", "Admin", "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=", null, 2, 0 },
+                    { new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"), "john.doe@example.com", "John Doe", "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=", null, 1, 0 },
+                    { new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"), "sarah.lee@example.com", "Sarah Lee", "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=", null, 1, 0 }
                 });
 
             migrationBuilder.InsertData(
@@ -371,54 +362,54 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 columns: new[] { "Id", "Amount", "InterviewerAvailabilityId", "Status", "Type", "UserId" },
                 values: new object[,]
                 {
-                    { 1, 1000, 1, 1, 0, 1 },
-                    { 2, 500, 1, 1, 1, 2 }
+                    { new Guid("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a88"), 1000, new Guid("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77"), 1, 0, new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11") },
+                    { new Guid("8f9a0b1c-d2e3-4f5a-9b0c-1d2e3f4a5b99"), 500, new Guid("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77"), 1, 1, new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22") }
                 });
 
             migrationBuilder.InsertData(
                 table: "IntervieweeProfiles",
                 columns: new[] { "Id", "Bio", "CVUrl", "CurrentAmount", "PortfolioUrl", "Skills" },
-                values: new object[] { 1, "Aspiring backend developer.", "https://example.com/cv-alice.pdf", 0, "https://portfolio.example.com/alice", "[C#, SQL]" });
+                values: new object[] { new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"), "Aspiring backend developer.", "https://example.com/cv-alice.pdf", 0, "https://portfolio.example.com/alice", "[C#, SQL]" });
 
             migrationBuilder.InsertData(
                 table: "InterviewerProfiles",
                 columns: new[] { "Id", "BankAccountNumber", "BankBinNumber", "Bio", "CurrentAmount", "ExperienceYears", "PortfolioUrl", "Status" },
                 values: new object[,]
                 {
-                    { 2, "", "", "Senior Backend Engineer with real interview experience", 0, 8, "https://portfolio.example.com/bob", 0 },
-                    { 5, "", "", "Fullstack Engineer previously at Uber", 0, 6, "https://portfolio.example.com/john", 0 },
-                    { 6, "", "", "Senior Frontend Engineer focusing on UI/UX interviews", 0, 7, "https://portfolio.example.com/sarah", 0 }
+                    { new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), "", "", "Senior Backend Engineer with real interview experience", 0, 8, "https://portfolio.example.com/bob", 0 },
+                    { new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"), "", "", "Fullstack Engineer previously at Uber", 0, 6, "https://portfolio.example.com/john", 0 },
+                    { new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"), "", "", "Senior Frontend Engineer focusing on UI/UX interviews", 0, 7, "https://portfolio.example.com/sarah", 0 }
                 });
 
             migrationBuilder.InsertData(
                 table: "NotificationReceives",
                 columns: new[] { "NotificationId", "ReceiverId" },
-                values: new object[] { 1, 1 });
+                values: new object[] { new Guid("0a1b2c3d-4e5f-4a6b-8c9d-0e1f2a3b4c20"), new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11") });
 
             migrationBuilder.InsertData(
                 table: "InterviewRooms",
                 columns: new[] { "Id", "CurrentLanguage", "DurationMinutes", "InterviewerId", "LanguageCodes", "ProblemDescription", "ProblemShortName", "ScheduledTime", "Status", "StudentId", "TestCases", "VideoCallRoomUrl" },
-                values: new object[] { 1, null, 60, 2, null, null, null, new DateTime(2025, 11, 1, 9, 0, 0, 0, DateTimeKind.Utc), 0, 1, null, "https://meet.example/room1" });
+                values: new object[] { new Guid("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a66"), null, 60, new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), null, null, null, new DateTime(2025, 11, 1, 9, 0, 0, 0, DateTimeKind.Utc), 0, new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"), null, "https://meet.example/room1" });
 
             migrationBuilder.InsertData(
                 table: "InterviewerAvailabilities",
                 columns: new[] { "Id", "EndTime", "InterviewerId", "IsBooked", "StartTime" },
-                values: new object[] { 1, new DateTime(2025, 11, 1, 10, 0, 0, 0, DateTimeKind.Utc), 2, false, new DateTime(2025, 11, 1, 9, 0, 0, 0, DateTimeKind.Utc) });
+                values: new object[] { new Guid("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77"), new DateTime(2025, 11, 1, 10, 0, 0, 0, DateTimeKind.Utc), new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), false, new DateTime(2025, 11, 1, 9, 0, 0, 0, DateTimeKind.Utc) });
 
             migrationBuilder.InsertData(
                 table: "InterviewerCompanies",
                 columns: new[] { "CompaniesId", "InterviewerProfilesId" },
                 values: new object[,]
                 {
-                    { 1, 2 },
-                    { 4, 2 },
-                    { 10, 2 },
-                    { 3, 5 },
-                    { 6, 5 },
-                    { 8, 5 },
-                    { 2, 6 },
-                    { 7, 6 },
-                    { 9, 6 }
+                    { new Guid("11111111-1111-4111-8111-111111111111"), new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22") },
+                    { new Guid("44444444-4444-4444-8444-444444444444"), new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22") },
+                    { new Guid("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"), new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22") },
+                    { new Guid("33333333-3333-4333-8333-333333333333"), new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44") },
+                    { new Guid("66666666-6666-4666-8666-666666666666"), new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44") },
+                    { new Guid("88888888-8888-4888-8888-888888888888"), new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44") },
+                    { new Guid("22222222-2222-4222-8222-222222222222"), new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55") },
+                    { new Guid("77777777-7777-4777-8777-777777777777"), new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55") },
+                    { new Guid("99999999-9999-4999-8999-999999999999"), new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55") }
                 });
 
             migrationBuilder.InsertData(
@@ -426,26 +417,26 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 columns: new[] { "InterviewerProfilesId", "SkillsId" },
                 values: new object[,]
                 {
-                    { 2, 1 },
-                    { 2, 7 },
-                    { 2, 11 },
-                    { 2, 12 },
-                    { 2, 13 },
-                    { 5, 3 },
-                    { 5, 4 },
-                    { 5, 9 },
-                    { 5, 12 },
-                    { 5, 14 },
-                    { 6, 3 },
-                    { 6, 4 },
-                    { 6, 5 },
-                    { 6, 15 }
+                    { new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), new Guid("02020202-0202-4202-8202-020202020202") },
+                    { new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), new Guid("06060606-0606-4606-8606-060606060606") },
+                    { new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), new Guid("07070707-0707-4707-8707-070707070707") },
+                    { new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), new Guid("08080808-0808-4808-8808-080808080808") },
+                    { new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), new Guid("b1b1b1b1-b1b1-41b1-81b1-b1b1b1b1b1b1") },
+                    { new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"), new Guid("04040404-0404-4404-8404-040404040404") },
+                    { new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"), new Guid("07070707-0707-4707-8707-070707070707") },
+                    { new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"), new Guid("09090909-0909-4909-8909-090909090909") },
+                    { new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"), new Guid("d3d3d3d3-d3d3-43d3-83d3-d3d3d3d3d3d3") },
+                    { new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"), new Guid("e4e4e4e4-e4e4-44e4-84e4-e4e4e4e4e4e4") },
+                    { new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"), new Guid("0a0a0a0a-0a0a-4a0a-8a0a-0a0a0a0a0a0a") },
+                    { new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"), new Guid("d3d3d3d3-d3d3-43d3-83d3-d3d3d3d3d3d3") },
+                    { new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"), new Guid("e4e4e4e4-e4e4-44e4-84e4-e4e4e4e4e4e4") },
+                    { new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"), new Guid("f5f5f5f5-f5f5-45f5-85f5-f5f5f5f5f5f5") }
                 });
 
             migrationBuilder.InsertData(
                 table: "Feedbacks",
                 columns: new[] { "Id", "AIAnalysis", "Comments", "InterviewRoomId", "InterviewerId", "Rating", "StudentId" },
-                values: new object[] { 1, "{}", "Great answers and communication.", 1, 2, 5, 1 });
+                values: new object[] { new Guid("9a0b1c2d-e3f4-4a5b-8c9d-0e1f2a3b4c10"), "{}", "Great answers and communication.", new Guid("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a66"), new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), 5, new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11") });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Feedbacks_InterviewerId",

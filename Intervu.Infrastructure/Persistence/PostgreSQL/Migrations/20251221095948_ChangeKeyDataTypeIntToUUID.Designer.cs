@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 {
     [DbContext(typeof(IntervuPostgreDbContext))]
-    [Migration("20251219070524_InitSupabase")]
-    partial class InitSupabase
+    [Migration("20251221095948_ChangeKeyDataTypeIntToUUID")]
+    partial class ChangeKeyDataTypeIntToUUID
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -27,11 +27,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 
             modelBuilder.Entity("InterviewerCompanies", b =>
                 {
-                    b.Property<int>("InterviewerProfilesId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("InterviewerProfilesId")
+                        .HasColumnType("uuid");
 
-                    b.Property<int>("CompaniesId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("CompaniesId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("InterviewerProfilesId", "CompaniesId");
 
@@ -42,58 +42,58 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.HasData(
                         new
                         {
-                            InterviewerProfilesId = 2,
-                            CompaniesId = 1
+                            InterviewerProfilesId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            CompaniesId = new Guid("11111111-1111-4111-8111-111111111111")
                         },
                         new
                         {
-                            InterviewerProfilesId = 2,
-                            CompaniesId = 4
+                            InterviewerProfilesId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            CompaniesId = new Guid("44444444-4444-4444-8444-444444444444")
                         },
                         new
                         {
-                            InterviewerProfilesId = 2,
-                            CompaniesId = 10
+                            InterviewerProfilesId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            CompaniesId = new Guid("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa")
                         },
                         new
                         {
-                            InterviewerProfilesId = 5,
-                            CompaniesId = 8
+                            InterviewerProfilesId = new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"),
+                            CompaniesId = new Guid("88888888-8888-4888-8888-888888888888")
                         },
                         new
                         {
-                            InterviewerProfilesId = 5,
-                            CompaniesId = 3
+                            InterviewerProfilesId = new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"),
+                            CompaniesId = new Guid("33333333-3333-4333-8333-333333333333")
                         },
                         new
                         {
-                            InterviewerProfilesId = 5,
-                            CompaniesId = 6
+                            InterviewerProfilesId = new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"),
+                            CompaniesId = new Guid("66666666-6666-4666-8666-666666666666")
                         },
                         new
                         {
-                            InterviewerProfilesId = 6,
-                            CompaniesId = 7
+                            InterviewerProfilesId = new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"),
+                            CompaniesId = new Guid("77777777-7777-4777-8777-777777777777")
                         },
                         new
                         {
-                            InterviewerProfilesId = 6,
-                            CompaniesId = 9
+                            InterviewerProfilesId = new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"),
+                            CompaniesId = new Guid("99999999-9999-4999-8999-999999999999")
                         },
                         new
                         {
-                            InterviewerProfilesId = 6,
-                            CompaniesId = 2
+                            InterviewerProfilesId = new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"),
+                            CompaniesId = new Guid("22222222-2222-4222-8222-222222222222")
                         });
                 });
 
             modelBuilder.Entity("InterviewerSkills", b =>
                 {
-                    b.Property<int>("InterviewerProfilesId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("InterviewerProfilesId")
+                        .HasColumnType("uuid");
 
-                    b.Property<int>("SkillsId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("SkillsId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("InterviewerProfilesId", "SkillsId");
 
@@ -104,83 +104,81 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.HasData(
                         new
                         {
-                            InterviewerProfilesId = 2,
-                            SkillsId = 1
+                            InterviewerProfilesId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            SkillsId = new Guid("b1b1b1b1-b1b1-41b1-81b1-b1b1b1b1b1b1")
                         },
                         new
                         {
-                            InterviewerProfilesId = 2,
-                            SkillsId = 7
+                            InterviewerProfilesId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            SkillsId = new Guid("02020202-0202-4202-8202-020202020202")
                         },
                         new
                         {
-                            InterviewerProfilesId = 2,
-                            SkillsId = 11
+                            InterviewerProfilesId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            SkillsId = new Guid("06060606-0606-4606-8606-060606060606")
                         },
                         new
                         {
-                            InterviewerProfilesId = 2,
-                            SkillsId = 12
+                            InterviewerProfilesId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            SkillsId = new Guid("07070707-0707-4707-8707-070707070707")
                         },
                         new
                         {
-                            InterviewerProfilesId = 2,
-                            SkillsId = 13
+                            InterviewerProfilesId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            SkillsId = new Guid("08080808-0808-4808-8808-080808080808")
                         },
                         new
                         {
-                            InterviewerProfilesId = 5,
-                            SkillsId = 3
+                            InterviewerProfilesId = new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"),
+                            SkillsId = new Guid("d3d3d3d3-d3d3-43d3-83d3-d3d3d3d3d3d3")
                         },
                         new
                         {
-                            InterviewerProfilesId = 5,
-                            SkillsId = 4
+                            InterviewerProfilesId = new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"),
+                            SkillsId = new Guid("e4e4e4e4-e4e4-44e4-84e4-e4e4e4e4e4e4")
                         },
                         new
                         {
-                            InterviewerProfilesId = 5,
-                            SkillsId = 12
+                            InterviewerProfilesId = new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"),
+                            SkillsId = new Guid("07070707-0707-4707-8707-070707070707")
                         },
                         new
                         {
-                            InterviewerProfilesId = 5,
-                            SkillsId = 9
+                            InterviewerProfilesId = new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"),
+                            SkillsId = new Guid("04040404-0404-4404-8404-040404040404")
                         },
                         new
                         {
-                            InterviewerProfilesId = 5,
-                            SkillsId = 14
+                            InterviewerProfilesId = new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"),
+                            SkillsId = new Guid("09090909-0909-4909-8909-090909090909")
                         },
                         new
                         {
-                            InterviewerProfilesId = 6,
-                            SkillsId = 3
+                            InterviewerProfilesId = new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"),
+                            SkillsId = new Guid("d3d3d3d3-d3d3-43d3-83d3-d3d3d3d3d3d3")
                         },
                         new
                         {
-                            InterviewerProfilesId = 6,
-                            SkillsId = 4
+                            InterviewerProfilesId = new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"),
+                            SkillsId = new Guid("e4e4e4e4-e4e4-44e4-84e4-e4e4e4e4e4e4")
                         },
                         new
                         {
-                            InterviewerProfilesId = 6,
-                            SkillsId = 5
+                            InterviewerProfilesId = new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"),
+                            SkillsId = new Guid("f5f5f5f5-f5f5-45f5-85f5-f5f5f5f5f5f5")
                         },
                         new
                         {
-                            InterviewerProfilesId = 6,
-                            SkillsId = 15
+                            InterviewerProfilesId = new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"),
+                            SkillsId = new Guid("0a0a0a0a-0a0a-4a0a-8a0a-0a0a0a0a0a0a")
                         });
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.Company", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<string>("LogoPath")
                         .IsRequired()
@@ -204,70 +202,70 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.HasData(
                         new
                         {
-                            Id = 1,
+                            Id = new Guid("11111111-1111-4111-8111-111111111111"),
                             LogoPath = "logos/google.png",
                             Name = "Google",
                             Website = "https://google.com"
                         },
                         new
                         {
-                            Id = 2,
+                            Id = new Guid("22222222-2222-4222-8222-222222222222"),
                             LogoPath = "logos/meta.png",
                             Name = "Meta",
                             Website = "https://meta.com"
                         },
                         new
                         {
-                            Id = 3,
+                            Id = new Guid("33333333-3333-4333-8333-333333333333"),
                             LogoPath = "logos/amazon.png",
                             Name = "Amazon",
                             Website = "https://amazon.com"
                         },
                         new
                         {
-                            Id = 4,
+                            Id = new Guid("44444444-4444-4444-8444-444444444444"),
                             LogoPath = "logos/microsoft.png",
                             Name = "Microsoft",
                             Website = "https://microsoft.com"
                         },
                         new
                         {
-                            Id = 5,
+                            Id = new Guid("55555555-5555-4555-8555-555555555555"),
                             LogoPath = "logos/netflix.png",
                             Name = "Netflix",
                             Website = "https://netflix.com"
                         },
                         new
                         {
-                            Id = 6,
+                            Id = new Guid("66666666-6666-4666-8666-666666666666"),
                             LogoPath = "logos/tiktok.png",
                             Name = "TikTok",
                             Website = "https://tiktok.com"
                         },
                         new
                         {
-                            Id = 7,
+                            Id = new Guid("77777777-7777-4777-8777-777777777777"),
                             LogoPath = "logos/apple.png",
                             Name = "Apple",
                             Website = "https://apple.com"
                         },
                         new
                         {
-                            Id = 8,
+                            Id = new Guid("88888888-8888-4888-8888-888888888888"),
                             LogoPath = "logos/uber.png",
                             Name = "Uber",
                             Website = "https://uber.com"
                         },
                         new
                         {
-                            Id = 9,
+                            Id = new Guid("99999999-9999-4999-8999-999999999999"),
                             LogoPath = "logos/spotify.png",
                             Name = "Spotify",
                             Website = "https://spotify.com"
                         },
                         new
                         {
-                            Id = 10,
+                            Id = new Guid("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"),
                             LogoPath = "logos/stripe.png",
                             Name = "Stripe",
                             Website = "https://stripe.com"
@@ -276,11 +274,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 
             modelBuilder.Entity("Intervu.Domain.Entities.Feedback", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<string>("AIAnalysis")
                         .IsRequired()
@@ -290,17 +286,17 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("InterviewRoomId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("InterviewRoomId")
+                        .HasColumnType("uuid");
 
-                    b.Property<int>("InterviewerId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("InterviewerId")
+                        .HasColumnType("uuid");
 
                     b.Property<int>("Rating")
                         .HasColumnType("integer");
 
-                    b.Property<int>("StudentId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("StudentId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -316,29 +312,27 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.HasData(
                         new
                         {
-                            Id = 1,
+                            Id = new Guid("9a0b1c2d-e3f4-4a5b-8c9d-0e1f2a3b4c10"),
                             AIAnalysis = "{}",
                             Comments = "Great answers and communication.",
-                            InterviewRoomId = 1,
-                            InterviewerId = 2,
+                            InterviewRoomId = new Guid("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a66"),
+                            InterviewerId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
                             Rating = 5,
-                            StudentId = 1
+                            StudentId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11")
                         });
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.InterviewBookingTransaction", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<int>("Amount")
                         .HasColumnType("integer");
 
-                    b.Property<int>("InterviewerAvailabilityId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("InterviewerAvailabilityId")
+                        .HasColumnType("uuid");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
@@ -346,8 +340,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<int>("Type")
                         .HasColumnType("integer");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -358,31 +352,29 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.HasData(
                         new
                         {
-                            Id = 1,
+                            Id = new Guid("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a88"),
                             Amount = 1000,
-                            InterviewerAvailabilityId = 1,
+                            InterviewerAvailabilityId = new Guid("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77"),
                             Status = 1,
                             Type = 0,
-                            UserId = 1
+                            UserId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11")
                         },
                         new
                         {
-                            Id = 2,
+                            Id = new Guid("8f9a0b1c-d2e3-4f5a-9b0c-1d2e3f4a5b99"),
                             Amount = 500,
-                            InterviewerAvailabilityId = 1,
+                            InterviewerAvailabilityId = new Guid("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77"),
                             Status = 1,
                             Type = 1,
-                            UserId = 2
+                            UserId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22")
                         });
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.InterviewRoom", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<string>("CurrentLanguage")
                         .HasMaxLength(50)
@@ -391,8 +383,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<int?>("DurationMinutes")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("InterviewerId")
-                        .HasColumnType("integer");
+                    b.Property<Guid?>("InterviewerId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("LanguageCodes")
                         .HasColumnType("text");
@@ -410,8 +402,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("StudentId")
-                        .HasColumnType("integer");
+                    b.Property<Guid?>("StudentId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("TestCases")
                         .HasColumnType("text");
@@ -431,20 +423,20 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.HasData(
                         new
                         {
-                            Id = 1,
+                            Id = new Guid("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a66"),
                             DurationMinutes = 60,
-                            InterviewerId = 2,
+                            InterviewerId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
                             ScheduledTime = new DateTime(2025, 11, 1, 9, 0, 0, 0, DateTimeKind.Utc),
                             Status = 0,
-                            StudentId = 1,
+                            StudentId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
                             VideoCallRoomUrl = "https://meet.example/room1"
                         });
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.IntervieweeProfile", b =>
                 {
-                    b.Property<int>("Id")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Bio")
                         .HasColumnType("text");
@@ -470,7 +462,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.HasData(
                         new
                         {
-                            Id = 1,
+                            Id = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
                             Bio = "Aspiring backend developer.",
                             CVUrl = "https://example.com/cv-alice.pdf",
                             CurrentAmount = 0,
@@ -481,17 +473,15 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 
             modelBuilder.Entity("Intervu.Domain.Entities.InterviewerAvailability", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("EndTime")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("InterviewerId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("InterviewerId")
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("IsBooked")
                         .HasColumnType("boolean");
@@ -508,9 +498,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.HasData(
                         new
                         {
-                            Id = 1,
+                            Id = new Guid("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77"),
                             EndTime = new DateTime(2025, 11, 1, 10, 0, 0, 0, DateTimeKind.Utc),
-                            InterviewerId = 2,
+                            InterviewerId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
                             IsBooked = false,
                             StartTime = new DateTime(2025, 11, 1, 9, 0, 0, 0, DateTimeKind.Utc)
                         });
@@ -518,8 +508,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 
             modelBuilder.Entity("Intervu.Domain.Entities.InterviewerProfile", b =>
                 {
-                    b.Property<int>("Id")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("BankAccountNumber")
                         .IsRequired()
@@ -553,7 +543,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.HasData(
                         new
                         {
-                            Id = 2,
+                            Id = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
                             BankAccountNumber = "",
                             BankBinNumber = "",
                             Bio = "Senior Backend Engineer with real interview experience",
@@ -564,7 +554,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         },
                         new
                         {
-                            Id = 5,
+                            Id = new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"),
                             BankAccountNumber = "",
                             BankBinNumber = "",
                             Bio = "Fullstack Engineer previously at Uber",
@@ -575,7 +565,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         },
                         new
                         {
-                            Id = 6,
+                            Id = new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"),
                             BankAccountNumber = "",
                             BankBinNumber = "",
                             Bio = "Senior Frontend Engineer focusing on UI/UX interviews",
@@ -588,11 +578,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 
             modelBuilder.Entity("Intervu.Domain.Entities.Notification", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -613,7 +601,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.HasData(
                         new
                         {
-                            Id = 1,
+                            Id = new Guid("0a1b2c3d-4e5f-4a6b-8c9d-0e1f2a3b4c20"),
                             CreatedAt = new DateTime(2025, 10, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Message = "Welcome to Intervu platform",
                             Title = "Welcome"
@@ -622,11 +610,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 
             modelBuilder.Entity("Intervu.Domain.Entities.NotificationReceive", b =>
                 {
-                    b.Property<int>("NotificationId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("NotificationId")
+                        .HasColumnType("uuid");
 
-                    b.Property<int>("ReceiverId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("ReceiverId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("NotificationId", "ReceiverId");
 
@@ -637,18 +625,16 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.HasData(
                         new
                         {
-                            NotificationId = 1,
-                            ReceiverId = 1
+                            NotificationId = new Guid("0a1b2c3d-4e5f-4a6b-8c9d-0e1f2a3b4c20"),
+                            ReceiverId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11")
                         });
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.Skill", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Description")
                         .HasColumnType("text");
@@ -665,88 +651,86 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.HasData(
                         new
                         {
-                            Id = 1,
+                            Id = new Guid("b1b1b1b1-b1b1-41b1-81b1-b1b1b1b1b1b1"),
                             Name = "C#"
                         },
                         new
                         {
-                            Id = 2,
+                            Id = new Guid("c2c2c2c2-c2c2-42c2-82c2-c2c2c2c2c2c2"),
                             Name = "Java"
                         },
                         new
                         {
-                            Id = 3,
+                            Id = new Guid("d3d3d3d3-d3d3-43d3-83d3-d3d3d3d3d3d3"),
                             Name = "JavaScript"
                         },
                         new
                         {
-                            Id = 4,
+                            Id = new Guid("e4e4e4e4-e4e4-44e4-84e4-e4e4e4e4e4e4"),
                             Name = "TypeScript"
                         },
                         new
                         {
-                            Id = 5,
+                            Id = new Guid("f5f5f5f5-f5f5-45f5-85f5-f5f5f5f5f5f5"),
                             Name = "React"
                         },
                         new
                         {
-                            Id = 6,
+                            Id = new Guid("01010101-0101-4101-8101-010101010101"),
                             Name = "Node.js"
                         },
                         new
                         {
-                            Id = 7,
+                            Id = new Guid("02020202-0202-4202-8202-020202020202"),
                             Name = "SQL"
                         },
                         new
                         {
-                            Id = 8,
+                            Id = new Guid("03030303-0303-4303-8303-030303030303"),
                             Name = "MongoDB"
                         },
                         new
                         {
-                            Id = 9,
+                            Id = new Guid("04040404-0404-4404-8404-040404040404"),
                             Name = "AWS"
                         },
                         new
                         {
-                            Id = 10,
+                            Id = new Guid("05050505-0505-4505-8505-050505050505"),
                             Name = "Azure"
                         },
                         new
                         {
-                            Id = 11,
+                            Id = new Guid("06060606-0606-4606-8606-060606060606"),
                             Name = "System Design"
                         },
                         new
                         {
-                            Id = 12,
+                            Id = new Guid("07070707-0707-4707-8707-070707070707"),
                             Name = "Microservices"
                         },
                         new
                         {
-                            Id = 13,
+                            Id = new Guid("08080808-0808-4808-8808-080808080808"),
                             Name = "Docker"
                         },
                         new
                         {
-                            Id = 14,
+                            Id = new Guid("09090909-0909-4909-8909-090909090909"),
                             Name = "Kubernetes"
                         },
                         new
                         {
-                            Id = 15,
+                            Id = new Guid("0a0a0a0a-0a0a-4a0a-8a0a-0a0a0a0a0a0a"),
                             Name = "Machine Learning"
                         });
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.User", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -783,7 +767,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.HasData(
                         new
                         {
-                            Id = 5,
+                            Id = new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"),
                             Email = "john.doe@example.com",
                             FullName = "John Doe",
                             Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
@@ -792,7 +776,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         },
                         new
                         {
-                            Id = 6,
+                            Id = new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"),
                             Email = "sarah.lee@example.com",
                             FullName = "Sarah Lee",
                             Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
@@ -801,7 +785,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         },
                         new
                         {
-                            Id = 1,
+                            Id = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
                             Email = "alice@example.com",
                             FullName = "Alice Student",
                             Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
@@ -810,7 +794,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         },
                         new
                         {
-                            Id = 2,
+                            Id = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
                             Email = "bob@example.com",
                             FullName = "Bob Interviewer",
                             Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
@@ -819,7 +803,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         },
                         new
                         {
-                            Id = 3,
+                            Id = new Guid("2f8c7a6b-6d5e-4e2f-8c7a-9d6e5c4b3a33"),
                             Email = "admin@example.com",
                             FullName = "Admin",
                             Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
