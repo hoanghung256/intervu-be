@@ -3,7 +3,7 @@ using System;
 
 namespace Intervu.Domain.Entities
 {
-    public class IntervieweeProfile : EntityBase<int>
+    public class IntervieweeProfile : EntityBase<Guid>
     {
         /// <summary>
         /// References User.Id (Interviewee)

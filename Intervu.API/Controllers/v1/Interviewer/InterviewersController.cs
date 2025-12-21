@@ -2,6 +2,7 @@
 using Intervu.Application.DTOs.Interviewer;
 using Intervu.Application.Interfaces.UseCases.InterviewerProfile;
 using Microsoft.AspNetCore.Mvc;
+using System;
 
 namespace Intervu.API.Controllers.v1.Interviewer
 {
@@ -18,7 +19,7 @@ namespace Intervu.API.Controllers.v1.Interviewer
 
         // [GET] api/interviewers?pageNumber=1&pageSize=10
         [HttpGet]
-        public async Task<IActionResult> GetAllInterviewers([FromQuery] int page = 1, [FromQuery] int pageSize = 24, [FromQuery] int? companyId = null, [FromQuery] int? skillId = null, [FromQuery] string? searchTerm = "")
+        public async Task<IActionResult> GetAllInterviewers([FromQuery] int page = 1, [FromQuery] int pageSize = 24, [FromQuery] Guid? companyId = null, [FromQuery] Guid? skillId = null, [FromQuery] string? searchTerm = "")
         {
             var request = new GetInterviewerFilterRequest
             {

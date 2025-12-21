@@ -9,9 +9,9 @@ namespace Intervu.Domain.Repositories
         Task<(IReadOnlyList<Feedback> Items, int TotalCount)> GetPagedFeedbacksAsync(int page, int pageSize);
         Task<int> GetTotalFeedbacksCountAsync();
         Task<double> GetAverageRatingAsync();
-        Task<(IReadOnlyList<Feedback> Items, int TotalCount)> GetFeedbacksByStudentIdAsync(int studentId, int page, int pageSize);
-        Task<Feedback?> GetFeedbackByIdAsync(int id);
-        Task<List<Feedback>> GetFeedbacksByInterviewRoomIdAsync(int interviewRoomId);
+        Task<(IReadOnlyList<Feedback> Items, int TotalCount)> GetFeedbacksByStudentIdAsync(Guid studentId, int page, int pageSize);
+        Task<Feedback?> GetFeedbackByIdAsync(Guid id);
+        Task<List<Feedback>> GetFeedbacksByInterviewRoomIdAsync(Guid interviewRoomId);
         Task CreateFeedbackAsync(Feedback feedback);
         Task UpdateFeedbackAsync(Feedback updatedFeedback);
     }

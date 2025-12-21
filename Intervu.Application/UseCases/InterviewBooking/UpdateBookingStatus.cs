@@ -14,7 +14,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
             _transactionRepository = transactionRepository;
         }
 
-        public async Task<InterviewBookingTransaction> ExecuteAsync(int bookingId, TransactionStatus transactionStatus)
+        public async Task<InterviewBookingTransaction> ExecuteAsync(Guid bookingId, TransactionStatus transactionStatus)
         {
             var t = await _transactionRepository.GetByIdAsync(bookingId) ?? throw new Exception("Booking transaction not found");
 

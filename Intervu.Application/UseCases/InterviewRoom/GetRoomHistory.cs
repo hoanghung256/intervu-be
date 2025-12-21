@@ -13,7 +13,7 @@ namespace Intervu.Application.UseCases.InterviewRoom
             _repo = repo;
         }
 
-        public async Task<IEnumerable<Domain.Entities.InterviewRoom>> ExecuteAsync(UserRole role, int userId)
+        public async Task<IEnumerable<Domain.Entities.InterviewRoom>> ExecuteAsync(UserRole role, Guid userId)
         {
             if (role == UserRole.Interviewee)
             {

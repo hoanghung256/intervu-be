@@ -7,7 +7,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 {
     public class TransactionRepository(IntervuPostgreDbContext context) : RepositoryBase<InterviewBookingTransaction>(context), ITransactionRepository
     {
-        public async Task<InterviewBookingTransaction?> GetByAvailabilityId(int id)
+        public async Task<InterviewBookingTransaction?> GetByAvailabilityId(Guid id)
         {
             return await _context.InterviewBookingTransaction.FirstOrDefaultAsync(t => t.InterviewerAvailabilityId == id);
         }

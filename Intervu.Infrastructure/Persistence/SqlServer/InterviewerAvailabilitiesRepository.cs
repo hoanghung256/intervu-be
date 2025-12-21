@@ -18,7 +18,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             _dbContext = dbContext;
         }
 
-        public async Task<IEnumerable<InterviewerAvailability>> GetInterviewerAvailabilitiesByMonthAsync(int intervewerId, int month = 0, int year = 0)
+        public async Task<IEnumerable<InterviewerAvailability>> GetInterviewerAvailabilitiesByMonthAsync(Guid intervewerId, int month = 0, int year = 0)
         {
             var query = _dbContext.InterviewerAvailabilities.AsQueryable();
 
@@ -41,7 +41,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             return result;
         }
 
-        public async Task<bool> IsInterviewerAvailableAsync(int interviewerId, DateTimeOffset startTime, DateTimeOffset endTime)
+        public async Task<bool> IsInterviewerAvailableAsync(Guid interviewerId, DateTimeOffset startTime, DateTimeOffset endTime)
         {
             // return true if no overlapping availability or booking exists
             var overlaps = await _dbContext.InterviewerAvailabilities
@@ -51,21 +51,21 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             return !overlaps;
         }
 
-        public async Task<int> CreateInterviewerAvailabilityAsync(InterviewerAvailability availability)
+        public async Task<Guid> CreateInterviewerAvailabilityAsync(InterviewerAvailability availability)
         {
             _dbContext.InterviewerAvailabilities.Add(availability);
             await _dbContext.SaveChangesAsync();
             return availability.Id;
         }
 
-        public async Task<int> CreateMultipleInterviewerAvailabilitiesAsync(List<InterviewerAvailability> availabilities)
+        public async Task<Guid> CreateMultipleInterviewerAvailabilitiesAsync(List<InterviewerAvailability> availabilities)
         {
             _dbContext.InterviewerAvailabilities.AddRange(availabilities);
             await _dbContext.SaveChangesAsync();
             return availabilities.First().Id;
         }
 
-        public async Task<bool> DeleteInterviewerAvailabilityAsync(int availabilityId)
+        public async Task<bool> DeleteInterviewerAvailabilityAsync(Guid availabilityId)
         {
             var availability = await _dbContext.InterviewerAvailabilities.FindAsync(availabilityId);
             if (availability == null)
@@ -76,7 +76,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             return true;
         }
 
-        public async Task<bool> UpdateInterviewerAvailabilityAsync(int availabilityId, DateTimeOffset startTime, DateTimeOffset endTime)
+        public async Task<bool> UpdateInterviewerAvailabilityAsync(Guid availabilityId, DateTimeOffset startTime, DateTimeOffset endTime)
         {
             var availability = await _dbContext.InterviewerAvailabilities.FindAsync(availabilityId);
             if (availability == null)
@@ -90,7 +90,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             return true;
         }
 
-        public Task<InterviewerAvailability?> GetAsync(int interviewerId, DateTime startTime)
+        public Task<InterviewerAvailability?> GetAsync(Guid interviewerId, DateTime startTime)
         {
             return _dbContext.InterviewerAvailabilities
                 .FirstOrDefaultAsync(a => a.InterviewerId == interviewerId && a.StartTime == startTime);

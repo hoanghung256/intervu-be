@@ -15,7 +15,7 @@ namespace Intervu.Application.UseCases.Interviewee
             _userRepository = userRepository;
         }
 
-        public async Task<User> ExecuteAsync(int intervieweeId)
+        public async Task<User> ExecuteAsync(Guid intervieweeId)
         {
             var user = await _userRepository.GetByIdAsync(intervieweeId);
             

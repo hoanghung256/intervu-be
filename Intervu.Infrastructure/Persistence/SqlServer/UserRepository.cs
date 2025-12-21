@@ -51,7 +51,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             return await _context.Users.CountAsync();
         }
         
-        public async Task<bool> UpdateProfileAsync(int userId, string fullName)
+        public async Task<bool> UpdateProfileAsync(Guid userId, string fullName)
         {
             var user = await GetByIdAsync(userId);
             if (user == null) return false;
@@ -62,7 +62,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             return true;
         }
 
-        public async Task<bool> UpdatePasswordAsync(int userId, string hashedPassword)
+        public async Task<bool> UpdatePasswordAsync(Guid userId, string hashedPassword)
         {
             var user = await GetByIdAsync(userId);
             if (user == null) return false;
@@ -73,7 +73,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             return true;
         }
 
-        public async Task<string?> UpdateProfilePictureAsync(int userId, string profilePictureUrl)
+        public async Task<string?> UpdateProfilePictureAsync(Guid userId, string profilePictureUrl)
         {
             var user = await GetByIdAsync(userId);
             if (user == null) return null;

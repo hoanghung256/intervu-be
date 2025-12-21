@@ -11,7 +11,7 @@ namespace Intervu.Application.DTOs.Interviewer
     {
 
         //User properties
-        public int Id { get; set; }
+        public Guid Id { get; set; }
         public string FullName { get; set; }
 
         public string Email { get; set; }
@@ -26,8 +26,8 @@ namespace Intervu.Application.DTOs.Interviewer
 
         public string? BankAccountNumber { get; set; }
 
-        public List<int> CompanyIds { get; set; }
+        public List<Guid> CompanyIds { get; set; }
 
-        public List<int> SkillIds { get; set; }
+        public List<Guid> SkillIds { get; set; }
     }
 }

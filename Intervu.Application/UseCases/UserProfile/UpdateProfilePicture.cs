@@ -19,7 +19,7 @@ namespace Intervu.Application.UseCases.UserProfile
             _fileService = fileService;
         }
 
-        public async Task<string?> ExecuteAsync(int userId, IFormFile profilePicture)
+        public async Task<string?> ExecuteAsync(Guid userId, IFormFile profilePicture)
         {
             var user = await _userRepository.GetByIdAsync(userId);
             

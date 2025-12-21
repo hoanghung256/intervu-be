@@ -13,7 +13,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
             _transactionRepository = transactionRepository;
         }
 
-        public async Task<InterviewBookingTransaction?> ExecuteAsync(int interviewBookingId)
+        public async Task<InterviewBookingTransaction?> ExecuteAsync(Guid interviewBookingId)
         {
             return await _transactionRepository.GetByIdAsync(interviewBookingId);   
         }

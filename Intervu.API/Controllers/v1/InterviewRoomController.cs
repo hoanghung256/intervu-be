@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using System;
 
 namespace Intervu.API.Controllers.v1
 {
@@ -28,7 +29,7 @@ namespace Intervu.API.Controllers.v1
         [HttpGet]
         public async Task<IActionResult> GetList()
         {
-            bool isGetUserIdSuccess = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId);
+            bool isGetUserIdSuccess = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
             bool isGetRoleSuccess = Enum.TryParse<UserRole>(User.FindFirstValue(ClaimTypes.Role), out UserRole role);
 
             var list = await _getRoomHistory.ExecuteAsync(role, userId);
@@ -44,7 +45,7 @@ namespace Intervu.API.Controllers.v1
         [HttpPost]
         public async Task<IActionResult> CreateRoom([FromBody] CreateRoomDto createRoomDto)
         {
-            int roomId = createRoomDto.interviewerId == null 
+            Guid roomId = createRoomDto.interviewerId == null 
                 ? await _createRoom.ExecuteAsync(createRoomDto.intervieweeId) 
                 : await _createRoom.ExecuteAsync(createRoomDto.intervieweeId, createRoomDto.interviewerId, DateTime.Now.AddDays(1));
 
@@ -61,8 +62,8 @@ namespace Intervu.API.Controllers.v1
 
         public class CreateRoomDto
         {
-            public int intervieweeId { get; set; }
-            public int interviewerId { get; set; }
+            public Guid intervieweeId { get; set; }
+            public Guid interviewerId { get; set; }
         }
     }
 }

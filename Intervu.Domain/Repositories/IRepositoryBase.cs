@@ -8,7 +8,7 @@ namespace Intervu.Domain.Repositories
 {
     public interface IRepositoryBase<T> where T : class
     {
-        Task<T?> GetByIdAsync(int id);
+        Task<T?> GetByIdAsync(Guid id);
         Task AddAsync(T entity);
         void UpdateAsync(T entity);
         void DeleteAsync(T entity);

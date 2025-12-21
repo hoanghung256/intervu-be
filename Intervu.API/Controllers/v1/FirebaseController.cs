@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client.Extensions.Msal;
+using System;
 
 namespace Intervu.API.Controllers
 {
@@ -31,7 +32,7 @@ namespace Intervu.API.Controllers
         }
 
         [HttpGet("get-avatar/{userId}")]
-        public async Task<IActionResult> GetUserAvatar(int userId)
+        public async Task<IActionResult> GetUserAvatar(Guid userId)
         {
             var user = await _context.Users.FindAsync(userId);
             if (user == null)
@@ -45,7 +46,7 @@ namespace Intervu.API.Controllers
         }
 
         [HttpPost("upload-avatar/{userId}")]
-        public async Task<IActionResult> UploadUserAvatar(int userId, IFormFile file)
+        public async Task<IActionResult> UploadUserAvatar(Guid userId, IFormFile file)
         {
             if (file == null || file.Length == 0)
                 return BadRequest("No file uploaded.");
@@ -89,7 +90,7 @@ namespace Intervu.API.Controllers
 
 
         [HttpDelete("delete-avatar/{userId}")]
-        public async Task<IActionResult> DeleteUserAvatar(int userId)
+        public async Task<IActionResult> DeleteUserAvatar(Guid userId)
         {
             var user = await _context.Users.FindAsync(userId);
             if (user == null)

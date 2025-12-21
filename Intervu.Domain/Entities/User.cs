@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Intervu.Domain.Entities
 {
-    public class User : EntityBase<int>
+    public class User : EntityBase<Guid>
     {
         public string FullName { get; set; }
 

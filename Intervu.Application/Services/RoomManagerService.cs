@@ -70,7 +70,8 @@ namespace Intervu.Application.Services
 
             //var getCurrentRoom = scope.ServiceProvider.GetRequiredService<IGetCurrentRoom>();
             //Domain.Entities.InterviewRoom interviewRoom = await getCurrentRoom.ExecuteAsync(int.Parse(roomId));
-            InterviewRoom interviewRoom = _cache.Rooms.SingleOrDefault(r => r.Id == int.Parse(roomId));
+            var roomGuid = Guid.Parse(roomId);
+            InterviewRoom interviewRoom = _cache.Rooms.SingleOrDefault(r => r.Id == roomGuid);
             return _roomStates.GetOrAdd(roomId, _ =>
             {
                 _logger.LogInformation("Creating new in-memory state for room '{RoomId}'.", roomId);
@@ -102,7 +103,8 @@ namespace Intervu.Application.Services
                 {
                     //Save room progress
                     //var room = await getCurrentRoom.ExecuteAsync(int.Parse(roomId));
-                    InterviewRoom room = _cache.Rooms.SingleOrDefault(r => r.Id == int.Parse(roomId));
+                    var roomGuid = Guid.Parse(roomId);
+                    InterviewRoom room = _cache.Rooms.SingleOrDefault(r => r.Id == roomGuid);
                     if (room != null)
                     {
                         room.CurrentLanguage = roomState.CurrentLanguage;
@@ -115,7 +117,7 @@ namespace Intervu.Application.Services
                     //Create feedback
                     GetFeedbackRequest request = new GetFeedbackRequest
                     {
-                        StudentId = room.StudentId.Value,
+                        StudentId = room.StudentId,
                     };
                     var feedbacks = await getFeedbacks.ExecuteAsync(request);
                     var filterFeedbacks = feedbacks.Items.Where(f => f.InterviewRoomId == room.Id).ToList();

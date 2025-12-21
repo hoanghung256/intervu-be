@@ -7,7 +7,7 @@ using Intervu.Domain.Abstractions.Entity;
 
 namespace Intervu.Domain.Entities
 {
-    public class Company : EntityBase<int>
+    public class Company : EntityBase<Guid>
     {
         public string Name { get; set; }
         public string Website { get; set; }

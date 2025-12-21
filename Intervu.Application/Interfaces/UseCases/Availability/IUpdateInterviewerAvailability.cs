@@ -5,6 +5,6 @@ namespace Intervu.Application.Interfaces.UseCases.Availability
 {
     public interface IUpdateInterviewerAvailability
     {
-        Task<bool> ExecuteAsync(int availabilityId, InterviewerAvailabilityUpdateDto dto);
+        Task<bool> ExecuteAsync(Guid availabilityId, InterviewerAvailabilityUpdateDto dto);
     }
 }

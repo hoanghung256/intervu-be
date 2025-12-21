@@ -21,7 +21,7 @@ namespace Intervu.Application.UseCases.InterviewerProfile
             _mapper = mapper;
         }
 
-        public async Task<InterviewerProfileDto?> ViewOwnProfileAsync(int id)
+        public async Task<InterviewerProfileDto?> ViewOwnProfileAsync(Guid id)
         {
             Domain.Entities.User? userData = await _userRepository.GetByIdAsync(id);
             if (userData == null) return null;
@@ -36,7 +36,7 @@ namespace Intervu.Application.UseCases.InterviewerProfile
             return result;
         }
 
-        public async Task<InterviewerViewDto?> ViewProfileForIntervieweeAsync(int id)
+        public async Task<InterviewerViewDto?> ViewProfileForIntervieweeAsync(Guid id)
         {
             Domain.Entities.User? userData = await _userRepository.GetByIdAsync(id);
             if (userData == null) return null;

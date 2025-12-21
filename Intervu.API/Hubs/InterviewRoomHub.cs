@@ -364,7 +364,7 @@ namespace Intervu.API.Hubs
 
         public async Task<bool> isRoomCompleted(string roomId)
         {
-            var room = _cache.Rooms.SingleOrDefault(r => r.Id == int.Parse(roomId));
+            var room = _cache.Rooms.SingleOrDefault(r => r.Id == Guid.Parse(roomId));
             if (room != null && room.Status == Domain.Entities.Constants.InterviewRoomStatus.Completed)
             {
                 _logger.LogInformation("Room is completed for id: " + roomId);

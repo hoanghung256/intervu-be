@@ -14,13 +14,13 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             await SaveChangesAsync();
         }
 
-        public async Task<Feedback?> GetFeedbackByIdAsync(int id)
+        public async Task<Feedback?> GetFeedbackByIdAsync(Guid id)
         {
             return await GetByIdAsync(id);
         }
 
 
-        public async Task<(IReadOnlyList<Feedback> Items, int TotalCount)> GetFeedbacksByStudentIdAsync(int studentId, int page, int pageSize)
+        public async Task<(IReadOnlyList<Feedback> Items, int TotalCount)> GetFeedbacksByStudentIdAsync(Guid studentId, int page, int pageSize)
         {
             var query = _context.Feedbacks.Where(f => f.StudentId == studentId).AsQueryable();
 
@@ -40,7 +40,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             await SaveChangesAsync();
         }
 
-        public async Task<List<Feedback>> GetFeedbacksByInterviewRoomIdAsync(int interviewRoomId)
+        public async Task<List<Feedback>> GetFeedbacksByInterviewRoomIdAsync(Guid interviewRoomId)
         {
             return await _context.Feedbacks
                 .Where(f => f.InterviewRoomId == interviewRoomId)

@@ -25,11 +25,11 @@ namespace Intervu.Application.UseCases.InterviewBooking
             _paymentService = paymentService;
         }
 
-        public async Task ExecuteAsync(int interviewRoomId)
+        public async Task ExecuteAsync(Guid interviewRoomId)
         {
             var room = await _interviewRoomRepository.GetByIdAsync(interviewRoomId);
 
-            int interviewerId = (int)room.InterviewerId;
+            var interviewerId = room.InterviewerId ?? throw new Exception("InterviewerId is missing for room");
             var interviewer = await _interviewerProfileRepository.GetProfileByIdAsync(interviewerId);
 
             // Get availability by schedule time + interviewerId

@@ -8,7 +8,7 @@ namespace Intervu.Application.DTOs.Interviewer
 {
     public class InterviewerViewDto
     {
-        public int Id { get; set; }
+        public Guid Id { get; set; }
         [Ignore]
         public UserDto User { get; set; }
 

@@ -17,7 +17,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
 
         public void DeleteAsync(T entity) => _context.Set<T>().Remove(entity);
 
-        public async Task<T?> GetByIdAsync(int id) => await _context.Set<T>().FindAsync(id);
+        public async Task<T?> GetByIdAsync(Guid id) => await _context.Set<T>().FindAsync(id);
 
         public void SoftDeleteAsync(T entity)
         {

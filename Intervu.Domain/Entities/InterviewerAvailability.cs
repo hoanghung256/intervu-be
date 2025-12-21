@@ -3,13 +3,13 @@ using System;
 
 namespace Intervu.Domain.Entities
 {
-    public class InterviewerAvailability : EntityBase<int>
+    public class InterviewerAvailability : EntityBase<Guid>
     {
         /// <summary>
         /// EntityBase.Id represents AvailabilityId
         /// References InterviewerProfile.Id
         /// </summary>
-        public int InterviewerId { get; set; }
+        public Guid InterviewerId { get; set; }
 
         public DateTime StartTime { get; set; }
 

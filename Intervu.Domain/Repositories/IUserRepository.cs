@@ -14,8 +14,8 @@ namespace Intervu.Domain.Repositories
         Task<bool> EmailExistsAsync(string email);
         Task<(IReadOnlyList<User> Items, int TotalCount)> GetPagedUsersAsync(int page, int pageSize);
         Task<int> GetTotalUsersCountAsync();
-        Task<bool> UpdateProfileAsync(int userId, string fullName);
-        Task<bool> UpdatePasswordAsync(int userId, string hashedPassword);
-        Task<string?> UpdateProfilePictureAsync(int userId, string profilePictureUrl);
+        Task<bool> UpdateProfileAsync(Guid userId, string fullName);
+        Task<bool> UpdatePasswordAsync(Guid userId, string hashedPassword);
+        Task<string?> UpdateProfilePictureAsync(Guid userId, string profilePictureUrl);
     }
 }

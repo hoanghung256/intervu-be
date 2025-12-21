@@ -5,6 +5,6 @@ namespace Intervu.Application.Interfaces.UseCases.UserProfile
 {
     public interface IUpdateUserProfile
     {
-        Task<UserDto?> ExecuteAsync(int userId, UpdateProfileRequest request);
+        Task<UserDto?> ExecuteAsync(Guid userId, UpdateProfileRequest request);
     }
 }

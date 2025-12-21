@@ -22,11 +22,17 @@ namespace Intervu.Application.UseCases.Feedbacks
 
         public async Task<PagedResult<Feedback>> ExecuteAsync(GetFeedbackRequest request)
         {
-            var (items, total) = await _repo.GetFeedbacksByStudentIdAsync(request.StudentId, request.Page, request.PageSize);
-            return new PagedResult<Feedback>(items.ToList(), total, request.PageSize, request.Page);
+            if (request.StudentId.HasValue)
+            {
+                var (items, total) = await _repo.GetFeedbacksByStudentIdAsync(request.StudentId.Value, request.Page, request.PageSize);
+                return new PagedResult<Feedback>(items.ToList(), total, request.PageSize, request.Page);
+            }
+
+            var (pagedItems, pagedTotal) = await _repo.GetPagedFeedbacksAsync(request.Page, request.PageSize);
+            return new PagedResult<Feedback>(pagedItems.ToList(), pagedTotal, request.PageSize, request.Page);
         }
 
-        public async Task<Feedback?> ExecuteAsync(int id)
+        public async Task<Feedback?> ExecuteAsync(Guid id)
         {
             return await _repo.GetFeedbackByIdAsync(id);
         }

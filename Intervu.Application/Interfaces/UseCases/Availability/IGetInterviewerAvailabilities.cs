@@ -9,8 +9,8 @@ namespace Intervu.Application.Interfaces.UseCases.Availability
 {
     public interface IGetInterviewerAvailabilities
     {
-        Task<IEnumerable<InterviewerAvailability>> ExecuteAsync(int intervewerId, int month = 0, int year = 0);
+        Task<IEnumerable<InterviewerAvailability>> ExecuteAsync(Guid intervewerId, int month = 0, int year = 0);
 
-        Task<InterviewerAvailability> GetAsync(int interviewerId, DateTime startTime);
+        Task<InterviewerAvailability> GetAsync(Guid interviewerId, DateTime startTime);
     }
 }

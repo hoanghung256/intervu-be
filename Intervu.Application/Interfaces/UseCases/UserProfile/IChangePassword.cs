@@ -5,6 +5,6 @@ namespace Intervu.Application.Interfaces.UseCases.UserProfile
 {
     public interface IChangePassword
     {
-        Task<bool> ExecuteAsync(int userId, ChangePasswordRequest request);
+        Task<bool> ExecuteAsync(Guid userId, ChangePasswordRequest request);
     }
 }

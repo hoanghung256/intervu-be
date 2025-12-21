@@ -5,6 +5,6 @@ namespace Intervu.Application.Interfaces.UseCases.Availability
 {
     public interface ICreateInterviewerAvailability
     {
-        Task<int> ExecuteAsync(InterviewerAvailabilityCreateDto dto);
+        Task<Guid> ExecuteAsync(InterviewerAvailabilityCreateDto dto);
     }
 }

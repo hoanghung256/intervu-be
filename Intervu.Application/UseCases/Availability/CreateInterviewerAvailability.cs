@@ -21,7 +21,7 @@ namespace Intervu.Application.UseCases.Availability
             _mapper = mapper;
         }
 
-        public async Task<int> ExecuteAsync(InterviewerAvailabilityCreateDto dto)
+        public async Task<Guid> ExecuteAsync(InterviewerAvailabilityCreateDto dto)
         {
             // basic validation
             if (dto == null) throw new ArgumentNullException(nameof(dto));
@@ -72,7 +72,7 @@ namespace Intervu.Application.UseCases.Availability
 
             // Bulk insert all slots
             var id = await _repo.CreateMultipleInterviewerAvailabilitiesAsync(slots);
-            return id;
+            return slots.First().Id;
         }
     }
 }

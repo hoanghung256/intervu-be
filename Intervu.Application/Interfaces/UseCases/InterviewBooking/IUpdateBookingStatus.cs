@@ -5,6 +5,6 @@ namespace Intervu.Application.Interfaces.UseCases.InterviewBooking
 {
     public interface IUpdateBookingStatus
     {
-        Task<InterviewBookingTransaction> ExecuteAsync(int bookingId, TransactionStatus transactionStatus);
+        Task<InterviewBookingTransaction> ExecuteAsync(Guid bookingId, TransactionStatus transactionStatus);
     }
 }

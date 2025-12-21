@@ -41,12 +41,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             throw new NotImplementedException();
         }
 
-        public void DeleteInterviewerProfile(int id)
+        public void DeleteInterviewerProfile(Guid id)
         {
             throw new NotImplementedException();
         }
 
-        public async Task<InterviewerProfile?> GetProfileByIdAsync(int id)
+        public async Task<InterviewerProfile?> GetProfileByIdAsync(Guid id)
         {
             InterviewerProfile? profile = await _context.InterviewerProfiles
                 .Where(p => p.Id == id)
@@ -58,7 +58,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             return profile;
         }
 
-        public async Task<(IReadOnlyList<InterviewerProfile> Items, int TotalCount)> GetPagedInterviewerProfilesAsync(string? search, int? skillId, int? companyId, int page, int pageSize)
+        public async Task<(IReadOnlyList<InterviewerProfile> Items, int TotalCount)> GetPagedInterviewerProfilesAsync(string? search, Guid? skillId, Guid? companyId, int page, int pageSize)
         {
             var query = _context.InterviewerProfiles
                 .Include(i => i.Companies)

@@ -33,7 +33,7 @@ namespace Intervu.API.Controllers.v1
         /// Get user profile by ID
         /// </summary>
         [HttpGet("{userId}")]
-        public async Task<IActionResult> GetProfile(int userId)
+        public async Task<IActionResult> GetProfile(Guid userId)
         {
             var user = await _getUserProfile.ExecuteAsync(userId);
             
@@ -58,7 +58,7 @@ namespace Intervu.API.Controllers.v1
         /// Update user profile (full name)
         /// </summary>
         [HttpPut("{userId}")]
-        public async Task<IActionResult> UpdateProfile(int userId, [FromBody] UpdateProfileRequest request)
+        public async Task<IActionResult> UpdateProfile(Guid userId, [FromBody] UpdateProfileRequest request)
         {
             var user = await _updateUserProfile.ExecuteAsync(userId, request);
             
@@ -83,7 +83,7 @@ namespace Intervu.API.Controllers.v1
         /// Change user password
         /// </summary>
         [HttpPut("{userId}/password")]
-        public async Task<IActionResult> ChangePassword(int userId, [FromBody] ChangePasswordRequest request)
+        public async Task<IActionResult> ChangePassword(Guid userId, [FromBody] ChangePasswordRequest request)
         {
             var success = await _changePassword.ExecuteAsync(userId, request);
             
@@ -107,7 +107,7 @@ namespace Intervu.API.Controllers.v1
         /// Update profile picture
         /// </summary>
         [HttpPut("{userId}/profile-picture")]
-        public async Task<IActionResult> UpdateProfilePicture(int userId, IFormFile profilePicture)
+        public async Task<IActionResult> UpdateProfilePicture(Guid userId, IFormFile profilePicture)
         {
             if (profilePicture == null || profilePicture.Length == 0)
             {

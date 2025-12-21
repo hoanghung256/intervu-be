@@ -23,7 +23,7 @@ namespace Intervu.Application.UseCases.InterviewerProfile
             _mapper = mapper;
         }
 
-        public async Task<InterviewerProfileDto> UpdateInterviewProfile(int id, InterviewerUpdateDto interviewerUpdateDto)
+        public async Task<InterviewerProfileDto> UpdateInterviewProfile(Guid id, InterviewerUpdateDto interviewerUpdateDto)
         {
             var existing = await _repo.GetByIdAsync(id);
             if (existing == null)
@@ -38,7 +38,7 @@ namespace Intervu.Application.UseCases.InterviewerProfile
             return _mapper.Map<InterviewerProfileDto>(existing);
         }
 
-        public async Task<InterviewerViewDto> UpdateInterviewStatus(int id, InterviewerProfileStatus status)
+        public async Task<InterviewerViewDto> UpdateInterviewStatus(Guid id, InterviewerProfileStatus status)
         {
             Domain.Entities.InterviewerProfile? profile = await _repo.GetByIdAsync(id);
             if (profile == null)

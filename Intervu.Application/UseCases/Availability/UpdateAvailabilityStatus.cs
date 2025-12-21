@@ -18,7 +18,7 @@ namespace Intervu.Application.UseCases.Availability
             _interviewerAvailabilitiesRepository = interviewerAvailabilitiesRepository;
         }
 
-        public async Task<InterviewerAvailability> ExecuteAsync(int availabilityId, bool isBooked)
+        public async Task<InterviewerAvailability> ExecuteAsync(Guid availabilityId, bool isBooked)
         {
             var a = await _interviewerAvailabilitiesRepository.GetByIdAsync(availabilityId) ?? throw new Exception("InterviewerAvailability not found");
 

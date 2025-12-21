@@ -16,12 +16,12 @@ namespace Intervu.Application.UseCases.Availability
         {
             _interviewerAvailabilitiesRepository = interviewerAvailabilitiesRepository;
         }
-        public Task<IEnumerable<InterviewerAvailability>> ExecuteAsync(int intervewerId, int month = 0, int year = 0)
+        public Task<IEnumerable<InterviewerAvailability>> ExecuteAsync(Guid intervewerId, int month = 0, int year = 0)
         {
             return _interviewerAvailabilitiesRepository.GetInterviewerAvailabilitiesByMonthAsync(intervewerId, month, year);
         }
 
-        public Task<InterviewerAvailability> GetAsync(int interviewerId, DateTime startTime)
+        public Task<InterviewerAvailability> GetAsync(Guid interviewerId, DateTime startTime)
         {
             return _interviewerAvailabilitiesRepository.GetAsync(interviewerId, startTime);
         }

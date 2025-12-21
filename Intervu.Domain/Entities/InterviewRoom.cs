@@ -3,14 +3,14 @@ using Intervu.Domain.Entities.Constants;
 
 namespace Intervu.Domain.Entities
 {
-    public class InterviewRoom : EntityBase<int>
+    public class InterviewRoom : EntityBase<Guid>
     {
         /// <summary>
         /// EntityBase.Id represents InterviewRoomId
         /// </summary>
-        public int? StudentId { get; set; }
+        public Guid? StudentId { get; set; }
 
-        public int? InterviewerId { get; set; }
+        public Guid? InterviewerId { get; set; }
 
         public DateTime? ScheduledTime { get; set; }
 

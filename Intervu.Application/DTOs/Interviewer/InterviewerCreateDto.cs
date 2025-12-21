@@ -16,7 +16,7 @@ namespace Intervu.Application.DTOs.Interviewer
         public int? ExperienceYears { get; set; }
         public InterviewerProfileStatus StatusProfile { get; set; } = InterviewerProfileStatus.Enable;
 
-        public List<int> CompanyIds { get; set; } = new List<int>();
-        public List<int> SkillIds { get; set; } = new List<int>();
+        public List<Guid> CompanyIds { get; set; } = new List<Guid>();
+        public List<Guid> SkillIds { get; set; } = new List<Guid>();
     }
 }
