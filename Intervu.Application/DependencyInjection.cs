@@ -33,6 +33,8 @@ using Intervu.Application.Interfaces.UseCases.Interviewee;
 using Intervu.Application.UseCases.Interviewee;
 using Intervu.Application.Utils;
 using Intervu.Application.UseCases.Admin;
+using Intervu.Application.Interfaces.UseCases.IntervieweeProfile;
+using Intervu.Application.UseCases.IntervieweeProfile;
 
 namespace Intervu.Application
 {
@@ -103,6 +105,9 @@ namespace Intervu.Application
             // ----- Interviewer & Interviewee Details ---
             services.AddScoped<IGetInterviewerDetails, GetInterviewerDetails>();
             services.AddScoped<IGetIntervieweeDetails, GetIntervieweeDetails>();
+
+            // ----- IntervieweeProfile ---
+            services.AddScoped<IUpdateIntervieweeProfile, UpdateIntervieweeProfile>();
 
             return services;
         }

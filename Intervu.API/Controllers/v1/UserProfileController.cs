@@ -1,9 +1,12 @@
 using Asp.Versioning;
 using Intervu.Application.DTOs.User;
+using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.UseCases.IntervieweeProfile;
 using Intervu.Application.Interfaces.UseCases.UserProfile;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
+using static Intervu.API.Controllers.v1.InterviewRoomController;
 
 namespace Intervu.API.Controllers.v1
 {
@@ -16,17 +19,23 @@ namespace Intervu.API.Controllers.v1
         private readonly IUpdateUserProfile _updateUserProfile;
         private readonly IChangePassword _changePassword;
         private readonly IUpdateProfilePicture _updateProfilePicture;
+        private readonly IFileService _fileService;
+        private readonly IUpdateIntervieweeProfile _updateIntervieweeProfile;
 
         public UserProfileController(
             IGetUserProfile getUserProfile,
             IUpdateUserProfile updateUserProfile,
             IChangePassword changePassword,
-            IUpdateProfilePicture updateProfilePicture)
+            IUpdateProfilePicture updateProfilePicture,
+            IFileService fileService,
+            IUpdateIntervieweeProfile updateIntervieweeProfile)
         {
             _getUserProfile = getUserProfile;
             _updateUserProfile = updateUserProfile;
             _changePassword = changePassword;
             _updateProfilePicture = updateProfilePicture;
+            _fileService = fileService;
+            _updateIntervieweeProfile = updateIntervieweeProfile;
         }
 
         /// <summary>
@@ -134,6 +143,26 @@ namespace Intervu.API.Controllers.v1
                 success = true,
                 message = "Profile picture updated successfully",
                 data = new { profilePictureUrl = fileUrl }
+            });
+        }
+
+        [HttpPost("upload-cv/{userId}")]
+        public async Task<IActionResult> UploadCV(Guid userId, IFormFile file)
+        {
+            using var stream = file.OpenReadStream();
+            var fileUrl = await _fileService.UploadFileAsync(stream, file.FileName, file.ContentType);
+
+            var profile = await _updateIntervieweeProfile.UpdateIntervieweeProfile(userId, fileUrl);
+            if (profile == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(new
+            {
+                success = true,
+                message = "Success",
+                data = fileUrl
             });
         }
     }
