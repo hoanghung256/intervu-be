@@ -35,7 +35,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="ExternalServices\EmailServices\Templates\" />
+    <Folder Include="ExternalServices\EmailServices\EmailTemplates\" />
     <Folder Include="Persistence\PostgreSQL\Migrations\" />
     <Folder Include="Persistence\SqlServer\Migrations\" />
   </ItemGroup>

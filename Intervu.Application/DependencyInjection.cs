@@ -33,6 +33,8 @@ using Intervu.Application.Interfaces.UseCases.Interviewee;
 using Intervu.Application.UseCases.Interviewee;
 using Intervu.Application.Utils;
 using Intervu.Application.UseCases.Admin;
+using Intervu.Application.Interfaces.UseCases.PasswordReset;
+using Intervu.Application.UseCases.PasswordReset;
 
 namespace Intervu.Application
 {
@@ -54,6 +56,12 @@ namespace Intervu.Application
             // Auth UseCases
             services.AddTransient<ILoginUseCase, LoginUseCase>();
             services.AddTransient<IRegisterUseCase, RegisterUseCase>();
+
+            // Password Reset UseCases
+            services.AddTransient<IForgotPasswordUseCase, ForgotPasswordUseCase>();
+            services.AddTransient<IValidateResetTokenUseCase, ValidateResetTokenUseCase>();
+            services.AddTransient<IResetPasswordUseCase, ResetPasswordUseCase>();
+
             // ----- InterviewRoom ----
             services.AddScoped<ICreateInterviewRoom, CreateInterviewRoom>();
             services.AddScoped<IGetRoomHistory, GetRoomHistory>();
