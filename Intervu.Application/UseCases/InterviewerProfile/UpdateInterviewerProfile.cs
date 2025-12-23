@@ -15,11 +15,15 @@ namespace Intervu.Application.UseCases.InterviewerProfile
     public class UpdateInterviewerProfile : IUpdateInterviewProfile
     {
         private readonly IInterviewerProfileRepository _repo;
+        private readonly ICompanyRepository _companyRepository;
+        private readonly ISkillRepository _skillRepository;
         private readonly IMapper _mapper;
 
-        public UpdateInterviewerProfile(IInterviewerProfileRepository repo, IMapper mapper)
+        public UpdateInterviewerProfile(IInterviewerProfileRepository repo, ICompanyRepository companyRepository, ISkillRepository skillRepository, IMapper mapper)
         {
             _repo = repo;
+            _companyRepository = companyRepository;
+            _skillRepository = skillRepository;
             _mapper = mapper;
         }
 
@@ -29,6 +33,21 @@ namespace Intervu.Application.UseCases.InterviewerProfile
             if (existing == null)
                 return null;
 
+            // Map Companies by IDs (DTO provides List<Guid> Companies)
+            if (interviewerUpdateDto.CompanyIds != null)
+            {
+                var companies = await _companyRepository.GetByIdsAsync(interviewerUpdateDto.CompanyIds);
+                existing.Companies = companies.ToList();
+            }
+
+            // Map Skills by IDs (DTO provides List<Guid> Skills)
+            if (interviewerUpdateDto.SkillIds != null)
+            {
+                var skills = await _skillRepository.GetByIdsAsync(interviewerUpdateDto.SkillIds);
+                existing.Skills = skills.ToList();
+            }
+
+            // Map simple properties from DTO to existing entity
             _mapper.Map(interviewerUpdateDto, existing);
 
             await _repo.UpdateInterviewerProfileAsync(existing);

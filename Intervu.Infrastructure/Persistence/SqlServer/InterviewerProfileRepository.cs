@@ -41,10 +41,10 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             await _context.SaveChangesAsync();
         }
 
-        public async Task<InterviewerProfile> GetProfileAsync()
-        {
-            throw new NotImplementedException();
-        }
+        //public async Task<InterviewerProfile> GetProfileAsync()
+        //{
+        //    throw new NotImplementedException();
+        //}
 
         public void DeleteInterviewerProfile(Guid id)
         {

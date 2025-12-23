@@ -12,5 +12,6 @@ namespace Intervu.Domain.Repositories
         Task<(IReadOnlyList<Company> Items, int TotalCount)> GetPagedCompaniesAsync(int page, int pageSize);
 
         Task<int> GetTotalCompaniesCountAsync();
+        Task<IReadOnlyList<Company>> GetByIdsAsync(IEnumerable<Guid> ids);
     }
 }

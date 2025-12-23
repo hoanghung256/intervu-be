@@ -30,5 +30,12 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
         {
             return await _context.Companies.CountAsync();
         }
+
+        public async Task<IReadOnlyList<Company>> GetByIdsAsync(IEnumerable<Guid> ids)
+        {
+            if (ids == null) return new List<Company>();
+            var list = await _context.Companies.Where(c => ids.Contains(c.Id)).ToListAsync();
+            return list;
+        }
     }
 }

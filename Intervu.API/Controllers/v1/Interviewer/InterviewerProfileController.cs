@@ -131,7 +131,7 @@ namespace Intervu.API.Controllers.v1.Interviewer
                 message = msg
             });
         }
-
+        
         // [PUT] api/interviewer-profile/{id}/status
         [Authorize(Policy = AuthorizationPolicies.Admin)]
         [HttpPut("{id}/status")]
