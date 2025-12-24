@@ -150,7 +150,10 @@ namespace Intervu.API.Controllers.v1
         public async Task<IActionResult> UploadCV(Guid userId, IFormFile file)
         {
             using var stream = file.OpenReadStream();
-            var fileUrl = await _fileService.UploadFileAsync(stream, file.FileName, file.ContentType);
+
+            string objectName = $"cvs/{userId}{Path.GetExtension(file.FileName)}";
+
+            var fileUrl = await _fileService.UploadFileAsync(stream, objectName, file.ContentType);
 
             var profile = await _updateIntervieweeProfile.UpdateIntervieweeProfile(userId, fileUrl);
             if (profile == null)

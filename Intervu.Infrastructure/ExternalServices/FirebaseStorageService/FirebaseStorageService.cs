@@ -60,12 +60,10 @@ namespace Intervu.Infrastructure.ExternalServices.FirebaseStorageService
             }
         }
 
-        public async Task<string> UploadFileAsync(Stream stream, string fileName, string contentType)
+        public async Task<string> UploadFileAsync(Stream stream, string objectName, string contentType)
         {
             try
             {
-                var objectName = $"{FolderName}/{Guid.NewGuid()}{Path.GetExtension(fileName)}";
-
                 var downloadToken = Guid.NewGuid().ToString();
 
                 var storageObject = new Google.Apis.Storage.v1.Data.Object
@@ -74,9 +72,9 @@ namespace Intervu.Infrastructure.ExternalServices.FirebaseStorageService
                     Name = objectName,
                     ContentType = contentType,
                     Metadata = new Dictionary<string, string>
-            {
-                { "firebaseStorageDownloadTokens", downloadToken }
-            }
+        {
+            { "firebaseStorageDownloadTokens", downloadToken }
+        }
                 };
 
                 await _storage.UploadObjectAsync(storageObject, stream);
