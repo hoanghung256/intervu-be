@@ -54,7 +54,7 @@ namespace Intervu.Application.UseCases.PasswordReset
 
             await _tokenRepository.CreateTokenAsync(user.Id, token, expiresAt);
 
-            var frontEndUrl = request.FrontendUrl ?? _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:7118";
+            var frontEndUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:5173";
             var resetLink = $"{frontEndUrl}/reset-password?token={token}";
 
             //Send email

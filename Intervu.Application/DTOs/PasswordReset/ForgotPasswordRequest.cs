@@ -12,8 +12,5 @@ namespace Intervu.Application.DTOs.PasswordReset
         [Required(ErrorMessage = "Email is required.")]
         [EmailAddress(ErrorMessage = "Invalid email address format.")]
         public string Email { get; set; }
-
-        //Optional: URL of the frontend application to include in the reset link
-        public string? FrontendUrl { get; set; }
     }
 }
