@@ -129,15 +129,12 @@ namespace Intervu.API.Controllers.v1.Authentication
         [AllowAnonymous]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
         {
-            if (!ModelState.IsValid)
+            var validationError = ValidateModelState();
+            if (validationError != null)
             {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = "Invalid request",
-                    errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)
-                });
+                return validationError;
             }
+
             var result = await _forgotPasswordUseCase.ExecuteAsync(request);
 
             if (!result.Success)
@@ -189,14 +186,10 @@ namespace Intervu.API.Controllers.v1.Authentication
         [AllowAnonymous]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
         {
-            if (!ModelState.IsValid)
+            var validationError = ValidateModelState();
+            if (validationError != null)
             {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = "Invalid request",
-                    errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)
-                });
+                return validationError;
             }
 
             var result = await _resetPasswordUseCase.ExecuteAsync(request);
@@ -215,6 +208,26 @@ namespace Intervu.API.Controllers.v1.Authentication
                 success = true,
                 message = result.Message
             });
+        }
+
+        private IActionResult? ValidateModelState()
+        {
+            if (!ModelState.IsValid)
+            {
+                var firstError = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .FirstOrDefault() ?? "Invalid request";
+
+                return BadRequest(new
+                {
+                    success = false,
+                    message = firstError,
+                    expiresAt = (DateTime?)null
+                });
+            }
+
+            return null;
         }
     }
 }
