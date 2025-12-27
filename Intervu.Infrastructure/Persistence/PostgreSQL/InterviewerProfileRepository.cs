@@ -46,6 +46,18 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             throw new NotImplementedException();
         }
 
+        public async Task<InterviewerProfile?> GetProfileBySlugAsync(string slug)
+        {
+            InterviewerProfile? profile = await _context.InterviewerProfiles
+                .Where(p => p.User.SlugProfileUrl == slug)
+                .Include(p => p.Companies)
+                .Include(p => p.Skills)
+                .Include(p => p.User)
+                .FirstOrDefaultAsync();
+
+            return profile;
+        }
+
         public async Task<InterviewerProfile?> GetProfileByIdAsync(Guid id)
         {
             InterviewerProfile? profile = await _context.InterviewerProfiles
@@ -114,6 +126,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             if (existingProfile.User != null && updatedProfile.User != null)
             {
                 existingProfile.User.FullName = updatedProfile.User.FullName;
+                existingProfile.User.SlugProfileUrl = updatedProfile.User.SlugProfileUrl;
                 existingProfile.User.Email = updatedProfile.User.Email;
                 existingProfile.User.ProfilePicture = updatedProfile.User.ProfilePicture;
             }

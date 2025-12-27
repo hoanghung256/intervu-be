@@ -72,6 +72,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.ProfilePicture).HasMaxLength(1000);
                 b.Property(x => x.Role).IsRequired();
                 b.Property(x => x.Status).IsRequired();
+                b.Property(x => x.SlugProfileUrl).HasMaxLength(255).IsRequired();
+                b.HasIndex(x => x.SlugProfileUrl)
+                    .IsUnique();
             });
 
             // IntervieweeProfile (one-to-one with User, shared PK)
@@ -136,18 +139,18 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
 
 
             // InterviewerAvailability (many availabilities per interviewer)
-              modelBuilder.Entity<InterviewerAvailability>(b =>
-            {
-                b.ToTable("InterviewerAvailabilities");
-                b.HasKey(x => x.Id);
-                b.Property(x => x.StartTime).IsRequired();
-                b.Property(x => x.EndTime).IsRequired();
+            modelBuilder.Entity<InterviewerAvailability>(b =>
+          {
+              b.ToTable("InterviewerAvailabilities");
+              b.HasKey(x => x.Id);
+              b.Property(x => x.StartTime).IsRequired();
+              b.Property(x => x.EndTime).IsRequired();
 
-                b.HasOne<InterviewerProfile>()
-                 .WithMany()
-                  .HasForeignKey(x => x.InterviewerId)
-                 .OnDelete(DeleteBehavior.Cascade);
-            });
+              b.HasOne<InterviewerProfile>()
+               .WithMany()
+                .HasForeignKey(x => x.InterviewerId)
+               .OnDelete(DeleteBehavior.Cascade);
+          });
 
             // InterviewRoom
             modelBuilder.Entity<InterviewRoom>(b =>
@@ -178,7 +181,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                         v => JsonSerializer.Deserialize<object[]>(v, jsonOptions))
                     .HasColumnType("text");
 
-                 b.Property(x => x.CurrentLanguage).HasMaxLength(50);
+                b.Property(x => x.CurrentLanguage).HasMaxLength(50);
                 b.Property(x => x.ProblemDescription).HasColumnType("text");
                 b.Property(x => x.ProblemShortName).HasMaxLength(200);
 
@@ -330,6 +333,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 Role = UserRole.Interviewee,
                 ProfilePicture = null,
                 Status = UserStatus.Active,
+                SlugProfileUrl = "alice-student_1719000000001"
             };
 
             var user2 = new User
@@ -341,6 +345,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 Role = UserRole.Interviewer,
                 ProfilePicture = null,
                 Status = UserStatus.Active,
+                SlugProfileUrl = "bob-interviewer_1719000000002"
             };
 
             var user3 = new User
@@ -352,6 +357,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 Role = UserRole.Admin,
                 ProfilePicture = null,
                 Status = UserStatus.Active,
+                SlugProfileUrl = "admin_1719000000003"
             };
 
             var user5 = new User
@@ -363,6 +369,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 Role = UserRole.Interviewer,
                 ProfilePicture = null,
                 Status = UserStatus.Active,
+                SlugProfileUrl = "john-doe_1719000000004"
             };
 
             var user6 = new User
@@ -374,6 +381,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 Role = UserRole.Interviewer,
                 ProfilePicture = null,
                 Status = UserStatus.Active,
+                SlugProfileUrl = "sarah-lee_1719000000005"
             };
 
             modelBuilder.Entity<User>().HasData(user5, user6);

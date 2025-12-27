@@ -20,6 +20,7 @@ namespace Intervu.Application.DTOs.User
         public UserRole Role { get; set; }
 
         public string? ProfilePicture { get; set; }
+        public string? SlugProfileUrl { get; set; }
 
         /// <summary>
         /// Active, Suspended, Deleted

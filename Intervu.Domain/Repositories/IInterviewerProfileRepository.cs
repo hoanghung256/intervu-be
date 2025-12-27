@@ -10,6 +10,7 @@ namespace Intervu.Domain.Repositories
     public interface IInterviewerProfileRepository : IRepositoryBase<InterviewerProfile>
     {
         //Task<InterviewerProfile> GetProfileAsync();
+        Task<InterviewerProfile?> GetProfileBySlugAsync(string slug);
         Task<InterviewerProfile?> GetProfileByIdAsync(Guid id);
         Task CreateInterviewerProfile(InterviewerProfile profile);
         Task UpdateInterviewerProfileAsync(InterviewerProfile updatedProfile);

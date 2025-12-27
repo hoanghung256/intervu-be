@@ -31,6 +31,11 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             return await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
         }
 
+        public async Task<User?> GetBySlugAsync(string slug)
+        {
+            return await _context.Users.FirstOrDefaultAsync(u => u.SlugProfileUrl == slug);
+        }
+
         public async Task<(IReadOnlyList<User> Items, int TotalCount)> GetPagedUsersAsync(int page, int pageSize)
         {
             var query = _context.Users.AsQueryable();
