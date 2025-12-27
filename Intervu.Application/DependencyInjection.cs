@@ -60,9 +60,9 @@ namespace Intervu.Application
             services.AddScoped<IUpdateRoom, UpdateRoom>();
             services.AddScoped<IGetCurrentRoom, GetCurrentRoom>();
             // ----- InterviewerProfile ----
-            services.AddScoped<ICreateInterviewProfile, CreateInterviewerProfile>();
-            services.AddScoped<IUpdateInterviewProfile, UpdateInterviewerProfile>();
-            services.AddScoped<IViewInterviewProfile, ViewInterviewerProfile>();
+            services.AddScoped<ICreateInterviewerProfile, CreateInterviewerProfile>();
+            services.AddScoped<IUpdateInterviewerProfile, UpdateInterviewerProfile>();
+            services.AddScoped<IViewInterviewerProfile, ViewInterviewerProfile>();
             services.AddScoped<IDeleteInterviewerProfile, DeleteInterviewerProfile>();
             services.AddScoped<IGetAllInterviewers, GetAllInterviewers>();
             services.AddScoped<CompanyInterfaces.IGetAllCompanies, CompanyUseCases.GetAllCompanies>();

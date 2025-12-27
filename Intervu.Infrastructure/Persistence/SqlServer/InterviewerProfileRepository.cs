@@ -12,7 +12,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
         {
         }
 
-        public async Task CreateInterviewerProfile(InterviewerProfile profile)
+        public async Task CreateInterviewerProfileAsync(InterviewerProfile profile)
         {
             if (profile == null)
                 throw new ArgumentNullException(nameof(profile), "Profile cannot be null");
@@ -29,14 +29,14 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
                     Password = profile.User.Password,
                     Role = profile.User.Role,
                     ProfilePicture = profile.User.ProfilePicture,
-                    Status = profile.User.Status
+                    Status = profile.User.Status,
+                    SlugProfileUrl = profile.User.SlugProfileUrl
                 };
 
                 await _context.Users.AddAsync(user);
                 await _context.SaveChangesAsync();
+                profile.User = user;
             }
-
-            profile.User = user;
             await _context.InterviewerProfiles.AddAsync(profile);
             await _context.SaveChangesAsync();
         }
@@ -124,9 +124,6 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             existingProfile.Bio = updatedProfile.Bio;
             existingProfile.BankBinNumber = updatedProfile.BankBinNumber;
             existingProfile.BankAccountNumber = updatedProfile.BankAccountNumber;
-
-            existingProfile.Companies = updatedProfile.Companies ?? new List<Company>();
-            existingProfile.Skills = updatedProfile.Skills ?? new List<Skill>();
 
             if (existingProfile.User != null && updatedProfile.User != null)
             {

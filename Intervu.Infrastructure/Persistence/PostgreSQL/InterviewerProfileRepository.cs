@@ -7,7 +7,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 {
     public class InterviewerProfileRepository(IntervuPostgreDbContext context) : RepositoryBase<InterviewerProfile>(context), IInterviewerProfileRepository
     {
-        public async Task CreateInterviewerProfile(InterviewerProfile profile)
+        public async Task CreateInterviewerProfileAsync(InterviewerProfile profile)
         {
             if (profile == null)
                 throw new ArgumentNullException(nameof(profile), "Profile cannot be null");
@@ -17,21 +17,13 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
             if (user == null)
             {
-                user = new User
-                {
-                    FullName = profile.User.FullName,
-                    Email = profile.User.Email,
-                    Password = profile.User.Password,
-                    Role = profile.User.Role,
-                    ProfilePicture = profile.User.ProfilePicture,
-                    Status = profile.User.Status
-                };
-
+                user = profile.User;
                 await _context.Users.AddAsync(user);
                 await _context.SaveChangesAsync();
             }
-
+            profile.User.Id = user.Id;
             profile.User = user;
+
             await _context.InterviewerProfiles.AddAsync(profile);
             await _context.SaveChangesAsync();
         }

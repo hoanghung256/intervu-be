@@ -8,7 +8,7 @@ using Intervu.Domain.Repositories;
 
 namespace Intervu.Application.UseCases.InterviewerProfile
 {
-    public class ViewInterviewerProfile : IViewInterviewProfile
+    public class ViewInterviewerProfile : IViewInterviewerProfile
     {
         private readonly IInterviewerProfileRepository _interviewerProfileRepository;
         private readonly IUserRepository _userRepository;

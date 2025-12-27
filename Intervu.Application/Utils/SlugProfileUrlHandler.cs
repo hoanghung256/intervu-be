@@ -42,8 +42,8 @@ namespace Intervu.Application.Utils
         public static string GenerateProfileSlug(string fullName)
         {
             var slug = Slugify(fullName);
-            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            return $"{slug}_{timestamp}";
+            var shortId = Guid.NewGuid().ToString("N")[..8];
+            return $"{slug}-{shortId}";
         }
 
     }

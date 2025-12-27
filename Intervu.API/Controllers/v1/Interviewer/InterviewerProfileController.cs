@@ -16,16 +16,16 @@ namespace Intervu.API.Controllers.v1.Interviewer
     [Route("api/v{version:apiVersion}/interviewer-profile")]
     public class InterviewerProfileController : ControllerBase
     {
-        private readonly ICreateInterviewProfile _createInterviewProfile;
-        private readonly IUpdateInterviewProfile _updateInterviewProfile;
-        private readonly IViewInterviewProfile _getInterviewProfile;
+        private readonly ICreateInterviewerProfile _createInterviewerProfile;
+        private readonly IUpdateInterviewerProfile _updateInterviewerProfile;
+        private readonly IViewInterviewerProfile _getInterviewerProfile;
         private readonly IDeleteInterviewerProfile _deleteInterviewerProfile;
 
-        public InterviewerProfileController(ICreateInterviewProfile createInterviewProfile, IUpdateInterviewProfile updateInterviewProfile, IViewInterviewProfile getInterviewProfile, IDeleteInterviewerProfile deleteInterviewerProfile)
+        public InterviewerProfileController(ICreateInterviewerProfile createInterviewerProfile, IUpdateInterviewerProfile updateInterviewerProfile, IViewInterviewerProfile getInterviewerProfile, IDeleteInterviewerProfile deleteInterviewerProfile)
         {
-            _createInterviewProfile = createInterviewProfile;
-            _updateInterviewProfile = updateInterviewProfile;
-            _getInterviewProfile = getInterviewProfile;
+            _createInterviewerProfile = createInterviewerProfile;
+            _updateInterviewerProfile = updateInterviewerProfile;
+            _getInterviewerProfile = getInterviewerProfile;
             _deleteInterviewerProfile = deleteInterviewerProfile;
         }
 
@@ -37,7 +37,7 @@ namespace Intervu.API.Controllers.v1.Interviewer
             string msg = "Get profile successfully!";
             try
             {
-                var profile = await _getInterviewProfile.ViewOwnProfileAsync(id);
+                var profile = await _getInterviewerProfile.ViewOwnProfileAsync(id);
                 return Ok(new
                 {
                     success = true,
@@ -64,7 +64,7 @@ namespace Intervu.API.Controllers.v1.Interviewer
             string msg = "Get profile successfully!";
             try
             {
-                var profile = await _getInterviewProfile.ViewProfileForIntervieweeAsync(slugProfileUrl);
+                var profile = await _getInterviewerProfile.ViewProfileForIntervieweeAsync(slugProfileUrl);
                 return Ok(new
                 {
                     success = true,
@@ -92,7 +92,7 @@ namespace Intervu.API.Controllers.v1.Interviewer
             string msg = "Profile created successfully";
             try
             {
-                await _createInterviewProfile.CreateInterviewRequest(request);
+                await _createInterviewerProfile.CreateInterviewerRequest(request);
             }
             catch (Exception ex)
             {
@@ -113,8 +113,8 @@ namespace Intervu.API.Controllers.v1.Interviewer
             string msg = "Profile update successfully!";
             try
             {
-                InterviewerProfileDto? profile = await _getInterviewProfile.ViewOwnProfileAsync(id);
-                profile = await _updateInterviewProfile.UpdateInterviewProfile(id, request);
+                InterviewerProfileDto? profile = await _getInterviewerProfile.ViewOwnProfileAsync(id);
+                profile = await _updateInterviewerProfile.UpdateInterviewProfile(id, request);
                 return Ok(new
                 {
                     success = true,
@@ -140,7 +140,7 @@ namespace Intervu.API.Controllers.v1.Interviewer
             string msg = "Profile status update successfully";
             try
             {
-                InterviewerViewDto profile = await _updateInterviewProfile.UpdateInterviewStatus(id, status);
+                InterviewerViewDto profile = await _updateInterviewerProfile.UpdateInterviewStatus(id, status);
                 return Ok(new
                 {
                     success = true,
