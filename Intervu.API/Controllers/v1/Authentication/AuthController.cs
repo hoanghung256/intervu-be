@@ -154,7 +154,7 @@ namespace Intervu.API.Controllers.v1.Authentication
             });
         }
 
-        [HttpPost("validate-reset-token/{token}")]
+        [HttpGet("validate-reset-token/{token}")]
         [AllowAnonymous]
         public async Task<IActionResult> ValidateResetToken(string token)
         {
