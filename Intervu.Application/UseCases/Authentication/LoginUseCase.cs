@@ -42,7 +42,7 @@ namespace Intervu.Application.UseCases.Authentication
 
             // Generate JWT token using JwtService
             var token = _jwtService.GenerateToken(
-                user.Id.ToString(),
+                user.Id,
                 user.Email,
                 user.Role.ToString()
             );

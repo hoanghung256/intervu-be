@@ -117,7 +117,7 @@ namespace Intervu.API.Controllers.v1.Authentication
             }
 
             // generate jwt
-            var token = _jwtService.GenerateToken(user.Id.ToString(), user.Email, user.Role.ToString());
+            var token = _jwtService.GenerateToken(user.Id, user.Email, user.Role.ToString());
             var expiresIn = _jwtService.GetTokenValidityInSeconds();
 
             user.Password = null!;
