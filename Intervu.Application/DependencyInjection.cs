@@ -56,6 +56,7 @@ namespace Intervu.Application
             // Auth UseCases
             services.AddTransient<ILoginUseCase, LoginUseCase>();
             services.AddTransient<IRegisterUseCase, RegisterUseCase>();
+            services.AddTransient<IRefreshTokenUseCase, RefreshTokenUseCase>();
 
             // Password Reset UseCases
             services.AddTransient<IForgotPasswordUseCase, ForgotPasswordUseCase>();

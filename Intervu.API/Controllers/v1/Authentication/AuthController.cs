@@ -23,8 +23,9 @@ namespace Intervu.API.Controllers.v1.Authentication
         private readonly IForgotPasswordUseCase _forgotPasswordUseCase;
         private readonly IValidateResetTokenUseCase _validateResetTokenUseCase;
         private readonly IResetPasswordUseCase _resetPasswordUseCase;
+        private readonly IRefreshTokenRepository _refreshTokenRepository;
 
-        public AuthController(IUserRepository userRepository, JwtService jwtService, IConfiguration configuration, ILogger<AuthController> logger, IForgotPasswordUseCase forgotPasswordUseCase, IValidateResetTokenUseCase validateResetTokenUseCase, IResetPasswordUseCase resetPasswordUseCase)
+        public AuthController(IUserRepository userRepository, JwtService jwtService, IConfiguration configuration, ILogger<AuthController> logger, IForgotPasswordUseCase forgotPasswordUseCase, IValidateResetTokenUseCase validateResetTokenUseCase, IResetPasswordUseCase resetPasswordUseCase, IRefreshTokenRepository refreshTokenRepository)
         {
             _userRepository = userRepository;
             _jwtService = jwtService;
@@ -33,6 +34,7 @@ namespace Intervu.API.Controllers.v1.Authentication
             _forgotPasswordUseCase = forgotPasswordUseCase;
             _validateResetTokenUseCase = validateResetTokenUseCase;
             _resetPasswordUseCase = resetPasswordUseCase;
+            _refreshTokenRepository = refreshTokenRepository;
         }
 
         // Accept either { "idToken": "..." } or { "credential": "..." }
@@ -122,7 +124,10 @@ namespace Intervu.API.Controllers.v1.Authentication
 
             user.Password = null!;
 
-            return Ok(new { success = true, message = "Logged in", data = new { user, token, expiresIn } });
+            // generate refresh token
+            var refreshToken = await _refreshTokenRepository.CreateRefreshTokenAsync(user.Id);
+
+            return Ok(new { success = true, message = "Logged in", data = new { user, token, refreshToken, expiresIn } });
         }
 
         [HttpPost("forgot-password")]
