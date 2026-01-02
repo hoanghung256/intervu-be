@@ -15,7 +15,7 @@ namespace Intervu.Application.Utils
             _configuration = configuration;
         }
 
-        public string GenerateToken(string userId, string email, string role)
+        public string GenerateToken(Guid userId, string email, string role)
         {
             var issuer = _configuration["JwtConfig:Issuer"];
             var audience = _configuration["JwtConfig:Audience"];
@@ -29,7 +29,7 @@ namespace Intervu.Application.Utils
             {
                 Subject = new ClaimsIdentity(new[]
                 {
-                    new Claim(JwtRegisteredClaimNames.Sub, userId),
+                    new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
                     new Claim(JwtRegisteredClaimNames.Email, email),
                     new Claim(ClaimTypes.Role, role),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())

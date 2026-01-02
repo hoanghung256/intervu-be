@@ -107,7 +107,8 @@ namespace Intervu.API
                     ValidateIssuer = false, // Disable because Issuer is empty in config
                     ValidateAudience = false, // Disable because Audience is empty in config
                     ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true
+                    ValidateIssuerSigningKey = true,
+                    ClockSkew = TimeSpan.Zero
                 };
             });
 

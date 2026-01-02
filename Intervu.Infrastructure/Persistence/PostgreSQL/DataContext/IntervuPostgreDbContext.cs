@@ -29,6 +29,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
         public DbSet<NotificationReceive> NotificationReceives { get; set; }
         public DbSet<Company> Companies { get; set; }
         public DbSet<Skill> Skills { get; set; }
+        public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -280,6 +282,51 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.HasKey(x => x.Id);
                 b.Property(x => x.Name).HasMaxLength(200).IsRequired();
                 b.Property(x => x.Description).HasColumnType("text");
+            });
+
+            modelBuilder.Entity<PasswordResetToken>(b =>
+            {
+                b.ToTable("PasswordResetTokens");
+                b.HasKey(x => x.Id);
+
+                b.Property(x => x.UserId).IsRequired();
+
+                b.Property(x => x.Token).HasMaxLength(500).IsRequired();
+
+                b.Property(x => x.ExpiresAt).IsRequired().HasColumnType("timestamp with time zone");
+
+                b.Property(x => x.IsUsed).IsRequired().HasDefaultValue(false);
+                b.Property(x => x.CreatedAt).IsRequired().HasColumnType("timestamp with time zone").HasDefaultValueSql("NOW()");
+
+                // Foreign key relationship
+                b.HasOne(x => x.User)
+                    .WithMany()
+                    .HasForeignKey(x => x.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Indexes for performance
+                b.HasIndex(x => x.Token);
+                b.HasIndex(x => new { x.UserId, x.ExpiresAt });
+            });
+
+            modelBuilder.Entity<RefreshToken>(r =>
+            {
+                r.ToTable("RefreshTokens");
+                r.HasKey(x => x.Id);
+
+                r.Property(x => x.UserId).IsRequired();
+                r.Property(x => x.Token).HasMaxLength(500).IsRequired();
+
+                r.Property(x => x.ExpiresAt).IsRequired().HasColumnType("timestamp with time zone");
+                r.Property(x => x.CreatedAt).IsRequired().HasColumnType("timestamp with time zone").HasDefaultValueSql("NOW()");
+
+                r.HasOne(x => x.User)
+                    .WithMany()
+                    .HasForeignKey(x => x.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                r.HasIndex(x => x.Token);
+                r.HasIndex(x => new { x.UserId, x.ExpiresAt });
             });
 
             /// <summary>

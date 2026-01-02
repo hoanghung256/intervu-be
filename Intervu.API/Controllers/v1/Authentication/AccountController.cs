@@ -14,11 +14,13 @@ namespace Intervu.API.Controllers.v1.Authentication
     {
         private readonly ILoginUseCase _loginUseCase;
         private readonly IRegisterUseCase _registerUseCase;
-        
-        public AccountController(ILoginUseCase loginUseCase, IRegisterUseCase registerUseCase)
+        private readonly IRefreshTokenUseCase _refreshTokenUseCase;
+
+        public AccountController(ILoginUseCase loginUseCase, IRegisterUseCase registerUseCase, IRefreshTokenUseCase refreshTokenUseCase)
         {
             _loginUseCase = loginUseCase;
             _registerUseCase = registerUseCase;
+            _refreshTokenUseCase = refreshTokenUseCase;
         }
 
         [AllowAnonymous]
@@ -53,6 +55,27 @@ namespace Intervu.API.Controllers.v1.Authentication
             }
             
             return Ok(new { message = "Registration successful" });
+        }
+        [AllowAnonymous]
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest refreshTokenRequest)
+        {
+            var response = await _refreshTokenUseCase.ExecuteAsync(refreshTokenRequest);
+
+            if (response == null)
+            {
+                return Ok(new
+                {
+                    success = false,
+                    message = "Invalid or expired refresh token"
+                });
+            }
+
+            return Ok(new
+            {
+                success = true,
+                data = response
+            });
         }
     }
 }
