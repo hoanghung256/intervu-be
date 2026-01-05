@@ -56,7 +56,7 @@ namespace Intervu.Application.UseCases.Authentication
             // Create IntervieweeProfile if role is Interviewee
             if (user.Role == UserRole.Interviewee)
             {
-                var profile = new IntervieweeProfile
+                var profile = new Domain.Entities.IntervieweeProfile
                 {
                     // Shared PK with User
                     // Id is set by EF when adding, but for shared key we ensure FK equals User.Id
