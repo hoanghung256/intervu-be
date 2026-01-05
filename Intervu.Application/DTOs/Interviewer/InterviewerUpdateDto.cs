@@ -26,8 +26,8 @@ namespace Intervu.Application.DTOs.Interviewer
 
         public string? BankAccountNumber { get; set; }
 
-        public List<Guid> CompanyIds { get; set; }
+        public List<Guid>? CompanyIds { get; set; }
 
-        public List<Guid> SkillIds { get; set; }
+        public List<Guid>? SkillIds { get; set; }
     }
 }

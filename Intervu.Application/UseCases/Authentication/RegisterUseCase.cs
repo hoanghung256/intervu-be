@@ -47,6 +47,8 @@ namespace Intervu.Application.UseCases.Authentication
                 user.Role = UserRole.Interviewee; // Default role
             }
 
+            user.SlugProfileUrl = SlugProfileUrlHandler.GenerateProfileSlug(request.FullName);
+
             // Set default active status
             user.Status = UserStatus.Active;
 
