@@ -6,8 +6,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Intervu.Domain.Repositories;
 using Intervu.Application.Utils;
+using Intervu.Application.Interfaces.UseCases.PasswordReset;
+using Intervu.Application.DTOs.PasswordReset;
 
-namespace Intervu.API.Controllers.v1
+namespace Intervu.API.Controllers.v1.Authentication
 {
     [ApiController]
     [ApiVersion("1.0")]
@@ -16,15 +18,21 @@ namespace Intervu.API.Controllers.v1
     {
         private readonly IUserRepository _userRepository;
         private readonly JwtService _jwtService;
-        private readonly Microsoft.Extensions.Configuration.IConfiguration _configuration;
+        private readonly IConfiguration _configuration;
         private readonly ILogger<AuthController> _logger;
+        private readonly IForgotPasswordUseCase _forgotPasswordUseCase;
+        private readonly IValidateResetTokenUseCase _validateResetTokenUseCase;
+        private readonly IResetPasswordUseCase _resetPasswordUseCase;
 
-        public AuthController(IUserRepository userRepository, JwtService jwtService, Microsoft.Extensions.Configuration.IConfiguration configuration, ILogger<AuthController> logger)
+        public AuthController(IUserRepository userRepository, JwtService jwtService, IConfiguration configuration, ILogger<AuthController> logger, IForgotPasswordUseCase forgotPasswordUseCase, IValidateResetTokenUseCase validateResetTokenUseCase, IResetPasswordUseCase resetPasswordUseCase)
         {
             _userRepository = userRepository;
             _jwtService = jwtService;
             _configuration = configuration;
             _logger = logger;
+            _forgotPasswordUseCase = forgotPasswordUseCase;
+            _validateResetTokenUseCase = validateResetTokenUseCase;
+            _resetPasswordUseCase = resetPasswordUseCase;
         }
 
         // Accept either { "idToken": "..." } or { "credential": "..." }
@@ -75,7 +83,7 @@ namespace Intervu.API.Controllers.v1
                 _logger.LogWarning(ex, "Invalid Google ID token. Env: {Env}, ClientId: {ClientId}", envName, configuredClientId);
                 return BadRequest(new { success = false, message = "Invalid Google ID token", detail = ex.Message, env = envName });
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "Google token validation failed");
                 return BadRequest(new { success = false, message = "Google token validation failed", detail = ex.Message });
@@ -98,7 +106,7 @@ namespace Intervu.API.Controllers.v1
                 {
                     FullName = string.IsNullOrEmpty(name) ? email!.Split('@')[0] : name!,
                     Email = email!,
-                    Password = PasswordHashHandler.HashPassword(System.Guid.NewGuid().ToString()),
+                    Password = PasswordHashHandler.HashPassword(Guid.NewGuid().ToString()),
                     Role = UserRole.Interviewee,
                     Status = UserStatus.Active,
                     ProfilePicture = picture
@@ -115,6 +123,111 @@ namespace Intervu.API.Controllers.v1
             user.Password = null!;
 
             return Ok(new { success = true, message = "Logged in", data = new { user, token, expiresIn } });
+        }
+
+        [HttpPost("forgot-password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+        {
+            var validationError = ValidateModelState();
+            if (validationError != null)
+            {
+                return validationError;
+            }
+
+            var result = await _forgotPasswordUseCase.ExecuteAsync(request);
+
+            if (!result.Success)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = result.Message
+                });
+            }
+
+            return Ok(new
+            {
+                success = true,
+                message = result.Message,
+                expiresAt = result.ExpiresAt
+            });
+        }
+
+        [HttpGet("validate-reset-token/{token}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ValidateResetToken(string token)
+        {
+            if(string.IsNullOrEmpty(token))
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Token is required"
+                });
+            }
+
+            var result = await _validateResetTokenUseCase.ExecuteAsync(new ValidateResetTokenRequest { Token = token });
+
+            if (!result.Success)
+            {
+                return BadRequest(new { success = false, message = result.Message });
+            }
+
+            return Ok(new
+            {
+                success = true,
+                message = result.Message,
+                expiresAt = result.ExpiresAt
+            });
+        }
+
+        [HttpPost("reset-password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+        {
+            var validationError = ValidateModelState();
+            if (validationError != null)
+            {
+                return validationError;
+            }
+
+            var result = await _resetPasswordUseCase.ExecuteAsync(request);
+
+            if (!result.Success)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = result.Message
+                });
+            }
+
+            return Ok(new
+            {
+                success = true,
+                message = result.Message
+            });
+        }
+
+        private IActionResult? ValidateModelState()
+        {
+            if (!ModelState.IsValid)
+            {
+                var firstError = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .FirstOrDefault() ?? "Invalid request";
+
+                return BadRequest(new
+                {
+                    success = false,
+                    message = firstError,
+                    expiresAt = (DateTime?)null
+                });
+            }
+
+            return null;
         }
     }
 }

@@ -3,6 +3,7 @@ using System;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 {
     [DbContext(typeof(IntervuPostgreDbContext))]
-    partial class IntervuPostgreDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251221165252_AddPasswordResetToken")]
+    partial class AddPasswordResetToken
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -787,20 +790,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<int>("Role")
                         .HasColumnType("integer");
 
-                    b.Property<string>("SlugProfileUrl")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
-                        .IsUnique();
-
-                    b.HasIndex("SlugProfileUrl")
                         .IsUnique();
 
                     b.ToTable("Users", (string)null);
@@ -813,7 +808,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             FullName = "John Doe",
                             Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
                             Role = 1,
-                            SlugProfileUrl = "john-doe_1719000000004",
                             Status = 0
                         },
                         new
@@ -823,7 +817,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             FullName = "Sarah Lee",
                             Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
                             Role = 1,
-                            SlugProfileUrl = "sarah-lee_1719000000005",
                             Status = 0
                         },
                         new
@@ -833,7 +826,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             FullName = "Alice Student",
                             Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
                             Role = 0,
-                            SlugProfileUrl = "alice-student_1719000000001",
                             Status = 0
                         },
                         new
@@ -843,7 +835,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             FullName = "Bob Interviewer",
                             Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
                             Role = 1,
-                            SlugProfileUrl = "bob-interviewer_1719000000002",
                             Status = 0
                         },
                         new
@@ -853,7 +844,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             FullName = "Admin",
                             Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
                             Role = 2,
-                            SlugProfileUrl = "admin_1719000000003",
                             Status = 0
                         });
                 });
