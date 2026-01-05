@@ -35,6 +35,8 @@ using Intervu.Application.Utils;
 using Intervu.Application.UseCases.Admin;
 using Intervu.Application.Interfaces.UseCases.PasswordReset;
 using Intervu.Application.UseCases.PasswordReset;
+using Intervu.Application.Interfaces.UseCases.IntervieweeProfile;
+using Intervu.Application.UseCases.IntervieweeProfile;
 
 namespace Intervu.Application
 {
@@ -68,9 +70,9 @@ namespace Intervu.Application
             services.AddScoped<IUpdateRoom, UpdateRoom>();
             services.AddScoped<IGetCurrentRoom, GetCurrentRoom>();
             // ----- InterviewerProfile ----
-            services.AddScoped<ICreateInterviewProfile, CreateInterviewerProfile>();
-            services.AddScoped<IUpdateInterviewProfile, UpdateInterviewerProfile>();
-            services.AddScoped<IViewInterviewProfile, ViewInterviewerProfile>();
+            services.AddScoped<ICreateInterviewerProfile, CreateInterviewerProfile>();
+            services.AddScoped<IUpdateInterviewerProfile, UpdateInterviewerProfile>();
+            services.AddScoped<IViewInterviewerProfile, ViewInterviewerProfile>();
             services.AddScoped<IDeleteInterviewerProfile, DeleteInterviewerProfile>();
             services.AddScoped<IGetAllInterviewers, GetAllInterviewers>();
             services.AddScoped<CompanyInterfaces.IGetAllCompanies, CompanyUseCases.GetAllCompanies>();
@@ -111,6 +113,9 @@ namespace Intervu.Application
             // ----- Interviewer & Interviewee Details ---
             services.AddScoped<IGetInterviewerDetails, GetInterviewerDetails>();
             services.AddScoped<IGetIntervieweeDetails, GetIntervieweeDetails>();
+
+            // ----- IntervieweeProfile ---
+            services.AddScoped<IUpdateIntervieweeProfile, UpdateIntervieweeProfile>();
 
             return services;
         }

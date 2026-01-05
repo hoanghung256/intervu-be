@@ -11,6 +11,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
         {
         }
 
+        public async Task<User?> GetBySlugAsync(string slug)
+        {
+            return await _context.Users.FirstOrDefaultAsync(u => u.SlugProfileUrl.ToLower() == slug.ToLower());
+        }
+
         public async Task<bool> EmailExistsAsync(string email)
         {
             return await _context.Users.AnyAsync(u => u.Email == email);

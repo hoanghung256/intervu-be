@@ -30,5 +30,12 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
 
             return (items, totalItems);
         }
+
+        public async Task<IReadOnlyList<Skill>> GetByIdsAsync(IEnumerable<Guid> ids)
+        {
+            if (ids == null) return new List<Skill>();
+            var list = await _context.Skills.Where(s => ids.Contains(s.Id)).ToListAsync();
+            return list;
+        }
     }
 }

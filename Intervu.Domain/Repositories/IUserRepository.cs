@@ -9,6 +9,7 @@ namespace Intervu.Domain.Repositories
 {
     public interface IUserRepository : IRepositoryBase<User>
     {
+        Task<User?> GetBySlugAsync(string slug);
         Task<User?> GetByEmailAsync(string email);
         Task<User?> GetByEmailAndPasswordAsync(string email, string password);
         Task<bool> EmailExistsAsync(string email);

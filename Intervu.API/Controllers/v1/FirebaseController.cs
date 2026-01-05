@@ -3,6 +3,7 @@ using Google.Api.Gax.ResourceNames;
 using Google.Cloud.Storage.V1;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Infrastructure.ExternalServices.FirebaseStorageService;
+using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -21,9 +22,9 @@ namespace Intervu.API.Controllers
         private readonly string _bucketName;
         private readonly string FolderName = "uploads";
         private readonly IFileService _fileService;
-        private readonly IntervuDbContext _context;
+        private readonly IntervuPostgreDbContext _context;
         private readonly string FirebaseBaseUrl = "https://firebasestorage.googleapis.com/v0/b/ntervu-4abd6.firebasestorage.app/o/";
-        public FirebaseController(StorageClient storageClient, IFileService fileService, string bucketName, IntervuDbContext context)
+        public FirebaseController(StorageClient storageClient, IFileService fileService, string bucketName, IntervuPostgreDbContext context)
         {
             _storageClient = storageClient;
             _fileService = fileService;
