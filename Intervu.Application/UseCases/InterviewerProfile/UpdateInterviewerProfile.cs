@@ -9,10 +9,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Intervu.Application.Utils;
 
 namespace Intervu.Application.UseCases.InterviewerProfile
 {
-    public class UpdateInterviewerProfile : IUpdateInterviewProfile
+    public class UpdateInterviewerProfile : IUpdateInterviewerProfile
     {
         private readonly IInterviewerProfileRepository _repo;
         private readonly ICompanyRepository _companyRepository;
@@ -32,6 +33,8 @@ namespace Intervu.Application.UseCases.InterviewerProfile
             var existing = await _repo.GetByIdAsync(id);
             if (existing == null)
                 return null;
+
+            existing.User.SlugProfileUrl = SlugProfileUrlHandler.GenerateProfileSlug(interviewerUpdateDto.FullName);
 
             // Map Companies by IDs (DTO provides List<Guid> Companies)
             if (interviewerUpdateDto.CompanyIds != null)

@@ -23,6 +23,8 @@ namespace Intervu.Domain.Entities
 
         public string? ProfilePicture { get; set; }
 
+        public string SlugProfileUrl { get; set; } = string.Empty;
+
         /// <summary>
         /// Active, Suspended, Deleted
         /// </summary>

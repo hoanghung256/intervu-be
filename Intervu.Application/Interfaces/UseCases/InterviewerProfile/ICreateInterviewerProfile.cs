@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 
 namespace Intervu.Application.Interfaces.UseCases.InterviewerProfile
 {
-    public interface ICreateInterviewProfile
+    public interface ICreateInterviewerProfile
     {
-        Task<InterviewerProfileDto> CreateInterviewRequest(InterviewerCreateDto interviewerCreateDto);
+        Task<InterviewerProfileDto> CreateInterviewerRequest(InterviewerCreateDto interviewerCreateDto);
     }
 }
