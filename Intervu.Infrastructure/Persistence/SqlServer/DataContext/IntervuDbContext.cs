@@ -65,13 +65,26 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 b.HasKey(x => x.Id);
                 b.Property(x => x.CVUrl).HasMaxLength(1000);
                 b.Property(x => x.PortfolioUrl).HasMaxLength(1000);
-                b.Property(x => x.Skills).HasColumnType("nvarchar(max)");
                 b.Property(x => x.Bio).HasColumnType("nvarchar(max)");
 
-                b.HasOne<User>()
+                // Explicitly map navigation to User (like InterviewerProfile)
+                b.HasOne(x => x.User)
                  .WithOne()
                  .HasForeignKey<IntervieweeProfile>(p => p.Id)
                  .OnDelete(DeleteBehavior.Cascade);
+
+                // Many-to-many: IntervieweeProfile <-> Skill
+                b.HasMany(x => x.Skills)
+                 .WithMany()
+                 .UsingEntity<Dictionary<string, object>>(
+                     "IntervieweeSkills",
+                     l => l.HasOne<Skill>().WithMany().HasForeignKey("SkillsId").OnDelete(DeleteBehavior.Cascade),
+                     r => r.HasOne<IntervieweeProfile>().WithMany().HasForeignKey("IntervieweeProfilesId").OnDelete(DeleteBehavior.Cascade),
+                     j =>
+                     {
+                         j.HasKey("IntervieweeProfilesId", "SkillsId");
+                         j.ToTable("IntervieweeSkills");
+                     });
             });
 
 
@@ -367,9 +380,13 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 Id = user1Id,
                 CVUrl = "https://example.com/cv-alice.pdf",
                 PortfolioUrl = "https://portfolio.example.com/alice",
-                Skills = "[C#, SQL]",
                 Bio = "Aspiring backend developer."
             });
+
+            modelBuilder.Entity("IntervieweeSkills").HasData(
+                new { IntervieweeProfilesId = user1Id, SkillsId = Guid.Parse("b1b1b1b1-b1b1-41b1-81b1-b1b1b1b1b1b1") },
+                new { IntervieweeProfilesId = user1Id, SkillsId = Guid.Parse("02020202-0202-4202-8202-020202020202") }
+            );
 
             modelBuilder.Entity<InterviewerProfile>().HasData(
             new InterviewerProfile

@@ -65,7 +65,7 @@ namespace Intervu.Application.UseCases.Authentication
                     Id = user.Id,
                     CVUrl = "",
                     PortfolioUrl = "",
-                    Skills = "[]",
+                    Skills = new List<Domain.Entities.Skill>(),
                     Bio = "",
                     CurrentAmount = 0
                 };

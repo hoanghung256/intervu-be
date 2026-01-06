@@ -17,7 +17,7 @@ using Intervu.Application.Interfaces.UseCases.Availability;
 using Intervu.Application.UseCases.Availability;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Services.CodeGeneration;
-using Intervu.Application.Interfaces.UseCases.InterviewRoom;
+// removed duplicate using Intervu.Application.Interfaces.UseCases.InterviewRoom
 using Intervu.Application.Interfaces.UseCases.Email;
 using Intervu.Application.UseCases.Email;
 using Intervu.Application.Interfaces.UseCases.Feedbacks;
@@ -31,6 +31,7 @@ using Intervu.Application.Interfaces.UseCases.Interviewer;
 using Intervu.Application.UseCases.Interviewer;
 using Intervu.Application.Interfaces.UseCases.Interviewee;
 using Intervu.Application.UseCases.Interviewee;
+using Intervu.Application.Interfaces.UseCases.IntervieweeProfile;
 using Intervu.Application.Utils;
 using Intervu.Application.UseCases.Admin;
 using Intervu.Application.Interfaces.UseCases.PasswordReset;
@@ -114,8 +115,11 @@ namespace Intervu.Application
             services.AddScoped<IGetInterviewerDetails, GetInterviewerDetails>();
             services.AddScoped<IGetIntervieweeDetails, GetIntervieweeDetails>();
 
-            // ----- IntervieweeProfile ---
+            // ----- IntervieweeProfile ----
+            services.AddScoped<ICreateIntervieweeProfile, CreateIntervieweeProfile>();
             services.AddScoped<IUpdateIntervieweeProfile, UpdateIntervieweeProfile>();
+            services.AddScoped<IViewIntervieweeProfile, ViewIntervieweeProfile>();
+            services.AddScoped<IDeleteIntervieweeProfile, DeleteIntervieweeProfile>();
 
             return services;
         }

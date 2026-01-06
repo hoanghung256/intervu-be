@@ -36,7 +36,7 @@ namespace Intervu.Application.UseCases.InterviewerProfile
             {
                 FullName = interviewerCreateDto.FullName,
                 Email = interviewerCreateDto.Email,
-                Password = interviewerCreateDto.Password,
+                Password = PasswordHashHandler.HashPassword(interviewerCreateDto.Password),
                 Role = interviewerCreateDto.Role,
                 ProfilePicture = interviewerCreateDto.ProfilePicture,
                 Status = interviewerCreateDto.UserStatus,

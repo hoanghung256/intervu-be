@@ -26,7 +26,7 @@ namespace Intervu.Application.UseCases.InterviewerProfile
             Domain.Entities.User? userData = await _userRepository.GetByIdAsync(id);
             if (userData == null) return null;
 
-            Domain.Entities.InterviewerProfile? profileData = await _interviewerProfileRepository.GetByIdAsync(id);
+            Domain.Entities.InterviewerProfile? profileData = await _interviewerProfileRepository.GetProfileByIdAsync(id);
             if (profileData == null) return null;
 
             InterviewerProfileDto result = _mapper.Map<InterviewerProfileDto>(profileData);
