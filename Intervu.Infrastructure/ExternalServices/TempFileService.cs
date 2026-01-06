@@ -20,5 +20,11 @@ namespace Intervu.Infrastructure.ExternalServices
             // Stub implementation - return placeholder URL
             return Task.FromResult($"temp://placeholder/{fileName}");
         }
+
+        public Task<string> UploadFileAsync(Stream stream, string fileName, string contentType)
+        {
+            // Stub implementation - return placeholder URL
+            return Task.FromResult($"temp://placeholder/{fileName}");
+        }
     }
 }

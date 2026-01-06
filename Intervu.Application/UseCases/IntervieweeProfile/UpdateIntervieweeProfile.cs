@@ -4,6 +4,11 @@ using Intervu.Application.Interfaces.UseCases.IntervieweeProfile;
 using Intervu.Application.Utils;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Intervu.Application.UseCases.IntervieweeProfile
 {
@@ -54,6 +59,21 @@ namespace Intervu.Application.UseCases.IntervieweeProfile
             await _repo.SaveChangesAsync();
 
             return _mapper.Map<IntervieweeViewDto>(profile);
+         }
+
+        async Task<Domain.Entities.IntervieweeProfile> IUpdateIntervieweeProfile.UpdateIntervieweeProfile(Guid id, string cvUrl)
+        {
+            Domain.Entities.IntervieweeProfile profile = await _repo.GetByIdAsync(id);
+            if (profile == null) {
+                return null;
+            }
+            profile.CVUrl = cvUrl;
+
+            _repo.UpdateAsync(profile);
+            await _repo.SaveChangesAsync();
+
+            return profile;
+
         }
     }
 }

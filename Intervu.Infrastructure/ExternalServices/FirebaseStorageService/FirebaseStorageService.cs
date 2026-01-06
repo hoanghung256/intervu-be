@@ -10,6 +10,7 @@ namespace Intervu.Infrastructure.ExternalServices.FirebaseStorageService
         private readonly StorageClient _storage;
         private readonly string _bucketName;
         private readonly string FolderName = "uploads";
+        private readonly string FirebaseBaseUrl = "https://firebasestorage.googleapis.com/v0/b/ntervu-4abd6.firebasestorage.app/o/";
         public FirebaseStorageService(StorageClient storage, string bucketName) 
         { 
             _storage = storage;
@@ -59,6 +60,33 @@ namespace Intervu.Infrastructure.ExternalServices.FirebaseStorageService
             }
         }
 
+        public async Task<string> UploadFileAsync(Stream stream, string objectName, string contentType)
+        {
+            try
+            {
+                var downloadToken = Guid.NewGuid().ToString();
 
+                var storageObject = new Google.Apis.Storage.v1.Data.Object
+                {
+                    Bucket = _bucketName,
+                    Name = objectName,
+                    ContentType = contentType,
+                    Metadata = new Dictionary<string, string>
+        {
+            { "firebaseStorageDownloadTokens", downloadToken }
+        }
+                };
+
+                await _storage.UploadObjectAsync(storageObject, stream);
+
+                var fileUrl = $"{FirebaseBaseUrl}{Uri.EscapeDataString(objectName)}?alt=media&token={downloadToken}";
+
+                return fileUrl;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error uploading file: {ex.Message}", ex);
+            }
+        }
     }
 }
