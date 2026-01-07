@@ -36,7 +36,7 @@ jobs:
           username: root
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            cd /intervu
+            cd intervu/
             docker pull hoangvuhung/intervu-be:latest
             docker compose down 
             docker compose up -d
