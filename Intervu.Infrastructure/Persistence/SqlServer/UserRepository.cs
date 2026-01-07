@@ -88,5 +88,16 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             await SaveChangesAsync();
             return profilePictureUrl;
         }
+
+        public async Task<bool> ClearProfilePictureAsync(Guid userId)
+        {
+            var user = await GetByIdAsync(userId);
+            if (user == null) return false;
+
+            user.ProfilePicture = null;
+            UpdateAsync(user);
+            await SaveChangesAsync();
+            return true;
+        }
     }
 }

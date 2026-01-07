@@ -18,5 +18,6 @@ namespace Intervu.Domain.Repositories
         Task<bool> UpdateProfileAsync(Guid userId, string fullName);
         Task<bool> UpdatePasswordAsync(Guid userId, string hashedPassword);
         Task<string?> UpdateProfilePictureAsync(Guid userId, string profilePictureUrl);
+        Task<bool> ClearProfilePictureAsync(Guid userId);
     }
 }
