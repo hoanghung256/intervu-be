@@ -1,0 +1,42 @@
+name: CI-CD to VPS
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create appsettings.json
+        run: |
+          cat <<EOF > .Intervu.API/appsettings.json
+          ${{ secrets.APP_SETTINGS_JSON }}
+          EOF
+
+      - name: Build Docker image
+        run: docker build -t intervu-be:latest .
+
+      - name: Login DockerHub
+        run: echo ${{ secrets.DOCKER_PASS }} | docker login -u ${{ secrets.DOCKER_USER }} --password-stdin
+
+      - name: Push image
+        run: |
+          docker tag intervu-be:latest hoangvuhung/intervu-be:latest
+          docker push hoangvuhung/intervu-be:latest
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_IP }}
+          username: root
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /intervu
+            docker pull hoangvuhung/intervu-be:latest
+            docker compose down 
+            docker compose up -d
