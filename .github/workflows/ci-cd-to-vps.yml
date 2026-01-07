@@ -14,7 +14,7 @@ jobs:
 
       - name: Create appsettings.json
         run: |
-          cat <<EOF > .Intervu.API/appsettings.json
+          cat <<EOF > Intervu.API/appsettings.json
           ${{ secrets.APP_SETTINGS_JSON }}
           EOF
 
