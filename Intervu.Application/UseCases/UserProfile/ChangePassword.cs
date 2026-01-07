@@ -15,7 +15,7 @@ namespace Intervu.Application.UseCases.UserProfile
             _userRepository = userRepository;
         }
 
-        public async Task<bool> ExecuteAsync(int userId, ChangePasswordRequest request)
+        public async Task<bool> ExecuteAsync(Guid userId, ChangePasswordRequest request)
         {
             var user = await _userRepository.GetByIdAsync(userId);
             

@@ -7,8 +7,8 @@ namespace Intervu.Domain.Entities
         /// <summary>
         /// Composite key: NotificationId + ReceiverId
         /// </summary>
-        public int NotificationId { get; set; }
+        public Guid NotificationId { get; set; }
 
-        public int ReceiverId { get; set; }
+        public Guid ReceiverId { get; set; }
     }
 }

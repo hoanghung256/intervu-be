@@ -5,6 +5,6 @@ namespace Intervu.Application.Interfaces.UseCases.Interviewee
 {
     public interface IGetIntervieweeDetails
     {
-        Task<User> ExecuteAsync(int intervieweeId);
+        Task<User> ExecuteAsync(Guid intervieweeId);
     }
 }

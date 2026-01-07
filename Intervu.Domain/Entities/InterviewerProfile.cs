@@ -4,7 +4,7 @@ using System;
 
 namespace Intervu.Domain.Entities
 {
-    public class InterviewerProfile : EntityBase<int>
+    public class InterviewerProfile : EntityBase<Guid>
     {
         /// <summary>
         /// References User.Id (Interviewer)

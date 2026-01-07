@@ -3,16 +3,16 @@ using System;
 
 namespace Intervu.Domain.Entities
 {
-    public class Feedback : EntityBase<int>
+    public class Feedback : EntityBase<Guid>
     {
         /// <summary>
         /// EntityBase.Id represents FeedbackId
         /// </summary>
-        public int InterviewerId { get; set; }
+        public Guid InterviewerId { get; set; }
 
-        public int StudentId { get; set; }
+        public Guid StudentId { get; set; }
 
-        public int InterviewRoomId { get; set; }
+        public Guid InterviewRoomId { get; set; }
 
         public int Rating { get; set; }
 

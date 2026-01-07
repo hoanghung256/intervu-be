@@ -13,10 +13,10 @@ namespace Intervu.Application.UseCases.Availability
             _repo = repo;
         }
 
-        public async Task<bool> ExecuteAsync(int availabilityId)
+        public async Task<bool> ExecuteAsync(Guid availabilityId)
         {
-            if (availabilityId <= 0)
-                throw new ArgumentException("Availability ID must be greater than 0");
+            if (availabilityId == Guid.Empty)
+                throw new ArgumentException("Availability ID must be a valid GUID");
 
             var deleted = await _repo.DeleteInterviewerAvailabilityAsync(availabilityId);
             if (!deleted)

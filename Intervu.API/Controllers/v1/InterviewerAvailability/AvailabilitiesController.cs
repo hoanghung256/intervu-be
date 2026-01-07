@@ -2,6 +2,7 @@
 using Intervu.Application.DTOs.Availability;
 using Intervu.Application.Interfaces.UseCases.Availability;
 using Microsoft.AspNetCore.Mvc;
+using System;
 
 namespace Intervu.API.Controllers.v1.InterviewerAvailability
 {
@@ -23,7 +24,7 @@ namespace Intervu.API.Controllers.v1.InterviewerAvailability
             _updateInterviewerAvailability = updateInterviewerAvailability;
         }
         [HttpGet("{interviewerId}")]
-        public async Task<IActionResult> GetInterviewerAvailabilities(int interviewerId, [FromQuery] int month = 0, [FromQuery] int year = 0)
+        public async Task<IActionResult> GetInterviewerAvailabilities(Guid interviewerId, [FromQuery] int month = 0, [FromQuery] int year = 0)
         {
             var data = await _getInterviewerAvailabilities.ExecuteAsync(interviewerId, month, year);
             return Ok(new
@@ -49,7 +50,7 @@ namespace Intervu.API.Controllers.v1.InterviewerAvailability
         }
 
         [HttpDelete("{availabilityId}")]
-        public async Task<IActionResult> DeleteInterviewerAvailability(int availabilityId)
+        public async Task<IActionResult> DeleteInterviewerAvailability(Guid availabilityId)
         {
             try
             {
@@ -63,7 +64,7 @@ namespace Intervu.API.Controllers.v1.InterviewerAvailability
         }
 
         [HttpPut("{availabilityId}")]
-        public async Task<IActionResult> UpdateInterviewerAvailability(int availabilityId, [FromBody] InterviewerAvailabilityUpdateDto request)
+        public async Task<IActionResult> UpdateInterviewerAvailability(Guid availabilityId, [FromBody] InterviewerAvailabilityUpdateDto request)
         {
             try
             {

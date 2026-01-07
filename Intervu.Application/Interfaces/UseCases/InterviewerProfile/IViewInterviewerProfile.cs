@@ -8,10 +8,10 @@ using System.Threading.Tasks;
 
 namespace Intervu.Application.Interfaces.UseCases.InterviewerProfile
 {
-    public interface IViewInterviewProfile
+    public interface IViewInterviewerProfile
     {
-        Task<InterviewerProfileDto?> ViewOwnProfileAsync(int id);
+        Task<InterviewerProfileDto?> ViewOwnProfileAsync(Guid id);
 
-        Task<InterviewerViewDto?> ViewProfileForIntervieweeAsync(int id);
+        Task<InterviewerViewDto?> ViewProfileForIntervieweeAsync(string slug);
     }
 }

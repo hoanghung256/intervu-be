@@ -17,7 +17,7 @@ namespace Intervu.Application.UseCases.InterviewRoom
             _repo = repo;
         }
 
-        public async Task<Domain.Entities.InterviewRoom> ExecuteAsync(int roomId)
+        public async Task<Domain.Entities.InterviewRoom> ExecuteAsync(Guid roomId)
         {
             return await _repo.GetByIdAsync(roomId);
         }

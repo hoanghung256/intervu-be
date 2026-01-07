@@ -8,6 +8,6 @@ namespace Intervu.Application.Interfaces.UseCases.InterviewerProfile
 {
     public interface IDeleteInterviewerProfile
     {
-        Task DeleteInterviewProfile(int id);
+        Task DeleteInterviewProfile(Guid id);
     }
 }

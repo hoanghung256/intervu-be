@@ -9,7 +9,7 @@ namespace Intervu.Application.Services
 {
     public class InterviewRoomCache
     {
-        private readonly Dictionary<int, InterviewRoom> _rooms = new();
+        private readonly Dictionary<Guid, InterviewRoom> _rooms = new();
 
         public IReadOnlyCollection<InterviewRoom> Rooms => _rooms.Values;
 
@@ -30,7 +30,7 @@ namespace Intervu.Application.Services
             _rooms[room.Id] = room;
         }
 
-        public void Remove(int id)
+        public void Remove(Guid id)
         {
             _rooms.Remove(id);
         }

@@ -8,11 +8,11 @@ using System.Threading.Tasks;
 
 namespace Intervu.Domain.Entities
 {
-    public class InterviewBookingTransaction : EntityBase<int>
+    public class InterviewBookingTransaction : EntityBase<Guid>
     {
-        public int UserId { get; set; }
+        public Guid UserId { get; set; }
 
-        public int InterviewerAvailabilityId { get; set; }
+        public Guid InterviewerAvailabilityId { get; set; }
 
         public int Amount { get; set; }
 

@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Mvc;
 using PayOS.Models.Webhooks;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
+using System;
 
 namespace Intervu.API.Controllers.v1.Payment
 {
@@ -62,9 +63,9 @@ namespace Intervu.API.Controllers.v1.Payment
         {
             try
             {
-                int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId);
+            Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
 
-                string checkOutUrl = await _createBookingCheckoutUrl.ExecuteAsync(userId, request.InterviewerId, request.InterviewerAvailabilityId, request.ReturnUrl);
+            string checkOutUrl = await _createBookingCheckoutUrl.ExecuteAsync(userId, request.InterviewerId, request.InterviewerAvailabilityId, request.ReturnUrl);
 
                 return Ok(new
                 {
@@ -91,43 +92,9 @@ namespace Intervu.API.Controllers.v1.Payment
             try
             {
                 bool isPaid = _paymentService.VerifyPaymentAsync(payload);
-                int orderId = (int)payload.Data.OrderCode;
-
-                if (isPaid)
-                {
-                    // Update booking status if isPaid = true
-                    Domain.Entities.InterviewBookingTransaction transaction = await _updateBookingStatus.ExecuteAsync(orderId, TransactionStatus.Paid);
-
-                    // Update interviewer availability to booked
-                    Domain.Entities.InterviewerAvailability avai = await _updateAvailabilityStatus.ExecuteAsync(transaction.InterviewerAvailabilityId, true);
-
-                    // Create intervew room
-                    int intervieweeId = transaction.UserId;
-                    int interviewerId = avai.InterviewerId;
-                    int roomId = await _createInterviewRoom.ExecuteAsync(intervieweeId, interviewerId, avai.StartTime);
-
-                    // Get full details for email
-                    var interviewer = await _getInterviewerDetails.ExecuteAsync(interviewerId);
-                    var interviewee = await _getIntervieweeDetails.ExecuteAsync(intervieweeId);
-
-                    var mailDto = new SendBookingConfirmationEmailDto
-                    {
-                        To = interviewee.Email,
-                        CandidateName = interviewee.FullName,
-                        InterviewerName = interviewer.FullName,
-                        InterviewDate = avai.StartTime.Date,
-                        InterviewTime = avai.StartTime.ToString("HH:mm") + " UTC",
-                        Position = "Software Engineer",
-                        Duration = (int)(avai.EndTime - avai.StartTime).TotalMinutes,
-                        BookingID = "BK-" + DateTime.UtcNow.ToString("yyyyMMdd") + "-" + transaction.Id.ToString("D6"),
-                        JoinLink = $"https://intervu.com/room/{roomId}",
-                        RescheduleLink = $"https://intervu.com/booking/{transaction.Id}/reschedule"
-                    };
-
-                    await _sendBookingConfirmationEmail.ExecuteAsync(mailDto);
-                }
-                return Ok();
-            } catch (Exception ex)
+                return Ok(new { success = isPaid });
+            }
+            catch (Exception ex)
             {
                 return Ok(ex.Message);
             }
@@ -147,11 +114,10 @@ namespace Intervu.API.Controllers.v1.Payment
             }
         }
 
-        [HttpGet("{orderCode}")]
-        // Note that orderCode of PayOS is InterviewBookingTransaction.Id in DB
-        public async Task<IActionResult> GetTransaction([FromRoute] int orderCode)
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetTransaction([FromRoute] Guid id)
         {
-            InterviewBookingTransaction? t = await _getInterviewBooking.ExecuteAsync(orderCode);
+            InterviewBookingTransaction? t = await _getInterviewBooking.ExecuteAsync(id);
             return Ok(new
             {
                 success = true,
@@ -162,8 +128,8 @@ namespace Intervu.API.Controllers.v1.Payment
 
     public class InterviewBookingRequest
     {
-        public int InterviewerId { get; set; }
-        public int InterviewerAvailabilityId { get; set; }
+        public Guid InterviewerId { get; set; }
+        public Guid InterviewerAvailabilityId { get; set; }
 
         public string ReturnUrl { get; set; } = string.Empty;
     }

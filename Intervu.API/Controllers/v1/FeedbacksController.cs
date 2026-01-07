@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using static Intervu.API.Controllers.v1.InterviewRoomController;
 using System.Security.Claims;
 using Intervu.Application.DTOs.Feedback;
+using System;
 using Intervu.Domain.Entities;
 using System.Threading.Tasks;
 using Intervu.Domain.Repositories;
@@ -44,7 +45,7 @@ namespace Intervu.API.Controllers.v1
         [HttpGet]
         public async Task<IActionResult> GetList([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            bool isGetUserIdSuccess = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId);
+            bool isGetUserIdSuccess = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
             bool isGetRoleSuccess = Enum.TryParse<UserRole>(User.FindFirstValue(ClaimTypes.Role), out UserRole role);
 
             GetFeedbackRequest request = new GetFeedbackRequest
@@ -65,7 +66,7 @@ namespace Intervu.API.Controllers.v1
 
         [Authorize(Policy = AuthorizationPolicies.Interviewee)]
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateFeedback([FromRoute] int id, [FromBody] UpdateFeedbackDto updateFeedbackDto)
+        public async Task<IActionResult> UpdateFeedback([FromRoute] Guid id, [FromBody] UpdateFeedbackDto updateFeedbackDto)
         {
             if (string.IsNullOrEmpty(updateFeedbackDto.Comments))
             {
@@ -106,7 +107,7 @@ namespace Intervu.API.Controllers.v1
 
         [Authorize(Policy = AuthorizationPolicies.InterviewOrAdmin)]
         [HttpGet("interview-room/{interviewRoomId}")]
-        public async Task<IActionResult> GetFeedbacksByInterviewRoom([FromRoute] int interviewRoomId)
+        public async Task<IActionResult> GetFeedbacksByInterviewRoom([FromRoute] Guid interviewRoomId)
         {
             try
             {

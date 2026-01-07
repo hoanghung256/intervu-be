@@ -8,7 +8,7 @@ using Intervu.Domain.Repositories;
 
 namespace Intervu.Application.UseCases.InterviewerProfile
 {
-    public class ViewInterviewerProfile : IViewInterviewProfile
+    public class ViewInterviewerProfile : IViewInterviewerProfile
     {
         private readonly IInterviewerProfileRepository _interviewerProfileRepository;
         private readonly IUserRepository _userRepository;
@@ -21,7 +21,7 @@ namespace Intervu.Application.UseCases.InterviewerProfile
             _mapper = mapper;
         }
 
-        public async Task<InterviewerProfileDto?> ViewOwnProfileAsync(int id)
+        public async Task<InterviewerProfileDto?> ViewOwnProfileAsync(Guid id)
         {
             Domain.Entities.User? userData = await _userRepository.GetByIdAsync(id);
             if (userData == null) return null;
@@ -36,12 +36,12 @@ namespace Intervu.Application.UseCases.InterviewerProfile
             return result;
         }
 
-        public async Task<InterviewerViewDto?> ViewProfileForIntervieweeAsync(int id)
+        public async Task<InterviewerViewDto?> ViewProfileForIntervieweeAsync(string slug)
         {
-            Domain.Entities.User? userData = await _userRepository.GetByIdAsync(id);
+            Domain.Entities.User? userData = await _userRepository.GetBySlugAsync(slug);
             if (userData == null) return null;
 
-            Domain.Entities.InterviewerProfile? profile = await _interviewerProfileRepository.GetProfileByIdAsync(id);
+            Domain.Entities.InterviewerProfile? profile = await _interviewerProfileRepository.GetProfileBySlugAsync(slug);
             InterviewerViewDto result = _mapper.Map<InterviewerViewDto>(profile);
             result.User = _mapper.Map<UserDto>(userData);
             return result;

@@ -3,7 +3,7 @@ using System;
 
 namespace Intervu.Domain.Entities
 {
-    public class Notification : EntityBase<int>
+    public class Notification : EntityBase<Guid>
     {
         /// <summary>
         /// EntityBase.Id represents Notification.Id

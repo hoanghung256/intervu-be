@@ -47,6 +47,8 @@ namespace Intervu.Application.UseCases.Authentication
                 user.Role = UserRole.Interviewee; // Default role
             }
 
+            user.SlugProfileUrl = SlugProfileUrlHandler.GenerateProfileSlug(request.FullName);
+
             // Set default active status
             user.Status = UserStatus.Active;
 
@@ -56,14 +58,14 @@ namespace Intervu.Application.UseCases.Authentication
             // Create IntervieweeProfile if role is Interviewee
             if (user.Role == UserRole.Interviewee)
             {
-                var profile = new IntervieweeProfile
+                var profile = new Domain.Entities.IntervieweeProfile
                 {
                     // Shared PK with User
                     // Id is set by EF when adding, but for shared key we ensure FK equals User.Id
                     Id = user.Id,
                     CVUrl = "",
                     PortfolioUrl = "",
-                    Skills = "[]",
+                    Skills = new List<Domain.Entities.Skill>(),
                     Bio = "",
                     CurrentAmount = 0
                 };

@@ -12,5 +12,6 @@ namespace Intervu.Application.DTOs.User
         public string Email { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
         public string Role { get; set; } = "Interviewee"; // Default role
+        public string SlugProfileUrl { get; set; } = string.Empty;
     }
 }

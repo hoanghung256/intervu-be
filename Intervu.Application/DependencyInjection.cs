@@ -7,15 +7,17 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Intervu.Application.UseCases.InterviewerProfile;
 using Intervu.Application.Interfaces.UseCases.InterviewerProfile;
-using Intervu.Application.Interfaces.UseCases.Company;
-using Intervu.Application.UseCases.Company;
+using CompanyInterfaces = Intervu.Application.Interfaces.UseCases.Company;
+using CompanyUseCases = Intervu.Application.UseCases.Company;
 using Intervu.Application.Interfaces.UseCases.Skill;
 using Intervu.Application.UseCases.Skill;
+using Intervu.Application.Interfaces.UseCases.Admin;
+using AdminUseCases = Intervu.Application.UseCases.Admin;
 using Intervu.Application.Interfaces.UseCases.Availability;
 using Intervu.Application.UseCases.Availability;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Services.CodeGeneration;
-using Intervu.Application.Interfaces.UseCases.InterviewRoom;
+// removed duplicate using Intervu.Application.Interfaces.UseCases.InterviewRoom
 using Intervu.Application.Interfaces.UseCases.Email;
 using Intervu.Application.UseCases.Email;
 using Intervu.Application.Interfaces.UseCases.Feedbacks;
@@ -29,7 +31,13 @@ using Intervu.Application.Interfaces.UseCases.Interviewer;
 using Intervu.Application.UseCases.Interviewer;
 using Intervu.Application.Interfaces.UseCases.Interviewee;
 using Intervu.Application.UseCases.Interviewee;
+using Intervu.Application.Interfaces.UseCases.IntervieweeProfile;
 using Intervu.Application.Utils;
+using Intervu.Application.UseCases.Admin;
+using Intervu.Application.Interfaces.UseCases.PasswordReset;
+using Intervu.Application.UseCases.PasswordReset;
+using Intervu.Application.Interfaces.UseCases.IntervieweeProfile;
+using Intervu.Application.UseCases.IntervieweeProfile;
 
 namespace Intervu.Application
 {
@@ -51,19 +59,32 @@ namespace Intervu.Application
             // Auth UseCases
             services.AddTransient<ILoginUseCase, LoginUseCase>();
             services.AddTransient<IRegisterUseCase, RegisterUseCase>();
+
+            // Password Reset UseCases
+            services.AddTransient<IForgotPasswordUseCase, ForgotPasswordUseCase>();
+            services.AddTransient<IValidateResetTokenUseCase, ValidateResetTokenUseCase>();
+            services.AddTransient<IResetPasswordUseCase, ResetPasswordUseCase>();
+
             // ----- InterviewRoom ----
             services.AddScoped<ICreateInterviewRoom, CreateInterviewRoom>();
             services.AddScoped<IGetRoomHistory, GetRoomHistory>();
             services.AddScoped<IUpdateRoom, UpdateRoom>();
             services.AddScoped<IGetCurrentRoom, GetCurrentRoom>();
             // ----- InterviewerProfile ----
-            services.AddScoped<ICreateInterviewProfile, CreateInterviewerProfile>();
-            services.AddScoped<IUpdateInterviewProfile, UpdateInterviewerProfile>();
-            services.AddScoped<IViewInterviewProfile, ViewInterviewerProfile>();
+            services.AddScoped<ICreateInterviewerProfile, CreateInterviewerProfile>();
+            services.AddScoped<IUpdateInterviewerProfile, UpdateInterviewerProfile>();
+            services.AddScoped<IViewInterviewerProfile, ViewInterviewerProfile>();
             services.AddScoped<IDeleteInterviewerProfile, DeleteInterviewerProfile>();
             services.AddScoped<IGetAllInterviewers, GetAllInterviewers>();
-            services.AddScoped<IGetAllCompanies, GetAllCompanies>();
+            services.AddScoped<CompanyInterfaces.IGetAllCompanies, CompanyUseCases.GetAllCompanies>();
             services.AddScoped<IGetAllSkills, GetAllSkills>();
+            // ----- Admin ----
+            services.AddScoped<IGetDashboardStats, AdminUseCases.GetDashboardStats>();
+            services.AddScoped<IGetAllUsersForAdmin, AdminUseCases.GetAllUsers>();
+            services.AddScoped<IGetAllCompaniesForAdmin, AdminUseCases.GetAllCompanies>();
+            services.AddScoped<IGetAllPayments, AdminUseCases.GetAllPayments>();
+            services.AddScoped<IGetAllFeedbacks, AdminUseCases.GetAllFeedbacks>();
+            services.AddScoped<IGetAllInterviewersForAdmin, AdminUseCases.GetAllInterviewersForAdmin>();
             // ----- Feedback ----
             services.AddScoped<IGetFeedbacks, GetFeedbacks>();
             services.AddScoped<ICreateFeedback, CreateFeedback>();
@@ -93,6 +114,12 @@ namespace Intervu.Application
             // ----- Interviewer & Interviewee Details ---
             services.AddScoped<IGetInterviewerDetails, GetInterviewerDetails>();
             services.AddScoped<IGetIntervieweeDetails, GetIntervieweeDetails>();
+
+            // ----- IntervieweeProfile ----
+            services.AddScoped<ICreateIntervieweeProfile, CreateIntervieweeProfile>();
+            services.AddScoped<IUpdateIntervieweeProfile, UpdateIntervieweeProfile>();
+            services.AddScoped<IViewIntervieweeProfile, ViewIntervieweeProfile>();
+            services.AddScoped<IDeleteIntervieweeProfile, DeleteIntervieweeProfile>();
 
             return services;
         }

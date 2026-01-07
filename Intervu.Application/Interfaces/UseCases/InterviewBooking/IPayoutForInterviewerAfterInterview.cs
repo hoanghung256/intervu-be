@@ -8,6 +8,6 @@ namespace Intervu.Application.Interfaces.UseCases.InterviewBooking
 {
     public interface IPayoutForInterviewerAfterInterview
     {
-        Task ExecuteAsync(int interviewRoomId);
+        Task ExecuteAsync(Guid interviewRoomId);
     }
 }

@@ -15,7 +15,7 @@ namespace Intervu.Application.UseCases.InterviewRoom
             _cache = cache;
         }
 
-        public async Task<int> ExecuteAsync(int interveweeId)
+        public async Task<Guid> ExecuteAsync(Guid interveweeId)
         {
             Domain.Entities.InterviewRoom room = new()
             {
@@ -29,7 +29,7 @@ namespace Intervu.Application.UseCases.InterviewRoom
             return room.Id;
         }
 
-        public async Task<int> ExecuteAsync(int interveweeId, int interviewerId, DateTime scheduledTime)
+        public async Task<Guid> ExecuteAsync(Guid interveweeId, Guid interviewerId, DateTime scheduledTime)
         {
             // TODO: interveweeId and interviewerId are valid and exists
             Domain.Entities.InterviewRoom room = new()

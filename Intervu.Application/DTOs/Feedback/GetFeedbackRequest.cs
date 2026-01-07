@@ -8,9 +8,9 @@ namespace Intervu.Application.DTOs.Feedback
 {
     public class GetFeedbackRequest
     {
-        public int FeedbackId { get; set; }
+        public Guid? FeedbackId { get; set; }
 
-        public int StudentId { get; set; }
+        public Guid? StudentId { get; set; }
 
         public int Rating { get; set; }
 

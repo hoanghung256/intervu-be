@@ -7,7 +7,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 {
     public class InterviewerProfileRepository(IntervuPostgreDbContext context) : RepositoryBase<InterviewerProfile>(context), IInterviewerProfileRepository
     {
-        public async Task CreateInterviewerProfile(InterviewerProfile profile)
+        public async Task CreateInterviewerProfileAsync(InterviewerProfile profile)
         {
             if (profile == null)
                 throw new ArgumentNullException(nameof(profile), "Profile cannot be null");
@@ -17,21 +17,13 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
             if (user == null)
             {
-                user = new User
-                {
-                    FullName = profile.User.FullName,
-                    Email = profile.User.Email,
-                    Password = profile.User.Password,
-                    Role = profile.User.Role,
-                    ProfilePicture = profile.User.ProfilePicture,
-                    Status = profile.User.Status
-                };
-
+                user = profile.User;
                 await _context.Users.AddAsync(user);
                 await _context.SaveChangesAsync();
             }
-
+            profile.User.Id = user.Id;
             profile.User = user;
+
             await _context.InterviewerProfiles.AddAsync(profile);
             await _context.SaveChangesAsync();
         }
@@ -41,12 +33,24 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             throw new NotImplementedException();
         }
 
-        public void DeleteInterviewerProfile(int id)
+        public void DeleteInterviewerProfile(Guid id)
         {
             throw new NotImplementedException();
         }
 
-        public async Task<InterviewerProfile?> GetProfileByIdAsync(int id)
+        public async Task<InterviewerProfile?> GetProfileBySlugAsync(string slug)
+        {
+            InterviewerProfile? profile = await _context.InterviewerProfiles
+                .Where(p => p.User.SlugProfileUrl == slug)
+                .Include(p => p.Companies)
+                .Include(p => p.Skills)
+                .Include(p => p.User)
+                .FirstOrDefaultAsync();
+
+            return profile;
+        }
+
+        public async Task<InterviewerProfile?> GetProfileByIdAsync(Guid id)
         {
             InterviewerProfile? profile = await _context.InterviewerProfiles
                 .Where(p => p.Id == id)
@@ -58,7 +62,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             return profile;
         }
 
-        public async Task<(IReadOnlyList<InterviewerProfile> Items, int TotalCount)> GetPagedInterviewerProfilesAsync(string? search, int? skillId, int? companyId, int page, int pageSize)
+        public async Task<(IReadOnlyList<InterviewerProfile> Items, int TotalCount)> GetPagedInterviewerProfilesAsync(string? search, Guid? skillId, Guid? companyId, int page, int pageSize)
         {
             var query = _context.InterviewerProfiles
                 .Include(i => i.Companies)
@@ -114,11 +118,17 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             if (existingProfile.User != null && updatedProfile.User != null)
             {
                 existingProfile.User.FullName = updatedProfile.User.FullName;
+                existingProfile.User.SlugProfileUrl = updatedProfile.User.SlugProfileUrl;
                 existingProfile.User.Email = updatedProfile.User.Email;
                 existingProfile.User.ProfilePicture = updatedProfile.User.ProfilePicture;
             }
 
             await _context.SaveChangesAsync();
+        }
+
+        public Task<int> GetTotalInterviewersCountAsync()
+        {
+            throw new NotImplementedException();
         }
     }
 }

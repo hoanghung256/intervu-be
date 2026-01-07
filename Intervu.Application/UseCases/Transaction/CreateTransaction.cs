@@ -13,7 +13,7 @@ namespace Intervu.Application.UseCases.Transaction
             _transactionRepository = transactionRepository;
         }
 
-        public async Task ExecuteAsync(int userId, int avaiabilityId, int amount, TransactionType type)
+        public async Task ExecuteAsync(Guid userId, Guid avaiabilityId, int amount, TransactionType type)
         {
             await _transactionRepository.AddAsync(new Domain.Entities.InterviewBookingTransaction
             {

@@ -15,7 +15,7 @@ namespace Intervu.Application.UseCases.Interviewer
             _interviewerProfileRepository = interviewerProfileRepository;
         }
 
-        public async Task<User> ExecuteAsync(int interviewerId)
+        public async Task<User> ExecuteAsync(Guid interviewerId)
         {
             var interviewerProfile = await _interviewerProfileRepository.GetProfileByIdAsync(interviewerId);
             

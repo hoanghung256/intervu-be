@@ -7,6 +7,7 @@ using Intervu.Domain.Entities.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
 
 namespace Intervu.API.Controllers.v1.Interviewer
 {
@@ -15,28 +16,28 @@ namespace Intervu.API.Controllers.v1.Interviewer
     [Route("api/v{version:apiVersion}/interviewer-profile")]
     public class InterviewerProfileController : ControllerBase
     {
-        private readonly ICreateInterviewProfile _createInterviewProfile;
-        private readonly IUpdateInterviewProfile _updateInterviewProfile;
-        private readonly IViewInterviewProfile _getInterviewProfile;
+        private readonly ICreateInterviewerProfile _createInterviewerProfile;
+        private readonly IUpdateInterviewerProfile _updateInterviewerProfile;
+        private readonly IViewInterviewerProfile _getInterviewerProfile;
         private readonly IDeleteInterviewerProfile _deleteInterviewerProfile;
 
-        public InterviewerProfileController(ICreateInterviewProfile createInterviewProfile, IUpdateInterviewProfile updateInterviewProfile, IViewInterviewProfile getInterviewProfile, IDeleteInterviewerProfile deleteInterviewerProfile)
+        public InterviewerProfileController(ICreateInterviewerProfile createInterviewerProfile, IUpdateInterviewerProfile updateInterviewerProfile, IViewInterviewerProfile getInterviewerProfile, IDeleteInterviewerProfile deleteInterviewerProfile)
         {
-            _createInterviewProfile = createInterviewProfile;
-            _updateInterviewProfile = updateInterviewProfile;
-            _getInterviewProfile = getInterviewProfile;
+            _createInterviewerProfile = createInterviewerProfile;
+            _updateInterviewerProfile = updateInterviewerProfile;
+            _getInterviewerProfile = getInterviewerProfile;
             _deleteInterviewerProfile = deleteInterviewerProfile;
         }
 
         //[GET] api/interviewerprofile/{id}
         [Authorize(Policy = AuthorizationPolicies.Interviewer)]
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetOwnInterviewerProfile([FromRoute] int id)
+        public async Task<IActionResult> GetOwnInterviewerProfile([FromRoute] Guid id)
         {
             string msg = "Get profile successfully!";
             try
             {
-                var profile = await _getInterviewProfile.ViewOwnProfileAsync(id);
+                var profile = await _getInterviewerProfile.ViewOwnProfileAsync(id);
                 return Ok(new
                 {
                     success = true,
@@ -57,13 +58,13 @@ namespace Intervu.API.Controllers.v1.Interviewer
 
         //[GET] api/interviewerprofile/interviewee/{id}/profile
         //[Authorize(Policy = AuthorizationPolicies.Interviewee)]
-        [HttpGet("{id}/profile")]
-        public async Task<IActionResult> GetProfileByInterviewee([FromRoute] int id)
+        [HttpGet("{slugProfileUrl}/profile")]
+        public async Task<IActionResult> GetProfileByInterviewee([FromRoute] string slugProfileUrl)
         {
             string msg = "Get profile successfully!";
             try
             {
-                var profile = await _getInterviewProfile.ViewProfileForIntervieweeAsync(id);
+                var profile = await _getInterviewerProfile.ViewProfileForIntervieweeAsync(slugProfileUrl);
                 return Ok(new
                 {
                     success = true,
@@ -91,7 +92,7 @@ namespace Intervu.API.Controllers.v1.Interviewer
             string msg = "Profile created successfully";
             try
             {
-                await _createInterviewProfile.CreateInterviewRequest(request);
+                await _createInterviewerProfile.CreateInterviewerRequest(request);
             }
             catch (Exception ex)
             {
@@ -107,13 +108,13 @@ namespace Intervu.API.Controllers.v1.Interviewer
         // [PUT] api/interviewer-profile/{id}
         [Authorize(Policy = AuthorizationPolicies.Interviewer)]
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateInterviewerProfile([FromRoute] int id, [FromBody] InterviewerUpdateDto request)
+        public async Task<IActionResult> UpdateInterviewerProfile([FromRoute] Guid id, [FromBody] InterviewerUpdateDto request)
         {
             string msg = "Profile update successfully!";
             try
             {
-                InterviewerProfileDto? profile = await _getInterviewProfile.ViewOwnProfileAsync(id);
-                profile = await _updateInterviewProfile.UpdateInterviewProfile(id, request);
+                InterviewerProfileDto? profile = await _getInterviewerProfile.ViewOwnProfileAsync(id);
+                profile = await _updateInterviewerProfile.UpdateInterviewProfile(id, request);
                 return Ok(new
                 {
                     success = true,
@@ -130,16 +131,16 @@ namespace Intervu.API.Controllers.v1.Interviewer
                 message = msg
             });
         }
-
+        
         // [PUT] api/interviewer-profile/{id}/status
         [Authorize(Policy = AuthorizationPolicies.Admin)]
         [HttpPut("{id}/status")]
-        public async Task<IActionResult> UpdateInterviewerStatus([FromRoute] int id, [FromBody] InterviewerProfileStatus status)
+        public async Task<IActionResult> UpdateInterviewerStatus([FromRoute] Guid id, [FromBody] InterviewerProfileStatus status)
         {
             string msg = "Profile status update successfully";
             try
             {
-                InterviewerViewDto profile = await _updateInterviewProfile.UpdateInterviewStatus(id, status);
+                InterviewerViewDto profile = await _updateInterviewerProfile.UpdateInterviewStatus(id, status);
                 return Ok(new
                 {
                     success = true,
@@ -160,7 +161,7 @@ namespace Intervu.API.Controllers.v1.Interviewer
         // [DELETE] api/interviewer-profile/{id}
         [Authorize(Policy = AuthorizationPolicies.Admin)]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteInterviewerProfile([FromRoute] int id)
+        public async Task<IActionResult> DeleteInterviewerProfile([FromRoute] Guid id)
         {
             string msg = "Profile deleted successfully";
             try

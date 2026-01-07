@@ -13,9 +13,9 @@ namespace Intervu.Application.UseCases.Transaction
             _transactionRepository = transactionRepository;
         }
 
-        public async Task<bool> ExecuteAsync(int payosOrderCode, TransactionStatus status)
+        public async Task<bool> ExecuteAsync(Guid availabilityId, TransactionStatus status)
         {
-            Domain.Entities.InterviewBookingTransaction? t = await _transactionRepository.GetByAvailabilityId(payosOrderCode);
+            Domain.Entities.InterviewBookingTransaction? t = await _transactionRepository.GetByAvailabilityId(availabilityId);
 
             if (t == null) return false;
 

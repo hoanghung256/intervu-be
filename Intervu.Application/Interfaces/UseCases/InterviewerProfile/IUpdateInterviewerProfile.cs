@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 
 namespace Intervu.Application.Interfaces.UseCases.InterviewerProfile
 {
-    public interface IUpdateInterviewProfile
+    public interface IUpdateInterviewerProfile
     {
-        Task<InterviewerProfileDto> UpdateInterviewProfile(int id, InterviewerUpdateDto interviewerUpdateDto);
-        Task<InterviewerViewDto> UpdateInterviewStatus(int id,InterviewerProfileStatus status);
+        Task<InterviewerProfileDto> UpdateInterviewProfile(Guid id, InterviewerUpdateDto interviewerUpdateDto);
+        Task<InterviewerViewDto> UpdateInterviewStatus(Guid id,InterviewerProfileStatus status);
     }
 }

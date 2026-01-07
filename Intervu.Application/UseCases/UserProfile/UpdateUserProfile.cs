@@ -17,7 +17,7 @@ namespace Intervu.Application.UseCases.UserProfile
             _mapper = mapper;
         }
 
-        public async Task<UserDto?> ExecuteAsync(int userId, UpdateProfileRequest request)
+        public async Task<UserDto?> ExecuteAsync(Guid userId, UpdateProfileRequest request)
         {
             var success = await _userRepository.UpdateProfileAsync(userId, request.FullName);
             

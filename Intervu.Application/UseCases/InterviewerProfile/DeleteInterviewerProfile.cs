@@ -17,7 +17,7 @@ namespace Intervu.Application.UseCases.InterviewerProfile
             _repo = repo;
         }
 
-        public async Task DeleteInterviewProfile(int id)
+        public async Task DeleteInterviewProfile(Guid id)
         {
             Domain.Entities.InterviewerProfile? profile = await _repo.GetProfileByIdAsync(id);
             if (profile == null)

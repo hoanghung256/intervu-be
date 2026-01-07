@@ -9,7 +9,7 @@ namespace Intervu.Application.DTOs.User
 {
     public class UserDto
     {
-        public int Id { get; set; }
+        public Guid Id { get; set; }
         public string FullName { get; set; }
 
         public string Email { get; set; }
@@ -20,6 +20,7 @@ namespace Intervu.Application.DTOs.User
         public UserRole Role { get; set; }
 
         public string? ProfilePicture { get; set; }
+        public string? SlugProfileUrl { get; set; }
 
         /// <summary>
         /// Active, Suspended, Deleted

@@ -19,13 +19,11 @@ namespace Intervu.Application.UseCases.Availability
             _mapper = mapper;
         }
 
-        public async Task<bool> ExecuteAsync(int availabilityId, InterviewerAvailabilityUpdateDto dto)
+        public async Task<bool> ExecuteAsync(Guid availabilityId, InterviewerAvailabilityUpdateDto dto)
         {
             // basic validation
             if (dto == null)
                 throw new ArgumentNullException(nameof(dto));
-            if (availabilityId <= 0)
-                throw new ArgumentException("ID must be greater than 0");
             if (dto.EndTime <= dto.StartTime)
                 throw new ArgumentException("EndTime must be greater than StartTime");
 

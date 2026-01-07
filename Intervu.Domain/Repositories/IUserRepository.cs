@@ -9,11 +9,14 @@ namespace Intervu.Domain.Repositories
 {
     public interface IUserRepository : IRepositoryBase<User>
     {
+        Task<User?> GetBySlugAsync(string slug);
         Task<User?> GetByEmailAsync(string email);
         Task<User?> GetByEmailAndPasswordAsync(string email, string password);
         Task<bool> EmailExistsAsync(string email);
-        Task<bool> UpdateProfileAsync(int userId, string fullName);
-        Task<bool> UpdatePasswordAsync(int userId, string hashedPassword);
-        Task<string?> UpdateProfilePictureAsync(int userId, string profilePictureUrl);
+        Task<(IReadOnlyList<User> Items, int TotalCount)> GetPagedUsersAsync(int page, int pageSize);
+        Task<int> GetTotalUsersCountAsync();
+        Task<bool> UpdateProfileAsync(Guid userId, string fullName);
+        Task<bool> UpdatePasswordAsync(Guid userId, string hashedPassword);
+        Task<string?> UpdateProfilePictureAsync(Guid userId, string profilePictureUrl);
     }
 }

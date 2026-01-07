@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Intervu.Domain.Entities
 {
-    public class User : EntityBase<int>
+    public class User : EntityBase<Guid>
     {
         public string FullName { get; set; }
 
@@ -22,6 +22,8 @@ namespace Intervu.Domain.Entities
         public UserRole Role { get; set; }
 
         public string? ProfilePicture { get; set; }
+
+        public string SlugProfileUrl { get; set; } = string.Empty;
 
         /// <summary>
         /// Active, Suspended, Deleted

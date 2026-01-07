@@ -22,5 +22,17 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
             return (items, totalItems);
         }
+
+        public Task<int> GetTotalCompaniesCountAsync()
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<IReadOnlyList<Company>> GetByIdsAsync(IEnumerable<Guid> ids)
+        {
+            if (ids == null) return new List<Company>();
+            var list = await _context.Companies.Where(c => ids.Contains(c.Id)).ToListAsync();
+            return list;
+        }
     }
 }
