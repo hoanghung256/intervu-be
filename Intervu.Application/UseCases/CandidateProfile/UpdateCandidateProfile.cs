@@ -1,35 +1,30 @@
 using AutoMapper;
-using Intervu.Application.DTOs.Interviewee;
-using Intervu.Application.Interfaces.UseCases.IntervieweeProfile;
+using Intervu.Application.DTOs.Candidate;
+using Intervu.Application.Interfaces.UseCases.CandidateProfile;
 using Intervu.Application.Utils;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Intervu.Application.UseCases.IntervieweeProfile
+namespace Intervu.Application.UseCases.CandidateProfile
 {
-    public class UpdateIntervieweeProfile : IUpdateIntervieweeProfile
+    public class UpdateCandidateProfile : IUpdateCandidateProfile
     {
-        private readonly IIntervieweeProfileRepository _repo;
+        private readonly ICandidateProfileRepository _repo;
         private readonly IMapper _mapper;
         private readonly ISkillRepository _skillRepository;
 
-        public UpdateIntervieweeProfile(IIntervieweeProfileRepository repo, ISkillRepository skillRepository, IMapper mapper)
+        public UpdateCandidateProfile(ICandidateProfileRepository repo, ISkillRepository skillRepository, IMapper mapper)
         {
             _repo = repo;
             _skillRepository = skillRepository;
             _mapper = mapper;
         }
 
-        public async Task<IntervieweeProfileDto> UpdateIntervieweeProfileAsync(Guid id, IntervieweeUpdateDto updateDto)
+        public async Task<CandidateProfileDto> UpdateCandidateProfileAsync(Guid id, CandidateUpdateDto updateDto)
         {
             var existing = await _repo.GetByIdAsync(id);
             if (existing == null)
-                throw new Exception("Interviewee profile not found.");
+                throw new Exception("Candidate profile not found.");
 
             existing.User.SlugProfileUrl = SlugProfileUrlHandler.GenerateProfileSlug(updateDto.FullName);
 
@@ -43,27 +38,27 @@ namespace Intervu.Application.UseCases.IntervieweeProfile
             // Map simple properties from DTO to existing entity
             _mapper.Map(updateDto, existing);
 
-            await _repo.UpdateIntervieweeProfileAsync(existing);
+            await _repo.UpdateCandidateProfileAsync(existing);
             await _repo.SaveChangesAsync();
 
-            return _mapper.Map<IntervieweeProfileDto>(existing);
+            return _mapper.Map<CandidateProfileDto>(existing);
         }
 
-        public async Task<IntervieweeViewDto> UpdateIntervieweeStatusAsync(Guid id, UserStatus status)
+        public async Task<CandidateViewDto> UpdateCandidateStatusAsync(Guid id, UserStatus status)
         {
             var profile = await _repo.GetByIdAsync(id);
             if (profile == null)
-                throw new Exception("Interviewee profile not found!");
+                throw new Exception("Candidate profile not found!");
 
             profile.User.Status = status;
             await _repo.SaveChangesAsync();
 
-            return _mapper.Map<IntervieweeViewDto>(profile);
-        }
+            return _mapper.Map<CandidateViewDto>(profile);
+         }
 
-        async Task<Domain.Entities.IntervieweeProfile> IUpdateIntervieweeProfile.UpdateIntervieweeCVProfile(Guid id, string cvUrl)
+        async Task<Domain.Entities.CandidateProfile> IUpdateCandidateProfile.UpdateCandidateCVProfile(Guid id, string cvUrl)
         {
-            Domain.Entities.IntervieweeProfile profile = await _repo.GetByIdAsync(id);
+            Domain.Entities.CandidateProfile profile = await _repo.GetByIdAsync(id);
             if (profile == null) {
                 return null;
             }

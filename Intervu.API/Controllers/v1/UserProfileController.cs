@@ -1,11 +1,11 @@
 using Asp.Versioning;
 using Intervu.Application.DTOs.User;
 using Intervu.Application.Interfaces.ExternalServices;
-using Intervu.Application.Interfaces.UseCases.IntervieweeProfile;
 using Intervu.Application.Interfaces.UseCases.UserProfile;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
+using Intervu.Application.Interfaces.UseCases.CandidateProfile;
 using static Intervu.API.Controllers.v1.InterviewRoomController;
 
 namespace Intervu.API.Controllers.v1
@@ -21,24 +21,24 @@ namespace Intervu.API.Controllers.v1
         private readonly IFileService _fileService;
         private readonly Intervu.Application.Interfaces.UseCases.UserProfile.IUploadAvatar _uploadAvatar;
         private readonly Intervu.Application.Interfaces.UseCases.UserProfile.IClearProfilePicture _clearProfilePicture;
-        private readonly IUpdateIntervieweeProfile _updateIntervieweeProfile;
+        private readonly IUpdateCandidateProfile _updateCandidateProfile;
 
         public UserProfileController(
             IGetUserProfile getUserProfile,
             IUpdateUserProfile updateUserProfile,
             IChangePassword changePassword,
             IFileService fileService,
-            IUpdateIntervieweeProfile updateIntervieweeProfile,
             Intervu.Application.Interfaces.UseCases.UserProfile.IUploadAvatar uploadAvatar,
-            Intervu.Application.Interfaces.UseCases.UserProfile.IClearProfilePicture clearProfilePicture)
+            Intervu.Application.Interfaces.UseCases.UserProfile.IClearProfilePicture clearProfilePicture,
+            IUpdateCandidateProfile updateCandidateProfile)
         {
             _getUserProfile = getUserProfile;
             _updateUserProfile = updateUserProfile;
             _changePassword = changePassword;
             _fileService = fileService;
-            _updateIntervieweeProfile = updateIntervieweeProfile;
             _uploadAvatar = uploadAvatar;
             _clearProfilePicture = clearProfilePicture;
+            _updateCandidateProfile = updateCandidateProfile;
         }
 
         /// <summary>
@@ -162,7 +162,7 @@ namespace Intervu.API.Controllers.v1
 
             var fileUrl = await _fileService.UploadFileAsync(stream, objectName, file.ContentType);
 
-            var profile = await _updateIntervieweeProfile.UpdateIntervieweeCVProfile(userId, fileUrl);
+            var profile = await _updateCandidateProfile.UpdateCandidateCVProfile(userId, fileUrl);
             if (profile == null)
             {
                 return NotFound();

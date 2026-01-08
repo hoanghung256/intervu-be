@@ -1,8 +1,6 @@
-using Intervu.Domain.Entities.Constants;
-
-namespace Intervu.Application.DTOs.Interviewee
+namespace Intervu.Application.DTOs.Candidate
 {
-    public class IntervieweeUpdateDto
+    public class CandidateUpdateDto
     {
         public Guid Id { get; set; }
         public string FullName { get; set; } = null!;

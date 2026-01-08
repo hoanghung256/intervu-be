@@ -17,7 +17,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
             _transactionRepository = transactionRepository;
         }
 
-        public async Task<string> ExecuteAsync(Guid intervieweeId, Guid interviewerId, Guid interviewerAvailabilityId, string returnUrl)
+        public async Task<string> ExecuteAsync(Guid candidateId, Guid interviewerId, Guid interviewerAvailabilityId, string returnUrl)
         {
             var interviewer = await _interviewerProfileRepository.GetProfileByIdAsync(interviewerId);
 
@@ -28,7 +28,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
 
             Domain.Entities.InterviewBookingTransaction t = new()
             {
-                UserId = intervieweeId,
+                UserId = candidateId,
                 Amount = interviewer.CurrentAmount ?? 0,
                 Status = Domain.Entities.Constants.TransactionStatus.Created,
                 Type = Domain.Entities.Constants.TransactionType.Payment,

@@ -125,14 +125,14 @@ namespace Intervu.API
                 );
 
                 options.AddPolicy(
-                    AuthorizationPolicies.Interviewee,
-                    policy => policy.RequireRole(UserRole.Interviewee.ToString())
+                    AuthorizationPolicies.Candidate,
+                    policy => policy.RequireRole(UserRole.Candidate.ToString())
                 );
 
                 options.AddPolicy(
-                    AuthorizationPolicies.IntervieweeOrInterviewer,
+                    AuthorizationPolicies.CandidateOrInterviewer,
                     policy => policy.RequireAssertion(context =>
-                        context.User.IsInRole(UserRole.Interviewee.ToString()) ||
+                        context.User.IsInRole(UserRole.Candidate.ToString()) ||
                         context.User.IsInRole(UserRole.Interviewer.ToString()))
                 );
 
@@ -144,9 +144,9 @@ namespace Intervu.API
                 );
 
                 options.AddPolicy(
-                    AuthorizationPolicies.IntervieweeOrAdmin,
+                    AuthorizationPolicies.CandidateOrAdmin,
                     policy => policy.RequireAssertion(context =>
-                        context.User.IsInRole(UserRole.Interviewee.ToString()) ||
+                        context.User.IsInRole(UserRole.Candidate.ToString()) ||
                         context.User.IsInRole(UserRole.Admin.ToString()))
                 );
             });

@@ -4,11 +4,11 @@ using System.Collections.Generic;
 
 namespace Intervu.Domain.Entities
 {
-    public class IntervieweeProfile : EntityBase<Guid>
+    public class CandidateProfile : EntityBase<Guid>
     {
         /// <summary>
-        /// References User.Id (Interviewee)
-        /// EntityBase.Id will be used as IntervieweeId
+        /// References User.Id (Candidate)
+        /// EntityBase.Id will be used as CandidateId
         /// </summary>
         public User User { get; set; } = null!;
 

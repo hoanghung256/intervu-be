@@ -56,15 +56,15 @@ namespace Intervu.API.Controllers.v1.Interviewer
             });
         }
 
-        //[GET] api/interviewerprofile/interviewee/{id}/profile
-        //[Authorize(Policy = AuthorizationPolicies.Interviewee)]
+        //[GET] api/interviewerprofile/candidate/{id}/profile
+        //[Authorize(Policy = AuthorizationPolicies.Candidate)]
         [HttpGet("{slugProfileUrl}/profile")]
-        public async Task<IActionResult> GetProfileByInterviewee([FromRoute] string slugProfileUrl)
+        public async Task<IActionResult> GetProfileByCandidate([FromRoute] string slugProfileUrl)
         {
             string msg = "Get profile successfully!";
             try
             {
-                var profile = await _getInterviewerProfile.ViewProfileForIntervieweeAsync(slugProfileUrl);
+                var profile = await _getInterviewerProfile.ViewProfileForCandidateAsync(slugProfileUrl);
                 return Ok(new
                 {
                     success = true,

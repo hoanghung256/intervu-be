@@ -15,9 +15,9 @@ namespace Intervu.Application.UseCases.InterviewRoom
 
         public async Task<IEnumerable<Domain.Entities.InterviewRoom>> ExecuteAsync(UserRole role, Guid userId)
         {
-            if (role == UserRole.Interviewee)
+            if (role == UserRole.Candidate)
             {
-                return await _repo.GetListByIntervieweeId(userId);
+                return await _repo.GetListByCandidateId(userId);
             }
             else
             {

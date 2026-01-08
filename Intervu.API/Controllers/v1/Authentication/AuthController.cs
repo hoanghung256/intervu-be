@@ -107,7 +107,7 @@ namespace Intervu.API.Controllers.v1.Authentication
                     FullName = string.IsNullOrEmpty(name) ? email!.Split('@')[0] : name!,
                     Email = email!,
                     Password = PasswordHashHandler.HashPassword(Guid.NewGuid().ToString()),
-                    Role = UserRole.Interviewee,
+                    Role = UserRole.Candidate,
                     Status = UserStatus.Active,
                     ProfilePicture = picture
                 };

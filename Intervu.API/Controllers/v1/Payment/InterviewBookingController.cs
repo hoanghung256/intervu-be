@@ -11,12 +11,12 @@ using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Intervu.Application.Interfaces.UseCases.Interviewer;
-using Intervu.Application.Interfaces.UseCases.Interviewee;
 using Microsoft.AspNetCore.Mvc;
 using PayOS.Models.Webhooks;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
 using System;
+using Intervu.Application.Interfaces.UseCases.Candidate;
 
 namespace Intervu.API.Controllers.v1.Payment
 {
@@ -33,7 +33,7 @@ namespace Intervu.API.Controllers.v1.Payment
         private readonly IGetInterviewBooking _getInterviewBooking;
         private readonly ISendBookingConfirmationEmail _sendBookingConfirmationEmail;
         private readonly IGetInterviewerDetails _getInterviewerDetails;
-        private readonly IGetIntervieweeDetails _getIntervieweeDetails;
+        private readonly IGetCandidateDetails _getCandidateDetails;
 
         public InterviewBookingController(
             ICreateBookingCheckoutUrl createBookingCheckoutUrl,
@@ -44,7 +44,7 @@ namespace Intervu.API.Controllers.v1.Payment
             IUpdateBookingStatus updateBookingStatus,
             ISendBookingConfirmationEmail sendBookingConfirmationEmail,
             IGetInterviewerDetails getInterviewerDetails,
-            IGetIntervieweeDetails getIntervieweeDetails)
+            IGetCandidateDetails getCandidateDetails)
         {
             _createBookingCheckoutUrl = createBookingCheckoutUrl;
             _paymentService = paymentService;
@@ -54,7 +54,7 @@ namespace Intervu.API.Controllers.v1.Payment
             _getInterviewBooking = getInterviewBooking;
             _sendBookingConfirmationEmail = sendBookingConfirmationEmail;
             _getInterviewerDetails = getInterviewerDetails;
-            _getIntervieweeDetails = getIntervieweeDetails;
+            _getCandidateDetails = getCandidateDetails;
         }
 
         [HttpPost]

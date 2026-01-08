@@ -1,9 +1,9 @@
-using Intervu.Application.DTOs.User;
 using Intervu.Application.DTOs.Skill;
+using Intervu.Application.DTOs.User;
 
-namespace Intervu.Application.DTOs.Interviewee
+namespace Intervu.Application.DTOs.Candidate
 {
-    public class IntervieweeProfileDto
+    public class CandidateProfileDto
     {
         public Guid Id { get; set; }
         public UserDto User { get; set; } = null!;
