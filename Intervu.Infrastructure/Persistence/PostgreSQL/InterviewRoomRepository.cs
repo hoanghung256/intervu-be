@@ -7,9 +7,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 {
     public class InterviewRoomRepository(IntervuPostgreDbContext context) : RepositoryBase<InterviewRoom>(context), IInterviewRoomRepository
     {
-        public async Task<IEnumerable<InterviewRoom>> GetListByIntervieweeId(Guid intervieweeId)
+        public async Task<IEnumerable<InterviewRoom>> GetListByCandidateId(Guid candidateId)
         {
-            return await _context.InterviewRooms.Where(r => r.StudentId == intervieweeId).ToListAsync();
+            return await _context.InterviewRooms.Where(r => r.StudentId == candidateId).ToListAsync();
         }
 
         public async Task<IEnumerable<InterviewRoom>> GetListByInterviewerId(Guid interviewerId)

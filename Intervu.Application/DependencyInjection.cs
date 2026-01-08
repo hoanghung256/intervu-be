@@ -16,6 +16,8 @@ using AdminUseCases = Intervu.Application.UseCases.Admin;
 using Intervu.Application.Interfaces.UseCases.Availability;
 using Intervu.Application.UseCases.Availability;
 using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.UseCases.Candidate;
+using Intervu.Application.Interfaces.UseCases.CandidateProfile;
 using Intervu.Application.Services.CodeGeneration;
 // removed duplicate using Intervu.Application.Interfaces.UseCases.InterviewRoom
 using Intervu.Application.Interfaces.UseCases.Email;
@@ -29,15 +31,12 @@ using Intervu.Application.UseCases.InterviewBooking;
 using Intervu.Application.UseCases.InterviewRoom;
 using Intervu.Application.Interfaces.UseCases.Interviewer;
 using Intervu.Application.UseCases.Interviewer;
-using Intervu.Application.Interfaces.UseCases.Interviewee;
-using Intervu.Application.UseCases.Interviewee;
-using Intervu.Application.Interfaces.UseCases.IntervieweeProfile;
 using Intervu.Application.Utils;
 using Intervu.Application.UseCases.Admin;
 using Intervu.Application.Interfaces.UseCases.PasswordReset;
 using Intervu.Application.UseCases.PasswordReset;
-using Intervu.Application.Interfaces.UseCases.IntervieweeProfile;
-using Intervu.Application.UseCases.IntervieweeProfile;
+using Intervu.Application.UseCases.Candidate;
+using Intervu.Application.UseCases.CandidateProfile;
 
 namespace Intervu.Application
 {
@@ -111,15 +110,15 @@ namespace Intervu.Application
             services.AddScoped<IGetInterviewBooking, GetInterviewBooking>();
             services.AddScoped<IPayoutForInterviewerAfterInterview, PayoutForInterviewerAfterInterview>();
 
-            // ----- Interviewer & Interviewee Details ---
+            // ----- Interviewer & Candidate Details ---
             services.AddScoped<IGetInterviewerDetails, GetInterviewerDetails>();
-            services.AddScoped<IGetIntervieweeDetails, GetIntervieweeDetails>();
+            services.AddScoped<IGetCandidateDetails, GetCandidateDetails>();
 
-            // ----- IntervieweeProfile ----
-            services.AddScoped<ICreateIntervieweeProfile, CreateIntervieweeProfile>();
-            services.AddScoped<IUpdateIntervieweeProfile, UpdateIntervieweeProfile>();
-            services.AddScoped<IViewIntervieweeProfile, ViewIntervieweeProfile>();
-            services.AddScoped<IDeleteIntervieweeProfile, DeleteIntervieweeProfile>();
+            // ----- CandidateProfile ----
+            services.AddScoped<ICreateCandidateProfile, CreateCandidateProfile>();
+            services.AddScoped<IUpdateCandidateProfile, UpdateCandidateProfile>();
+            services.AddScoped<IViewCandidateProfile, ViewCandidateProfile>();
+            services.AddScoped<IDeleteCandidateProfile, DeleteCandidateProfile>();
 
             return services;
         }

@@ -15,7 +15,7 @@ namespace Intervu.Application.DTOs.User
         public string Email { get; set; }
 
         /// <summary>
-        /// Interviewee, Interviewer, Admin
+        /// Candidate, Interviewer, Admin
         /// </summary>
         public UserRole Role { get; set; }
 

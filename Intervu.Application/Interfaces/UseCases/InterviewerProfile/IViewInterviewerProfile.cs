@@ -12,6 +12,6 @@ namespace Intervu.Application.Interfaces.UseCases.InterviewerProfile
     {
         Task<InterviewerProfileDto?> ViewOwnProfileAsync(Guid id);
 
-        Task<InterviewerViewDto?> ViewProfileForIntervieweeAsync(string slug);
+        Task<InterviewerViewDto?> ViewProfileForCandidateAsync(string slug);
     }
 }

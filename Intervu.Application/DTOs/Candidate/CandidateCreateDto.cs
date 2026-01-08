@@ -1,8 +1,6 @@
-using Intervu.Domain.Entities.Constants;
-
-namespace Intervu.Application.DTOs.Interviewee
+namespace Intervu.Application.DTOs.Candidate
 {
-    public class IntervieweeCreateDto
+    public class CandidateCreateDto
     {
         // Link to the already-registered user; no need to re-enter account info
         public Guid UserId { get; set; }

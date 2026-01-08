@@ -1,43 +1,43 @@
 ﻿using Asp.Versioning;
 using AutoMapper;
 using Intervu.API.Utils.Constant;
-using Intervu.Application.DTOs.Interviewee;
-using Intervu.Application.Interfaces.UseCases.IntervieweeProfile;
+using Intervu.Application.Interfaces.UseCases.CandidateProfile;
 using Intervu.Domain.Entities.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using Intervu.Application.DTOs.Candidate;
 
-namespace Intervu.API.Controllers.v1.Interviewee
+namespace Intervu.API.Controllers.v1.Candidate
 {
     [ApiController]
     [ApiVersion("1.0")]
-    [Route("api/v{version:apiVersion}/interviewee-profile")]
-    public class IntervieweeProfileController : ControllerBase
+    [Route("api/v{version:apiVersion}/candidate-profile")]
+    public class CandidateProfileController : ControllerBase
     {
-        private readonly ICreateIntervieweeProfile _createIntervieweeProfile;
-        private readonly IUpdateIntervieweeProfile _updateIntervieweeProfile;
-        private readonly IViewIntervieweeProfile _getIntervieweeProfile;
-        private readonly IDeleteIntervieweeProfile _deleteIntervieweeProfile;
+        private readonly ICreateCandidateProfile _createCandidateProfile;
+        private readonly IUpdateCandidateProfile _updateCandidateProfile;
+        private readonly IViewCandidateProfile _getCandidateProfile;
+        private readonly IDeleteCandidateProfile _deleteCandidateProfile;
 
-        public IntervieweeProfileController(ICreateIntervieweeProfile createIntervieweeProfile, IUpdateIntervieweeProfile updateIntervieweeProfile, IViewIntervieweeProfile getIntervieweeProfile, IDeleteIntervieweeProfile deleteIntervieweeProfile)
+        public CandidateProfileController(ICreateCandidateProfile createCandidateProfile, IUpdateCandidateProfile updateCandidateProfile, IViewCandidateProfile getCandidateProfile, IDeleteCandidateProfile deleteCandidateProfile)
         {
-            _createIntervieweeProfile = createIntervieweeProfile;
-            _updateIntervieweeProfile = updateIntervieweeProfile;
-            _getIntervieweeProfile = getIntervieweeProfile;
-            _deleteIntervieweeProfile = deleteIntervieweeProfile;
+            _createCandidateProfile = createCandidateProfile;
+            _updateCandidateProfile = updateCandidateProfile;
+            _getCandidateProfile = getCandidateProfile;
+            _deleteCandidateProfile = deleteCandidateProfile;
         }
 
-        //[GET] api/Intervieweeprofile/{id}
-        [Authorize(Policy = AuthorizationPolicies.Interviewee)]
+        //[GET] api/Candidate-profile/{id}
+        [Authorize(Policy = AuthorizationPolicies.Candidate)]
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetOwnIntervieweeProfile([FromRoute] Guid id)
+        public async Task<IActionResult> GetOwnCandidateProfile([FromRoute] Guid id)
         {
             string msg = "Get profile successfully!";
             try
             {
-                var profile = await _getIntervieweeProfile.ViewOwnProfileAsync(id);
+                var profile = await _getCandidateProfile.ViewOwnProfileAsync(id);
                 return Ok(new
                 {
                     success = true,
@@ -56,15 +56,15 @@ namespace Intervu.API.Controllers.v1.Interviewee
             });
         }
 
-        //[GET] api/Intervieweeprofile/interviewee/{id}/profile
-        //[Authorize(Policy = AuthorizationPolicies.Interviewee)]
+        //[GET] api/Candidateprofile/candidate/{id}/profile
+        //[Authorize(Policy = AuthorizationPolicies.Candidate)]
         [HttpGet("{slugProfileUrl}/profile")]
-        public async Task<IActionResult> GetProfileByInterviewee([FromRoute] string slugProfileUrl)
+        public async Task<IActionResult> GetProfileByCandidate([FromRoute] string slugProfileUrl)
         {
             string msg = "Get profile successfully!";
             try
             {
-                var profile = await _getIntervieweeProfile.ViewProfileBySlugAsync(slugProfileUrl);
+                var profile = await _getCandidateProfile.ViewProfileBySlugAsync(slugProfileUrl);
                 return Ok(new
                 {
                     success = true,
@@ -83,16 +83,16 @@ namespace Intervu.API.Controllers.v1.Interviewee
             });
         }
 
-        //[POST] api/Intervieweeprofile
-        //[Authorize(Policy = AuthorizationPolicies.Interviewee)]
+        //[POST] api/Candidate-profile
+        //[Authorize(Policy = AuthorizationPolicies.Candidate)]
         //[HttpPost]
-        //public async Task<IActionResult> CreateIntervieweeProfile([FromBody] IntervieweeCreateDto request)
+        //public async Task<IActionResult> CreateCandidateProfile([FromBody] CandidateCreateDto request)
         //{
             
         //    string msg = "Profile created successfully";
         //    try
         //    {
-        //        await _createIntervieweeProfile.CreateIntervieweeProfileAsync(request);
+        //        await _createCandidateProfile.CreateCandidateProfileAsync(request);
         //    }
         //    catch (Exception ex)
         //    {
@@ -105,16 +105,16 @@ namespace Intervu.API.Controllers.v1.Interviewee
         //    });
         //}
 
-        // [PUT] api/Interviewee-profile/{id}
-        [Authorize(Policy = AuthorizationPolicies.Interviewee)]
+        // [PUT] api/Candidate-profile/{id}
+        [Authorize(Policy = AuthorizationPolicies.Candidate)]
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateIntervieweeProfile([FromRoute] Guid id, [FromBody] IntervieweeUpdateDto request)
+        public async Task<IActionResult> UpdateCandidateProfile([FromRoute] Guid id, [FromBody] CandidateUpdateDto request)
         {
             string msg = "Profile update successfully!";
             try
             {
-                IntervieweeProfileDto? profile = await _getIntervieweeProfile.ViewOwnProfileAsync(id);
-                profile = await _updateIntervieweeProfile.UpdateIntervieweeProfileAsync(id, request);
+                CandidateProfileDto? profile = await _getCandidateProfile.ViewOwnProfileAsync(id);
+                profile = await _updateCandidateProfile.UpdateCandidateProfileAsync(id, request);
                 return Ok(new
                 {
                     success = true,
@@ -132,15 +132,15 @@ namespace Intervu.API.Controllers.v1.Interviewee
             });
         }
 
-        // [PUT] api/Interviewee-profile/{id}/status
+        // [PUT] api/Candidate-profile/{id}/status
         [Authorize(Policy = AuthorizationPolicies.Admin)]
         [HttpPut("{id}/status")]
-        public async Task<IActionResult> UpdateIntervieweeStatus([FromRoute] Guid id, [FromBody] UserStatus status)
+        public async Task<IActionResult> UpdateCandidateStatus([FromRoute] Guid id, [FromBody] UserStatus status)
         {
             string msg = "Profile status update successfully";
             try
             {
-                IntervieweeViewDto profile = await _updateIntervieweeProfile.UpdateIntervieweeStatusAsync(id, status);
+                CandidateViewDto profile = await _updateCandidateProfile.UpdateCandidateStatusAsync(id, status);
                 return Ok(new
                 {
                     success = true,
@@ -158,15 +158,15 @@ namespace Intervu.API.Controllers.v1.Interviewee
             });
         }
 
-        // [DELETE] api/Interviewee-profile/{id}
+        // [DELETE] api/Candidate-profile/{id}
         [Authorize(Policy = AuthorizationPolicies.Admin)]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteIntervieweeProfile([FromRoute] Guid id)
+        public async Task<IActionResult> DeleteCandidateProfile([FromRoute] Guid id)
         {
             string msg = "Profile deleted successfully";
             try
             {
-                await _deleteIntervieweeProfile.DeleteIntervieweeProfileAsync(id);
+                await _deleteCandidateProfile.DeleteCandidateProfileAsync(id);
             } catch (Exception ex)
             {
                 msg = ex.Message;

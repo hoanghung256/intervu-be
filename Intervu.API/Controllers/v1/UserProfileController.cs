@@ -1,11 +1,11 @@
 using Asp.Versioning;
 using Intervu.Application.DTOs.User;
 using Intervu.Application.Interfaces.ExternalServices;
-using Intervu.Application.Interfaces.UseCases.IntervieweeProfile;
 using Intervu.Application.Interfaces.UseCases.UserProfile;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
+using Intervu.Application.Interfaces.UseCases.CandidateProfile;
 using static Intervu.API.Controllers.v1.InterviewRoomController;
 
 namespace Intervu.API.Controllers.v1
@@ -20,7 +20,7 @@ namespace Intervu.API.Controllers.v1
         private readonly IChangePassword _changePassword;
         private readonly IUpdateProfilePicture _updateProfilePicture;
         private readonly IFileService _fileService;
-        private readonly IUpdateIntervieweeProfile _updateIntervieweeProfile;
+        private readonly IUpdateCandidateProfile _updateCandidateProfile;
 
         public UserProfileController(
             IGetUserProfile getUserProfile,
@@ -28,14 +28,14 @@ namespace Intervu.API.Controllers.v1
             IChangePassword changePassword,
             IUpdateProfilePicture updateProfilePicture,
             IFileService fileService,
-            IUpdateIntervieweeProfile updateIntervieweeProfile)
+            IUpdateCandidateProfile updateCandidateProfile)
         {
             _getUserProfile = getUserProfile;
             _updateUserProfile = updateUserProfile;
             _changePassword = changePassword;
             _updateProfilePicture = updateProfilePicture;
             _fileService = fileService;
-            _updateIntervieweeProfile = updateIntervieweeProfile;
+            _updateCandidateProfile = updateCandidateProfile;
         }
 
         /// <summary>
@@ -155,7 +155,7 @@ namespace Intervu.API.Controllers.v1
 
             var fileUrl = await _fileService.UploadFileAsync(stream, objectName, file.ContentType);
 
-            var profile = await _updateIntervieweeProfile.UpdateIntervieweeProfile(userId, fileUrl);
+            var profile = await _updateCandidateProfile.UpdateCandidateProfile(userId, fileUrl);
             if (profile == null)
             {
                 return NotFound();

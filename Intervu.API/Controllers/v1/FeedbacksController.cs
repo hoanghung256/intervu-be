@@ -41,7 +41,7 @@ namespace Intervu.API.Controllers.v1
             _userRepository = userRepository;
         }
 
-        [Authorize(Policy = AuthorizationPolicies.Interviewee)]
+        [Authorize(Policy = AuthorizationPolicies.Candidate)]
         [HttpGet]
         public async Task<IActionResult> GetList([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
@@ -64,7 +64,7 @@ namespace Intervu.API.Controllers.v1
             });
         }
 
-        [Authorize(Policy = AuthorizationPolicies.Interviewee)]
+        [Authorize(Policy = AuthorizationPolicies.Candidate)]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateFeedback([FromRoute] Guid id, [FromBody] UpdateFeedbackDto updateFeedbackDto)
         {
