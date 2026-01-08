@@ -102,7 +102,8 @@ namespace Intervu.Application
             services.AddScoped<IGetUserProfile, GetUserProfile>();
             services.AddScoped<IUpdateUserProfile, UpdateUserProfile>();
             services.AddScoped<IChangePassword, ChangePassword>();
-            services.AddScoped<IUpdateProfilePicture, UpdateProfilePicture>();
+            services.AddScoped<IUploadAvatar, UploadAvatar>();
+            services.AddScoped<IClearProfilePicture, ClearProfilePicture>();
             services.AddScoped<IUpdateAvailabilityStatus, UpdateAvailabilityStatus>();
 
             // ----- Interview Booking ---

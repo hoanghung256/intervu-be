@@ -14,7 +14,7 @@ namespace Intervu.Application.Interfaces.UseCases.IntervieweeProfile
     {
         Task<IntervieweeProfileDto> UpdateIntervieweeProfileAsync(Guid id, IntervieweeUpdateDto updateDto);
         Task<IntervieweeViewDto> UpdateIntervieweeStatusAsync(Guid id, UserStatus status);
-        Task<Domain.Entities.IntervieweeProfile> UpdateIntervieweeProfile(Guid id, string cvUrl);
+        Task<Domain.Entities.IntervieweeProfile> UpdateIntervieweeCVProfile(Guid id, string cvUrl);
 
     }
 }

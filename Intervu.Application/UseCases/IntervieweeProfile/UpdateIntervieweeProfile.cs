@@ -59,9 +59,9 @@ namespace Intervu.Application.UseCases.IntervieweeProfile
             await _repo.SaveChangesAsync();
 
             return _mapper.Map<IntervieweeViewDto>(profile);
-         }
+        }
 
-        async Task<Domain.Entities.IntervieweeProfile> IUpdateIntervieweeProfile.UpdateIntervieweeProfile(Guid id, string cvUrl)
+        async Task<Domain.Entities.IntervieweeProfile> IUpdateIntervieweeProfile.UpdateIntervieweeCVProfile(Guid id, string cvUrl)
         {
             Domain.Entities.IntervieweeProfile profile = await _repo.GetByIdAsync(id);
             if (profile == null) {
