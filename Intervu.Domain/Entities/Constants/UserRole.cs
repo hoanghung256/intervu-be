@@ -2,7 +2,7 @@ namespace Intervu.Domain.Entities.Constants
 {
     public enum UserRole
     {
-        Interviewee,
+        Candidate,
         Interviewer,
         Admin
     }

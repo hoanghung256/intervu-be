@@ -36,7 +36,7 @@ namespace Intervu.Application.UseCases.InterviewerProfile
             return result;
         }
 
-        public async Task<InterviewerViewDto?> ViewProfileForIntervieweeAsync(string slug)
+        public async Task<InterviewerViewDto?> ViewProfileForCandidateAsync(string slug)
         {
             Domain.Entities.User? userData = await _userRepository.GetBySlugAsync(slug);
             if (userData == null) return null;

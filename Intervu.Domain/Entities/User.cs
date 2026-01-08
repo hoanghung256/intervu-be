@@ -17,7 +17,7 @@ namespace Intervu.Domain.Entities
         public string Password { get; set; }
 
         /// <summary>
-        /// Interviewee, Interviewer, Admin
+        /// Candidate, Interviewer, Admin
         /// </summary>
         public UserRole Role { get; set; }
 

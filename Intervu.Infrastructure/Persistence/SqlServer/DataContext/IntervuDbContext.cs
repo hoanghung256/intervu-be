@@ -21,7 +21,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
         }
 
         public DbSet<User> Users { get; set; }
-        public DbSet<IntervieweeProfile> IntervieweeProfiles { get; set; }
+        public DbSet<CandidateProfile> CandidateProfiles { get; set; }
         public DbSet<InterviewerProfile> InterviewerProfiles { get; set; }
         public DbSet<InterviewerAvailability> InterviewerAvailabilities { get; set; }
         public DbSet<InterviewRoom> InterviewRooms { get; set; }
@@ -58,10 +58,10 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 b.Property(x => x.Status).IsRequired();
             });
 
-            // IntervieweeProfile (one-to-one with User, shared PK)
-            modelBuilder.Entity<IntervieweeProfile>(b =>
+            // CandidateProfile (one-to-one with User, shared PK)
+            modelBuilder.Entity<CandidateProfile>(b =>
             {
-                b.ToTable("IntervieweeProfiles");
+                b.ToTable("CandidateProfiles");
                 b.HasKey(x => x.Id);
                 b.Property(x => x.CVUrl).HasMaxLength(1000);
                 b.Property(x => x.PortfolioUrl).HasMaxLength(1000);
@@ -70,20 +70,20 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 // Explicitly map navigation to User (like InterviewerProfile)
                 b.HasOne(x => x.User)
                  .WithOne()
-                 .HasForeignKey<IntervieweeProfile>(p => p.Id)
+                 .HasForeignKey<CandidateProfile>(p => p.Id)
                  .OnDelete(DeleteBehavior.Cascade);
 
-                // Many-to-many: IntervieweeProfile <-> Skill
+                // Many-to-many: CandidateProfile <-> Skill
                 b.HasMany(x => x.Skills)
                  .WithMany()
                  .UsingEntity<Dictionary<string, object>>(
-                     "IntervieweeSkills",
+                     "CandidateSkills",
                      l => l.HasOne<Skill>().WithMany().HasForeignKey("SkillsId").OnDelete(DeleteBehavior.Cascade),
-                     r => r.HasOne<IntervieweeProfile>().WithMany().HasForeignKey("IntervieweeProfilesId").OnDelete(DeleteBehavior.Cascade),
+                     r => r.HasOne<CandidateProfile>().WithMany().HasForeignKey("CandidateProfilesId").OnDelete(DeleteBehavior.Cascade),
                      j =>
                      {
-                         j.HasKey("IntervieweeProfilesId", "SkillsId");
-                         j.ToTable("IntervieweeSkills");
+                         j.HasKey("CandidateProfilesId", "SkillsId");
+                         j.ToTable("CandidateSkills");
                      });
             });
 
@@ -179,7 +179,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 b.Property(x => x.ProblemDescription).HasColumnType("nvarchar(max)");
                 b.Property(x => x.ProblemShortName).HasMaxLength(200);
 
-                b.HasOne<IntervieweeProfile>()
+                b.HasOne<CandidateProfile>()
                  .WithMany()
                  .HasForeignKey(x => x.StudentId)
                  .OnDelete(DeleteBehavior.Restrict);
@@ -211,7 +211,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                  .HasForeignKey(x => x.InterviewerId)
                  .OnDelete(DeleteBehavior.Restrict);
 
-                b.HasOne<IntervieweeProfile>()
+                b.HasOne<CandidateProfile>()
                  .WithMany()
                  .HasForeignKey(x => x.StudentId)
                  .OnDelete(DeleteBehavior.Restrict);
@@ -323,7 +323,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 FullName = "Alice Student",
                 Email = "alice@example.com",
                 Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
-                Role = UserRole.Interviewee,
+                Role = UserRole.Candidate,
                 ProfilePicture = null,
                 Status = UserStatus.Active,
             };
@@ -375,7 +375,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
             modelBuilder.Entity<User>().HasData(user5, user6);
             modelBuilder.Entity<User>().HasData(user1, user2, user3);
 
-            modelBuilder.Entity<IntervieweeProfile>().HasData(new IntervieweeProfile
+            modelBuilder.Entity<CandidateProfile>().HasData(new CandidateProfile
             {
                 Id = user1Id,
                 CVUrl = "https://example.com/cv-alice.pdf",
@@ -383,9 +383,9 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 Bio = "Aspiring backend developer."
             });
 
-            modelBuilder.Entity("IntervieweeSkills").HasData(
-                new { IntervieweeProfilesId = user1Id, SkillsId = Guid.Parse("b1b1b1b1-b1b1-41b1-81b1-b1b1b1b1b1b1") },
-                new { IntervieweeProfilesId = user1Id, SkillsId = Guid.Parse("02020202-0202-4202-8202-020202020202") }
+            modelBuilder.Entity("CandidateSkills").HasData(
+                new { CandidateProfilesId = user1Id, SkillsId = Guid.Parse("b1b1b1b1-b1b1-41b1-81b1-b1b1b1b1b1b1") },
+                new { CandidateProfilesId = user1Id, SkillsId = Guid.Parse("02020202-0202-4202-8202-020202020202") }
             );
 
             modelBuilder.Entity<InterviewerProfile>().HasData(

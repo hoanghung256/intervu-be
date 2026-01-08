@@ -19,9 +19,9 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             _context = context;
         }
 
-        public async Task<IEnumerable<InterviewRoom>> GetListByIntervieweeId(Guid intervieweeId)
+        public async Task<IEnumerable<InterviewRoom>> GetListByCandidateId(Guid candidateId)
         {
-            return await _context.InterviewRooms.Where(r => r.StudentId == intervieweeId).ToListAsync();
+            return await _context.InterviewRooms.Where(r => r.StudentId == candidateId).ToListAsync();
         }
 
         public async Task<IEnumerable<InterviewRoom>> GetListByInterviewerId(Guid interviewerId)

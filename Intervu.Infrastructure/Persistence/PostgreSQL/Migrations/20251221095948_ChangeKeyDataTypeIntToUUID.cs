@@ -94,7 +94,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "IntervieweeProfiles",
+                name: "CandidateProfiles",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -106,9 +106,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_IntervieweeProfiles", x => x.Id);
+                    table.PrimaryKey("PK_CandidateProfiles", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_IntervieweeProfiles_Users_Id",
+                        name: "FK_CandidateProfiles_Users_Id",
                         column: x => x.Id,
                         principalTable: "Users",
                         principalColumn: "Id",
@@ -253,9 +253,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 {
                     table.PrimaryKey("PK_InterviewRooms", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_InterviewRooms_IntervieweeProfiles_StudentId",
+                        name: "FK_InterviewRooms_CandidateProfiles_StudentId",
                         column: x => x.StudentId,
-                        principalTable: "IntervieweeProfiles",
+                        principalTable: "CandidateProfiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
@@ -288,9 +288,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_Feedbacks_IntervieweeProfiles_StudentId",
+                        name: "FK_Feedbacks_CandidateProfiles_StudentId",
                         column: x => x.StudentId,
-                        principalTable: "IntervieweeProfiles",
+                        principalTable: "CandidateProfiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
@@ -367,7 +367,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 });
 
             migrationBuilder.InsertData(
-                table: "IntervieweeProfiles",
+                table: "CandidateProfiles",
                 columns: new[] { "Id", "Bio", "CVUrl", "CurrentAmount", "PortfolioUrl", "Skills" },
                 values: new object[] { new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"), "Aspiring backend developer.", "https://example.com/cv-alice.pdf", 0, "https://portfolio.example.com/alice", "[C#, SQL]" });
 
@@ -530,7 +530,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 name: "Notifications");
 
             migrationBuilder.DropTable(
-                name: "IntervieweeProfiles");
+                name: "CandidateProfiles");
 
             migrationBuilder.DropTable(
                 name: "InterviewerProfiles");

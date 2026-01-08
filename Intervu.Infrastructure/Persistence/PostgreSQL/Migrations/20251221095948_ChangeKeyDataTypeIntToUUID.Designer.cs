@@ -433,7 +433,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Intervu.Domain.Entities.IntervieweeProfile", b =>
+            modelBuilder.Entity("Intervu.Domain.Entities.CandidateProfile", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
@@ -457,7 +457,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("IntervieweeProfiles", (string)null);
+                    b.ToTable("CandidateProfiles", (string)null);
 
                     b.HasData(
                         new
@@ -856,7 +856,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Intervu.Domain.Entities.IntervieweeProfile", null)
+                    b.HasOne("Intervu.Domain.Entities.CandidateProfile", null)
                         .WithMany()
                         .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -879,17 +879,17 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .HasForeignKey("InterviewerId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("Intervu.Domain.Entities.IntervieweeProfile", null)
+                    b.HasOne("Intervu.Domain.Entities.CandidateProfile", null)
                         .WithMany()
                         .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
-            modelBuilder.Entity("Intervu.Domain.Entities.IntervieweeProfile", b =>
+            modelBuilder.Entity("Intervu.Domain.Entities.CandidateProfile", b =>
                 {
                     b.HasOne("Intervu.Domain.Entities.User", null)
                         .WithOne()
-                        .HasForeignKey("Intervu.Domain.Entities.IntervieweeProfile", "Id")
+                        .HasForeignKey("Intervu.Domain.Entities.CandidateProfile", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

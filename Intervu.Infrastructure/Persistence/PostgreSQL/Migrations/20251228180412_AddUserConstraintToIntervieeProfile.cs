@@ -15,26 +15,26 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
         {
             migrationBuilder.DropColumn(
                 name: "Skills",
-                table: "IntervieweeProfiles");
+                table: "CandidateProfiles");
 
             migrationBuilder.CreateTable(
-                name: "IntervieweeSkills",
+                name: "CandidateSkills",
                 columns: table => new
                 {
-                    IntervieweeProfilesId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CandidateProfilesId = table.Column<Guid>(type: "uuid", nullable: false),
                     SkillsId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_IntervieweeSkills", x => new { x.IntervieweeProfilesId, x.SkillsId });
+                    table.PrimaryKey("PK_CandidateSkills", x => new { x.CandidateProfilesId, x.SkillsId });
                     table.ForeignKey(
-                        name: "FK_IntervieweeSkills_IntervieweeProfiles_IntervieweeProfilesId",
-                        column: x => x.IntervieweeProfilesId,
-                        principalTable: "IntervieweeProfiles",
+                        name: "FK_CandidateSkills_CandidateProfiles_CandidateProfilesId",
+                        column: x => x.CandidateProfilesId,
+                        principalTable: "CandidateProfiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_IntervieweeSkills_Skills_SkillsId",
+                        name: "FK_CandidateSkills_Skills_SkillsId",
                         column: x => x.SkillsId,
                         principalTable: "Skills",
                         principalColumn: "Id",
@@ -42,8 +42,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 });
 
             migrationBuilder.InsertData(
-                table: "IntervieweeSkills",
-                columns: new[] { "IntervieweeProfilesId", "SkillsId" },
+                table: "CandidateSkills",
+                columns: new[] { "CandidateProfilesId", "SkillsId" },
                 values: new object[,]
                 {
                     { new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"), new Guid("02020202-0202-4202-8202-020202020202") },
@@ -51,8 +51,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_IntervieweeSkills_SkillsId",
-                table: "IntervieweeSkills",
+                name: "IX_CandidateSkills_SkillsId",
+                table: "CandidateSkills",
                 column: "SkillsId");
         }
 
@@ -60,16 +60,16 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "IntervieweeSkills");
+                name: "CandidateSkills");
 
             migrationBuilder.AddColumn<string>(
                 name: "Skills",
-                table: "IntervieweeProfiles",
+                table: "CandidateProfiles",
                 type: "text",
                 nullable: true);
 
             migrationBuilder.UpdateData(
-                table: "IntervieweeProfiles",
+                table: "CandidateProfiles",
                 keyColumn: "Id",
                 keyValue: new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
                 column: "Skills",
