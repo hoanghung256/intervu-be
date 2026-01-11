@@ -127,7 +127,10 @@ namespace Intervu.API.Controllers.v1.Authentication
             // generate refresh token
             var refreshToken = await _refreshTokenRepository.CreateRefreshTokenAsync(user.Id);
 
-            return Ok(new { success = true, message = "Logged in", data = new { user, token, refreshToken, expiresIn } });
+            // Set HttpOnly cookie
+            SetRefreshTokenCookie(refreshToken);
+
+            return Ok(new { success = true, message = "Logged in", data = new { user, token, expiresIn } });
         }
 
         [HttpPost("forgot-password")]
@@ -233,6 +236,22 @@ namespace Intervu.API.Controllers.v1.Authentication
             }
 
             return null;
+        }
+
+        private void SetRefreshTokenCookie(string refreshToken)
+        {
+            int expiryDays = _configuration.GetValue<int>("JwtConfig:RefreshTokenValidityInDays");
+            if (expiryDays <= 0) expiryDays = 7;
+
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Expires = DateTimeOffset.UtcNow.AddDays(expiryDays)
+            };
+
+            Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
         }
     }
 }

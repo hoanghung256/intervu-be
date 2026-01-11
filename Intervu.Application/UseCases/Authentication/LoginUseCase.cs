@@ -53,7 +53,10 @@ namespace Intervu.Application.UseCases.Authentication
             // Get token expiry time
             var expiresIn = _jwtService.GetTokenValidityInSeconds();
 
-            // Generate Refresh Token
+            // Revoke all existing refresh tokens for this user (logout from all devices)
+            await _refreshTokenRepository.RevokeAllUserTokensAsync(user.Id);
+
+            // Generate new Refresh Token
             var refreshToken = await _refreshTokenRepository.CreateRefreshTokenAsync(user.Id);
 
             // Detach password before returning user data

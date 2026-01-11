@@ -181,7 +181,8 @@ namespace Intervu.API
 
                     policy.WithOrigins(allowedOrigins)
                           .AllowAnyHeader()
-                          .AllowAnyMethod();
+                          .AllowAnyMethod()
+                          .AllowCredentials();
                 });
             });
 
@@ -232,7 +233,7 @@ namespace Intervu.API
 
             app.Run();
         }
-
+            
         public static string? GetLocalIPv4()
         {
             foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())

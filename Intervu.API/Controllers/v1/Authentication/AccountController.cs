@@ -15,12 +15,14 @@ namespace Intervu.API.Controllers.v1.Authentication
         private readonly ILoginUseCase _loginUseCase;
         private readonly IRegisterUseCase _registerUseCase;
         private readonly IRefreshTokenUseCase _refreshTokenUseCase;
+        private readonly IConfiguration _configuration;
 
-        public AccountController(ILoginUseCase loginUseCase, IRegisterUseCase registerUseCase, IRefreshTokenUseCase refreshTokenUseCase)
+        public AccountController(ILoginUseCase loginUseCase, IRegisterUseCase registerUseCase, IRefreshTokenUseCase refreshTokenUseCase, IConfiguration configuration)
         {
             _loginUseCase = loginUseCase;
             _registerUseCase = registerUseCase;
             _refreshTokenUseCase = refreshTokenUseCase;
+            _configuration = configuration; 
         }
 
         [AllowAnonymous]
@@ -36,10 +38,16 @@ namespace Intervu.API.Controllers.v1.Authentication
                     message = "Invalid email or password"
                 });
             }
-            
+
+            SetRefreshTokenCookie(response.RefreshToken);
+
             return Ok(new {
                 success = true,
-                data = response
+                data = new {
+                    user = response.User,
+                    token = response.Token,
+                    expiresIn = response.ExpiresIn
+                }
             });
         }
 
@@ -58,24 +66,77 @@ namespace Intervu.API.Controllers.v1.Authentication
         }
         [AllowAnonymous]
         [HttpPost("refresh-token")]
-        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest refreshTokenRequest)
+        public async Task<IActionResult> RefreshToken()
         {
-            var response = await _refreshTokenUseCase.ExecuteAsync(refreshTokenRequest);
+            if (!Request.Cookies.TryGetValue("refreshToken", out var refreshToken))
+            {
+                return Unauthorized(new
+                {
+                    success = false,
+                    message = "Refresh token not found"
+                });
+            }
+
+            var response = await _refreshTokenUseCase.ExecuteAsync(new RefreshTokenRequest
+            {
+                RefreshToken = refreshToken
+            });
 
             if (response == null)
             {
-                return Ok(new
+                Response.Cookies.Delete("refreshToken");
+
+                return Unauthorized(new
                 {
                     success = false,
                     message = "Invalid or expired refresh token"
                 });
             }
 
+            SetRefreshTokenCookie(response.RefreshToken);
+
             return Ok(new
             {
                 success = true,
-                data = response
+                data = new
+                {
+                    accessToken = response.AccessToken,
+                    expiresIn = response.ExpiresIn
+                }
             });
+        }
+
+        [Authorize]
+        [HttpPost("logout")]
+        public IActionResult Logout()
+        {
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Expires = DateTime.UtcNow.AddDays(-1) // Set về quá khứ để xóa
+            };
+            Response.Cookies.Append("refreshToken", "", cookieOptions);
+
+            return Ok(new
+            {
+                success = true,
+                message = "Logged out successfully"
+            });
+        }
+
+        private void SetRefreshTokenCookie(string refreshToken)
+        {
+            int expiryDays = _configuration.GetValue<int>("JwtConfig:RefreshTokenValidityInDays");
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Expires = DateTime.UtcNow.AddDays(expiryDays)
+            };
+            Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
         }
     }
 }
