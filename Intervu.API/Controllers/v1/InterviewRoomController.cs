@@ -45,9 +45,9 @@ namespace Intervu.API.Controllers.v1
         [HttpPost]
         public async Task<IActionResult> CreateRoom([FromBody] CreateRoomDto createRoomDto)
         {
-            Guid roomId = createRoomDto.interviewerId == null 
+            Guid roomId = createRoomDto.coachId == null 
                 ? await _createRoom.ExecuteAsync(createRoomDto.candidateId) 
-                : await _createRoom.ExecuteAsync(createRoomDto.candidateId, createRoomDto.interviewerId, DateTime.Now.AddDays(1));
+                : await _createRoom.ExecuteAsync(createRoomDto.candidateId, createRoomDto.coachId, DateTime.Now.AddDays(1));
 
             return Ok(new
             {
@@ -63,7 +63,7 @@ namespace Intervu.API.Controllers.v1
         public class CreateRoomDto
         {
             public Guid candidateId { get; set; }
-            public Guid interviewerId { get; set; }
+            public Guid coachId { get; set; }
         }
     }
 }

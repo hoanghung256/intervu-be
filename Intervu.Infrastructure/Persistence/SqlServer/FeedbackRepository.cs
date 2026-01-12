@@ -42,9 +42,9 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
         }
 
 
-        public async Task<(IReadOnlyList<Feedback> Items, int TotalCount)> GetFeedbacksByStudentIdAsync(Guid studentId, int page, int pageSize)
+        public async Task<(IReadOnlyList<Feedback> Items, int TotalCount)> GetFeedbacksByCandidateIdAsync(Guid studentId, int page, int pageSize)
         {
-            var query = _context.Feedbacks.Where(f => f.StudentId == studentId).AsQueryable();
+            var query = _context.Feedbacks.Where(f => f.CandidateId == studentId).AsQueryable();
 
             var totalItems = await query.CountAsync();
 

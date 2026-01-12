@@ -18,7 +18,7 @@ namespace Intervu.Application.UseCases.Transaction
             await _transactionRepository.AddAsync(new Domain.Entities.InterviewBookingTransaction
             {
                 UserId = userId,
-                InterviewerAvailabilityId = avaiabilityId,
+                CoachAvailabilityId = avaiabilityId,
                 Amount = amount,
                 Type = type,
                 Status = TransactionStatus.Created

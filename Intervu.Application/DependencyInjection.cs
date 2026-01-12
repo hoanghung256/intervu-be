@@ -5,8 +5,10 @@ using Intervu.Application.Interfaces.UseCases.Authentication;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Intervu.Application.UseCases.InterviewerProfile;
-using Intervu.Application.Interfaces.UseCases.InterviewerProfile;
+using Intervu.Application.UseCases.CoachProfile;
+using Intervu.Application.Interfaces.UseCases.CoachProfile;
+using Intervu.Application.UseCases.Coach;
+using Intervu.Application.Interfaces.UseCases.Coach;
 using CompanyInterfaces = Intervu.Application.Interfaces.UseCases.Company;
 using CompanyUseCases = Intervu.Application.UseCases.Company;
 using Intervu.Application.Interfaces.UseCases.Skill;
@@ -29,8 +31,6 @@ using Intervu.Application.UseCases.UserProfile;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
 using Intervu.Application.UseCases.InterviewBooking;
 using Intervu.Application.UseCases.InterviewRoom;
-using Intervu.Application.Interfaces.UseCases.Interviewer;
-using Intervu.Application.UseCases.Interviewer;
 using Intervu.Application.Utils;
 using Intervu.Application.UseCases.Admin;
 using Intervu.Application.Interfaces.UseCases.PasswordReset;
@@ -69,12 +69,12 @@ namespace Intervu.Application
             services.AddScoped<IGetRoomHistory, GetRoomHistory>();
             services.AddScoped<IUpdateRoom, UpdateRoom>();
             services.AddScoped<IGetCurrentRoom, GetCurrentRoom>();
-            // ----- InterviewerProfile ----
-            services.AddScoped<ICreateInterviewerProfile, CreateInterviewerProfile>();
-            services.AddScoped<IUpdateInterviewerProfile, UpdateInterviewerProfile>();
-            services.AddScoped<IViewInterviewerProfile, ViewInterviewerProfile>();
-            services.AddScoped<IDeleteInterviewerProfile, DeleteInterviewerProfile>();
-            services.AddScoped<IGetAllInterviewers, GetAllInterviewers>();
+            // ----- CoachProfile ----
+            services.AddScoped<ICreateCoachProfile, CreateCoachProfile>();
+            services.AddScoped<IUpdateCoachProfile, UpdateCoachProfile>();
+            services.AddScoped<IViewCoachProfile, ViewCoachProfile>();
+            services.AddScoped<IDeleteCoachProfile, DeleteCoachProfile>();
+            services.AddScoped<IGetAllCoach, GetAllCoach>();
             services.AddScoped<CompanyInterfaces.IGetAllCompanies, CompanyUseCases.GetAllCompanies>();
             services.AddScoped<IGetAllSkills, GetAllSkills>();
             // ----- Admin ----
@@ -83,17 +83,18 @@ namespace Intervu.Application
             services.AddScoped<IGetAllCompaniesForAdmin, AdminUseCases.GetAllCompanies>();
             services.AddScoped<IGetAllPayments, AdminUseCases.GetAllPayments>();
             services.AddScoped<IGetAllFeedbacks, AdminUseCases.GetAllFeedbacks>();
-            services.AddScoped<IGetAllInterviewersForAdmin, AdminUseCases.GetAllInterviewersForAdmin>();
+            services.AddScoped<IGetAllCoachForAdmin, AdminUseCases.GetAllCoachForAdmin>();
             // ----- Feedback ----
             services.AddScoped<IGetFeedbacks, GetFeedbacks>();
             services.AddScoped<ICreateFeedback, CreateFeedback>();
             services.AddScoped<IUpdateFeedback, UpdateFeedback>();
 
-            // ----- Available ----
-            services.AddScoped<IGetInterviewerAvailabilities, GetInterviewerAvailabilities>();
-            services.AddScoped<ICreateInterviewerAvailability, CreateInterviewerAvailability>();
-            services.AddScoped<IDeleteInterviewerAvailability, DeleteInterviewerAvailability>();
-            services.AddScoped<IUpdateInterviewerAvailability, UpdateInterviewerAvailability>();
+            // ----- Coach Availability ----
+            services.AddScoped<IGetCoachAvailabilities, GetCoachAvailabilities>();
+            services.AddScoped<ICreateCoachAvailability, CreateCoachAvailability>();
+            services.AddScoped<IDeleteCoachAvailability, DeleteCoachAvailability>();
+            services.AddScoped<IUpdateAvailabilityStatus, UpdateAvailabilityStatus>();
+            services.AddScoped<IUpdateCoachAvailability, UpdateCoachAvailability>();
             // ----- Email ----
             services.AddScoped<ISendBookingConfirmationEmail, SendBookingConfirmationEmail>();
           
@@ -109,10 +110,10 @@ namespace Intervu.Application
             services.AddScoped<ICreateBookingCheckoutUrl, CreateBookingCheckoutUrl>();
             services.AddScoped<IUpdateBookingStatus, UpdateBookingStatus>();
             services.AddScoped<IGetInterviewBooking, GetInterviewBooking>();
-            services.AddScoped<IPayoutForInterviewerAfterInterview, PayoutForInterviewerAfterInterview>();
+            services.AddScoped<IPayoutForCoachAfterInterview, PayoutForCoachAfterInterview>();
 
-            // ----- Interviewer & Candidate Details ---
-            services.AddScoped<IGetInterviewerDetails, GetInterviewerDetails>();
+            // ----- Coach & Candidate Details ---
+            services.AddScoped<IGetCoachDetails, GetCoachDetails>();
             services.AddScoped<IGetCandidateDetails, GetCandidateDetails>();
 
             // ----- CandidateProfile ----

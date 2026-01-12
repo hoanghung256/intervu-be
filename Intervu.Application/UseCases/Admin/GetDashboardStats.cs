@@ -10,20 +10,20 @@ namespace Intervu.Application.UseCases.Admin
     {
         private readonly IUserRepository _userRepository;
         private readonly ICompanyRepository _companyRepository;
-        private readonly IInterviewerProfileRepository _interviewerProfileRepository;
+        private readonly ICoachProfileRepository _coachProfileRepository;
         //private readonly IPaymentRepository _paymentRepository;
         private readonly IFeedbackRepository _feedbackRepository;
 
         public GetDashboardStats(
             IUserRepository userRepository,
             ICompanyRepository companyRepository,
-            IInterviewerProfileRepository interviewerProfileRepository,
+            ICoachProfileRepository coachProfileRepository,
             //IPaymentRepository paymentRepository,
             IFeedbackRepository feedbackRepository)
         {
             _userRepository = userRepository;
             _companyRepository = companyRepository;
-            _interviewerProfileRepository = interviewerProfileRepository;
+            _coachProfileRepository = coachProfileRepository;
             //_paymentRepository = paymentRepository;
             _feedbackRepository = feedbackRepository;
         }
@@ -32,7 +32,7 @@ namespace Intervu.Application.UseCases.Admin
         {
             var totalUsers = await _userRepository.GetTotalUsersCountAsync();
             var totalCompanies = await _companyRepository.GetTotalCompaniesCountAsync();
-            var totalInterviewers = await _interviewerProfileRepository.GetTotalInterviewersCountAsync();
+            var totalCoaches = await _coachProfileRepository.GetTotalCoachCountAsync();
             //var totalPayments = await _paymentRepository.GetTotalPaymentsCountAsync();
             //var totalRevenue = await _paymentRepository.GetTotalRevenueAsync();
             var totalFeedbacks = await _feedbackRepository.GetTotalFeedbacksCountAsync();
@@ -42,7 +42,7 @@ namespace Intervu.Application.UseCases.Admin
             {
                 TotalUsers = totalUsers,
                 TotalCompanies = totalCompanies,
-                TotalInterviewers = totalInterviewers,
+                TotalCoaches = totalCoaches,
                 //TotalPayments = totalPayments,
                 //TotalRevenue = totalRevenue,
                 TotalFeedbacks = totalFeedbacks,

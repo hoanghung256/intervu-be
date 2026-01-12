@@ -21,7 +21,7 @@ namespace Intervu.Application.UseCases.InterviewRoom
             }
             else
             {
-                return await _repo.GetListByInterviewerId(userId);
+                return await _repo.GetListByCoachId(userId);
             }
         }
 

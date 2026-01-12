@@ -9,12 +9,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
     {
         public async Task<IEnumerable<InterviewRoom>> GetListByCandidateId(Guid candidateId)
         {
-            return await _context.InterviewRooms.Where(r => r.StudentId == candidateId).ToListAsync();
+            return await _context.InterviewRooms.Where(r => r.CandidateId == candidateId).ToListAsync();
         }
 
-        public async Task<IEnumerable<InterviewRoom>> GetListByInterviewerId(Guid interviewerId)
+        public async Task<IEnumerable<InterviewRoom>> GetListByCoachId(Guid coachId)
         {
-            return await _context.InterviewRooms.Where(r => r.InterviewerId == interviewerId).ToListAsync();
+            return await _context.InterviewRooms.Where(r => r.CoachId == coachId).ToListAsync();
         }
 
         public async Task<IEnumerable<InterviewRoom>> GetList()

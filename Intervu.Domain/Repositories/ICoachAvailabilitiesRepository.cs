@@ -1,0 +1,19 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Intervu.Domain.Entities;
+
+namespace Intervu.Domain.Repositories
+{
+    public interface ICoachAvailabilitiesRepository : IRepositoryBase<CoachAvailability>
+    {
+        Task<bool> IsCoachAvailableAsync(Guid coachId, DateTimeOffset startTime, DateTimeOffset endTime);
+        Task<IEnumerable<CoachAvailability>> GetCoachAvailabilitiesByMonthAsync(Guid coachId, int month = 0, int year = 0);
+        Task<Guid> CreateCoachAvailabilityAsync(CoachAvailability availability);
+        Task<Guid> CreateMultipleCoachAvailabilitiesAsync(List<CoachAvailability> availabilities);
+        Task<bool> DeleteCoachAvailabilityAsync(Guid availabilityId);
+        Task<bool> UpdateCoachAvailabilityAsync(Guid availabilityId, DateTimeOffset startTime, DateTimeOffset endTime);
+
+        Task<CoachAvailability?> GetAsync(Guid coachId, DateTime startTime);
+    }
+}

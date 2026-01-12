@@ -6,13 +6,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Intervu.Infrastructure.Persistence.SqlServer
 {
-    public class InterviewerProfileRepository : RepositoryBase<InterviewerProfile>, IInterviewerProfileRepository
+    public class InterviewerProfileRepository : RepositoryBase<CoachProfile>, ICoachProfileRepository
     {
         public InterviewerProfileRepository(IntervuDbContext context) : base(context)
         {
         }
 
-        public async Task CreateInterviewerProfileAsync(InterviewerProfile profile)
+        public async Task CreateCoachProfileAsync(CoachProfile profile)
         {
             if (profile == null)
                 throw new ArgumentNullException(nameof(profile), "Profile cannot be null");
@@ -37,23 +37,23 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
                 await _context.SaveChangesAsync();
                 profile.User = user;
             }
-            await _context.InterviewerProfiles.AddAsync(profile);
+            await _context.CoachProfiles.AddAsync(profile);
             await _context.SaveChangesAsync();
         }
 
-        //public async Task<InterviewerProfile> GetProfileAsync()
+        //public async Task<CoachProfile> GetProfileAsync();
         //{
         //    throw new NotImplementedException();
         //}
 
-        public void DeleteInterviewerProfile(Guid id)
+        public void DeleteCoachProfile(Guid id)
         {
             throw new NotImplementedException();
         }
 
-        public async Task<InterviewerProfile?> GetProfileBySlugAsync(string slug)
+        public async Task<CoachProfile?> GetProfileBySlugAsync(string slug)
         {
-            InterviewerProfile? profile = await _context.InterviewerProfiles
+            CoachProfile? profile = await _context.CoachProfiles
                 .Where(p => p.User.SlugProfileUrl == slug)
                 .Include(p => p.Companies)
                 .Include(p => p.Skills)
@@ -63,9 +63,9 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             return profile;
         }
 
-        public async Task<InterviewerProfile?> GetProfileByIdAsync(Guid id)
+        public async Task<CoachProfile?> GetProfileByIdAsync(Guid id)
         {
-            InterviewerProfile? profile = await _context.InterviewerProfiles
+            CoachProfile? profile = await _context.CoachProfiles
                 .Where(p => p.Id == id)
                 .Include(p => p.Companies)
                 .Include(p => p.Skills)
@@ -75,9 +75,9 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             return profile;
         }
 
-        public async Task<(IReadOnlyList<InterviewerProfile> Items, int TotalCount)> GetPagedInterviewerProfilesAsync(string? search, Guid? skillId, Guid? companyId, int page, int pageSize)
+        public async Task<(IReadOnlyList<CoachProfile> Items, int TotalCount)> GetPagedCoachProfilesAsync(string? search, Guid? skillId, Guid? companyId, int page, int pageSize)
         {
-            var query = _context.InterviewerProfiles
+            var query = _context.CoachProfiles
                 .Include(i => i.Companies)
                 .Include(i => i.Skills)
                 .AsQueryable();
@@ -107,9 +107,9 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             return (items, totalItems);
         }
 
-        public async Task UpdateInterviewerProfileAsync(InterviewerProfile updatedProfile)
+        public async Task UpdateCoachProfileAsync(CoachProfile updatedProfile)
         {
-            var existingProfile = await _context.InterviewerProfiles
+            var existingProfile = await _context.CoachProfiles
                 .Include(p => p.Companies)
                 .Include(p => p.Skills)
                 .Include(p => p.User)
@@ -135,9 +135,9 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             await _context.SaveChangesAsync();
         }
 
-        public async Task<PagedResult<InterviewerProfile>> GetPagedInterviewerProfilesAsync(int page, int pageSize)
+        public async Task<PagedResult<CoachProfile>> GetPagedInterviewerProfilesAsync(int page, int pageSize)
         {
-            var query = _context.InterviewerProfiles
+            var query = _context.CoachProfiles
                 .Include(i => i.Companies)
                 .Include(i => i.Skills)
                 .AsQueryable();
@@ -150,12 +150,12 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
                 .Take(pageSize)
                 .ToListAsync();
 
-            return new PagedResult<InterviewerProfile>(items, totalItems, pageSize, page);
+            return new PagedResult<CoachProfile>(items, totalItems, pageSize, page);
         }
 
-        public async Task<int> GetTotalInterviewersCountAsync()
+        public async Task<int> GetTotalCoachCountAsync()
         {
-            return await _context.InterviewerProfiles.CountAsync();
+            return await _context.CoachProfiles.CountAsync();
         }
     }
 }

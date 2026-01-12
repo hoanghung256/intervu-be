@@ -10,7 +10,7 @@ using Intervu.Application.UseCases.InterviewBooking;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Microsoft.AspNetCore.Authorization;
-using Intervu.Application.Interfaces.UseCases.Interviewer;
+using Intervu.Application.Interfaces.UseCases.Coach;
 using Microsoft.AspNetCore.Mvc;
 using PayOS.Models.Webhooks;
 using System.Security.Claims;
@@ -32,7 +32,7 @@ namespace Intervu.API.Controllers.v1.Payment
         private readonly IUpdateBookingStatus _updateBookingStatus;
         private readonly IGetInterviewBooking _getInterviewBooking;
         private readonly ISendBookingConfirmationEmail _sendBookingConfirmationEmail;
-        private readonly IGetInterviewerDetails _getInterviewerDetails;
+        private readonly IGetCoachDetails _getCoachDetails;
         private readonly IGetCandidateDetails _getCandidateDetails;
 
         public InterviewBookingController(
@@ -43,7 +43,7 @@ namespace Intervu.API.Controllers.v1.Payment
             IGetInterviewBooking getInterviewBooking,
             IUpdateBookingStatus updateBookingStatus,
             ISendBookingConfirmationEmail sendBookingConfirmationEmail,
-            IGetInterviewerDetails getInterviewerDetails,
+            IGetCoachDetails getCoachDetails,
             IGetCandidateDetails getCandidateDetails)
         {
             _createBookingCheckoutUrl = createBookingCheckoutUrl;
@@ -53,7 +53,7 @@ namespace Intervu.API.Controllers.v1.Payment
             _updateBookingStatus = updateBookingStatus;
             _getInterviewBooking = getInterviewBooking;
             _sendBookingConfirmationEmail = sendBookingConfirmationEmail;
-            _getInterviewerDetails = getInterviewerDetails;
+            _getCoachDetails = getCoachDetails;
             _getCandidateDetails = getCandidateDetails;
         }
 
@@ -65,7 +65,7 @@ namespace Intervu.API.Controllers.v1.Payment
             {
             Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
 
-            string checkOutUrl = await _createBookingCheckoutUrl.ExecuteAsync(userId, request.InterviewerId, request.InterviewerAvailabilityId, request.ReturnUrl);
+            string checkOutUrl = await _createBookingCheckoutUrl.ExecuteAsync(userId, request.CoachId, request.CoachAvailabilityId, request.ReturnUrl);
 
                 return Ok(new
                 {
@@ -128,8 +128,8 @@ namespace Intervu.API.Controllers.v1.Payment
 
     public class InterviewBookingRequest
     {
-        public Guid InterviewerId { get; set; }
-        public Guid InterviewerAvailabilityId { get; set; }
+        public Guid CoachId { get; set; }
+        public Guid CoachAvailabilityId { get; set; }
 
         public string ReturnUrl { get; set; } = string.Empty;
     }

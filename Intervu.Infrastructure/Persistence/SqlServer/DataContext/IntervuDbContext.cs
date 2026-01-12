@@ -22,8 +22,8 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
 
         public DbSet<User> Users { get; set; }
         public DbSet<CandidateProfile> CandidateProfiles { get; set; }
-        public DbSet<InterviewerProfile> InterviewerProfiles { get; set; }
-        public DbSet<InterviewerAvailability> InterviewerAvailabilities { get; set; }
+        public DbSet<CoachProfile> CoachProfiles { get; set; }
+        public DbSet<CoachAvailability> CoachAvailabilities { get; set; }
         public DbSet<InterviewRoom> InterviewRooms { get; set; }
         public DbSet<Feedback> Feedbacks { get; set; }
         public DbSet<InterviewBookingTransaction> InterviewBookingTransaction { get; set; }
@@ -88,9 +88,9 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
             });
 
 
-            modelBuilder.Entity<InterviewerProfile>(b =>
+            modelBuilder.Entity<CoachProfile>(b =>
             {
-                b.ToTable("InterviewerProfiles");
+                b.ToTable("CoachProfiles");
                 b.HasKey(x => x.Id);
 
                 b.Property(x => x.PortfolioUrl).HasMaxLength(4000);
@@ -103,46 +103,46 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
 
                 b.HasOne(x => x.User)
                  .WithOne()
-                 .HasForeignKey<InterviewerProfile>(p => p.Id)
+                 .HasForeignKey<CoachProfile>(p => p.Id)
                  .OnDelete(DeleteBehavior.Cascade);
 
                 b.HasMany(x => x.Companies)
-                 .WithMany(c => c.InterviewerProfiles)
+                 .WithMany(c => c.CoachProfiles)
                  .UsingEntity<Dictionary<string, object>>(
-                     "InterviewerCompanies",
+                     "CoachCompanies",
                      l => l.HasOne<Company>().WithMany().HasForeignKey("CompaniesId").OnDelete(DeleteBehavior.Cascade),
-                     r => r.HasOne<InterviewerProfile>().WithMany().HasForeignKey("InterviewerProfilesId").OnDelete(DeleteBehavior.Cascade),
+                     r => r.HasOne<CoachProfile>().WithMany().HasForeignKey("CoachProfilesId").OnDelete(DeleteBehavior.Cascade),
                      j =>
                      {
-                         j.HasKey("InterviewerProfilesId", "CompaniesId");
-                         j.ToTable("InterviewerCompanies");
+                         j.HasKey("CoachProfilesId", "CompaniesId");
+                         j.ToTable("CoachCompanies");
                      });
 
                 b.HasMany(x => x.Skills)
-                 .WithMany(s => s.InterviewerProfiles)
+                 .WithMany(s => s.CoachProfiles)
                  .UsingEntity<Dictionary<string, object>>(
                      "InterviewerSkills",
                      l => l.HasOne<Skill>().WithMany().HasForeignKey("SkillsId").OnDelete(DeleteBehavior.Cascade),
-                     r => r.HasOne<InterviewerProfile>().WithMany().HasForeignKey("InterviewerProfilesId").OnDelete(DeleteBehavior.Cascade),
+                     r => r.HasOne<CoachProfile>().WithMany().HasForeignKey("CoachProfilesId").OnDelete(DeleteBehavior.Cascade),
                      j =>
                      {
-                         j.HasKey("InterviewerProfilesId", "SkillsId");
-                         j.ToTable("InterviewerSkills");
+                         j.HasKey("CoachProfilesId", "SkillsId");
+                         j.ToTable("CoachSkills");
                      });
             });
 
 
             // InterviewerAvailability (many availabilities per interviewer)
-            modelBuilder.Entity<InterviewerAvailability>(b =>
+            modelBuilder.Entity<CoachAvailability>(b =>
             {
-                b.ToTable("InterviewerAvailabilities");
+                b.ToTable("CoachAvailabilities");
                 b.HasKey(x => x.Id);
                 b.Property(x => x.StartTime).IsRequired();
                 b.Property(x => x.EndTime).IsRequired();
 
-                b.HasOne<InterviewerProfile>()
+                b.HasOne<CoachProfile>()
                  .WithMany()
-                 .HasForeignKey(x => x.InterviewerId)
+                 .HasForeignKey(x => x.CoachId)
                  .OnDelete(DeleteBehavior.Cascade);
             });
 
@@ -181,12 +181,12 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
 
                 b.HasOne<CandidateProfile>()
                  .WithMany()
-                 .HasForeignKey(x => x.StudentId)
+                 .HasForeignKey(x => x.CandidateId)
                  .OnDelete(DeleteBehavior.Restrict);
 
-                b.HasOne<InterviewerProfile>()
+                b.HasOne<CoachProfile>()
                  .WithMany()
-                 .HasForeignKey(x => x.InterviewerId)
+                 .HasForeignKey(x => x.CoachId)
                  .OnDelete(DeleteBehavior.Restrict);
             });
 
@@ -206,14 +206,14 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                  .HasForeignKey<Feedback>("InterviewRoomId")
                  .OnDelete(DeleteBehavior.Restrict);
 
-                b.HasOne<InterviewerProfile>()
+                b.HasOne<CoachProfile>()
                  .WithMany()
-                 .HasForeignKey(x => x.InterviewerId)
+                 .HasForeignKey(x => x.CoachId)
                  .OnDelete(DeleteBehavior.Restrict);
 
                 b.HasOne<CandidateProfile>()
                  .WithMany()
-                 .HasForeignKey(x => x.StudentId)
+                 .HasForeignKey(x => x.CandidateId)
                  .OnDelete(DeleteBehavior.Restrict);
             });
 
@@ -225,7 +225,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 b.Property(x => x.Amount).IsRequired();
                 //b.Property(x => x.CreatedAt).IsRequired();
                 //b.Property(x => x.UpdatedAt).IsRequired();
-                b.Property(x => x.InterviewerAvailabilityId).IsRequired();
+                b.Property(x => x.CoachAvailabilityId).IsRequired();
                 b.Property(x => x.Type).IsRequired();
                 b.Property(x => x.Status).IsRequired();
 
@@ -334,7 +334,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 FullName = "Bob Interviewer",
                 Email = "bob@example.com",
                 Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
-                Role = UserRole.Interviewer,
+                Role = UserRole.Coach,
                 ProfilePicture = null,
                 Status = UserStatus.Active,
             };
@@ -356,7 +356,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 FullName = "John Doe",
                 Email = "john.doe@example.com",
                 Password = user1.Password,
-                Role = UserRole.Interviewer,
+                Role = UserRole.Coach,
                 ProfilePicture = null,
                 Status = UserStatus.Active,
             };
@@ -367,7 +367,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 FullName = "Sarah Lee",
                 Email = "sarah.lee@example.com",
                 Password = user1.Password,
-                Role = UserRole.Interviewer,
+                Role = UserRole.Coach,
                 ProfilePicture = null,
                 Status = UserStatus.Active,
             };
@@ -388,40 +388,46 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 new { CandidateProfilesId = user1Id, SkillsId = Guid.Parse("02020202-0202-4202-8202-020202020202") }
             );
 
-            modelBuilder.Entity<InterviewerProfile>().HasData(
-            new InterviewerProfile
+            modelBuilder.Entity<CoachProfile>().HasData(
+            new CoachProfile
             {
                 Id = user2Id,
                 PortfolioUrl = "https://portfolio.example.com/bob",
                 ExperienceYears = 8,
-                Status = InterviewerProfileStatus.Enable,
+                Status = CoachProfileStatus.Enable,
                 CurrentAmount = 0,
-                Bio = "Senior Backend Engineer with real interview experience"
+                Bio = "Senior Backend Engineer with real interview experience",
+                BankBinNumber = "",
+                BankAccountNumber = ""
             },
-            new InterviewerProfile
+            new CoachProfile
             {
                 Id = user5Id,
                 PortfolioUrl = "https://portfolio.example.com/john",
                 ExperienceYears = 6,
                 CurrentAmount = 0,
                 Bio = "Fullstack Engineer previously at Uber",
-                Status = InterviewerProfileStatus.Enable
+                Status = CoachProfileStatus.Enable,
+                BankBinNumber = "",
+                BankAccountNumber = ""
             },
-            new InterviewerProfile
+            new CoachProfile
             {
                 Id = user6Id,
                 PortfolioUrl = "https://portfolio.example.com/sarah",
                 ExperienceYears = 7,
                 CurrentAmount = 0,
                 Bio = "Senior Frontend Engineer focusing on UI/UX interviews",
-                Status = InterviewerProfileStatus.Enable
+                Status = CoachProfileStatus.Enable,
+                BankBinNumber = "",
+                BankAccountNumber = ""
             }
             );
 
-            modelBuilder.Entity<InterviewerAvailability>().HasData(new InterviewerAvailability
+            modelBuilder.Entity<CoachAvailability>().HasData(new CoachAvailability
             {
                 Id = interviewerAvail1Id,
-                InterviewerId = user2Id,
+                CoachId = user2Id,
                 StartTime = DateTime.SpecifyKind(new DateTime(2025, 11, 1, 9, 0, 0), DateTimeKind.Utc),
                 EndTime = DateTime.SpecifyKind(new DateTime(2025, 11, 1, 10, 0, 0), DateTimeKind.Utc),
                 IsBooked = false
@@ -430,8 +436,8 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
             modelBuilder.Entity<InterviewRoom>().HasData(new InterviewRoom
             {
                 Id = room1Id,
-                StudentId = user1Id,
-                InterviewerId = user2Id,
+                CandidateId = user1Id,
+                CoachId = user2Id,
                 ScheduledTime = DateTime.SpecifyKind(new DateTime(2025, 11, 1, 9, 0, 0), DateTimeKind.Utc),
                 DurationMinutes = 60,
                 VideoCallRoomUrl = "https://meet.example/room1",
@@ -442,7 +448,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
             {
                 Id = Guid.Parse("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a88"),
                 UserId = user1Id,
-                InterviewerAvailabilityId = interviewerAvail1Id,
+                CoachAvailabilityId = interviewerAvail1Id,
                 Amount = 1000,
                 Type = TransactionType.Payment,
                 Status = TransactionStatus.Paid,
@@ -451,7 +457,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
             {
                 Id = Guid.Parse("8f9a0b1c-d2e3-4f5a-9b0c-1d2e3f4a5b99"),
                 UserId = user2Id,
-                InterviewerAvailabilityId = interviewerAvail1Id,
+                CoachAvailabilityId = interviewerAvail1Id,
                 Amount = 500,
                 Type = TransactionType.Payout,
                 Status = TransactionStatus.Paid,
@@ -460,8 +466,8 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
             modelBuilder.Entity<Feedback>().HasData(new Feedback
             {
                 Id = Guid.Parse("9a0b1c2d-e3f4-4a5b-8c9d-0e1f2a3b4c10"),
-                InterviewerId = user2Id,
-                StudentId = user1Id,
+                CoachId = user2Id,
+                CandidateId = user1Id,
                 InterviewRoomId = room1Id,
                 Rating = 5,
                 Comments = "Great answers and communication.",

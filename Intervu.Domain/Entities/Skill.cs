@@ -13,7 +13,7 @@ namespace Intervu.Domain.Entities
         public string? Description { get; set; }
 
         // Navigation
-        public ICollection<InterviewerProfile> InterviewerProfiles { get; set; } = new List<InterviewerProfile>();
+        public ICollection<CoachProfile> CoachProfiles { get; set; } = new List<CoachProfile>();
     }
 
 }
