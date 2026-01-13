@@ -1,5 +1,5 @@
 ﻿using Intervu.Domain.Entities;
-using Intervu.Application.DTOs.Interviewer;
+using Intervu.Application.DTOs.Coach;
 using System;
 using System.Collections.Generic;
 using System.Linq;

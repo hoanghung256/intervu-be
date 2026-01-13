@@ -15,7 +15,7 @@ namespace Intervu.API.Controllers.v1
         private readonly IGetAllCompaniesForAdmin _getAllCompanies;
         private readonly IGetAllPayments _getAllPayments;
         private readonly IGetAllFeedbacks _getAllFeedbacks;
-        private readonly IGetAllInterviewersForAdmin _getAllInterviewers;
+        private readonly IGetAllCoachForAdmin _getAllCoach;
 
         public AdminController(
             IGetDashboardStats getDashboardStats,
@@ -23,14 +23,14 @@ namespace Intervu.API.Controllers.v1
             IGetAllCompaniesForAdmin getAllCompanies,
             IGetAllPayments getAllPayments,
             IGetAllFeedbacks getAllFeedbacks,
-            IGetAllInterviewersForAdmin getAllInterviewers)
+            IGetAllCoachForAdmin getAllCoach)
         {
             _getDashboardStats = getDashboardStats;
             _getAllUsers = getAllUsers;
             _getAllCompanies = getAllCompanies;
             _getAllPayments = getAllPayments;
             _getAllFeedbacks = getAllFeedbacks;
-            _getAllInterviewers = getAllInterviewers;
+            _getAllCoach = getAllCoach;
         }
 
         /// <summary>
@@ -112,9 +112,9 @@ namespace Intervu.API.Controllers.v1
         /// Get all interviewers with pagination
         /// </summary>
         [HttpGet("interviewers")]
-        public async Task<IActionResult> GetAllInterviewers([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetAllCoach([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            var interviewers = await _getAllInterviewers.ExecuteAsync(page, pageSize);
+            var interviewers = await _getAllCoach.ExecuteAsync(page, pageSize);
             return Ok(new
             {
                 success = true,

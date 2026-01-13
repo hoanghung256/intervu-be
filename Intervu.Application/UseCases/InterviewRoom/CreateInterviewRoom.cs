@@ -15,11 +15,11 @@ namespace Intervu.Application.UseCases.InterviewRoom
             _cache = cache;
         }
 
-        public async Task<Guid> ExecuteAsync(Guid interveweeId)
+        public async Task<Guid> ExecuteAsync(Guid candidateId)
         {
             Domain.Entities.InterviewRoom room = new()
             {
-                StudentId = interveweeId,
+                CandidateId = candidateId,
             };
             await _interviewRoomRepo.AddAsync(room);
             await _interviewRoomRepo.SaveChangesAsync();
@@ -29,13 +29,13 @@ namespace Intervu.Application.UseCases.InterviewRoom
             return room.Id;
         }
 
-        public async Task<Guid> ExecuteAsync(Guid interveweeId, Guid interviewerId, DateTime scheduledTime)
+        public async Task<Guid> ExecuteAsync(Guid candidateId, Guid coachId, DateTime scheduledTime)
         {
             // TODO: interveweeId and interviewerId are valid and exists
             Domain.Entities.InterviewRoom room = new()
             {
-                StudentId = interveweeId,
-                InterviewerId = interviewerId,
+                CandidateId = candidateId,
+                CoachId = coachId,
                 ScheduledTime = scheduledTime,
                 Status = Domain.Entities.Constants.InterviewRoomStatus.Scheduled,
                 DurationMinutes = 60

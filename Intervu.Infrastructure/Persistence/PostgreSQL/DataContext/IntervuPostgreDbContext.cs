@@ -20,8 +20,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
 
         public DbSet<User> Users { get; set; }
         public DbSet<CandidateProfile> CandidateProfiles { get; set; }
-        public DbSet<InterviewerProfile> InterviewerProfiles { get; set; }
-        public DbSet<InterviewerAvailability> InterviewerAvailabilities { get; set; }
+        public DbSet<CoachProfile> CoachProfiles { get; set; }
+        public DbSet<CoachAvailability> CoachAvailabilities { get; set; }
         public DbSet<InterviewRoom> InterviewRooms { get; set; }
         public DbSet<Feedback> Feedbacks { get; set; }
         public DbSet<InterviewBookingTransaction> InterviewBookingTransaction { get; set; }
@@ -88,7 +88,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.PortfolioUrl).HasMaxLength(1000);
                 b.Property(x => x.Bio).HasColumnType("text");
 
-                // Explicitly map navigation to User (like InterviewerProfile)
+                // Explicitly map navigation to User (like CoachProfile)
                 b.HasOne(x => x.User)
                  .WithOne()
                  .HasForeignKey<CandidateProfile>(p => p.Id)
@@ -109,9 +109,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             });
 
 
-            modelBuilder.Entity<InterviewerProfile>(b =>
+            modelBuilder.Entity<CoachProfile>(b =>
             {
-                b.ToTable("InterviewerProfiles");
+                b.ToTable("CoachProfiles");
                 b.HasKey(x => x.Id);
 
                 b.Property(x => x.PortfolioUrl).HasMaxLength(4000);
@@ -124,46 +124,47 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
 
                 b.HasOne(x => x.User)
                  .WithOne()
-                 .HasForeignKey<InterviewerProfile>(p => p.Id)
+                 .HasForeignKey<CoachProfile>(p => p.Id)
                  .OnDelete(DeleteBehavior.Cascade);
 
                 b.HasMany(x => x.Companies)
-                 .WithMany(c => c.InterviewerProfiles)
+                 .WithMany(c => c.CoachProfiles)
                  .UsingEntity<Dictionary<string, object>>(
-                     "InterviewerCompanies",
+                     "CoachCompanies",
                      l => l.HasOne<Company>().WithMany().HasForeignKey("CompaniesId").OnDelete(DeleteBehavior.Cascade),
-                     r => r.HasOne<InterviewerProfile>().WithMany().HasForeignKey("InterviewerProfilesId").OnDelete(DeleteBehavior.Cascade),
+                     r => r.HasOne<CoachProfile>().WithMany().HasForeignKey("CoachProfilesId").OnDelete(DeleteBehavior.Cascade),
                      j =>
                      {
-                         j.HasKey("InterviewerProfilesId", "CompaniesId");
-                         j.ToTable("InterviewerCompanies");
+                         j.HasKey("CoachProfilesId", "CompaniesId");
+                         j.ToTable("CoachCompanies");
                      });
 
                 b.HasMany(x => x.Skills)
-                 .WithMany(s => s.InterviewerProfiles)
+                 .WithMany(s => s.CoachProfiles)
                  .UsingEntity<Dictionary<string, object>>(
-                     "InterviewerSkills",
+                     "CoachSkills",
                      l => l.HasOne<Skill>().WithMany().HasForeignKey("SkillsId").OnDelete(DeleteBehavior.Cascade),
-                     r => r.HasOne<InterviewerProfile>().WithMany().HasForeignKey("InterviewerProfilesId").OnDelete(DeleteBehavior.Cascade),
+                     r => r.HasOne<CoachProfile>().WithMany().HasForeignKey("CoachProfilesId").OnDelete(DeleteBehavior.Cascade),
                      j =>
                      {
-                         j.HasKey("InterviewerProfilesId", "SkillsId");
-                         j.ToTable("InterviewerSkills");
+                         j.HasKey("CoachProfilesId", "SkillsId");
+                         j.ToTable("CoachSkills");
                      });
             });
 
 
-            // InterviewerAvailability (many availabilities per interviewer)
-            modelBuilder.Entity<InterviewerAvailability>(b =>
+            // CoachAvailability (many availabilities per coach)
+            modelBuilder.Entity<CoachAvailability>(b =>
           {
-              b.ToTable("InterviewerAvailabilities");
+              b.ToTable("CoachAvailabilities");
               b.HasKey(x => x.Id);
               b.Property(x => x.StartTime).IsRequired();
               b.Property(x => x.EndTime).IsRequired();
 
-              b.HasOne<InterviewerProfile>()
+              b.HasOne<CoachProfile>()
                .WithMany()
-                .HasForeignKey(x => x.InterviewerId)
+                .HasForeignKey(x => x.CoachId)
+                .HasConstraintName("FK_CoachAvailabilities_CoachProfiles_CoachId")
                .OnDelete(DeleteBehavior.Cascade);
           });
 
@@ -185,29 +186,33 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 };
 
                 b.Property(x => x.LanguageCodes)
+                    .HasColumnName("LanguageCodes")
                     .HasConversion(
                         v => JsonSerializer.Serialize(v, jsonOptions),
                         v => JsonSerializer.Deserialize<Dictionary<string, string>>(v, jsonOptions))
                     .HasColumnType("text");
 
                 b.Property(x => x.TestCases)
+                    .HasColumnName("TestCases")
                     .HasConversion(
                         v => JsonSerializer.Serialize(v, jsonOptions),
                         v => JsonSerializer.Deserialize<object[]>(v, jsonOptions))
                     .HasColumnType("text");
 
-                b.Property(x => x.CurrentLanguage).HasMaxLength(50);
-                b.Property(x => x.ProblemDescription).HasColumnType("text");
-                b.Property(x => x.ProblemShortName).HasMaxLength(200);
+                b.Property(x => x.CurrentLanguage).HasColumnName("CurrentLanguage").HasMaxLength(50);
+                b.Property(x => x.ProblemDescription).HasColumnName("ProblemDescription").HasColumnType("text");
+                b.Property(x => x.ProblemShortName).HasColumnName("ProblemShortName").HasMaxLength(200);
 
                 b.HasOne<CandidateProfile>()
                  .WithMany()
-                  .HasForeignKey(x => x.StudentId)
+                  .HasForeignKey(x => x.CandidateId)
+                 .HasConstraintName("FK_InterviewRooms_CandidateProfiles_CandidateId")
                  .OnDelete(DeleteBehavior.Restrict);
 
-                b.HasOne<InterviewerProfile>()
+                b.HasOne<CoachProfile>()
                  .WithMany()
-                  .HasForeignKey(x => x.InterviewerId)
+                  .HasForeignKey(x => x.CoachId)
+                 .HasConstraintName("FK_InterviewRooms_CoachProfiles_CoachId")
                  .OnDelete(DeleteBehavior.Restrict);
             });
 
@@ -227,14 +232,16 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                  .HasForeignKey<Feedback>("InterviewRoomId")
                  .OnDelete(DeleteBehavior.Restrict);
 
-                b.HasOne<InterviewerProfile>()
+                b.HasOne<CoachProfile>()
                  .WithMany()
-                 .HasForeignKey(x => x.InterviewerId)
+                 .HasForeignKey(x => x.CoachId)
+                 .HasConstraintName("FK_Feedbacks_CoachProfiles_CoachId")
                  .OnDelete(DeleteBehavior.Restrict);
 
                 b.HasOne<CandidateProfile>()
                  .WithMany()
-                 .HasForeignKey(x => x.StudentId)
+                 .HasForeignKey(x => x.CandidateId)
+                 .HasConstraintName("FK_Feedbacks_CandidateProfiles_CandidateId")
                  .OnDelete(DeleteBehavior.Restrict);
             });
 
@@ -246,7 +253,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.Amount).IsRequired();
                 //b.Property(x => x.CreatedAt).IsRequired();
                 //b.Property(x => x.UpdatedAt).IsRequired();
-                b.Property(x => x.InterviewerAvailabilityId).IsRequired();
+                b.Property(x => x.CoachAvailabilityId).IsRequired();
                 b.Property(x => x.Type).IsRequired();
                 b.Property(x => x.Status).IsRequired();
 
@@ -381,31 +388,31 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             var user6Id = Guid.Parse("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55");
 
             var room1Id = Guid.Parse("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a66");
-            var interviewerAvail1Id = Guid.Parse("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77");
+            var CoachAvail1Id = Guid.Parse("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77");
 
             // Users
             var user1 = new User
             {
                 Id = user1Id,
-                FullName = "Alice Student",
+                FullName = "Alice Candidate",
                 Email = "alice@example.com",
                 Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
                 Role = UserRole.Candidate,
                 ProfilePicture = null,
                 Status = UserStatus.Active,
-                SlugProfileUrl = "alice-student_1719000000001"
+                SlugProfileUrl = "alice-candidate_1719000000001"
             };
 
             var user2 = new User
             {
                 Id = user2Id,
-                FullName = "Bob Interviewer",
+                FullName = "Bob Coach",
                 Email = "bob@example.com",
                 Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
-                Role = UserRole.Interviewer,
+                Role = UserRole.Coach,
                 ProfilePicture = null,
                 Status = UserStatus.Active,
-                SlugProfileUrl = "bob-interviewer_1719000000002"
+                SlugProfileUrl = "bob-Coach_1719000000002"
             };
 
             var user3 = new User
@@ -426,7 +433,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 FullName = "John Doe",
                 Email = "john.doe@example.com",
                 Password = user1.Password,
-                Role = UserRole.Interviewer,
+                Role = UserRole.Coach,
                 ProfilePicture = null,
                 Status = UserStatus.Active,
                 SlugProfileUrl = "john-doe_1719000000004"
@@ -438,7 +445,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 FullName = "Sarah Lee",
                 Email = "sarah.lee@example.com",
                 Password = user1.Password,
-                Role = UserRole.Interviewer,
+                Role = UserRole.Coach,
                 ProfilePicture = null,
                 Status = UserStatus.Active,
                 SlugProfileUrl = "sarah-lee_1719000000005"
@@ -462,40 +469,46 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 new { CandidateProfilesId = user1Id, SkillsId = Guid.Parse("02020202-0202-4202-8202-020202020202") }
             );
 
-            modelBuilder.Entity<InterviewerProfile>().HasData(
-            new InterviewerProfile
+            modelBuilder.Entity<CoachProfile>().HasData(
+            new CoachProfile
             {
                 Id = user2Id,
                 PortfolioUrl = "https://portfolio.example.com/bob",
                 ExperienceYears = 8,
-                Status = InterviewerProfileStatus.Enable,
+                Status = CoachProfileStatus.Enable,
                 CurrentAmount = 0,
-                Bio = "Senior Backend Engineer with real interview experience"
+                Bio = "Senior Backend Engineer with real interview experience",
+                BankBinNumber = "",
+                BankAccountNumber = ""
             },
-            new InterviewerProfile
+            new CoachProfile
             {
                 Id = user5Id,
                 PortfolioUrl = "https://portfolio.example.com/john",
                 ExperienceYears = 6,
                 CurrentAmount = 0,
                 Bio = "Fullstack Engineer previously at Uber",
-                Status = InterviewerProfileStatus.Enable
+                Status = CoachProfileStatus.Enable,
+                BankBinNumber = "",
+                BankAccountNumber = ""
             },
-            new InterviewerProfile
+            new CoachProfile
             {
                 Id = user6Id,
                 PortfolioUrl = "https://portfolio.example.com/sarah",
                 ExperienceYears = 7,
                 CurrentAmount = 0,
                 Bio = "Senior Frontend Engineer focusing on UI/UX interviews",
-                Status = InterviewerProfileStatus.Enable
+                Status = CoachProfileStatus.Enable,
+                BankBinNumber = "",
+                BankAccountNumber = ""
             }
             );
 
-            modelBuilder.Entity<InterviewerAvailability>().HasData(new InterviewerAvailability
+            modelBuilder.Entity<CoachAvailability>().HasData(new CoachAvailability
             {
-                Id = interviewerAvail1Id,
-                InterviewerId = user2Id,
+                Id = CoachAvail1Id,
+                CoachId = user2Id,
                 StartTime = DateTime.SpecifyKind(new DateTime(2025, 11, 1, 9, 0, 0), DateTimeKind.Utc),
                 EndTime = DateTime.SpecifyKind(new DateTime(2025, 11, 1, 10, 0, 0),
                 DateTimeKind.Utc),
@@ -505,8 +518,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             modelBuilder.Entity<InterviewRoom>().HasData(new InterviewRoom
             {
                 Id = room1Id,
-                StudentId = user1Id,
-                InterviewerId = user2Id,
+                CandidateId = user1Id,
+                CoachId = user2Id,
                 ScheduledTime = DateTime.SpecifyKind(new DateTime(2025, 11, 1, 9, 0, 0), DateTimeKind.Utc),
                 DurationMinutes = 60,
                 VideoCallRoomUrl = "https://meet.example/room1",
@@ -517,7 +530,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             {
                 Id = Guid.Parse("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a88"),
                 UserId = user1Id,
-                InterviewerAvailabilityId = interviewerAvail1Id,
+                CoachAvailabilityId = CoachAvail1Id,
                 Amount = 1000,
                 Type = TransactionType.Payment,
                 Status = TransactionStatus.Paid,
@@ -528,7 +541,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             {
                 Id = Guid.Parse("8f9a0b1c-d2e3-4f5a-9b0c-1d2e3f4a5b99"),
                 UserId = user2Id,
-                InterviewerAvailabilityId = interviewerAvail1Id,
+                CoachAvailabilityId = CoachAvail1Id,
                 Amount = 500,
                 Type = TransactionType.Payout,
                 Status = TransactionStatus.Paid,
@@ -539,8 +552,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             modelBuilder.Entity<Feedback>().HasData(new Feedback
             {
                 Id = Guid.Parse("9a0b1c2d-e3f4-4a5b-8c9d-0e1f2a3b4c10"),
-                InterviewerId = user2Id,
-                StudentId = user1Id,
+                CoachId = user2Id,
+                CandidateId = user1Id,
                 InterviewRoomId = room1Id,
                 Rating = 5,
                 Comments = "Great answers and communication.",
@@ -589,50 +602,50 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             );
 
             // Bob (user2Id)
-            modelBuilder.Entity("InterviewerCompanies").HasData(
-                new { InterviewerProfilesId = user2Id, CompaniesId = Guid.Parse("11111111-1111-4111-8111-111111111111") }, // Google
-                new { InterviewerProfilesId = user2Id, CompaniesId = Guid.Parse("44444444-4444-4444-8444-444444444444") }, // Microsoft
-                new { InterviewerProfilesId = user2Id, CompaniesId = Guid.Parse("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa") } // Stripe
+            modelBuilder.Entity("CoachCompanies").HasData(
+                new { CoachProfilesId = user2Id, CompaniesId = Guid.Parse("11111111-1111-4111-8111-111111111111") }, // Google
+                new { CoachProfilesId = user2Id, CompaniesId = Guid.Parse("44444444-4444-4444-8444-444444444444") }, // Microsoft
+                new { CoachProfilesId = user2Id, CompaniesId = Guid.Parse("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa") } // Stripe
             );
 
             // John (user5Id)
-            modelBuilder.Entity("InterviewerCompanies").HasData(
-                new { InterviewerProfilesId = user5Id, CompaniesId = Guid.Parse("88888888-8888-4888-8888-888888888888") }, // Uber
-                new { InterviewerProfilesId = user5Id, CompaniesId = Guid.Parse("33333333-3333-4333-8333-333333333333") }, // Amazon
-                new { InterviewerProfilesId = user5Id, CompaniesId = Guid.Parse("66666666-6666-4666-8666-666666666666") }  // TikTok
+            modelBuilder.Entity("CoachCompanies").HasData(
+                new { CoachProfilesId = user5Id, CompaniesId = Guid.Parse("88888888-8888-4888-8888-888888888888") }, // Uber
+                new { CoachProfilesId = user5Id, CompaniesId = Guid.Parse("33333333-3333-4333-8333-333333333333") }, // Amazon
+                new { CoachProfilesId = user5Id, CompaniesId = Guid.Parse("66666666-6666-4666-8666-666666666666") }  // TikTok
             );
 
             // Sarah (user6Id)
-            modelBuilder.Entity("InterviewerCompanies").HasData(
-                new { InterviewerProfilesId = user6Id, CompaniesId = Guid.Parse("77777777-7777-4777-8777-777777777777") }, // Apple
-                new { InterviewerProfilesId = user6Id, CompaniesId = Guid.Parse("99999999-9999-4999-8999-999999999999") }, // Spotify
-                new { InterviewerProfilesId = user6Id, CompaniesId = Guid.Parse("22222222-2222-4222-8222-222222222222") }  // Meta
+            modelBuilder.Entity("CoachCompanies").HasData(
+                new { CoachProfilesId = user6Id, CompaniesId = Guid.Parse("77777777-7777-4777-8777-777777777777") }, // Apple
+                new { CoachProfilesId = user6Id, CompaniesId = Guid.Parse("99999999-9999-4999-8999-999999999999") }, // Spotify
+                new { CoachProfilesId = user6Id, CompaniesId = Guid.Parse("22222222-2222-4222-8222-222222222222") }  // Meta
             );
 
             // Bob (backend)
-            modelBuilder.Entity("InterviewerSkills").HasData(
-                new { InterviewerProfilesId = user2Id, SkillsId = Guid.Parse("b1b1b1b1-b1b1-41b1-81b1-b1b1b1b1b1b1") },
-                new { InterviewerProfilesId = user2Id, SkillsId = Guid.Parse("02020202-0202-4202-8202-020202020202") },
-                new { InterviewerProfilesId = user2Id, SkillsId = Guid.Parse("06060606-0606-4606-8606-060606060606") },
-                new { InterviewerProfilesId = user2Id, SkillsId = Guid.Parse("07070707-0707-4707-8707-070707070707") },
-                new { InterviewerProfilesId = user2Id, SkillsId = Guid.Parse("08080808-0808-4808-8808-080808080808") }
+            modelBuilder.Entity("CoachSkills").HasData(
+                new { CoachProfilesId = user2Id, SkillsId = Guid.Parse("b1b1b1b1-b1b1-41b1-81b1-b1b1b1b1b1b1") },
+                new { CoachProfilesId = user2Id, SkillsId = Guid.Parse("02020202-0202-4202-8202-020202020202") },
+                new { CoachProfilesId = user2Id, SkillsId = Guid.Parse("06060606-0606-4606-8606-060606060606") },
+                new { CoachProfilesId = user2Id, SkillsId = Guid.Parse("07070707-0707-4707-8707-070707070707") },
+                new { CoachProfilesId = user2Id, SkillsId = Guid.Parse("08080808-0808-4808-8808-080808080808") }
             );
 
             // John (fullstack)
-            modelBuilder.Entity("InterviewerSkills").HasData(
-                new { InterviewerProfilesId = user5Id, SkillsId = Guid.Parse("d3d3d3d3-d3d3-43d3-83d3-d3d3d3d3d3d3") },
-                new { InterviewerProfilesId = user5Id, SkillsId = Guid.Parse("e4e4e4e4-e4e4-44e4-84e4-e4e4e4e4e4e4") },
-                new { InterviewerProfilesId = user5Id, SkillsId = Guid.Parse("07070707-0707-4707-8707-070707070707") },
-                new { InterviewerProfilesId = user5Id, SkillsId = Guid.Parse("04040404-0404-4404-8404-040404040404") },
-                new { InterviewerProfilesId = user5Id, SkillsId = Guid.Parse("09090909-0909-4909-8909-090909090909") }
+            modelBuilder.Entity("CoachSkills").HasData(
+                new { CoachProfilesId = user5Id, SkillsId = Guid.Parse("d3d3d3d3-d3d3-43d3-83d3-d3d3d3d3d3d3") },
+                new { CoachProfilesId = user5Id, SkillsId = Guid.Parse("e4e4e4e4-e4e4-44e4-84e4-e4e4e4e4e4e4") },
+                new { CoachProfilesId = user5Id, SkillsId = Guid.Parse("07070707-0707-4707-8707-070707070707") },
+                new { CoachProfilesId = user5Id, SkillsId = Guid.Parse("04040404-0404-4404-8404-040404040404") },
+                new { CoachProfilesId = user5Id, SkillsId = Guid.Parse("09090909-0909-4909-8909-090909090909") }
             );
 
             // Sarah (frontend + ML)
-            modelBuilder.Entity("InterviewerSkills").HasData(
-                new { InterviewerProfilesId = user6Id, SkillsId = Guid.Parse("d3d3d3d3-d3d3-43d3-83d3-d3d3d3d3d3d3") },
-                new { InterviewerProfilesId = user6Id, SkillsId = Guid.Parse("e4e4e4e4-e4e4-44e4-84e4-e4e4e4e4e4e4") },
-                new { InterviewerProfilesId = user6Id, SkillsId = Guid.Parse("f5f5f5f5-f5f5-45f5-85f5-f5f5f5f5f5f5") },
-                new { InterviewerProfilesId = user6Id, SkillsId = Guid.Parse("0a0a0a0a-0a0a-4a0a-8a0a-0a0a0a0a0a0a") }
+            modelBuilder.Entity("CoachSkills").HasData(
+                new { CoachProfilesId = user6Id, SkillsId = Guid.Parse("d3d3d3d3-d3d3-43d3-83d3-d3d3d3d3d3d3") },
+                new { CoachProfilesId = user6Id, SkillsId = Guid.Parse("e4e4e4e4-e4e4-44e4-84e4-e4e4e4e4e4e4") },
+                new { CoachProfilesId = user6Id, SkillsId = Guid.Parse("f5f5f5f5-f5f5-45f5-85f5-f5f5f5f5f5f5") },
+                new { CoachProfilesId = user6Id, SkillsId = Guid.Parse("0a0a0a0a-0a0a-4a0a-8a0a-0a0a0a0a0a0a") }
             );
 
 

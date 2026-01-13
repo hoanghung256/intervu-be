@@ -122,7 +122,7 @@ namespace Intervu.API
 
                 options.AddPolicy(
                     AuthorizationPolicies.Interviewer,
-                    policy => policy.RequireRole(UserRole.Interviewer.ToString())
+                    policy => policy.RequireRole(UserRole.Coach.ToString())
                 );
 
                 options.AddPolicy(
@@ -134,13 +134,13 @@ namespace Intervu.API
                     AuthorizationPolicies.CandidateOrInterviewer,
                     policy => policy.RequireAssertion(context =>
                         context.User.IsInRole(UserRole.Candidate.ToString()) ||
-                        context.User.IsInRole(UserRole.Interviewer.ToString()))
+                        context.User.IsInRole(UserRole.Coach.ToString()))
                 );
 
                 options.AddPolicy(
                     AuthorizationPolicies.InterviewOrAdmin,
                     policy => policy.RequireAssertion(context =>
-                        context.User.IsInRole(UserRole.Interviewer.ToString()) ||
+                        context.User.IsInRole(UserRole.Coach.ToString()) ||
                         context.User.IsInRole(UserRole.Admin.ToString()))
                 );
 

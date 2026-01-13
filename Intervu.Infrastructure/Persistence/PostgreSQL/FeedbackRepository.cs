@@ -20,9 +20,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
         }
 
 
-        public async Task<(IReadOnlyList<Feedback> Items, int TotalCount)> GetFeedbacksByStudentIdAsync(Guid studentId, int page, int pageSize)
+        public async Task<(IReadOnlyList<Feedback> Items, int TotalCount)> GetFeedbacksByCandidateIdAsync(Guid candidateId, int page, int pageSize)
         {
-            var query = _context.Feedbacks.Where(f => f.StudentId == studentId).AsQueryable();
+            var query = _context.Feedbacks.Where(f => f.CandidateId == candidateId).AsQueryable();
 
             var totalItems = await query.CountAsync();
 

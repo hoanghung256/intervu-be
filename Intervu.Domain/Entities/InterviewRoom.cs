@@ -8,9 +8,9 @@ namespace Intervu.Domain.Entities
         /// <summary>
         /// EntityBase.Id represents InterviewRoomId
         /// </summary>
-        public Guid? StudentId { get; set; }
+        public Guid? CandidateId { get; set; }
 
-        public Guid? InterviewerId { get; set; }
+        public Guid? CoachId { get; set; }
 
         public DateTime? ScheduledTime { get; set; }
 

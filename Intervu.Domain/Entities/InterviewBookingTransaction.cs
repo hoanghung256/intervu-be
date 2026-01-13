@@ -12,7 +12,7 @@ namespace Intervu.Domain.Entities
     {
         public Guid UserId { get; set; }
 
-        public Guid InterviewerAvailabilityId { get; set; }
+        public Guid CoachAvailabilityId { get; set; }
 
         public int Amount { get; set; }
 

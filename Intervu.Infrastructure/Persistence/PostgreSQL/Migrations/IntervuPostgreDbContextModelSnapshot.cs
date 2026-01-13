@@ -49,152 +49,291 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         });
                 });
 
-            modelBuilder.Entity("InterviewerCompanies", b =>
+            modelBuilder.Entity("CoachCompanies", b =>
                 {
-                    b.Property<Guid>("InterviewerProfilesId")
+                    b.Property<Guid>("CoachProfilesId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("CompaniesId")
                         .HasColumnType("uuid");
 
-                    b.HasKey("InterviewerProfilesId", "CompaniesId");
+                    b.HasKey("CoachProfilesId", "CompaniesId");
 
                     b.HasIndex("CompaniesId");
 
-                    b.ToTable("InterviewerCompanies", (string)null);
+                    b.ToTable("CoachCompanies", (string)null);
 
                     b.HasData(
                         new
                         {
-                            InterviewerProfilesId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            CoachProfilesId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
                             CompaniesId = new Guid("11111111-1111-4111-8111-111111111111")
                         },
                         new
                         {
-                            InterviewerProfilesId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            CoachProfilesId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
                             CompaniesId = new Guid("44444444-4444-4444-8444-444444444444")
                         },
                         new
                         {
-                            InterviewerProfilesId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            CoachProfilesId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
                             CompaniesId = new Guid("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa")
                         },
                         new
                         {
-                            InterviewerProfilesId = new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"),
+                            CoachProfilesId = new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"),
                             CompaniesId = new Guid("88888888-8888-4888-8888-888888888888")
                         },
                         new
                         {
-                            InterviewerProfilesId = new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"),
+                            CoachProfilesId = new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"),
                             CompaniesId = new Guid("33333333-3333-4333-8333-333333333333")
                         },
                         new
                         {
-                            InterviewerProfilesId = new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"),
+                            CoachProfilesId = new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"),
                             CompaniesId = new Guid("66666666-6666-4666-8666-666666666666")
                         },
                         new
                         {
-                            InterviewerProfilesId = new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"),
+                            CoachProfilesId = new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"),
                             CompaniesId = new Guid("77777777-7777-4777-8777-777777777777")
                         },
                         new
                         {
-                            InterviewerProfilesId = new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"),
+                            CoachProfilesId = new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"),
                             CompaniesId = new Guid("99999999-9999-4999-8999-999999999999")
                         },
                         new
                         {
-                            InterviewerProfilesId = new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"),
+                            CoachProfilesId = new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"),
                             CompaniesId = new Guid("22222222-2222-4222-8222-222222222222")
                         });
                 });
 
-            modelBuilder.Entity("InterviewerSkills", b =>
+            modelBuilder.Entity("CoachSkills", b =>
                 {
-                    b.Property<Guid>("InterviewerProfilesId")
+                    b.Property<Guid>("CoachProfilesId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("SkillsId")
                         .HasColumnType("uuid");
 
-                    b.HasKey("InterviewerProfilesId", "SkillsId");
+                    b.HasKey("CoachProfilesId", "SkillsId");
 
                     b.HasIndex("SkillsId");
 
-                    b.ToTable("InterviewerSkills", (string)null);
+                    b.ToTable("CoachSkills", (string)null);
 
                     b.HasData(
                         new
                         {
-                            InterviewerProfilesId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            CoachProfilesId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
                             SkillsId = new Guid("b1b1b1b1-b1b1-41b1-81b1-b1b1b1b1b1b1")
                         },
                         new
                         {
-                            InterviewerProfilesId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            CoachProfilesId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
                             SkillsId = new Guid("02020202-0202-4202-8202-020202020202")
                         },
                         new
                         {
-                            InterviewerProfilesId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            CoachProfilesId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
                             SkillsId = new Guid("06060606-0606-4606-8606-060606060606")
                         },
                         new
                         {
-                            InterviewerProfilesId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            CoachProfilesId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
                             SkillsId = new Guid("07070707-0707-4707-8707-070707070707")
                         },
                         new
                         {
-                            InterviewerProfilesId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            CoachProfilesId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
                             SkillsId = new Guid("08080808-0808-4808-8808-080808080808")
                         },
                         new
                         {
-                            InterviewerProfilesId = new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"),
+                            CoachProfilesId = new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"),
                             SkillsId = new Guid("d3d3d3d3-d3d3-43d3-83d3-d3d3d3d3d3d3")
                         },
                         new
                         {
-                            InterviewerProfilesId = new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"),
+                            CoachProfilesId = new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"),
                             SkillsId = new Guid("e4e4e4e4-e4e4-44e4-84e4-e4e4e4e4e4e4")
                         },
                         new
                         {
-                            InterviewerProfilesId = new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"),
+                            CoachProfilesId = new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"),
                             SkillsId = new Guid("07070707-0707-4707-8707-070707070707")
                         },
                         new
                         {
-                            InterviewerProfilesId = new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"),
+                            CoachProfilesId = new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"),
                             SkillsId = new Guid("04040404-0404-4404-8404-040404040404")
                         },
                         new
                         {
-                            InterviewerProfilesId = new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"),
+                            CoachProfilesId = new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"),
                             SkillsId = new Guid("09090909-0909-4909-8909-090909090909")
                         },
                         new
                         {
-                            InterviewerProfilesId = new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"),
+                            CoachProfilesId = new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"),
                             SkillsId = new Guid("d3d3d3d3-d3d3-43d3-83d3-d3d3d3d3d3d3")
                         },
                         new
                         {
-                            InterviewerProfilesId = new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"),
+                            CoachProfilesId = new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"),
                             SkillsId = new Guid("e4e4e4e4-e4e4-44e4-84e4-e4e4e4e4e4e4")
                         },
                         new
                         {
-                            InterviewerProfilesId = new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"),
+                            CoachProfilesId = new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"),
                             SkillsId = new Guid("f5f5f5f5-f5f5-45f5-85f5-f5f5f5f5f5f5")
                         },
                         new
                         {
-                            InterviewerProfilesId = new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"),
+                            CoachProfilesId = new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"),
                             SkillsId = new Guid("0a0a0a0a-0a0a-4a0a-8a0a-0a0a0a0a0a0a")
+                        });
+                });
+
+            modelBuilder.Entity("Intervu.Domain.Entities.CandidateProfile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Bio")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CVUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int>("CurrentAmount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PortfolioUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CandidateProfiles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
+                            Bio = "Aspiring backend developer.",
+                            CVUrl = "https://example.com/cv-alice.pdf",
+                            CurrentAmount = 0,
+                            PortfolioUrl = "https://portfolio.example.com/alice"
+                        });
+                });
+
+            modelBuilder.Entity("Intervu.Domain.Entities.CoachAvailability", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CoachId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("EndTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsBooked")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("StartTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CoachId");
+
+                    b.ToTable("CoachAvailabilities", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77"),
+                            CoachId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            EndTime = new DateTime(2025, 11, 1, 10, 0, 0, 0, DateTimeKind.Utc),
+                            IsBooked = false,
+                            StartTime = new DateTime(2025, 11, 1, 9, 0, 0, 0, DateTimeKind.Utc)
+                        });
+                });
+
+            modelBuilder.Entity("Intervu.Domain.Entities.CoachProfile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("BankAccountNumber")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("BankBinNumber")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Bio")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("CurrentAmount")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("ExperienceYears")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PortfolioUrl")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CoachProfiles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            BankAccountNumber = "",
+                            BankBinNumber = "",
+                            Bio = "Senior Backend Engineer with real interview experience",
+                            CurrentAmount = 0,
+                            ExperienceYears = 8,
+                            PortfolioUrl = "https://portfolio.example.com/bob",
+                            Status = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"),
+                            BankAccountNumber = "",
+                            BankBinNumber = "",
+                            Bio = "Fullstack Engineer previously at Uber",
+                            CurrentAmount = 0,
+                            ExperienceYears = 6,
+                            PortfolioUrl = "https://portfolio.example.com/john",
+                            Status = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"),
+                            BankAccountNumber = "",
+                            BankBinNumber = "",
+                            Bio = "Senior Frontend Engineer focusing on UI/UX interviews",
+                            CurrentAmount = 0,
+                            ExperienceYears = 7,
+                            PortfolioUrl = "https://portfolio.example.com/sarah",
+                            Status = 0
                         });
                 });
 
@@ -306,6 +445,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid>("CandidateId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CoachId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Comments")
                         .IsRequired()
                         .HasColumnType("text");
@@ -313,23 +458,17 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<Guid>("InterviewRoomId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("InterviewerId")
-                        .HasColumnType("uuid");
-
                     b.Property<int>("Rating")
                         .HasColumnType("integer");
 
-                    b.Property<Guid>("StudentId")
-                        .HasColumnType("uuid");
-
                     b.HasKey("Id");
+
+                    b.HasIndex("CandidateId");
+
+                    b.HasIndex("CoachId");
 
                     b.HasIndex("InterviewRoomId")
                         .IsUnique();
-
-                    b.HasIndex("InterviewerId");
-
-                    b.HasIndex("StudentId");
 
                     b.ToTable("Feedbacks", (string)null);
 
@@ -338,11 +477,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         {
                             Id = new Guid("9a0b1c2d-e3f4-4a5b-8c9d-0e1f2a3b4c10"),
                             AIAnalysis = "{}",
+                            CandidateId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
+                            CoachId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
                             Comments = "Great answers and communication.",
                             InterviewRoomId = new Guid("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a66"),
-                            InterviewerId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
-                            Rating = 5,
-                            StudentId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11")
+                            Rating = 5
                         });
                 });
 
@@ -355,7 +494,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<int>("Amount")
                         .HasColumnType("integer");
 
-                    b.Property<Guid>("InterviewerAvailabilityId")
+                    b.Property<Guid>("CoachAvailabilityId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("Status")
@@ -378,7 +517,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         {
                             Id = new Guid("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a88"),
                             Amount = 1000,
-                            InterviewerAvailabilityId = new Guid("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77"),
+                            CoachAvailabilityId = new Guid("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77"),
                             Status = 1,
                             Type = 0,
                             UserId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11")
@@ -387,7 +526,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         {
                             Id = new Guid("8f9a0b1c-d2e3-4f5a-9b0c-1d2e3f4a5b99"),
                             Amount = 500,
-                            InterviewerAvailabilityId = new Guid("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77"),
+                            CoachAvailabilityId = new Guid("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77"),
                             Status = 1,
                             Type = 1,
                             UserId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22")
@@ -400,25 +539,32 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("CandidateId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CoachId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("CurrentLanguage")
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("CurrentLanguage");
 
                     b.Property<int?>("DurationMinutes")
                         .HasColumnType("integer");
 
-                    b.Property<Guid?>("InterviewerId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("LanguageCodes")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("LanguageCodes");
 
                     b.Property<string>("ProblemDescription")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("ProblemDescription");
 
                     b.Property<string>("ProblemShortName")
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("ProblemShortName");
 
                     b.Property<DateTime?>("ScheduledTime")
                         .HasColumnType("timestamp with time zone");
@@ -426,11 +572,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
-                    b.Property<Guid?>("StudentId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("TestCases")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("TestCases");
 
                     b.Property<string>("VideoCallRoomUrl")
                         .HasMaxLength(1000)
@@ -438,9 +582,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("InterviewerId");
+                    b.HasIndex("CandidateId");
 
-                    b.HasIndex("StudentId");
+                    b.HasIndex("CoachId");
 
                     b.ToTable("InterviewRooms", (string)null);
 
@@ -448,151 +592,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         new
                         {
                             Id = new Guid("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a66"),
+                            CandidateId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
+                            CoachId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
                             DurationMinutes = 60,
-                            InterviewerId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
                             ScheduledTime = new DateTime(2025, 11, 1, 9, 0, 0, 0, DateTimeKind.Utc),
                             Status = 0,
-                            StudentId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
                             VideoCallRoomUrl = "https://meet.example/room1"
-                        });
-                });
-
-            modelBuilder.Entity("Intervu.Domain.Entities.CandidateProfile", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Bio")
-                        .HasColumnType("text");
-
-                    b.Property<string>("CVUrl")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<int>("CurrentAmount")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("PortfolioUrl")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("CandidateProfiles", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
-                            Bio = "Aspiring backend developer.",
-                            CVUrl = "https://example.com/cv-alice.pdf",
-                            CurrentAmount = 0,
-                            PortfolioUrl = "https://portfolio.example.com/alice"
-                        });
-                });
-
-            modelBuilder.Entity("Intervu.Domain.Entities.InterviewerAvailability", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("EndTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("InterviewerId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("IsBooked")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime>("StartTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("InterviewerId");
-
-                    b.ToTable("InterviewerAvailabilities", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77"),
-                            EndTime = new DateTime(2025, 11, 1, 10, 0, 0, 0, DateTimeKind.Utc),
-                            InterviewerId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
-                            IsBooked = false,
-                            StartTime = new DateTime(2025, 11, 1, 9, 0, 0, 0, DateTimeKind.Utc)
-                        });
-                });
-
-            modelBuilder.Entity("Intervu.Domain.Entities.InterviewerProfile", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("BankAccountNumber")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("BankBinNumber")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Bio")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int?>("CurrentAmount")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("ExperienceYears")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("PortfolioUrl")
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("InterviewerProfiles", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
-                            BankAccountNumber = "",
-                            BankBinNumber = "",
-                            Bio = "Senior Backend Engineer with real interview experience",
-                            CurrentAmount = 0,
-                            ExperienceYears = 8,
-                            PortfolioUrl = "https://portfolio.example.com/bob",
-                            Status = 0
-                        },
-                        new
-                        {
-                            Id = new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"),
-                            BankAccountNumber = "",
-                            BankBinNumber = "",
-                            Bio = "Fullstack Engineer previously at Uber",
-                            CurrentAmount = 0,
-                            ExperienceYears = 6,
-                            PortfolioUrl = "https://portfolio.example.com/john",
-                            Status = 0
-                        },
-                        new
-                        {
-                            Id = new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"),
-                            BankAccountNumber = "",
-                            BankBinNumber = "",
-                            Bio = "Senior Frontend Engineer focusing on UI/UX interviews",
-                            CurrentAmount = 0,
-                            ExperienceYears = 7,
-                            PortfolioUrl = "https://portfolio.example.com/sarah",
-                            Status = 0
                         });
                 });
 
@@ -884,20 +889,20 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         {
                             Id = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
                             Email = "alice@example.com",
-                            FullName = "Alice Student",
+                            FullName = "Alice Candidate",
                             Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
                             Role = 0,
-                            SlugProfileUrl = "alice-student_1719000000001",
+                            SlugProfileUrl = "alice-candidate_1719000000001",
                             Status = 0
                         },
                         new
                         {
                             Id = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
                             Email = "bob@example.com",
-                            FullName = "Bob Interviewer",
+                            FullName = "Bob Coach",
                             Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
                             Role = 1,
-                            SlugProfileUrl = "bob-interviewer_1719000000002",
+                            SlugProfileUrl = "bob-Coach_1719000000002",
                             Status = 0
                         },
                         new
@@ -927,26 +932,26 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("InterviewerCompanies", b =>
+            modelBuilder.Entity("CoachCompanies", b =>
                 {
+                    b.HasOne("Intervu.Domain.Entities.CoachProfile", null)
+                        .WithMany()
+                        .HasForeignKey("CoachProfilesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Intervu.Domain.Entities.Company", null)
                         .WithMany()
                         .HasForeignKey("CompaniesId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("Intervu.Domain.Entities.InterviewerProfile", null)
-                        .WithMany()
-                        .HasForeignKey("InterviewerProfilesId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
-            modelBuilder.Entity("InterviewerSkills", b =>
+            modelBuilder.Entity("CoachSkills", b =>
                 {
-                    b.HasOne("Intervu.Domain.Entities.InterviewerProfile", null)
+                    b.HasOne("Intervu.Domain.Entities.CoachProfile", null)
                         .WithMany()
-                        .HasForeignKey("InterviewerProfilesId")
+                        .HasForeignKey("CoachProfilesId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -957,23 +962,57 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Intervu.Domain.Entities.CandidateProfile", b =>
+                {
+                    b.HasOne("Intervu.Domain.Entities.User", "User")
+                        .WithOne()
+                        .HasForeignKey("Intervu.Domain.Entities.CandidateProfile", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Intervu.Domain.Entities.CoachAvailability", b =>
+                {
+                    b.HasOne("Intervu.Domain.Entities.CoachProfile", null)
+                        .WithMany()
+                        .HasForeignKey("CoachId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_CoachAvailabilities_CoachProfiles_CoachId");
+                });
+
+            modelBuilder.Entity("Intervu.Domain.Entities.CoachProfile", b =>
+                {
+                    b.HasOne("Intervu.Domain.Entities.User", "User")
+                        .WithOne()
+                        .HasForeignKey("Intervu.Domain.Entities.CoachProfile", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Intervu.Domain.Entities.Feedback", b =>
                 {
+                    b.HasOne("Intervu.Domain.Entities.CandidateProfile", null)
+                        .WithMany()
+                        .HasForeignKey("CandidateId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Feedbacks_CandidateProfiles_CandidateId");
+
+                    b.HasOne("Intervu.Domain.Entities.CoachProfile", null)
+                        .WithMany()
+                        .HasForeignKey("CoachId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Feedbacks_CoachProfiles_CoachId");
+
                     b.HasOne("Intervu.Domain.Entities.InterviewRoom", null)
                         .WithOne()
                         .HasForeignKey("Intervu.Domain.Entities.Feedback", "InterviewRoomId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Intervu.Domain.Entities.InterviewerProfile", null)
-                        .WithMany()
-                        .HasForeignKey("InterviewerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Intervu.Domain.Entities.CandidateProfile", null)
-                        .WithMany()
-                        .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
@@ -989,46 +1028,17 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 
             modelBuilder.Entity("Intervu.Domain.Entities.InterviewRoom", b =>
                 {
-                    b.HasOne("Intervu.Domain.Entities.InterviewerProfile", null)
-                        .WithMany()
-                        .HasForeignKey("InterviewerId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("Intervu.Domain.Entities.CandidateProfile", null)
                         .WithMany()
-                        .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Restrict);
-                });
+                        .HasForeignKey("CandidateId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_InterviewRooms_CandidateProfiles_CandidateId");
 
-            modelBuilder.Entity("Intervu.Domain.Entities.CandidateProfile", b =>
-                {
-                    b.HasOne("Intervu.Domain.Entities.User", "User")
-                        .WithOne()
-                        .HasForeignKey("Intervu.Domain.Entities.CandidateProfile", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Intervu.Domain.Entities.InterviewerAvailability", b =>
-                {
-                    b.HasOne("Intervu.Domain.Entities.InterviewerProfile", null)
+                    b.HasOne("Intervu.Domain.Entities.CoachProfile", null)
                         .WithMany()
-                        .HasForeignKey("InterviewerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Intervu.Domain.Entities.InterviewerProfile", b =>
-                {
-                    b.HasOne("Intervu.Domain.Entities.User", "User")
-                        .WithOne()
-                        .HasForeignKey("Intervu.Domain.Entities.InterviewerProfile", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
+                        .HasForeignKey("CoachId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_InterviewRooms_CoachProfiles_CoachId");
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.NotificationReceive", b =>

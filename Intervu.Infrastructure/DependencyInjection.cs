@@ -24,21 +24,21 @@ namespace Intervu.Infrastructure
         public static IServiceCollection AddPersistenceSqlServer(this IServiceCollection services, IConfiguration configuration)
         {
             //services.AddDbContextPool<IntervuDbContext>(options =>
-                //options.UseSqlServer(configuration.GetConnectionString("SqlDefeaultConnection")));
+            //options.UseSqlServer(configuration.GetConnectionString("SqlDefeaultConnection")));
 
             // PostgreSQL
-            services.AddDbContextPool<IntervuPostgreDbContext>(options => 
+            services.AddDbContextPool<IntervuPostgreDbContext>(options =>
                 options.UseNpgsql(configuration.GetConnectionString("PostgreSqlDefaultConnection")));
 
             // Register your repositories here
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IInterviewRoomRepository, InterviewRoomRepository>();
-            services.AddScoped<IInterviewerProfileRepository, InterviewerProfileRepository>();
+            services.AddScoped<ICoachProfileRepository, CoachProfileRepository>();
             services.AddScoped<ICandidateProfileRepository, CandidateProfileRepository>();
             services.AddScoped<ICompanyRepository, CompanyRepository>();
             services.AddScoped<ISkillRepository, SkillRepository>();
             //services.AddScoped<IPaymentRepository, PaymentRepository>();
-            services.AddScoped<IInterviewerAvailabilitiesRepository, InterviewerAvailabilitiesRepository>();
+            services.AddScoped<ICoachAvailabilitiesRepository, CoachAvailabilitiesRepository>();
             services.AddScoped<ITransactionRepository, TransactionRepository>();
             services.AddScoped<IFeedbackRepository, FeedbackRepository>();
             services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
@@ -134,3 +134,4 @@ namespace Intervu.Infrastructure
         }
     }
 }
+
