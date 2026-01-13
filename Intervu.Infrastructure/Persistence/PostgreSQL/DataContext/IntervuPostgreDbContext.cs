@@ -30,6 +30,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
         public DbSet<Company> Companies { get; set; }
         public DbSet<Skill> Skills { get; set; }
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -322,6 +323,26 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 // Indexes for performance
                 b.HasIndex(x => x.Token);
                 b.HasIndex(x => new { x.UserId, x.ExpiresAt });
+            });
+
+            modelBuilder.Entity<RefreshToken>(r =>
+            {
+                r.ToTable("RefreshTokens");
+                r.HasKey(x => x.Id);
+
+                r.Property(x => x.UserId).IsRequired();
+                r.Property(x => x.Token).HasMaxLength(500).IsRequired();
+
+                r.Property(x => x.ExpiresAt).IsRequired().HasColumnType("timestamp with time zone");
+                r.Property(x => x.CreatedAt).IsRequired().HasColumnType("timestamp with time zone").HasDefaultValueSql("NOW()");
+
+                r.HasOne(x => x.User)
+                    .WithMany()
+                    .HasForeignKey(x => x.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                r.HasIndex(x => x.Token);
+                r.HasIndex(x => new { x.UserId, x.ExpiresAt });
             });
 
             /// <summary>

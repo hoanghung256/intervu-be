@@ -107,7 +107,8 @@ namespace Intervu.API
                     ValidateIssuer = false, // Disable because Issuer is empty in config
                     ValidateAudience = false, // Disable because Audience is empty in config
                     ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true
+                    ValidateIssuerSigningKey = true,
+                    ClockSkew = TimeSpan.Zero
                 };
             });
 
@@ -180,7 +181,8 @@ namespace Intervu.API
 
                     policy.WithOrigins(allowedOrigins)
                           .AllowAnyHeader()
-                          .AllowAnyMethod();
+                          .AllowAnyMethod()
+                          .AllowCredentials();
                 });
             });
 
@@ -231,7 +233,7 @@ namespace Intervu.API
 
             app.Run();
         }
-
+            
         public static string? GetLocalIPv4()
         {
             foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())

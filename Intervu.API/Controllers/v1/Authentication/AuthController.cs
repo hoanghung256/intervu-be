@@ -23,8 +23,9 @@ namespace Intervu.API.Controllers.v1.Authentication
         private readonly IForgotPasswordUseCase _forgotPasswordUseCase;
         private readonly IValidateResetTokenUseCase _validateResetTokenUseCase;
         private readonly IResetPasswordUseCase _resetPasswordUseCase;
+        private readonly IRefreshTokenRepository _refreshTokenRepository;
 
-        public AuthController(IUserRepository userRepository, JwtService jwtService, IConfiguration configuration, ILogger<AuthController> logger, IForgotPasswordUseCase forgotPasswordUseCase, IValidateResetTokenUseCase validateResetTokenUseCase, IResetPasswordUseCase resetPasswordUseCase)
+        public AuthController(IUserRepository userRepository, JwtService jwtService, IConfiguration configuration, ILogger<AuthController> logger, IForgotPasswordUseCase forgotPasswordUseCase, IValidateResetTokenUseCase validateResetTokenUseCase, IResetPasswordUseCase resetPasswordUseCase, IRefreshTokenRepository refreshTokenRepository)
         {
             _userRepository = userRepository;
             _jwtService = jwtService;
@@ -33,6 +34,7 @@ namespace Intervu.API.Controllers.v1.Authentication
             _forgotPasswordUseCase = forgotPasswordUseCase;
             _validateResetTokenUseCase = validateResetTokenUseCase;
             _resetPasswordUseCase = resetPasswordUseCase;
+            _refreshTokenRepository = refreshTokenRepository;
         }
 
         // Accept either { "idToken": "..." } or { "credential": "..." }
@@ -117,10 +119,16 @@ namespace Intervu.API.Controllers.v1.Authentication
             }
 
             // generate jwt
-            var token = _jwtService.GenerateToken(user.Id.ToString(), user.Email, user.Role.ToString());
+            var token = _jwtService.GenerateToken(user.Id, user.Email, user.Role.ToString());
             var expiresIn = _jwtService.GetTokenValidityInSeconds();
 
             user.Password = null!;
+
+            // generate refresh token
+            var refreshToken = await _refreshTokenRepository.CreateRefreshTokenAsync(user.Id);
+
+            // Set HttpOnly cookie
+            SetRefreshTokenCookie(refreshToken);
 
             return Ok(new { success = true, message = "Logged in", data = new { user, token, expiresIn } });
         }
@@ -228,6 +236,22 @@ namespace Intervu.API.Controllers.v1.Authentication
             }
 
             return null;
+        }
+
+        private void SetRefreshTokenCookie(string refreshToken)
+        {
+            int expiryDays = _configuration.GetValue<int>("JwtConfig:RefreshTokenValidityInDays");
+            if (expiryDays <= 0) expiryDays = 7;
+
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Expires = DateTimeOffset.UtcNow.AddDays(expiryDays)
+            };
+
+            Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
         }
     }
 }

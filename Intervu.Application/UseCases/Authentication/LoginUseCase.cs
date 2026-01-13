@@ -12,15 +12,18 @@ namespace Intervu.Application.UseCases.Authentication
         private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
         private readonly JwtService _jwtService;
+        private readonly IRefreshTokenRepository _refreshTokenRepository;
 
         public LoginUseCase(
             IUserRepository userRepository, 
             IMapper mapper, 
-            JwtService jwtService)
+            JwtService jwtService,
+            IRefreshTokenRepository refreshTokenRepository)
         {
             _userRepository = userRepository;
             _mapper = mapper;
             _jwtService = jwtService;
+            _refreshTokenRepository = refreshTokenRepository;
         }
 
         public async Task<LoginResponse?> ExecuteAsync(LoginRequest request)
@@ -42,13 +45,19 @@ namespace Intervu.Application.UseCases.Authentication
 
             // Generate JWT token using JwtService
             var token = _jwtService.GenerateToken(
-                user.Id.ToString(),
+                user.Id,
                 user.Email,
                 user.Role.ToString()
             );
 
             // Get token expiry time
             var expiresIn = _jwtService.GetTokenValidityInSeconds();
+
+            // Revoke all existing refresh tokens for this user (logout from all devices)
+            await _refreshTokenRepository.RevokeAllUserTokensAsync(user.Id);
+
+            // Generate new Refresh Token
+            var refreshToken = await _refreshTokenRepository.CreateRefreshTokenAsync(user.Id);
 
             // Detach password before returning user data
             user.Password = null;
@@ -57,7 +66,8 @@ namespace Intervu.Application.UseCases.Authentication
             {
                 User = user,
                 Token = token,
-                ExpiresIn = expiresIn
+                ExpiresIn = expiresIn,
+                RefreshToken = refreshToken
             };
         }
     }

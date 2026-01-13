@@ -3,6 +3,7 @@ using System;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 {
     [DbContext(typeof(IntervuPostgreDbContext))]
-    partial class IntervuPostgreDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251230153313_AddRefreshToken")]
+    partial class AddRefreshToken
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,33 +24,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("CandidateSkills", b =>
-                {
-                    b.Property<Guid>("CandidateProfilesId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("SkillsId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("CandidateProfilesId", "SkillsId");
-
-                    b.HasIndex("SkillsId");
-
-                    b.ToTable("CandidateSkills", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            CandidateProfilesId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
-                            SkillsId = new Guid("b1b1b1b1-b1b1-41b1-81b1-b1b1b1b1b1b1")
-                        },
-                        new
-                        {
-                            CandidateProfilesId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
-                            SkillsId = new Guid("02020202-0202-4202-8202-020202020202")
-                        });
-                });
 
             modelBuilder.Entity("InterviewerCompanies", b =>
                 {
@@ -457,7 +433,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Intervu.Domain.Entities.CandidateProfile", b =>
+            modelBuilder.Entity("Intervu.Domain.Entities.IntervieweeProfile", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
@@ -476,9 +452,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
+                    b.Property<string>("Skills")
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
-                    b.ToTable("CandidateProfiles", (string)null);
+                    b.ToTable("IntervieweeProfiles", (string)null);
 
                     b.HasData(
                         new
@@ -487,7 +466,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             Bio = "Aspiring backend developer.",
                             CVUrl = "https://example.com/cv-alice.pdf",
                             CurrentAmount = 0,
-                            PortfolioUrl = "https://portfolio.example.com/alice"
+                            PortfolioUrl = "https://portfolio.example.com/alice",
+                            Skills = "[C#, SQL]"
                         });
                 });
 
@@ -841,20 +821,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<int>("Role")
                         .HasColumnType("integer");
 
-                    b.Property<string>("SlugProfileUrl")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
-                        .IsUnique();
-
-                    b.HasIndex("SlugProfileUrl")
                         .IsUnique();
 
                     b.ToTable("Users", (string)null);
@@ -867,7 +839,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             FullName = "John Doe",
                             Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
                             Role = 1,
-                            SlugProfileUrl = "john-doe_1719000000004",
                             Status = 0
                         },
                         new
@@ -877,7 +848,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             FullName = "Sarah Lee",
                             Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
                             Role = 1,
-                            SlugProfileUrl = "sarah-lee_1719000000005",
                             Status = 0
                         },
                         new
@@ -887,7 +857,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             FullName = "Alice Student",
                             Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
                             Role = 0,
-                            SlugProfileUrl = "alice-student_1719000000001",
                             Status = 0
                         },
                         new
@@ -897,7 +866,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             FullName = "Bob Interviewer",
                             Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
                             Role = 1,
-                            SlugProfileUrl = "bob-interviewer_1719000000002",
                             Status = 0
                         },
                         new
@@ -907,24 +875,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             FullName = "Admin",
                             Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
                             Role = 2,
-                            SlugProfileUrl = "admin_1719000000003",
                             Status = 0
                         });
-                });
-
-            modelBuilder.Entity("CandidateSkills", b =>
-                {
-                    b.HasOne("Intervu.Domain.Entities.CandidateProfile", null)
-                        .WithMany()
-                        .HasForeignKey("CandidateProfilesId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Intervu.Domain.Entities.Skill", null)
-                        .WithMany()
-                        .HasForeignKey("SkillsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("InterviewerCompanies", b =>
@@ -971,7 +923,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Intervu.Domain.Entities.CandidateProfile", null)
+                    b.HasOne("Intervu.Domain.Entities.IntervieweeProfile", null)
                         .WithMany()
                         .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -994,21 +946,19 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .HasForeignKey("InterviewerId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("Intervu.Domain.Entities.CandidateProfile", null)
+                    b.HasOne("Intervu.Domain.Entities.IntervieweeProfile", null)
                         .WithMany()
                         .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
-            modelBuilder.Entity("Intervu.Domain.Entities.CandidateProfile", b =>
+            modelBuilder.Entity("Intervu.Domain.Entities.IntervieweeProfile", b =>
                 {
-                    b.HasOne("Intervu.Domain.Entities.User", "User")
+                    b.HasOne("Intervu.Domain.Entities.User", null)
                         .WithOne()
-                        .HasForeignKey("Intervu.Domain.Entities.CandidateProfile", "Id")
+                        .HasForeignKey("Intervu.Domain.Entities.IntervieweeProfile", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.InterviewerAvailability", b =>
