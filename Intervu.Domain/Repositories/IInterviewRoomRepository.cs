@@ -9,8 +9,8 @@ namespace Intervu.Domain.Repositories
 {
     public interface IInterviewRoomRepository : IRepositoryBase<InterviewRoom>
     {
-        Task<IEnumerable<InterviewRoom>> GetListByIntervieweeId(Guid intervieweeId);
-        Task<IEnumerable<InterviewRoom>> GetListByInterviewerId(Guid interviewerId);
+        Task<IEnumerable<InterviewRoom>> GetListByCandidateId(Guid candidateId);
+        Task<IEnumerable<InterviewRoom>> GetListByCoachId(Guid coachId);
         Task<IEnumerable<InterviewRoom>> GetList();
     }
 }

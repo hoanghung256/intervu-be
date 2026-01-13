@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Intervu.Infrastructure.Persistence.SqlServer
 {
-    public class InterviewerAvailabilitiesRepository : RepositoryBase<InterviewerAvailability>, IInterviewerAvailabilitiesRepository
+    public class InterviewerAvailabilitiesRepository : RepositoryBase<CoachAvailability>, ICoachAvailabilitiesRepository
     {
         private readonly IntervuDbContext _dbContext;
         public InterviewerAvailabilitiesRepository(IntervuDbContext dbContext) :base(dbContext)
@@ -18,11 +18,11 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             _dbContext = dbContext;
         }
 
-        public async Task<IEnumerable<InterviewerAvailability>> GetInterviewerAvailabilitiesByMonthAsync(Guid intervewerId, int month = 0, int year = 0)
+        public async Task<IEnumerable<CoachAvailability>> GetCoachAvailabilitiesByMonthAsync(Guid coachId, int month = 0, int year = 0)
         {
-            var query = _dbContext.InterviewerAvailabilities.AsQueryable();
+            var query = _dbContext.CoachAvailabilities.AsQueryable();
 
-            var filtered = query.Where(x => x.InterviewerId == intervewerId && x.IsBooked == false);
+            var filtered = query.Where(x => x.CoachId == coachId && x.IsBooked == false);
 
             if (month > 0 && year > 0)
             {
@@ -41,59 +41,59 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             return result;
         }
 
-        public async Task<bool> IsInterviewerAvailableAsync(Guid interviewerId, DateTimeOffset startTime, DateTimeOffset endTime)
+        public async Task<bool> IsCoachAvailableAsync(Guid coachId, DateTimeOffset startTime, DateTimeOffset endTime)
         {
             // return true if no overlapping availability or booking exists
-            var overlaps = await _dbContext.InterviewerAvailabilities
-                .Where(x => x.InterviewerId == interviewerId)
+            var overlaps = await _dbContext.CoachAvailabilities
+                .Where(x => x.CoachId == coachId)
                 .Where(x => !(x.EndTime <= startTime.UtcDateTime || x.StartTime >= endTime.UtcDateTime))
                 .AnyAsync();
             return !overlaps;
         }
 
-        public async Task<Guid> CreateInterviewerAvailabilityAsync(InterviewerAvailability availability)
+        public async Task<Guid> CreateCoachAvailabilityAsync(CoachAvailability availability)
         {
-            _dbContext.InterviewerAvailabilities.Add(availability);
+            _dbContext.CoachAvailabilities.Add(availability);
             await _dbContext.SaveChangesAsync();
             return availability.Id;
         }
 
-        public async Task<Guid> CreateMultipleInterviewerAvailabilitiesAsync(List<InterviewerAvailability> availabilities)
+        public async Task<Guid> CreateMultipleCoachAvailabilitiesAsync(List<CoachAvailability> availabilities)
         {
-            _dbContext.InterviewerAvailabilities.AddRange(availabilities);
+            _dbContext.CoachAvailabilities.AddRange(availabilities);
             await _dbContext.SaveChangesAsync();
             return availabilities.First().Id;
         }
 
-        public async Task<bool> DeleteInterviewerAvailabilityAsync(Guid availabilityId)
+        public async Task<bool> DeleteCoachAvailabilityAsync(Guid availabilityId)
         {
-            var availability = await _dbContext.InterviewerAvailabilities.FindAsync(availabilityId);
+            var availability = await _dbContext.CoachAvailabilities.FindAsync(availabilityId);
             if (availability == null)
                 return false;
 
-            _dbContext.InterviewerAvailabilities.Remove(availability);
+            _dbContext.CoachAvailabilities.Remove(availability);
             await _dbContext.SaveChangesAsync();
             return true;
         }
 
-        public async Task<bool> UpdateInterviewerAvailabilityAsync(Guid availabilityId, DateTimeOffset startTime, DateTimeOffset endTime)
+        public async Task<bool> UpdateCoachAvailabilityAsync(Guid availabilityId, DateTimeOffset startTime, DateTimeOffset endTime)
         {
-            var availability = await _dbContext.InterviewerAvailabilities.FindAsync(availabilityId);
+            var availability = await _dbContext.CoachAvailabilities.FindAsync(availabilityId);
             if (availability == null)
                 return false;
 
             availability.StartTime = startTime.UtcDateTime;
             availability.EndTime = endTime.UtcDateTime;
 
-            _dbContext.InterviewerAvailabilities.Update(availability);
+            _dbContext.CoachAvailabilities.Update(availability);
             await _dbContext.SaveChangesAsync();
             return true;
         }
 
-        public Task<InterviewerAvailability?> GetAsync(Guid interviewerId, DateTime startTime)
+        public Task<CoachAvailability?> GetAsync(Guid coachId, DateTime startTime)
         {
-            return _dbContext.InterviewerAvailabilities
-                .FirstOrDefaultAsync(a => a.InterviewerId == interviewerId && a.StartTime == startTime);
+            return _dbContext.CoachAvailabilities
+                .FirstOrDefaultAsync(a => a.CoachId == coachId && a.StartTime == startTime);
         }
     }
 }

@@ -11,13 +11,13 @@ namespace Intervu.Application.UseCases.Authentication
     public class RegisterUseCase : IRegisterUseCase
     {
         private readonly IUserRepository _userRepository;
-        private readonly IIntervieweeProfileRepository _intervieweeProfileRepository;
+        private readonly ICandidateProfileRepository _candidateProfileRepository;
         private readonly IMapper _mapper;
 
-        public RegisterUseCase(IUserRepository userRepository, IIntervieweeProfileRepository intervieweeProfileRepository, IMapper mapper)
+        public RegisterUseCase(IUserRepository userRepository, ICandidateProfileRepository candidateProfileRepository, IMapper mapper)
         {
             _userRepository = userRepository;
-            _intervieweeProfileRepository = intervieweeProfileRepository;
+            _candidateProfileRepository = candidateProfileRepository;
             _mapper = mapper;
         }
 
@@ -44,7 +44,7 @@ namespace Intervu.Application.UseCases.Authentication
             }
             else
             {
-                user.Role = UserRole.Interviewee; // Default role
+                user.Role = UserRole.Candidate; // Default role
             }
 
             user.SlugProfileUrl = SlugProfileUrlHandler.GenerateProfileSlug(request.FullName);
@@ -55,10 +55,10 @@ namespace Intervu.Application.UseCases.Authentication
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
 
-            // Create IntervieweeProfile if role is Interviewee
-            if (user.Role == UserRole.Interviewee)
+            // Create CandidateProfile if role is Candidate
+            if (user.Role == UserRole.Candidate)
             {
-                var profile = new Domain.Entities.IntervieweeProfile
+                var profile = new Domain.Entities.CandidateProfile
                 {
                     // Shared PK with User
                     // Id is set by EF when adding, but for shared key we ensure FK equals User.Id
@@ -70,8 +70,8 @@ namespace Intervu.Application.UseCases.Authentication
                     CurrentAmount = 0
                 };
 
-                await _intervieweeProfileRepository.AddAsync(profile);
-                await _intervieweeProfileRepository.SaveChangesAsync();
+                await _candidateProfileRepository.AddAsync(profile);
+                await _candidateProfileRepository.SaveChangesAsync();
             }
 
             return true;

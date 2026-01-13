@@ -1,11 +1,11 @@
 using Asp.Versioning;
 using Intervu.Application.DTOs.User;
 using Intervu.Application.Interfaces.ExternalServices;
-using Intervu.Application.Interfaces.UseCases.IntervieweeProfile;
 using Intervu.Application.Interfaces.UseCases.UserProfile;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
+using Intervu.Application.Interfaces.UseCases.CandidateProfile;
 using static Intervu.API.Controllers.v1.InterviewRoomController;
 
 namespace Intervu.API.Controllers.v1
@@ -18,24 +18,27 @@ namespace Intervu.API.Controllers.v1
         private readonly IGetUserProfile _getUserProfile;
         private readonly IUpdateUserProfile _updateUserProfile;
         private readonly IChangePassword _changePassword;
-        private readonly IUpdateProfilePicture _updateProfilePicture;
         private readonly IFileService _fileService;
-        private readonly IUpdateIntervieweeProfile _updateIntervieweeProfile;
+        private readonly Intervu.Application.Interfaces.UseCases.UserProfile.IUploadAvatar _uploadAvatar;
+        private readonly Intervu.Application.Interfaces.UseCases.UserProfile.IClearProfilePicture _clearProfilePicture;
+        private readonly IUpdateCandidateProfile _updateCandidateProfile;
 
         public UserProfileController(
             IGetUserProfile getUserProfile,
             IUpdateUserProfile updateUserProfile,
             IChangePassword changePassword,
-            IUpdateProfilePicture updateProfilePicture,
             IFileService fileService,
-            IUpdateIntervieweeProfile updateIntervieweeProfile)
+            Intervu.Application.Interfaces.UseCases.UserProfile.IUploadAvatar uploadAvatar,
+            Intervu.Application.Interfaces.UseCases.UserProfile.IClearProfilePicture clearProfilePicture,
+            IUpdateCandidateProfile updateCandidateProfile)
         {
             _getUserProfile = getUserProfile;
             _updateUserProfile = updateUserProfile;
             _changePassword = changePassword;
-            _updateProfilePicture = updateProfilePicture;
             _fileService = fileService;
-            _updateIntervieweeProfile = updateIntervieweeProfile;
+            _uploadAvatar = uploadAvatar;
+            _clearProfilePicture = clearProfilePicture;
+            _updateCandidateProfile = updateCandidateProfile;
         }
 
         /// <summary>
@@ -113,37 +116,41 @@ namespace Intervu.API.Controllers.v1
         }
 
         /// <summary>
-        /// Update profile picture
+        /// Upload avatar (store in file service and update user record)
         /// </summary>
-        [HttpPut("{userId}/profile-picture")]
-        public async Task<IActionResult> UpdateProfilePicture(Guid userId, IFormFile profilePicture)
+        [HttpPost("upload-avatar/{userId}")]
+        public async Task<IActionResult> UploadAvatar(Guid userId, IFormFile profilePicture)
         {
             if (profilePicture == null || profilePicture.Length == 0)
             {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = "Profile picture is required"
-                });
+                return BadRequest(new { success = false, message = "Profile picture is required" });
             }
 
-            var fileUrl = await _updateProfilePicture.ExecuteAsync(userId, profilePicture);
-            
+            var fileUrl = await _uploadAvatar.ExecuteAsync(userId, profilePicture);
             if (fileUrl == null)
             {
-                return NotFound(new
-                {
-                    success = false,
-                    message = "User not found"
-                });
+                return NotFound(new { success = false, message = "User not found" });
             }
 
-            return Ok(new
-            {
-                success = true,
-                message = "Profile picture updated successfully",
-                data = new { profilePictureUrl = fileUrl }
+            return Ok(new { 
+                success = true, 
+                message = 
+                "Profile picture updated successfully", 
+                data = new { profilePictureUrl = fileUrl 
+                } 
             });
+        }
+
+        [HttpDelete("delete-avatar/{userId}")]
+        public async Task<IActionResult> DeleteAvatar(Guid userId)
+        {
+            var success = await _clearProfilePicture.ExecuteAsync(userId);
+            if (!success)
+            {
+                return NotFound(new { success = false, message = "User not found or no avatar to delete" });
+            }
+
+            return Ok(new { success = true, message = "Avatar deleted successfully" });
         }
 
         [HttpPost("upload-cv/{userId}")]
@@ -155,7 +162,7 @@ namespace Intervu.API.Controllers.v1
 
             var fileUrl = await _fileService.UploadFileAsync(stream, objectName, file.ContentType);
 
-            var profile = await _updateIntervieweeProfile.UpdateIntervieweeProfile(userId, fileUrl);
+            var profile = await _updateCandidateProfile.UpdateCandidateCVProfile(userId, fileUrl);
             if (profile == null)
             {
                 return NotFound();

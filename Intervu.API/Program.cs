@@ -107,7 +107,8 @@ namespace Intervu.API
                     ValidateIssuer = false, // Disable because Issuer is empty in config
                     ValidateAudience = false, // Disable because Audience is empty in config
                     ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true
+                    ValidateIssuerSigningKey = true,
+                    ClockSkew = TimeSpan.Zero
                 };
             });
 
@@ -121,32 +122,32 @@ namespace Intervu.API
 
                 options.AddPolicy(
                     AuthorizationPolicies.Interviewer,
-                    policy => policy.RequireRole(UserRole.Interviewer.ToString())
+                    policy => policy.RequireRole(UserRole.Coach.ToString())
                 );
 
                 options.AddPolicy(
-                    AuthorizationPolicies.Interviewee,
-                    policy => policy.RequireRole(UserRole.Interviewee.ToString())
+                    AuthorizationPolicies.Candidate,
+                    policy => policy.RequireRole(UserRole.Candidate.ToString())
                 );
 
                 options.AddPolicy(
-                    AuthorizationPolicies.IntervieweeOrInterviewer,
+                    AuthorizationPolicies.CandidateOrInterviewer,
                     policy => policy.RequireAssertion(context =>
-                        context.User.IsInRole(UserRole.Interviewee.ToString()) ||
-                        context.User.IsInRole(UserRole.Interviewer.ToString()))
+                        context.User.IsInRole(UserRole.Candidate.ToString()) ||
+                        context.User.IsInRole(UserRole.Coach.ToString()))
                 );
 
                 options.AddPolicy(
                     AuthorizationPolicies.InterviewOrAdmin,
                     policy => policy.RequireAssertion(context =>
-                        context.User.IsInRole(UserRole.Interviewer.ToString()) ||
+                        context.User.IsInRole(UserRole.Coach.ToString()) ||
                         context.User.IsInRole(UserRole.Admin.ToString()))
                 );
 
                 options.AddPolicy(
-                    AuthorizationPolicies.IntervieweeOrAdmin,
+                    AuthorizationPolicies.CandidateOrAdmin,
                     policy => policy.RequireAssertion(context =>
-                        context.User.IsInRole(UserRole.Interviewee.ToString()) ||
+                        context.User.IsInRole(UserRole.Candidate.ToString()) ||
                         context.User.IsInRole(UserRole.Admin.ToString()))
                 );
             });
@@ -180,7 +181,8 @@ namespace Intervu.API
 
                     policy.WithOrigins(allowedOrigins)
                           .AllowAnyHeader()
-                          .AllowAnyMethod();
+                          .AllowAnyMethod()
+                          .AllowCredentials();
                 });
             });
 
@@ -231,7 +233,7 @@ namespace Intervu.API
 
             app.Run();
         }
-
+            
         public static string? GetLocalIPv4()
         {
             foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())

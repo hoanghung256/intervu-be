@@ -7,41 +7,41 @@ namespace Intervu.Application.UseCases.InterviewBooking
     internal class CreateBookingCheckoutUrl : ICreateBookingCheckoutUrl
     {
         private readonly IPaymentService _paymentService;
-        private readonly IInterviewerProfileRepository _interviewerProfileRepository;
+        private readonly ICoachProfileRepository _coachProfileRepository;
         private readonly ITransactionRepository _transactionRepository;
 
-        public CreateBookingCheckoutUrl(IPaymentService paymentService, IInterviewerProfileRepository interviewerProfileRepository, ITransactionRepository transactionRepository) 
+        public CreateBookingCheckoutUrl(IPaymentService paymentService, ICoachProfileRepository coachProfileRepository, ITransactionRepository transactionRepository) 
         {
             _paymentService = paymentService;
-            _interviewerProfileRepository = interviewerProfileRepository;
+            _coachProfileRepository = coachProfileRepository;
             _transactionRepository = transactionRepository;
         }
 
-        public async Task<string> ExecuteAsync(Guid intervieweeId, Guid interviewerId, Guid interviewerAvailabilityId, string returnUrl)
+        public async Task<string> ExecuteAsync(Guid candidateId, Guid coachId, Guid coachAvailabilityId, string returnUrl)
         {
-            var interviewer = await _interviewerProfileRepository.GetProfileByIdAsync(interviewerId);
+            var coach = await _coachProfileRepository.GetProfileByIdAsync(coachId);
 
-            if (interviewer == null)
+            if (coach == null)
             {
                 throw new Exception("Interviewer not found");
             }
 
             Domain.Entities.InterviewBookingTransaction t = new()
             {
-                UserId = intervieweeId,
-                Amount = interviewer.CurrentAmount ?? 0,
+                UserId = candidateId,
+                Amount = coach.CurrentAmount ?? 0,
                 Status = Domain.Entities.Constants.TransactionStatus.Created,
                 Type = Domain.Entities.Constants.TransactionType.Payment,
-                InterviewerAvailabilityId = interviewerAvailabilityId,
+                CoachAvailabilityId = coachAvailabilityId,
             };
 
             Domain.Entities.InterviewBookingTransaction t2 = new()
             {
-                UserId = interviewerId,
-                Amount = interviewer.CurrentAmount ?? 0,
+                UserId = coachId,
+                Amount = coach.CurrentAmount ?? 0,
                 Status = Domain.Entities.Constants.TransactionStatus.Created,
                 Type = Domain.Entities.Constants.TransactionType.Payout,
-                InterviewerAvailabilityId = interviewerAvailabilityId,
+                CoachAvailabilityId = coachAvailabilityId,
             };
 
             await _transactionRepository.AddAsync(t);

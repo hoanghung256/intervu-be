@@ -25,7 +25,7 @@ namespace Intervu.API.Controllers.v1
             _createRoom = createRoom;
         }
 
-        [Authorize(Policy = AuthorizationPolicies.IntervieweeOrInterviewer)]
+        [Authorize(Policy = AuthorizationPolicies.CandidateOrInterviewer)]
         [HttpGet]
         public async Task<IActionResult> GetList()
         {
@@ -45,9 +45,9 @@ namespace Intervu.API.Controllers.v1
         [HttpPost]
         public async Task<IActionResult> CreateRoom([FromBody] CreateRoomDto createRoomDto)
         {
-            Guid roomId = createRoomDto.interviewerId == null 
-                ? await _createRoom.ExecuteAsync(createRoomDto.intervieweeId) 
-                : await _createRoom.ExecuteAsync(createRoomDto.intervieweeId, createRoomDto.interviewerId, DateTime.Now.AddDays(1));
+            Guid roomId = createRoomDto.coachId == null 
+                ? await _createRoom.ExecuteAsync(createRoomDto.candidateId) 
+                : await _createRoom.ExecuteAsync(createRoomDto.candidateId, createRoomDto.coachId, DateTime.Now.AddDays(1));
 
             return Ok(new
             {
@@ -62,8 +62,8 @@ namespace Intervu.API.Controllers.v1
 
         public class CreateRoomDto
         {
-            public Guid intervieweeId { get; set; }
-            public Guid interviewerId { get; set; }
+            public Guid candidateId { get; set; }
+            public Guid coachId { get; set; }
         }
     }
 }

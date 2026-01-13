@@ -70,7 +70,7 @@ namespace Intervu.Infrastructure.ExternalServices
                 {
                     //using var scope = _services.CreateScope();
                     //var db = scope.ServiceProvider.GetRequiredService<IntervuDbContext>();
-                    var payout = scope.ServiceProvider.GetRequiredService<Intervu.Application.Interfaces.UseCases.InterviewBooking.IPayoutForInterviewerAfterInterview>();
+                    var payout = scope.ServiceProvider.GetRequiredService<Intervu.Application.Interfaces.UseCases.InterviewBooking.IPayoutForCoachAfterInterview>();
 
                     foreach (var room in roomsToEnd)
                     {

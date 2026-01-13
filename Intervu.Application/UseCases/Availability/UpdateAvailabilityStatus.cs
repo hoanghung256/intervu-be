@@ -11,21 +11,20 @@ namespace Intervu.Application.UseCases.Availability
 {
     public class UpdateAvailabilityStatus : IUpdateAvailabilityStatus
     {
-        private readonly IInterviewerAvailabilitiesRepository _interviewerAvailabilitiesRepository;
+        private readonly ICoachAvailabilitiesRepository _coachAvailabilitiesRepository;
 
-        public UpdateAvailabilityStatus(IInterviewerAvailabilitiesRepository interviewerAvailabilitiesRepository) 
+        public UpdateAvailabilityStatus(ICoachAvailabilitiesRepository coachAvailabilitiesRepository) 
         {
-            _interviewerAvailabilitiesRepository = interviewerAvailabilitiesRepository;
+            _coachAvailabilitiesRepository = coachAvailabilitiesRepository;
         }
 
-        public async Task<InterviewerAvailability> ExecuteAsync(Guid availabilityId, bool isBooked)
+        public async Task<CoachAvailability> ExecuteAsync(Guid availabilityId, bool isBooked)
         {
-            var a = await _interviewerAvailabilitiesRepository.GetByIdAsync(availabilityId) ?? throw new Exception("InterviewerAvailability not found");
+            var a = await _coachAvailabilitiesRepository.GetByIdAsync(availabilityId) ?? throw new Exception("CoachAvailability not found");
 
             a.IsBooked = isBooked;
-            _interviewerAvailabilitiesRepository.UpdateAsync(a);
-            await _interviewerAvailabilitiesRepository.SaveChangesAsync();
-
+            _coachAvailabilitiesRepository.UpdateAsync(a);
+            await _coachAvailabilitiesRepository.SaveChangesAsync();
             return a;
         }
     }

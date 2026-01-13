@@ -8,7 +8,6 @@ namespace Intervu.Application.Interfaces.ExternalServices
 {
     public interface IFileService
     {
-        Task<string> UploadFileAsync(Stream stream, string fileName);
         Task<string> UploadFileAsync(Stream stream, string fileName, string contentType);
         Task<bool> DeleteFileAsync(string fileUrl);
     }

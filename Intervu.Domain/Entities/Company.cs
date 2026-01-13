@@ -9,9 +9,9 @@ namespace Intervu.Domain.Entities
 {
     public class Company : EntityBase<Guid>
     {
-        public string Name { get; set; }
-        public string Website { get; set; }
-        public string LogoPath { get; set; }
-        public ICollection<InterviewerProfile> InterviewerProfiles { get; set; } = new List<InterviewerProfile>(); 
+        public required string Name { get; set; }
+        public required string Website { get; set; }
+        public required string LogoPath { get; set; }
+        public ICollection<CoachProfile> CoachProfiles { get; set; } = new List<CoachProfile>();
     }
 }

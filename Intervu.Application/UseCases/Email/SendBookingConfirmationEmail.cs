@@ -28,7 +28,7 @@ namespace Intervu.Application.UseCases.Email
             // Build placeholders dictionary from DTO
             var placeholders = new Dictionary<string, string>
             {
-                { "IntervieweeName", dto.CandidateName },
+                { "CandidateName", dto.CandidateName },
                 { "BookingID", dto.BookingID },
                 { "InterviewDate", dto.InterviewDate.ToString("MMMM dd, yyyy") },
                 { "InterviewTime", dto.InterviewTime },

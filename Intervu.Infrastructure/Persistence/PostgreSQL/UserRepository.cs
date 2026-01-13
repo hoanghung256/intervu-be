@@ -64,6 +64,17 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             return profilePictureUrl;
         }
 
+        public async Task<bool> ClearProfilePictureAsync(Guid userId)
+        {
+            var user = await GetByIdAsync(userId);
+            if (user == null) return false;
+
+            user.ProfilePicture = null;
+            UpdateAsync(user);
+            await SaveChangesAsync();
+            return true;
+        }
+
         public Task<(IReadOnlyList<User> Items, int TotalCount)> GetPagedUsersAsync(int page, int pageSize)
         {
             throw new NotImplementedException();

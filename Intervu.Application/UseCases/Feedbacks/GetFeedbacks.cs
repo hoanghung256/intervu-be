@@ -24,7 +24,7 @@ namespace Intervu.Application.UseCases.Feedbacks
         {
             if (request.StudentId.HasValue)
             {
-                var (items, total) = await _repo.GetFeedbacksByStudentIdAsync(request.StudentId.Value, request.Page, request.PageSize);
+                var (items, total) = await _repo.GetFeedbacksByCandidateIdAsync(request.StudentId.Value, request.Page, request.PageSize);
                 return new PagedResult<Feedback>(items.ToList(), total, request.PageSize, request.Page);
             }
 

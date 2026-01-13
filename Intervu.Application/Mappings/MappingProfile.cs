@@ -1,9 +1,9 @@
 ﻿using AutoMapper;
 using Intervu.Application.DTOs.Admin;
 using Intervu.Application.DTOs.Availability;
+using Intervu.Application.DTOs.Candidate;
 using Intervu.Application.DTOs.Company;
-using Intervu.Application.DTOs.Interviewee;
-using Intervu.Application.DTOs.Interviewer;
+using Intervu.Application.DTOs.Coach;
 using Intervu.Application.DTOs.Skill;
 using Intervu.Application.DTOs.User;
 using Intervu.Domain.Entities;
@@ -32,26 +32,25 @@ namespace Intervu.Application.Mappings
                 .ForMember(dest => dest.ProfilePicture, opt => opt.Ignore())
                 .ForMember(dest => dest.Status, opt => opt.Ignore());
 
-            // Interview mappings
-            CreateMap<InterviewerProfile, InterviewerProfileDto>().ForMember(dest => dest.User, opt => opt.Ignore()).ReverseMap();
-            CreateMap<InterviewerProfile, InterviewerViewDto>().ForMember(dest => dest.User, opt => opt.Ignore()).ReverseMap();
-            CreateMap<InterviewerProfile, InterviewerCreateDto>().ReverseMap();
-            CreateMap<InterviewerProfile, InterviewerUpdateDto>().ReverseMap();
+            // Coach mappings
+            CreateMap<CoachProfile, CoachProfileDto>().ForMember(dest => dest.User, opt => opt.Ignore()).ReverseMap();
+            CreateMap<CoachProfile, CoachViewDto>().ForMember(dest => dest.User, opt => opt.Ignore()).ReverseMap();
+            CreateMap<CoachCreateDto, CoachProfile>().ReverseMap();
+            CreateMap<CoachUpdateDto, CoachProfile>().ReverseMap();
 
-            CreateMap<InterviewerProfileDto, InterviewerCreateDto>().ReverseMap();
-            CreateMap<User, InterviewerCreateDto>().ReverseMap();
+            CreateMap<User, CoachCreateDto>().ReverseMap();
 
             CreateMap<Company, DTOs.Company.CompanyDto>().ReverseMap();
             CreateMap<Skill, SkillDto>().ReverseMap();
 
-            // Interviewee mappings
-            CreateMap<IntervieweeProfile, IntervieweeProfileDto>().ForMember(dest => dest.User, opt => opt.Ignore()).ReverseMap();
-            CreateMap<IntervieweeProfile, IntervieweeViewDto>().ForMember(dest => dest.User, opt => opt.Ignore()).ReverseMap();
-            CreateMap<IntervieweeCreateDto, IntervieweeProfile>()
+            // Candidate mappings
+            CreateMap<CandidateProfile, CandidateProfileDto>().ForMember(dest => dest.User, opt => opt.Ignore()).ReverseMap();
+            CreateMap<CandidateProfile, CandidateViewDto>().ForMember(dest => dest.User, opt => opt.Ignore()).ReverseMap();
+            CreateMap<CandidateCreateDto, CandidateProfile>()
                 .ForMember(dest => dest.User, opt => opt.Ignore())
                 .ForMember(dest => dest.Skills, opt => opt.Ignore());
-            CreateMap<IntervieweeProfile, IntervieweeCreateDto>();
-            CreateMap<IntervieweeProfile, IntervieweeUpdateDto>().ReverseMap();
+            CreateMap<CandidateProfile, CandidateCreateDto>();
+            CreateMap<CandidateProfile, CandidateUpdateDto>().ReverseMap();
 
             // Admin mappings
             CreateMap<User, DTOs.Admin.UserDto>();
@@ -60,13 +59,13 @@ namespace Intervu.Application.Mappings
             CreateMap<Feedback, FeedbackDto>();
             // InterviewerAdminDto is manually mapped in use case to include User data
             // Availability mappings
-            CreateMap<InterviewerAvailabilityCreateDto, InterviewerAvailability>()
+            CreateMap<CoachAvailabilityCreateDto, CoachAvailability>()
                 .ForMember(dest => dest.IsBooked, opt => opt.MapFrom(src => false))
                 .ForMember(dest => dest.Id, opt => opt.Ignore());
 
-            CreateMap<InterviewerAvailabilityUpdateDto, InterviewerAvailability>()
+            CreateMap<CoachAvailabilityUpdateDto, CoachAvailability>()
                 .ForMember(dest => dest.IsBooked, opt => opt.Ignore())
-                .ForMember(dest => dest.InterviewerId, opt => opt.Ignore());
+                .ForMember(dest => dest.CoachId, opt => opt.Ignore());
         }
     }
 }

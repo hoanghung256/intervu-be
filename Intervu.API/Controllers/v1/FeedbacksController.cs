@@ -41,7 +41,7 @@ namespace Intervu.API.Controllers.v1
             _userRepository = userRepository;
         }
 
-        [Authorize(Policy = AuthorizationPolicies.Interviewee)]
+        [Authorize(Policy = AuthorizationPolicies.Candidate)]
         [HttpGet]
         public async Task<IActionResult> GetList([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
@@ -64,7 +64,7 @@ namespace Intervu.API.Controllers.v1
             });
         }
 
-        [Authorize(Policy = AuthorizationPolicies.Interviewee)]
+        [Authorize(Policy = AuthorizationPolicies.Candidate)]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateFeedback([FromRoute] Guid id, [FromBody] UpdateFeedbackDto updateFeedbackDto)
         {
@@ -116,22 +116,22 @@ namespace Intervu.API.Controllers.v1
                 var result = new List<object>();
                 foreach (var feedback in feedbacks)
                 {
-                    var student = await _userRepository.GetByIdAsync(feedback.StudentId);
-                    var interviewer = await _userRepository.GetByIdAsync(feedback.InterviewerId);
+                    var student = await _userRepository.GetByIdAsync(feedback.CandidateId);
+                    var coach = await _userRepository.GetByIdAsync(feedback.CoachId);
 
                     result.Add(new
                     {
                         id = feedback.Id,
-                        interviewerId = feedback.InterviewerId,
-                        studentId = feedback.StudentId,
+                        interviewerId = feedback.CoachId,
+                        studentId = feedback.CandidateId,
                         interviewRoomId = feedback.InterviewRoomId,
                         rating = feedback.Rating,
                         comments = feedback.Comments ?? "",
                         aiAnalysis = feedback.AIAnalysis ?? "",
                         studentName = student?.FullName ?? "Unknown",
                         studentEmail = student?.Email ?? "Unknown",
-                        interviewerName = interviewer?.FullName ?? "Unknown",
-                        interviewerEmail = interviewer?.Email ?? "Unknown"
+                        interviewerName = coach?.FullName ?? "Unknown",
+                        interviewerEmail = coach?.Email ?? "Unknown"
                     });
                 }
                 

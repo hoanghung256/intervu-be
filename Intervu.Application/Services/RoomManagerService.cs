@@ -117,7 +117,7 @@ namespace Intervu.Application.Services
                     //Create feedback
                     GetFeedbackRequest request = new GetFeedbackRequest
                     {
-                        StudentId = room.StudentId,
+                        StudentId = room.CandidateId,
                     };
                     var feedbacks = await getFeedbacks.ExecuteAsync(request);
                     var filterFeedbacks = feedbacks.Items.Where(f => f.InterviewRoomId == room.Id).ToList();
@@ -125,8 +125,8 @@ namespace Intervu.Application.Services
                     {
                         Feedback feedback = new Feedback
                         {
-                            InterviewerId = room.InterviewerId.Value,
-                            StudentId = room.StudentId.Value,
+                            CoachId = room.CoachId.Value,
+                            CandidateId = room.CandidateId.Value,
                             InterviewRoomId = room.Id,
                             Rating = 0,
                             Comments = "",
