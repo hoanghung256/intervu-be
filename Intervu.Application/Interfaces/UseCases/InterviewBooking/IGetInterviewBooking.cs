@@ -8,6 +8,8 @@ namespace Intervu.Application.Interfaces.UseCases.InterviewBooking
 {
     public interface IGetInterviewBooking
     {
-        Task<Domain.Entities.InterviewBookingTransaction?> ExecuteAsync(Guid interviewBookingId);
+        Task<Domain.Entities.InterviewBookingTransaction?> GetById(Guid id);
+
+        Task<Domain.Entities.InterviewBookingTransaction?> GetByOrderCode(int orderCode);
     }
 }

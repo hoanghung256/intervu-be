@@ -5,5 +5,7 @@ namespace Intervu.Domain.Repositories
     public interface ITransactionRepository : IRepositoryBase<InterviewBookingTransaction>
     {
         Task<InterviewBookingTransaction?> GetByAvailabilityId(Guid id);
+
+        Task<InterviewBookingTransaction?> GetByOrderCode(int orderCode);
     }
 }

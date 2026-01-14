@@ -17,6 +17,7 @@ using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
 using System;
 using Intervu.Application.Interfaces.UseCases.Candidate;
+using Intervu.Application.DTOs.InterviewBooking;
 
 namespace Intervu.API.Controllers.v1.Payment
 {
@@ -25,32 +26,35 @@ namespace Intervu.API.Controllers.v1.Payment
     [Route("api/v{version:apiVersion}/interview-booking")]
     public class InterviewBookingController : Controller
     {
+        private readonly ILogger<InterviewBookingController> _logger;
         private readonly ICreateBookingCheckoutUrl _createBookingCheckoutUrl;
         private readonly IPaymentService _paymentService;
         private readonly ICreateInterviewRoom _createInterviewRoom;
         private readonly IUpdateAvailabilityStatus _updateAvailabilityStatus;
-        private readonly IUpdateBookingStatus _updateBookingStatus;
+        private readonly IHandldeInterviewBookingUpdate _handldeInterviewBookingUpdate;
         private readonly IGetInterviewBooking _getInterviewBooking;
         private readonly ISendBookingConfirmationEmail _sendBookingConfirmationEmail;
         private readonly IGetCoachDetails _getCoachDetails;
         private readonly IGetCandidateDetails _getCandidateDetails;
 
         public InterviewBookingController(
+            ILogger<InterviewBookingController> logger,
             ICreateBookingCheckoutUrl createBookingCheckoutUrl,
             IPaymentService paymentService,
             ICreateInterviewRoom createInterviewRoom,
             IUpdateAvailabilityStatus updateAvailabilityStatus,
             IGetInterviewBooking getInterviewBooking,
-            IUpdateBookingStatus updateBookingStatus,
+            IHandldeInterviewBookingUpdate handldeInterviewBookingUpdate,
             ISendBookingConfirmationEmail sendBookingConfirmationEmail,
             IGetCoachDetails getCoachDetails,
             IGetCandidateDetails getCandidateDetails)
         {
+            _logger = logger;
             _createBookingCheckoutUrl = createBookingCheckoutUrl;
             _paymentService = paymentService;
             _createInterviewRoom = createInterviewRoom;
             _updateAvailabilityStatus = updateAvailabilityStatus;
-            _updateBookingStatus = updateBookingStatus;
+            _handldeInterviewBookingUpdate = handldeInterviewBookingUpdate;
             _getInterviewBooking = getInterviewBooking;
             _sendBookingConfirmationEmail = sendBookingConfirmationEmail;
             _getCoachDetails = getCoachDetails;
@@ -63,22 +67,24 @@ namespace Intervu.API.Controllers.v1.Payment
         {
             try
             {
-            Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
+                Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
 
-            string checkOutUrl = await _createBookingCheckoutUrl.ExecuteAsync(userId, request.CoachId, request.CoachAvailabilityId, request.ReturnUrl);
+                string? checkOutUrl = await _createBookingCheckoutUrl.ExecuteAsync(userId, request.CoachId, request.CoachAvailabilityId, request.ReturnUrl);
 
                 return Ok(new
                 {
                     success = true,
                     data = new
                     {
+                        isPaid = checkOutUrl == null,
                         checkOutUrl
                     }
                 });
             }
             catch (Exception ex)
             {
-                return Ok(new
+                _logger.LogError(ex, "Create checkout URL failed");
+                return StatusCode(500, new
                 {
                     success = false,
                     message = "Create checkout url failed! Please try again"
@@ -87,12 +93,13 @@ namespace Intervu.API.Controllers.v1.Payment
         }
 
         [HttpPost("webhook")]
-        public async Task<IActionResult> VerifyPayment(Webhook payload)
+        public async Task<IActionResult> VerifyPaymentAsync(Webhook payload)
         {
             try
             {
-                bool isPaid = _paymentService.VerifyPaymentAsync(payload);
-                return Ok(new { success = isPaid });
+                await _handldeInterviewBookingUpdate.ExecuteAsync(payload);
+
+                return Ok();
             }
             catch (Exception ex)
             {
@@ -114,23 +121,15 @@ namespace Intervu.API.Controllers.v1.Payment
             }
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetTransaction([FromRoute] Guid id)
+        [HttpGet("{orderCode}")]
+        public async Task<IActionResult> GetTransaction([FromRoute] int orderCode)
         {
-            InterviewBookingTransaction? t = await _getInterviewBooking.ExecuteAsync(id);
+            InterviewBookingTransaction? t = await _getInterviewBooking.GetByOrderCode(orderCode);
             return Ok(new
             {
                 success = true,
                 data = t
             });
         }
-    }
-
-    public class InterviewBookingRequest
-    {
-        public Guid CoachId { get; set; }
-        public Guid CoachAvailabilityId { get; set; }
-
-        public string ReturnUrl { get; set; } = string.Empty;
     }
 }
