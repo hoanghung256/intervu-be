@@ -10,6 +10,9 @@ namespace Intervu.Domain.Entities
 {
     public class InterviewBookingTransaction : EntityBase<Guid>
     {
+        // For tracking with PayOS, IDENTITY(1,1)
+        public int OrderCode { get; set; }
+
         public Guid UserId { get; set; }
 
         public Guid CoachAvailabilityId { get; set; }

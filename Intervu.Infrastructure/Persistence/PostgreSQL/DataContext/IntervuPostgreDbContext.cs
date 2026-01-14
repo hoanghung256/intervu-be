@@ -250,9 +250,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             {
                 b.ToTable("InterviewBookingTransaction");
                 b.HasKey(x => x.Id);
+                b.Property(x => x.OrderCode).UseIdentityAlwaysColumn();
                 b.Property(x => x.Amount).IsRequired();
-                //b.Property(x => x.CreatedAt).IsRequired();
-                //b.Property(x => x.UpdatedAt).IsRequired();
                 b.Property(x => x.CoachAvailabilityId).IsRequired();
                 b.Property(x => x.Type).IsRequired();
                 b.Property(x => x.Status).IsRequired();
@@ -526,28 +525,28 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 Status = InterviewRoomStatus.Scheduled
             });
 
-            modelBuilder.Entity<InterviewBookingTransaction>().HasData(new InterviewBookingTransaction
-            {
-                Id = Guid.Parse("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a88"),
-                UserId = user1Id,
-                CoachAvailabilityId = CoachAvail1Id,
-                Amount = 1000,
-                Type = TransactionType.Payment,
-                Status = TransactionStatus.Paid,
-                //CreatedAt = new DateTime(2025, 11, 17, 0, 0, 0),
-                //UpdatedAt = new DateTime(2025, 11, 17, 0, 0, 0)
-            },
-            new InterviewBookingTransaction
-            {
-                Id = Guid.Parse("8f9a0b1c-d2e3-4f5a-9b0c-1d2e3f4a5b99"),
-                UserId = user2Id,
-                CoachAvailabilityId = CoachAvail1Id,
-                Amount = 500,
-                Type = TransactionType.Payout,
-                Status = TransactionStatus.Paid,
-                //CreatedAt = new DateTime(2025, 11, 17, 0, 0, 0),
-                //UpdatedAt = new DateTime(2025, 11, 17, 0, 0, 0)
-            });
+            //modelBuilder.Entity<InterviewBookingTransaction>().HasData(new InterviewBookingTransaction
+            //{
+            //    Id = Guid.Parse("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a88"),
+            //    UserId = user1Id,
+            //    CoachAvailabilityId = CoachAvail1Id,
+            //    Amount = 1000,
+            //    Type = TransactionType.Payment,
+            //    Status = TransactionStatus.Paid,
+            //    //CreatedAt = new DateTime(2025, 11, 17, 0, 0, 0),
+            //    //UpdatedAt = new DateTime(2025, 11, 17, 0, 0, 0)
+            //},
+            //new InterviewBookingTransaction
+            //{
+            //    Id = Guid.Parse("8f9a0b1c-d2e3-4f5a-9b0c-1d2e3f4a5b99"),
+            //    UserId = user2Id,
+            //    CoachAvailabilityId = CoachAvail1Id,
+            //    Amount = 500,
+            //    Type = TransactionType.Payout,
+            //    Status = TransactionStatus.Paid,
+            //    //CreatedAt = new DateTime(2025, 11, 17, 0, 0, 0),
+            //    //UpdatedAt = new DateTime(2025, 11, 17, 0, 0, 0)
+            //});
 
             modelBuilder.Entity<Feedback>().HasData(new Feedback
             {
