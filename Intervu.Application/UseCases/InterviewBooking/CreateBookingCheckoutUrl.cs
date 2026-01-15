@@ -1,5 +1,7 @@
-﻿using Intervu.Application.Interfaces.ExternalServices;
+﻿using Intervu.Application.Exceptions;
+using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
+using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 using Microsoft.Extensions.Logging;
 
@@ -11,20 +13,29 @@ namespace Intervu.Application.UseCases.InterviewBooking
         private readonly IPaymentService _paymentService;
         private readonly ICoachProfileRepository _coachProfileRepository;
         private readonly ITransactionRepository _transactionRepository;
+        private readonly ICoachAvailabilitiesRepository _coachAvailabilitiesRepository;
 
-        public CreateBookingCheckoutUrl(ILogger<CreateBookingCheckoutUrl> logger, IPaymentService paymentService, ICoachProfileRepository coachProfileRepository, ITransactionRepository transactionRepository) 
+        public CreateBookingCheckoutUrl(ILogger<CreateBookingCheckoutUrl> logger, IPaymentService paymentService, ICoachProfileRepository coachProfileRepository, ITransactionRepository transactionRepository, ICoachAvailabilitiesRepository coachAvailabilitiesRepository) 
         {
             _logger = logger;
             _paymentService = paymentService;
             _coachProfileRepository = coachProfileRepository;
             _transactionRepository = transactionRepository;
+            _coachAvailabilitiesRepository = coachAvailabilitiesRepository;
         }
 
         public async Task<string?> ExecuteAsync(Guid candidateId, Guid coachId, Guid coachAvailabilityId, string returnUrl)
         {
             try
             {
-                var coach = await _coachProfileRepository.GetProfileByIdAsync(coachId) ?? throw new Exception("Interviewer not found");
+                var availability = await _coachAvailabilitiesRepository.GetByIdAsync(coachAvailabilityId) ?? throw new NotFoundException("Coach availability not found");
+
+                if (availability.CoachId != coachId) throw new Exception("Coach availability does not belong to the specified coach");
+
+                if (availability.Status != CoachAvailabilityStatus.Available) throw new CoachAvailabilityNotAvailableException("Coach availability is not available for booking");
+
+                var coach = await _coachProfileRepository.GetProfileByIdAsync(coachId) ?? throw new NotFoundException("Interviewer not found");
+
                 Domain.Entities.InterviewBookingTransaction t = new()
                 {
                     UserId = candidateId,
