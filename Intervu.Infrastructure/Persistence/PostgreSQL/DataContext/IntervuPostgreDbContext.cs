@@ -155,18 +155,18 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
 
             // CoachAvailability (many availabilities per coach)
             modelBuilder.Entity<CoachAvailability>(b =>
-          {
-              b.ToTable("CoachAvailabilities");
-              b.HasKey(x => x.Id);
-              b.Property(x => x.StartTime).IsRequired();
-              b.Property(x => x.EndTime).IsRequired();
+            {
+                b.ToTable("CoachAvailabilities");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.StartTime).IsRequired();
+                b.Property(x => x.EndTime).IsRequired();
 
-              b.HasOne<CoachProfile>()
-               .WithMany()
+                b.HasOne(x => x.CoachProfile)
+                .WithMany()
                 .HasForeignKey(x => x.CoachId)
                 .HasConstraintName("FK_CoachAvailabilities_CoachProfiles_CoachId")
-               .OnDelete(DeleteBehavior.Cascade);
-          });
+                .OnDelete(DeleteBehavior.Cascade);
+            });
 
             // InterviewRoom
             modelBuilder.Entity<InterviewRoom>(b =>
@@ -256,10 +256,17 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.Type).IsRequired();
                 b.Property(x => x.Status).IsRequired();
 
-                b.HasOne<User>()
-                 .WithMany()
-                 .HasForeignKey(x => x.UserId)
-                 .OnDelete(DeleteBehavior.Cascade);
+                b.HasOne(x => x.CoachAvailability)
+                .WithMany(x => x.InterviewBookingTransactions)
+                .HasForeignKey(x => x.CoachAvailabilityId)
+                .HasConstraintName("FK_InterviewBookingTransaction_CoachAvailabilities_CoachAvailabilityId")
+                .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .HasConstraintName("FK_InterviewBookingTransaction_Users_UserId")
+                .OnDelete(DeleteBehavior.Cascade);
             });
 
             // Notification
@@ -511,7 +518,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 StartTime = DateTime.SpecifyKind(new DateTime(2025, 11, 1, 9, 0, 0), DateTimeKind.Utc),
                 EndTime = DateTime.SpecifyKind(new DateTime(2025, 11, 1, 10, 0, 0),
                 DateTimeKind.Utc),
-                IsBooked = false
+                Status = CoachAvailabilityStatus.Available
             });
 
             modelBuilder.Entity<InterviewRoom>().HasData(new InterviewRoom

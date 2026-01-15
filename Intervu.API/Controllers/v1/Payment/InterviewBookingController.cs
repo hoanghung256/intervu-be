@@ -65,31 +65,19 @@ namespace Intervu.API.Controllers.v1.Payment
         [Authorize]
         public async Task<IActionResult> CreatePaymentUrl([FromBody] InterviewBookingRequest request)
         {
-            try
-            {
-                Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
+            Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
 
-                string? checkOutUrl = await _createBookingCheckoutUrl.ExecuteAsync(userId, request.CoachId, request.CoachAvailabilityId, request.ReturnUrl);
+            string? checkOutUrl = await _createBookingCheckoutUrl.ExecuteAsync(userId, request.CoachId, request.CoachAvailabilityId, request.ReturnUrl);
 
-                return Ok(new
-                {
-                    success = true,
-                    data = new
-                    {
-                        isPaid = checkOutUrl == null,
-                        checkOutUrl
-                    }
-                });
-            }
-            catch (Exception ex)
+            return Ok(new
             {
-                _logger.LogError(ex, "Create checkout URL failed");
-                return StatusCode(500, new
+                success = true,
+                data = new
                 {
-                    success = false,
-                    message = "Create checkout url failed! Please try again"
-                });
-            }
+                    isPaid = checkOutUrl == null,
+                    checkOutUrl
+                }
+            });
         }
 
         [HttpPost("webhook")]

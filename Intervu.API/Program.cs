@@ -12,6 +12,7 @@ using Microsoft.IdentityModel.Tokens;
 using Intervu.Domain.Entities.Constants;
 using Intervu.API.Utils.Constant;
 using Intervu.API.Utils;
+using Intervu.API.Middlewares;
 
 namespace Intervu.API
 {
@@ -195,6 +196,10 @@ namespace Intervu.API
                 app.Environment.EnvironmentName);
             Console.WriteLine("IsDEvelopment=" + app.Environment.IsDevelopment());
 
+            app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+            app.UseHttpsRedirection();
+
             // --- HTTP REQUEST PIPELINE ---
             if (app.Environment.IsDevelopment())
             {
@@ -221,10 +226,6 @@ namespace Intervu.API
                 Console.WriteLine("in pro");
             }
 
-            app.MapHub<InterviewRoomHub>("/api/v1/hubs/interviewroom");
-
-            app.UseHttpsRedirection();
-
             // Add Cross-Origin-Opener-Policy header for Google auth popup
             app.Use(async (context, next) =>
             {
@@ -235,7 +236,9 @@ namespace Intervu.API
 
             app.UseAuthentication();
             app.UseAuthorization();
+
             app.MapControllers();
+            app.MapHub<InterviewRoomHub>("/api/v1/hubs/interviewroom");
 
             app.Run();
         }

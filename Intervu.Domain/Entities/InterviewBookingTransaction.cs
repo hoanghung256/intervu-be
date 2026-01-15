@@ -22,5 +22,9 @@ namespace Intervu.Domain.Entities
         public TransactionType Type { get; set; }
 
         public TransactionStatus Status { get; set; }
+
+        public CoachAvailability? CoachAvailability { get; set; }
+
+        public User? User { get; set; }
     }
 }

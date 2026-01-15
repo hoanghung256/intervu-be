@@ -73,7 +73,7 @@ namespace Intervu.Application.UseCases.Availability
                     CoachId = dto.CoachId,
                     StartTime = slotStart,
                     EndTime = slotEnd,
-                    IsBooked = false
+                    Status = Domain.Entities.Constants.CoachAvailabilityStatus.Available
                 });
             }
 
