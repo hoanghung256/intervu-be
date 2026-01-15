@@ -190,6 +190,10 @@ namespace Intervu.API
             builder.Services.AddSignalR();
 
             var app = builder.Build();
+            app.Logger.LogInformation(
+                "Hosting environment: {Env}",
+                app.Environment.EnvironmentName);
+            Console.WriteLine("IsDEvelopment=" + app.Environment.IsDevelopment());
 
             // --- HTTP REQUEST PIPELINE ---
             if (app.Environment.IsDevelopment())
@@ -209,10 +213,12 @@ namespace Intervu.API
                 });
 
                 app.UseCors(CorsPolicies.DevCorsPolicy);
+                Console.WriteLine("in dev");
             }
             else
             {
                 app.UseCors(CorsPolicies.ProdCorsPolicy);
+                Console.WriteLine("in pro");
             }
 
             app.MapHub<InterviewRoomHub>("/api/v1/hubs/interviewroom");
