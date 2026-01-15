@@ -16,5 +16,9 @@ namespace Intervu.Domain.Entities
         public DateTime EndTime { get; set; }
 
         public bool IsBooked { get; set; }
+
+        public CoachProfile? CoachProfile { get; set; }
+
+        public ICollection<InterviewBookingTransaction> InterviewBookingTransactions { get; set; } = [];
     }
 }

@@ -229,6 +229,11 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 b.Property(x => x.Type).IsRequired();
                 b.Property(x => x.Status).IsRequired();
 
+                 b.HasOne(x => x.CoachAvailability)
+                  .WithMany(x => x.InterviewBookingTransactions)
+                  .HasForeignKey(x => x.CoachAvailabilityId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
                 b.HasOne<User>()
                  .WithMany()
                  .HasForeignKey(x => x.UserId)
