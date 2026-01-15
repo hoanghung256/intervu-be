@@ -1,5 +1,5 @@
 using Intervu.Domain.Abstractions.Entity;
-using System;
+using Intervu.Domain.Entities.Constants;
 
 namespace Intervu.Domain.Entities
 {
@@ -15,7 +15,7 @@ namespace Intervu.Domain.Entities
 
         public DateTime EndTime { get; set; }
 
-        public bool IsBooked { get; set; }
+        public CoachAvailabilityStatus Status { get; set; }
 
         public CoachProfile? CoachProfile { get; set; }
 

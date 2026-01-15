@@ -234,10 +234,10 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                   .HasForeignKey(x => x.CoachAvailabilityId)
                   .OnDelete(DeleteBehavior.Restrict);
 
-                b.HasOne<User>()
-                 .WithMany()
-                 .HasForeignKey(x => x.UserId)
-                 .OnDelete(DeleteBehavior.Cascade);
+                 b.HasOne(x => x.User)
+                  .WithMany()
+                  .HasForeignKey(x => x.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
             });
 
             // Notification
@@ -435,7 +435,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer.DataContext
                 CoachId = user2Id,
                 StartTime = DateTime.SpecifyKind(new DateTime(2025, 11, 1, 9, 0, 0), DateTimeKind.Utc),
                 EndTime = DateTime.SpecifyKind(new DateTime(2025, 11, 1, 10, 0, 0), DateTimeKind.Utc),
-                IsBooked = false
+                Status = CoachAvailabilityStatus.Available
             });
 
             modelBuilder.Entity<InterviewRoom>().HasData(new InterviewRoom

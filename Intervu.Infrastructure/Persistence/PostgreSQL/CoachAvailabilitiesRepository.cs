@@ -13,7 +13,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             int year = 0)
         {
             var query = _context.CoachAvailabilities.AsQueryable();
-            var filtered = query.Where(x => x.CoachId == coachId && x.IsBooked == false);
+            var filtered = query.Where(x => x.CoachId == coachId && x.Status == Domain.Entities.Constants.CoachAvailabilityStatus.Available);
 
             if (month > 0 && year > 0)
             {

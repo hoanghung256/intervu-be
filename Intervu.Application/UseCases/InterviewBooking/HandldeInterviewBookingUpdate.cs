@@ -35,7 +35,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
 
             CoachAvailability availability = await _coachAvailabilitiesRepository.GetByIdAsync(transaction.CoachAvailabilityId) ?? throw new Exception("Coach availability not found");
 
-            availability.IsBooked = true;
+            availability.Status = CoachAvailabilityStatus.Booked;
             await _coachAvailabilitiesRepository.SaveChangesAsync();
 
             // TODO: Notify candidate and coach

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Intervu.Domain.Entities;
+using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
 using Microsoft.EntityFrameworkCore;
@@ -22,7 +23,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
         {
             var query = _dbContext.CoachAvailabilities.AsQueryable();
 
-            var filtered = query.Where(x => x.CoachId == coachId && x.IsBooked == false);
+            var filtered = query.Where(x => x.CoachId == coachId && x.Status == CoachAvailabilityStatus.Available);
 
             if (month > 0 && year > 0)
             {
