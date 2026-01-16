@@ -25,6 +25,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
         public DbSet<InterviewRoom> InterviewRooms { get; set; }
         public DbSet<Feedback> Feedbacks { get; set; }
         public DbSet<InterviewBookingTransaction> InterviewBookingTransaction { get; set; }
+        public DbSet<InterviewRescheduleRequest> InterviewRescheduleRequests { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<NotificationReceive> NotificationReceives { get; set; }
         public DbSet<Company> Companies { get; set; }
@@ -267,6 +268,59 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 .HasForeignKey(x => x.UserId)
                 .HasConstraintName("FK_InterviewBookingTransaction_Users_UserId")
                 .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // InterviewRescheduleRequest
+            modelBuilder.Entity<InterviewRescheduleRequest>(b =>
+            {
+                b.ToTable("InterviewRescheduleRequests");
+                b.HasKey(x => x.Id);
+                
+                b.Property(x => x.InterviewBookingTransactionId).IsRequired();
+                b.Property(x => x.CurrentAvailabilityId).IsRequired();
+                b.Property(x => x.ProposedAvailabilityId).IsRequired();
+                b.Property(x => x.RequestedBy).IsRequired();
+                b.Property(x => x.Status).IsRequired();
+                b.Property(x => x.ExpiresAt).IsRequired();
+                b.Property(x => x.Reason).HasColumnType("text");
+                b.Property(x => x.RejectionReason).HasColumnType("text");
+
+                // Relationships
+                b.HasOne(x => x.Booking)
+                 .WithMany()
+                 .HasForeignKey(x => x.InterviewBookingTransactionId)
+                 .HasConstraintName("FK_InterviewRescheduleRequests_InterviewBookingTransaction_InterviewBookingTransactionId")
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasOne(x => x.CurrentAvailability)
+                 .WithMany()
+                 .HasForeignKey(x => x.CurrentAvailabilityId)
+                 .HasConstraintName("FK_InterviewRescheduleRequests_CoachAvailabilities_CurrentAvailabilityId")
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasOne(x => x.ProposedAvailability)
+                 .WithMany()
+                 .HasForeignKey(x => x.ProposedAvailabilityId)
+                 .HasConstraintName("FK_InterviewRescheduleRequests_CoachAvailabilities_ProposedAvailabilityId")
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasOne(x => x.Requester)
+                 .WithMany()
+                 .HasForeignKey(x => x.RequestedBy)
+                 .HasConstraintName("FK_InterviewRescheduleRequests_Users_RequestedBy")
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasOne(x => x.Responder)
+                 .WithMany()
+                 .HasForeignKey(x => x.RespondedBy)
+                 .HasConstraintName("FK_InterviewRescheduleRequests_Users_RespondedBy")
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                // Indexes for performance
+                b.HasIndex(x => x.InterviewBookingTransactionId);
+                b.HasIndex(x => x.Status);
+                b.HasIndex(x => x.ExpiresAt);
+                b.HasIndex(x => new { x.InterviewBookingTransactionId, x.Status });
             });
 
             // Notification
