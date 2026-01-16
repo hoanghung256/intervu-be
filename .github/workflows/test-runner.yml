@@ -1,0 +1,132 @@
+name: .NET CI Test Runner
+
+on:
+  push:
+    branches:
+      - master
+      - dev
+  pull_request:
+    branches: 
+      - master
+      - dev
+  workflow_dispatch:
+
+jobs:
+  build-and-run-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout other repo
+      uses: actions/checkout@v4
+      with:
+        repository: motuen66/intervu-fe
+        ref: ${{ github.base_ref || github.ref_name }}
+        path: intervu-fe
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: 'npm'
+        cache-dependency-path: intervu-fe/package-lock.json
+    
+    - name: Install frontend deps
+      run: npm ci
+      working-directory: intervu-fe
+
+    - name: Start Vite dev server
+      run: |
+        npm run dev &
+      working-directory: intervu-fe
+      env:
+        VITE_APP_BE_BASE_URL: ${{ secrets.VITE_APP_BE_BASE_URL }}
+        VITE_APP_API_KEY: ${{ secrets.VITE_APP_API_KEY }}
+        VITE_LOCAL_HTTPS: ${{ secrets.VITE_LOCAL_HTTPS }}
+        VITE_DEV_PFX_PASSPHRASE: ${{ secrets.VITE_DEV_PFX_PASSPHRASE }}
+
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        path: intervu-be
+
+    - name: Setup .NET 8 SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Install SSL Certificates
+      run: |
+        dotnet dev-certs https --clean
+        dotnet dev-certs https --trust
+
+    - name: Write appsettings.Development.json
+      shell: pwsh
+      run: |
+        [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String("${{ secrets.APPSETTINGS_JSON_BASE64 }}")) | Set-Content intervu-be/Intervu.API/appsettings.Development.json -NoNewline
+
+    - name: Write appsettings.Testing.json
+      shell: pwsh
+      run: |
+        [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String("${{ secrets.APPSETTINGS_JSON_BASE64_TESTING }}")) | Set-Content intervu-be/Intervu.API/appsettings.Testing.json -NoNewline
+
+    - name: Write firebase.json
+      shell: pwsh
+      run: |
+        [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String("${{ secrets.FIREBASE_JSON }}")) | Set-Content intervu-be/Intervu.API/firebase.json -NoNewline
+    
+    - name: Restore dependencies
+      run: |
+        cd ./intervu-be
+        dotnet restore
+
+    - name: Init user secrets
+      run: dotnet user-secrets init --project intervu-be/Intervu.API
+
+    - name: Set user secrets
+      run: |
+       dotnet user-secrets set "Firebase:CredentialPath" "${{ github.workspace }}/intervu-be/Intervu.API/firebase.json" --project intervu-be/Intervu.API
+       dotnet user-secrets set "Firebase:StorageBucket" "${{ secrets.FIREBASE__STORAGEBUCKET }}" --project intervu-be/Intervu.API
+
+    - name: Build solution
+      run: |
+        cd ./intervu-be
+        dotnet build --no-restore --configuration Release
+
+    - name: Run API
+      env:
+        Firebase__CredentialPath: ${{ github.workspace }}/intervu-be/Intervu.API/firebase.json
+        Firebase__StorageBucket: ${{ secrets.FIREBASE__STORAGEBUCKET }}
+      run: |
+        dotnet run --no-build --project intervu-be/Intervu.API/Intervu.API.csproj --configuration Release &
+
+    - name: Wait for API
+      run: |
+        for i in {1..30}; do
+          curl -f "http://localhost:5293/swagger/v1/swagger.json" && exit 0
+          sleep 2
+        done
+        exit 1
+
+    - name: Run tests
+      id: test_step
+      continue-on-error: true
+      env:
+        ASPNETCORE_ENVIRONMENT: Testing
+        PLAYWRIGHT_HEADLESS: "true"
+        Firebase__CredentialPath: ${{ github.workspace }}/intervu-be/Intervu.API/firebase.json
+      run: |
+        cd ./intervu-be
+        dotnet test --verbosity minimal --no-build --configuration Release
+    
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: ./intervu-be/Intervu.API.Test/bin/Release/net8.0/TestResults/ExtentReport.html
+
+    - name: Fail job if tests failed
+      if: steps.test_step.outcome == 'failure'
+      run: |
+        echo "Tests failed ❌"
+        exit 1
