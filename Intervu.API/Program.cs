@@ -85,7 +85,7 @@ namespace Intervu.API
 
             // --- CUSTOM SERVICES ---
             builder.Services.AddUseCases(builder.Configuration);
-            builder.Services.AddPersistenceSqlServer(builder.Configuration);
+            builder.Services.AddPersistenceSqlServer(builder.Configuration, builder.Environment);
             builder.Services.AddInfrastructureExternalServices(builder.Configuration);
 
             // --- AUTHENTICATION WITH JWT CONFIGURATION ---
