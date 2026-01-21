@@ -37,6 +37,8 @@ using Intervu.Application.Interfaces.UseCases.PasswordReset;
 using Intervu.Application.UseCases.PasswordReset;
 using Intervu.Application.UseCases.Candidate;
 using Intervu.Application.UseCases.CandidateProfile;
+using Intervu.Application.Interfaces.UseCases.RescheduleRequest;
+using Intervu.Application.UseCases.RescheduleRequest;
 
 namespace Intervu.Application
 {
@@ -122,6 +124,11 @@ namespace Intervu.Application
             services.AddScoped<IUpdateCandidateProfile, UpdateCandidateProfile>();
             services.AddScoped<IViewCandidateProfile, ViewCandidateProfile>();
             services.AddScoped<IDeleteCandidateProfile, DeleteCandidateProfile>();
+
+            // ----- Reschedule Request ----
+            services.AddScoped<ICreateRescheduleRequestUseCase, CreateRescheduleRequestUseCase>();
+            services.AddScoped<IRespondToRescheduleRequestUseCase, RespondToRescheduleRequestUseCase>();
+            services.AddScoped<IExpireRescheduleRequestsUseCase, ExpireRescheduleRequestsUseCase>();
 
             return services;
         }
