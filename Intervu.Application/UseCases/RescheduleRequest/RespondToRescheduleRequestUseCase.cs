@@ -28,102 +28,70 @@ namespace Intervu.Application.UseCases.RescheduleRequest
 
         public async Task ExecuteAsync(Guid requestId, Guid respondedBy, bool isApproved, string? rejectionReason)
         {
-            var request = await _rescheduleRequestRepository.GetByIdWithDetailsAsync(requestId);
-            if (request == null)
+            var request = await _rescheduleRequestRepository.GetByIdAsync(requestId);
+            if(request == null)
             {
                 _logger.LogWarning("Reschedule request with ID {RequestId} not found.", requestId);
                 throw new NotFoundException("Reschedule request not found");
             }
 
-            if (request.Status != RescheduleRequestStatus.Pending)
+            if(request.Status != RescheduleRequestStatus.Pending)
             {
                 _logger.LogWarning("Reschedule request with ID {RequestId} is not pending.", requestId);
                 throw new ConflictException("Reschedule request is not pending");
             }
 
-            if (request.ExpiresAt < DateTime.UtcNow)
+            if(request.ExpiresAt < DateTime.UtcNow)
             {
                 _logger.LogWarning("Reschedule request with ID {RequestId} has expired.", requestId);
                 throw new ConflictException("Reschedule request has expired");
             }
 
-            if (request.Booking == null)
-            {
-                _logger.LogWarning("Booking not found for reschedule request {RequestId}.", requestId);
-                throw new NotFoundException("Booking not found");
-            }
-
-            var currentAvailability = await _coachAvailabilitiesRepository.GetByIdAsync(request.CurrentAvailabilityId);
-            if (currentAvailability == null)
-            {
-                _logger.LogWarning("Current availability with ID {CurrentAvailabilityId} not found.", request.CurrentAvailabilityId);
-                throw new NotFoundException("Current availability not found");
-            }
-
-            bool isRequesterCandidate = request.RequestedBy == request.Booking.UserId;
-            bool isRequesterCoach = request.RequestedBy == currentAvailability.CoachId;
-
-            bool isResponderCandidate = respondedBy == request.Booking.UserId;
-            bool isResponderCoach = respondedBy == currentAvailability.CoachId;
-
-            if (isRequesterCandidate && !isResponderCoach)
-            {
-                _logger.LogWarning("Candidate requested reschedule, but responder {RespondedBy} is not the coach.", respondedBy);
-                throw new ForbiddenException("Only the coach can respond to this reschedule request");
-            }
-
-            if (isRequesterCoach && !isResponderCandidate)
-            {
-                _logger.LogWarning("Coach requested reschedule, but responder {RespondedBy} is not the candidate.", respondedBy);
-                throw new ForbiddenException("Only the candidate can respond to this reschedule request");
-            }
-
-            if (!isResponderCandidate && !isResponderCoach)
-            {
-                _logger.LogWarning("Responder {RespondedBy} is neither the coach nor the candidate.", respondedBy);
-                throw new ForbiddenException("You are not authorized to respond to this request");
-            }
-
             if (isApproved)
             {
+                request.Status = RescheduleRequestStatus.Approved;
+                var booking = await _transactionRepository.GetByIdAsync(request.InterviewBookingTransactionId);
+                if (booking == null)
+                {
+                    _logger.LogWarning("Booking with ID {BookingId} not found.", request.InterviewBookingTransactionId);
+                    throw new NotFoundException("Booking not found");
+                }
+                booking.CoachAvailabilityId = request.ProposedAvailabilityId;
+                _transactionRepository.UpdateAsync(booking);
+                await _transactionRepository.SaveChangesAsync();
+
                 var proposedAvailability = await _coachAvailabilitiesRepository.GetByIdAsync(request.ProposedAvailabilityId);
                 if (proposedAvailability == null)
                 {
                     _logger.LogWarning("Proposed availability with ID {ProposedAvailabilityId} not found.", request.ProposedAvailabilityId);
                     throw new NotFoundException("Proposed availability not found");
                 }
-
-                request.Booking.CoachAvailabilityId = request.ProposedAvailabilityId;
-                _transactionRepository.UpdateAsync(request.Booking);
-
                 proposedAvailability.Status = CoachAvailabilityStatus.Booked;
                 _coachAvailabilitiesRepository.UpdateAsync(proposedAvailability);
+                await _coachAvailabilitiesRepository.SaveChangesAsync();
 
+                var currentAvailability = await _coachAvailabilitiesRepository.GetByIdAsync(request.CurrentAvailabilityId);
+                if (currentAvailability == null)
+                {
+                    _logger.LogWarning("Current availability with ID {CurrentAvailabilityId} not found.", request.CurrentAvailabilityId);
+                    throw new NotFoundException("Current availability not found");
+                }
                 currentAvailability.Status = CoachAvailabilityStatus.Available;
                 _coachAvailabilitiesRepository.UpdateAsync(currentAvailability);
+                await _coachAvailabilitiesRepository.SaveChangesAsync();
 
-                request.Status = RescheduleRequestStatus.Approved;
                 request.RespondedAt = DateTime.UtcNow;
                 request.RespondedBy = respondedBy;
                 _rescheduleRequestRepository.UpdateAsync(request);
-
-                await _transactionRepository.SaveChangesAsync();
-                await _coachAvailabilitiesRepository.SaveChangesAsync();
-                await _rescheduleRequestRepository.SaveChangesAsync();
-
-                _logger.LogInformation("Reschedule request {RequestId} approved by {RespondedBy}", requestId, respondedBy);
             }
-            else
+
+            if (!isApproved)
             {
                 request.Status = RescheduleRequestStatus.Rejected;
                 request.RejectionReason = rejectionReason;
                 request.RespondedAt = DateTime.UtcNow;
                 request.RespondedBy = respondedBy;
                 _rescheduleRequestRepository.UpdateAsync(request);
-
-                await _rescheduleRequestRepository.SaveChangesAsync();
-
-                _logger.LogInformation("Reschedule request {RequestId} rejected by {RespondedBy}", requestId, respondedBy);
             }
         }
     }
