@@ -22,7 +22,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             var requests = await _context.InterviewRescheduleRequests
                 .Include(r => r.CurrentAvailability)
                 .Include(r => r.ProposedAvailability)
-                .Include(r => r.RequestedBy)
+                .Include(r => r.Requester)
                 .Where(r => r.Status == RescheduleRequestStatus.Pending &&
                     r.ExpiresAt <= DateTime.UtcNow)
                 .ToListAsync();
@@ -34,7 +34,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             var request = await _context.InterviewRescheduleRequests
                 .Include(r => r.CurrentAvailability)
                 .Include(r => r.ProposedAvailability)
-                .Include(r => r.RequestedBy)
+                .Include(r => r.Requester)
                 .FirstOrDefaultAsync(r => r.InterviewBookingTransactionId == bookingId &&
                 r.Status == RescheduleRequestStatus.Pending);
             return request;
@@ -45,8 +45,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             var request = await _context.InterviewRescheduleRequests
                 .Include(r => r.CurrentAvailability)
                 .Include(r => r.ProposedAvailability)
-                .Include(r => r.RequestedBy)
-                .Include(r => r.RespondedBy)
+                .Include(r => r.Requester)
+                .Include(r => r.Responder)
                 .Include(r => r.Booking)
                 .FirstOrDefaultAsync(r => r.Id == id);
             return request;
@@ -57,7 +57,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             var requests = await _context.InterviewRescheduleRequests
                 .Include(r => r.CurrentAvailability)
                 .Include(r => r.ProposedAvailability)
-                .Include(r => r.RequestedBy)
+                .Include(r => r.Requester)
                 .Include(r => r.Booking)
                     .ThenInclude(b => b.CoachAvailability)
                 .Where(r => r.Booking.CoachAvailability.CoachId == responderId &&
@@ -78,7 +78,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             var requests = await _context.InterviewRescheduleRequests
                 .Include(r => r.CurrentAvailability)
                 .Include(r => r.ProposedAvailability)
-                .Include(r => r.RequestedBy)
+                .Include(r => r.Requester)
                 .Where(r => r.RequestedBy == userId &&
                     r.Status == RescheduleRequestStatus.Pending)
                 .ToListAsync();
@@ -90,7 +90,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             var requests = await _context.InterviewRescheduleRequests
                 .Include(r => r.CurrentAvailability)
                 .Include(r => r.ProposedAvailability)
-                .Include(r => r.RequestedBy)
+                .Include(r => r.Requester)
                 .Where(r => r.InterviewBookingTransactionId == bookingId)
                 .ToListAsync();
             return requests;

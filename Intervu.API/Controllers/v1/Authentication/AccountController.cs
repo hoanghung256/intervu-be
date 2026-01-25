@@ -115,7 +115,7 @@ namespace Intervu.API.Controllers.v1.Authentication
                 HttpOnly = true,
                 Secure = true,
                 SameSite = SameSiteMode.None,
-                Expires = DateTime.UtcNow.AddDays(-1) // Set về quá khứ để xóa
+                Expires = DateTime.UtcNow.AddDays(-1)
             };
             Response.Cookies.Append("refreshToken", "", cookieOptions);
 

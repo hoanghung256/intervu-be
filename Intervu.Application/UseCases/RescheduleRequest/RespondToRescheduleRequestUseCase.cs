@@ -56,8 +56,8 @@ namespace Intervu.Application.UseCases.RescheduleRequest
                     _logger.LogWarning("Booking with ID {BookingId} not found.", request.InterviewBookingTransactionId);
                     throw new NotFoundException("Booking not found");
                 }
+                // Chỉ update CoachAvailabilityId, không gọi UpdateAsync để tránh update OrderCode
                 booking.CoachAvailabilityId = request.ProposedAvailabilityId;
-                _transactionRepository.UpdateAsync(booking);
                 await _transactionRepository.SaveChangesAsync();
 
                 var proposedAvailability = await _coachAvailabilitiesRepository.GetByIdAsync(request.ProposedAvailabilityId);
@@ -67,7 +67,6 @@ namespace Intervu.Application.UseCases.RescheduleRequest
                     throw new NotFoundException("Proposed availability not found");
                 }
                 proposedAvailability.Status = CoachAvailabilityStatus.Booked;
-                _coachAvailabilitiesRepository.UpdateAsync(proposedAvailability);
                 await _coachAvailabilitiesRepository.SaveChangesAsync();
 
                 var currentAvailability = await _coachAvailabilitiesRepository.GetByIdAsync(request.CurrentAvailabilityId);
@@ -77,12 +76,11 @@ namespace Intervu.Application.UseCases.RescheduleRequest
                     throw new NotFoundException("Current availability not found");
                 }
                 currentAvailability.Status = CoachAvailabilityStatus.Available;
-                _coachAvailabilitiesRepository.UpdateAsync(currentAvailability);
                 await _coachAvailabilitiesRepository.SaveChangesAsync();
 
                 request.RespondedAt = DateTime.UtcNow;
                 request.RespondedBy = respondedBy;
-                _rescheduleRequestRepository.UpdateAsync(request);
+                await _rescheduleRequestRepository.SaveChangesAsync();
             }
 
             if (!isApproved)
@@ -91,7 +89,7 @@ namespace Intervu.Application.UseCases.RescheduleRequest
                 request.RejectionReason = rejectionReason;
                 request.RespondedAt = DateTime.UtcNow;
                 request.RespondedBy = respondedBy;
-                _rescheduleRequestRepository.UpdateAsync(request);
+                await _rescheduleRequestRepository.SaveChangesAsync();
             }
         }
     }
