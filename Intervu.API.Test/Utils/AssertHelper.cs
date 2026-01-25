@@ -1,5 +1,4 @@
 ﻿using AventStack.ExtentReports;
-using FluentAssertions.Execution;
 using Intervu.API.Test.Base;
 using Intervu.API.Test.Controls;
 using Microsoft.Playwright;
@@ -9,49 +8,6 @@ namespace Intervu.API.Test.Utils
 {
     public static class AssertHelper
     {
-        /*/// <summary>
-        /// Executes a block of assertions. If any fail, execution continues.
-        /// All failures are reported at the end of the block.
-        /// Note: Only works with FluentAssertions (e.g., .Should().Be()).
-        /// </summary>
-        /// <param name="assertions">The action containing assertions.</param>
-        public static void SoftAssert(Action assertions)
-        {
-            using (new AssertionScope())
-            {
-                assertions();
-            }
-        }
-
-        /// <summary>
-        /// Executes a block of async assertions softly.
-        /// </summary>
-        public static async Task SoftAssertAsync(Func<Task> assertions)
-        {
-            using (new AssertionScope())
-            {
-                await assertions();
-            }
-        }
-
-        /// <summary>
-        /// Executes assertions normally (Hard Assert). 
-        /// Stops at the first failure.
-        /// </summary>
-        public static void HardAssert(Action assertions)
-        {
-            assertions();
-        }
-        
-        /// <summary>
-        /// Executes a block of async assertions normally (Hard Assert).
-        /// </summary>
-        public static async Task HardAssertAsync(Func<Task> assertions)
-        {
-            await assertions();
-        }*/
-
-        // --- Custom Assertion Extensions for BaseTest ---
 
         public static async Task AssertTrue(bool condition, string userMessage)
         {

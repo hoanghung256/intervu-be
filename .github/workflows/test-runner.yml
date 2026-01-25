@@ -16,7 +16,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout other repo
+    - name: Try checkout (head_ref)
+      id: checkout_try
+      continue-on-error: true
+      uses: actions/checkout@v4
+      with:
+        repository: motuen66/intervu-fe
+        ref: ${{ github.head_ref || github.ref_name }}
+        path: intervu-fe
+
+    - name: Clean folder if checkout failed
+      if: steps.checkout_try.outcome == 'failure'
+      run: rm -rf intervu-fe
+
+    - name: Checkout fallback (base_ref)
+      if: steps.checkout_try.outcome == 'failure'
       uses: actions/checkout@v4
       with:
         repository: motuen66/intervu-fe
@@ -79,14 +93,6 @@ jobs:
         cd ./intervu-be
         dotnet restore
 
-    - name: Init user secrets
-      run: dotnet user-secrets init --project intervu-be/Intervu.API
-
-    - name: Set user secrets
-      run: |
-       dotnet user-secrets set "Firebase:CredentialPath" "${{ github.workspace }}/intervu-be/Intervu.API/firebase.json" --project intervu-be/Intervu.API
-       dotnet user-secrets set "Firebase:StorageBucket" "${{ secrets.FIREBASE__STORAGEBUCKET }}" --project intervu-be/Intervu.API
-
     - name: Build solution
       run: |
         cd ./intervu-be
@@ -97,14 +103,18 @@ jobs:
         Firebase__CredentialPath: ${{ github.workspace }}/intervu-be/Intervu.API/firebase.json
         Firebase__StorageBucket: ${{ secrets.FIREBASE__STORAGEBUCKET }}
       run: |
-        dotnet run --no-build --project intervu-be/Intervu.API/Intervu.API.csproj --configuration Release &
+        dotnet run --launch-profile "Testing" --no-build --project intervu-be/Intervu.API/Intervu.API.csproj --configuration Release &
 
     - name: Wait for API
       run: |
         for i in {1..30}; do
-          curl -f "http://localhost:5293/swagger/v1/swagger.json" && exit 0
+          if curl -sf "http://localhost:5293/swagger/v1/swagger.json" -o /dev/null; then
+            echo "API ready ✅"
+            exit 0
+          fi
           sleep 2
         done
+        echo "API failed to start ❌"
         exit 1
 
     - name: Run tests

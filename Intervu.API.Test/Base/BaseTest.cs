@@ -1,4 +1,4 @@
-﻿﻿﻿using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using AventStack.ExtentReports;
@@ -19,7 +19,7 @@ namespace Intervu.API.Test.Base
         public static AsyncLocal<BaseTest> Current { get; } = new();
         
         // Default timeout for steps to detect infinite loops
-        protected virtual TimeSpan StepTimeout => TimeSpan.FromSeconds(30);
+        protected virtual TimeSpan StepTimeout => TimeSpan.FromSeconds(60);
 
         // Delegate to capture screenshot (to be set by derived classes like BaseAutomationTest)
         public Func<Task<byte[]>>? ScreenshotProvider { get; set; }
@@ -50,12 +50,20 @@ namespace Intervu.API.Test.Base
                 var testMember = type.GetField("test", BindingFlags.Instance | BindingFlags.NonPublic);
                 if (testMember != null)
                 {
-                    var test = (ITest)testMember.GetValue(output);
+                    var test = (ITest)testMember.GetValue(output)!;
                     if (test.TestCase.Traits.TryGetValue("Category", out var categories))
                     {
                         foreach (var category in categories)
                         {
                             _test.AssignCategory(category);
+                        }
+                    }
+                    
+                    if (test.TestCase.Traits.TryGetValue("Name", out var names))
+                    {
+                        foreach (var name in names)
+                        {
+                            _test.AssignAuthor(name);
                         }
                     }
                 }

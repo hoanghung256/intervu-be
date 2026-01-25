@@ -86,11 +86,11 @@ public class BaseAutomationTest : BaseTest, IAsyncLifetime
         }
         catch (TimeoutException)
         {
-            LogInfo("Could not connect to frontend (expected if not running). Skipping assertion.");
+            await LogFail("Could not connect to frontend (expected if not running). Skipping assertion.");
         }
         catch (Exception ex)
         {
-            LogInfo($"Exception during navigation: {ex.Message}");
+            await LogFail($"Exception during navigation: {ex.Message}");
         }
     }
 

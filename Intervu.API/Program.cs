@@ -196,7 +196,7 @@ namespace Intervu.API
             Console.WriteLine("IsDEvelopment=" + app.Environment.IsDevelopment());
 
             // --- HTTP REQUEST PIPELINE ---
-            if (app.Environment.IsDevelopment())
+            if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
             {
                 var provider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
 

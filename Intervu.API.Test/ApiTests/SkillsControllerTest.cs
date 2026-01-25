@@ -2,6 +2,7 @@
 using Intervu.API.Test.Utils;
 using Intervu.Application.DTOs.Common;
 using Intervu.Application.DTOs.Skill;
+using Intervu.Application.DTOs.User;
 using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests
@@ -18,6 +19,7 @@ namespace Intervu.API.Test.ApiTests
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Smoke")]
+        [Trait("Name", "IC-00")]
         public async Task GetAllSkills_ReturnsSuccessAndData()
         {            
             LogInfo("Getting all skills.");

@@ -41,6 +41,17 @@ namespace Intervu.Infrastructure
                 }
             });
 
+            if (environment.IsEnvironment("Testing"))
+            {
+                var sp = services.BuildServiceProvider();
+                using (var scope = sp.CreateScope())
+                {
+                    var scopedServices = scope.ServiceProvider;
+                    var db = scopedServices.GetRequiredService<IntervuPostgreDbContext>();
+                    db.Database.EnsureCreated();
+                }
+            }
+
             // Register your repositories here
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IInterviewRoomRepository, InterviewRoomRepository>();
