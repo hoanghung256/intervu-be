@@ -31,6 +31,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
         public DbSet<Skill> Skills { get; set; }
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<InterviewType> InterviewTypes { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -352,6 +353,23 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 r.HasIndex(x => new { x.UserId, x.ExpiresAt });
             });
 
+            modelBuilder.Entity<InterviewType>(entity =>
+            {
+                entity.ToTable("InterviewTypes");
+
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Name)
+                      .IsRequired()
+                      .HasMaxLength(150);
+
+                entity.Property(e => e.BasePrice)
+                      .HasDefaultValue(0);
+
+                entity.Property(e => e.Status)
+                      .HasConversion<int>();
+            });
+
             /// <summary>
             /// Global query filter for soft delete
             /// When querying any entity that has an "IsDeleted" property.
@@ -648,7 +666,48 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 new { CoachProfilesId = user6Id, SkillsId = Guid.Parse("0a0a0a0a-0a0a-4a0a-8a0a-0a0a0a0a0a0a") }
             );
 
-
+            modelBuilder.Entity<InterviewType>().HasData(
+                new InterviewType
+                {
+                    Id = Guid.Parse("a3f1c8b2-9d4e-4c7a-8f21-6b7e4d2c91aa"),
+                    Name = "CV Interview",
+                    Description = "Resume review and HR-style interview focusing on background and experience.",
+                    IsCoding = false,
+                    DurationMinutes = 30,
+                    BasePrice = 20,
+                    Status = InterviewTypeStatus.Active
+                },
+                new InterviewType
+                {
+                    Id = Guid.Parse("e8b74d9f-2c41-4c9a-9b13-1f8a6e52d0c3"),
+                    Name = "Technical Interview",
+                    Description = "Technical interview with coding problems and system design questions.",
+                    IsCoding = true,
+                    DurationMinutes = 60,
+                    BasePrice = 50,
+                    Status = InterviewTypeStatus.Active
+                },
+                new InterviewType
+                {
+                    Id = Guid.Parse("5c9e2a14-73bb-4b61-b7e2-91a8f42d3c6e"),
+                    Name = "Soft Skills Interview",
+                    Description = "Behavioral interview focused on communication and interpersonal skills.",
+                    IsCoding = false,
+                    DurationMinutes = 45,
+                    BasePrice = 30,
+                    Status = InterviewTypeStatus.Active
+                },
+                new InterviewType
+                {
+                    Id = Guid.Parse("f14a7c6d-88b2-4d55-a9fd-2b4e73c91a08"),
+                    Name = "Mock Interview",
+                    Description = "Full mock interview simulating a real job interview experience.",
+                    IsCoding = true,
+                    DurationMinutes = 75,
+                    BasePrice = 70,
+                    Status = InterviewTypeStatus.Draft
+                }
+            );
         }
 
         public override int SaveChanges()
