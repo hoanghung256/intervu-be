@@ -43,6 +43,7 @@ namespace Intervu.Infrastructure
             services.AddScoped<IFeedbackRepository, FeedbackRepository>();
             services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+            services.AddScoped<IInterviewTypeRepository, InterviewTypeRepository>();
 
             return services;
         }
