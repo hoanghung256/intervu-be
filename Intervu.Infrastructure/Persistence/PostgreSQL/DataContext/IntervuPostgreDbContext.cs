@@ -215,6 +215,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                   .HasForeignKey(x => x.CoachId)
                  .HasConstraintName("FK_InterviewRooms_CoachProfiles_CoachId")
                  .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasOne(x => x.Transaction)
+                 .WithMany()
+                 .HasForeignKey(x => x.TransactionId)
+                 .HasConstraintName("FK_InterviewRooms_InterviewBookingTransaction_TransactionId")
+                 .OnDelete(DeleteBehavior.Restrict);
             });
 
             // Feedback

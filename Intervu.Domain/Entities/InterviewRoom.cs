@@ -12,6 +12,8 @@ namespace Intervu.Domain.Entities
 
         public Guid? CoachId { get; set; }
 
+        public Guid? TransactionId { get; set; }
+
         public DateTime? ScheduledTime { get; set; }
 
         public int? DurationMinutes { get; set; }
@@ -36,6 +38,8 @@ namespace Intervu.Domain.Entities
         public int RescheduleAttemptCount { get; set; } = 0;
 
         // Navigation Properties
+        public InterviewBookingTransaction? Transaction { get; set; }
+        
         public ICollection<InterviewRescheduleRequest>? RescheduleRequests { get; set; }
     }
 }
