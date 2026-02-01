@@ -276,7 +276,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.ToTable("InterviewRescheduleRequests");
                 b.HasKey(x => x.Id);
                 
-                b.Property(x => x.InterviewBookingTransactionId).IsRequired();
+                b.Property(x => x.InterviewRoomId).IsRequired();
                 b.Property(x => x.CurrentAvailabilityId).IsRequired();
                 b.Property(x => x.ProposedAvailabilityId).IsRequired();
                 b.Property(x => x.RequestedBy).IsRequired();
@@ -286,10 +286,10 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.RejectionReason).HasColumnType("text");
 
                 // Relationships
-                b.HasOne(x => x.Booking)
-                 .WithMany()
-                 .HasForeignKey(x => x.InterviewBookingTransactionId)
-                 .HasConstraintName("FK_InterviewRescheduleRequests_InterviewBookingTransaction_InterviewBookingTransactionId")
+                b.HasOne(x => x.InterviewRoom)
+                 .WithMany(r => r.RescheduleRequests)
+                 .HasForeignKey(x => x.InterviewRoomId)
+                 .HasConstraintName("FK_InterviewRescheduleRequests_InterviewRooms_InterviewRoomId")
                  .OnDelete(DeleteBehavior.Restrict);
 
                 b.HasOne(x => x.CurrentAvailability)
@@ -317,10 +317,10 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                  .OnDelete(DeleteBehavior.Restrict);
 
                 // Indexes for performance
-                b.HasIndex(x => x.InterviewBookingTransactionId);
+                b.HasIndex(x => x.InterviewRoomId);
                 b.HasIndex(x => x.Status);
                 b.HasIndex(x => x.ExpiresAt);
-                b.HasIndex(x => new { x.InterviewBookingTransactionId, x.Status });
+                b.HasIndex(x => new { x.InterviewRoomId, x.Status });
             });
 
             // Notification

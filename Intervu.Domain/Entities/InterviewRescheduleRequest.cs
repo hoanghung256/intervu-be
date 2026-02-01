@@ -10,7 +10,7 @@ namespace Intervu.Domain.Entities
 {
     public class InterviewRescheduleRequest : EntityBase<Guid>
     {
-        public Guid InterviewBookingTransactionId { get; set; }
+        public Guid InterviewRoomId { get; set; }
 
         public Guid CurrentAvailabilityId { get; set; }
 
@@ -31,7 +31,7 @@ namespace Intervu.Domain.Entities
         public DateTime ExpiresAt { get; set; }
 
         // Navigation Properties
-        public InterviewBookingTransaction? Booking { get; set; }
+        public InterviewRoom? InterviewRoom { get; set; }
 
         public CoachAvailability? CurrentAvailability { get; set; }
 

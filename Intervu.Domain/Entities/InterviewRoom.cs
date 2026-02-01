@@ -32,5 +32,10 @@ namespace Intervu.Domain.Entities
         /// Scheduled, Completed, Cancelled, No-Show
         /// </summary>
         public InterviewRoomStatus Status { get; set; }
+
+        public int RescheduleAttemptCount { get; set; } = 0;
+
+        // Navigation Properties
+        public ICollection<InterviewRescheduleRequest>? RescheduleRequests { get; set; }
     }
 }
