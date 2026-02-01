@@ -23,6 +23,9 @@ namespace Intervu.Application.UseCases.InterviewType
 
         public async Task ExecuteAsync(Guid id, InterviewTypeDto interviewTypeDto)
         {
+            if (id == Guid.Empty)
+                throw new ArgumentException("Type ID must be a valid GUID");
+
             var interviewTypeToUpdate = await _repo.GetByIdAsync(id);
             
             if (interviewTypeToUpdate is null)

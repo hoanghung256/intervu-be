@@ -129,6 +129,7 @@ namespace Intervu.Application
             services.AddScoped<IGetInterviewType, GetInterviewType>();
             services.AddScoped<IUpdateInterviewType, UpdateInterviewType>();
             services.AddScoped<ICreateInterviewType, CreateInterviewType>();
+            services.AddScoped<IDeleteInterviewType, DeleteInterviewType>();
 
             return services;
         }

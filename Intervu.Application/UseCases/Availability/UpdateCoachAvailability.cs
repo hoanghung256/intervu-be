@@ -38,7 +38,7 @@ namespace Intervu.Application.UseCases.Availability
             if (dto.EndTime <= utcNow)
                 throw new ArgumentException("Cannot update availability to a time in the past");
 
-            var updated = await _repo.UpdateCoachAvailabilityAsync(availabilityId, dto.StartTime, dto.EndTime);
+            var updated = await _repo.UpdateCoachAvailabilityAsync(availabilityId, dto.StartTime, dto.EndTime, dto.TypeId);
             if (!updated)
                 throw new InvalidOperationException($"Availability with ID {availabilityId} not found or could not be updated");
 

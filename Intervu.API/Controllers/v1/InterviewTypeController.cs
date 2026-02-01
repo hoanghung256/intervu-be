@@ -14,12 +14,14 @@ namespace Intervu.API.Controllers.v1
         private readonly IGetInterviewType _getInterviewType;
         private readonly IUpdateInterviewType _updateInterviewType;
         private readonly ICreateInterviewType _createInterviewType;
+        private readonly IDeleteInterviewType _deleteInterviewType;
 
-        public InterviewTypeController(IGetInterviewType getInterviewType, IUpdateInterviewType updateInterviewType, ICreateInterviewType createInterviewType)
+        public InterviewTypeController(IGetInterviewType getInterviewType, IUpdateInterviewType updateInterviewType, ICreateInterviewType createInterviewType, IDeleteInterviewType deleteInterviewType)
         {
             _getInterviewType = getInterviewType;
             _updateInterviewType = updateInterviewType;
             _createInterviewType = createInterviewType;
+            _deleteInterviewType = deleteInterviewType;
         }
 
         [HttpGet]
@@ -49,11 +51,25 @@ namespace Intervu.API.Controllers.v1
             try
             {
                 await _updateInterviewType.ExecuteAsync(id, request);
-                return NoContent();
+                return Ok(new { success = true, message = "Updated" });
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while updating the interview type.");
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpDelete("{id:guid}")]
+        public async Task<IActionResult> DeleteCoachAvailability(Guid id)
+        {
+            try
+            {
+                await _deleteInterviewType.ExecuteAsync(id);
+                return Ok(new { success = true, message = "Deleted" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
             }
         }
     }

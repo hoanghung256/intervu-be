@@ -71,6 +71,7 @@ namespace Intervu.Application.UseCases.Availability
                 slots.Add(new CoachAvailability
                 {
                     CoachId = dto.CoachId,
+                    TypeId = dto.TypeId,
                     StartTime = slotStart,
                     EndTime = slotEnd,
                     IsBooked = false

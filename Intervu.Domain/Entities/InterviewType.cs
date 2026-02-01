@@ -19,7 +19,7 @@ namespace Intervu.Domain.Entities
 
         public bool IsCoding { get; set; }
 
-        [Range(1, 180)]
+        [Range(30, 180)]
         public int DurationMinutes { get; set; }
 
         [Range(0, int.MaxValue)]

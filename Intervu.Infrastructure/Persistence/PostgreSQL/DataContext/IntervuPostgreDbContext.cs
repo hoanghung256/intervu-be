@@ -167,6 +167,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 .HasForeignKey(x => x.CoachId)
                 .HasConstraintName("FK_CoachAvailabilities_CoachProfiles_CoachId")
                .OnDelete(DeleteBehavior.Cascade);
+
+              b.HasOne<InterviewType>()
+               .WithMany()
+                .HasForeignKey(x => x.TypeId)
+                .HasConstraintName("FK_CoachAvailabilities_InterviewTypes_TypeId")
+               .OnDelete(DeleteBehavior.Cascade);
           });
 
             // InterviewRoom
@@ -527,6 +533,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             {
                 Id = CoachAvail1Id,
                 CoachId = user2Id,
+                TypeId = Guid.Parse("a3f1c8b2-9d4e-4c7a-8f21-6b7e4d2c91aa"),
                 StartTime = DateTime.SpecifyKind(new DateTime(2025, 11, 1, 9, 0, 0), DateTimeKind.Utc),
                 EndTime = DateTime.SpecifyKind(new DateTime(2025, 11, 1, 10, 0, 0),
                 DateTimeKind.Utc),
