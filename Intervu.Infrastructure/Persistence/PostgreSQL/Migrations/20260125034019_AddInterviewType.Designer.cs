@@ -3,6 +3,7 @@ using System;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 {
     [DbContext(typeof(IntervuPostgreDbContext))]
-    partial class IntervuPostgreDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260125034019_AddInterviewType")]
+    partial class AddInterviewType
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -250,14 +253,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("TypeId")
-                        .HasColumnType("uuid");
-
                     b.HasKey("Id");
 
                     b.HasIndex("CoachId");
-
-                    b.HasIndex("TypeId");
 
                     b.ToTable("CoachAvailabilities", (string)null);
 
@@ -268,8 +266,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             CoachId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
                             EndTime = new DateTime(2025, 11, 1, 10, 0, 0, 0, DateTimeKind.Utc),
                             IsBooked = false,
-                            StartTime = new DateTime(2025, 11, 1, 9, 0, 0, 0, DateTimeKind.Utc),
-                            TypeId = new Guid("a3f1c8b2-9d4e-4c7a-8f21-6b7e4d2c91aa")
+                            StartTime = new DateTime(2025, 11, 1, 9, 0, 0, 0, DateTimeKind.Utc)
                         });
                 });
 
@@ -1063,13 +1060,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("FK_CoachAvailabilities_CoachProfiles_CoachId");
-
-                    b.HasOne("Intervu.Domain.Entities.InterviewType", null)
-                        .WithMany()
-                        .HasForeignKey("TypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_CoachAvailabilities_InterviewTypes_TypeId");
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.CoachProfile", b =>

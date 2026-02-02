@@ -6,5 +6,6 @@ namespace Intervu.Application.DTOs.Availability
     {
         public DateTimeOffset StartTime { get; set; }
         public DateTimeOffset EndTime { get; set; }
+        public Guid TypeId { get; set; }
     }
 }
