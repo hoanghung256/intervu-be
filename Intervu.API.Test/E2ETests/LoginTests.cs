@@ -59,4 +59,23 @@ public class LoginTests : BaseAutomationTest
         await Page.WaitForURLAsync("**/home"); // Using a glob pattern
         await AssertHelper.AssertContains("/home", Page.Url, "Successfully redirected to the homepage.");
     }
+
+    [Fact]
+    [Trait("Category", "Automation")]
+    public async Task Should_Display_Error_Message_For_Invalid_Email()
+    {
+        // Arrange: Create a Page Object instance
+        var loginPage = new LoginPage(Page);
+
+        // Act: Perform actions using the Page Object
+        LogInfo("Navigating to the login page.");
+        await loginPage.NavigateAsync();
+
+        LogInfo("Attempting to log in with invalid credentials.");
+        await loginPage.LoginAsync("wrong", "wrongpassword");
+
+        // Assert: Verify the outcome
+        LogInfo("Verifying that an error message is displayed.");
+        await loginPage.VerifyToastMessageAsync("Invalid email or password");
+    }
 }
