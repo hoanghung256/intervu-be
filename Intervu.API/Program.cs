@@ -191,6 +191,10 @@ namespace Intervu.API
             builder.Services.AddSignalR();
 
             var app = builder.Build();
+            app.Logger.LogInformation(
+                "Hosting environment: {Env}",
+                app.Environment.EnvironmentName);
+            Console.WriteLine("IsDEvelopment=" + app.Environment.IsDevelopment());
 
             app.UseMiddleware<ExceptionHandlingMiddleware>();
 
@@ -214,10 +218,12 @@ namespace Intervu.API
                 });
 
                 app.UseCors(CorsPolicies.DevCorsPolicy);
+                Console.WriteLine("in dev");
             }
             else
             {
                 app.UseCors(CorsPolicies.ProdCorsPolicy);
+                Console.WriteLine("in pro");
             }
 
             // Add Cross-Origin-Opener-Policy header for Google auth popup

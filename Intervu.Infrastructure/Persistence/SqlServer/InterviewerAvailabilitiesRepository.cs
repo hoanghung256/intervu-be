@@ -77,17 +77,19 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             return true;
         }
 
-        public async Task<bool> UpdateCoachAvailabilityAsync(Guid availabilityId, DateTimeOffset startTime, DateTimeOffset endTime)
+        public async Task<bool> UpdateCoachAvailabilityAsync(Guid availabilityId, InterviewFocus focus, DateTimeOffset startTime, DateTimeOffset endTime, Guid typeId)
         {
-            var availability = await _dbContext.CoachAvailabilities.FindAsync(availabilityId);
+            var availability = await _context.CoachAvailabilities.FindAsync(availabilityId);
             if (availability == null)
                 return false;
 
+            availability.Focus = focus;
             availability.StartTime = startTime.UtcDateTime;
             availability.EndTime = endTime.UtcDateTime;
+            availability.TypeId = focus == InterviewFocus.General_Skills ? typeId : Guid.Empty;
 
-            _dbContext.CoachAvailabilities.Update(availability);
-            await _dbContext.SaveChangesAsync();
+            _context.CoachAvailabilities.Update(availability);
+            await _context.SaveChangesAsync();
             return true;
         }
 

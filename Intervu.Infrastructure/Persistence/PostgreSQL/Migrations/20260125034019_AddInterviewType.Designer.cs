@@ -3,6 +3,7 @@ using System;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 {
     [DbContext(typeof(IntervuPostgreDbContext))]
-    partial class IntervuPostgreDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260125034019_AddInterviewType")]
+    partial class AddInterviewType
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -244,23 +247,15 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<DateTime>("EndTime")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("Focus")
-                        .HasColumnType("integer");
+                    b.Property<bool>("IsBooked")
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("TypeId")
-                        .HasColumnType("uuid");
-
                     b.HasKey("Id");
 
                     b.HasIndex("CoachId");
-
-                    b.HasIndex("TypeId");
 
                     b.ToTable("CoachAvailabilities", (string)null);
 
@@ -270,10 +265,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             Id = new Guid("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77"),
                             CoachId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
                             EndTime = new DateTime(2025, 11, 1, 10, 0, 0, 0, DateTimeKind.Utc),
-                            Focus = 0,
-                            StartTime = new DateTime(2025, 11, 1, 9, 0, 0, 0, DateTimeKind.Utc),
-                            Status = 0,
-                            TypeId = new Guid("a3f1c8b2-9d4e-4c7a-8f21-6b7e4d2c91aa")
+                            IsBooked = false,
+                            StartTime = new DateTime(2025, 11, 1, 9, 0, 0, 0, DateTimeKind.Utc)
                         });
                 });
 
@@ -507,12 +500,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<Guid>("CoachAvailabilityId")
                         .HasColumnType("uuid");
 
-                    b.Property<int>("OrderCode")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("OrderCode"));
-
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
@@ -524,11 +511,29 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CoachAvailabilityId");
-
                     b.HasIndex("UserId");
 
                     b.ToTable("InterviewBookingTransaction", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a88"),
+                            Amount = 1000,
+                            CoachAvailabilityId = new Guid("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77"),
+                            Status = 1,
+                            Type = 0,
+                            UserId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11")
+                        },
+                        new
+                        {
+                            Id = new Guid("8f9a0b1c-d2e3-4f5a-9b0c-1d2e3f4a5b99"),
+                            Amount = 500,
+                            CoachAvailabilityId = new Guid("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77"),
+                            Status = 1,
+                            Type = 1,
+                            UserId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22")
+                        });
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.InterviewRoom", b =>
@@ -1049,21 +1054,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 
             modelBuilder.Entity("Intervu.Domain.Entities.CoachAvailability", b =>
                 {
-                    b.HasOne("Intervu.Domain.Entities.CoachProfile", "CoachProfile")
+                    b.HasOne("Intervu.Domain.Entities.CoachProfile", null)
                         .WithMany()
                         .HasForeignKey("CoachId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("FK_CoachAvailabilities_CoachProfiles_CoachId");
-
-                    b.HasOne("Intervu.Domain.Entities.InterviewType", null)
-                        .WithMany()
-                        .HasForeignKey("TypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_CoachAvailabilities_InterviewTypes_TypeId");
-
-                    b.Navigation("CoachProfile");
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.CoachProfile", b =>
@@ -1102,23 +1098,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 
             modelBuilder.Entity("Intervu.Domain.Entities.InterviewBookingTransaction", b =>
                 {
-                    b.HasOne("Intervu.Domain.Entities.CoachAvailability", "CoachAvailability")
-                        .WithMany("InterviewBookingTransactions")
-                        .HasForeignKey("CoachAvailabilityId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("FK_InterviewBookingTransaction_CoachAvailabilities_CoachAvailabilityId");
-
-                    b.HasOne("Intervu.Domain.Entities.User", "User")
+                    b.HasOne("Intervu.Domain.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_InterviewBookingTransaction_Users_UserId");
-
-                    b.Navigation("CoachAvailability");
-
-                    b.Navigation("User");
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.InterviewRoom", b =>
@@ -1171,11 +1155,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Intervu.Domain.Entities.CoachAvailability", b =>
-                {
-                    b.Navigation("InterviewBookingTransactions");
                 });
 #pragma warning restore 612, 618
         }
