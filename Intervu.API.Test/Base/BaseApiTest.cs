@@ -11,16 +11,6 @@ namespace Intervu.API.Test.Base
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.UseEnvironment("Testing");
-            //builder.ConfigureServices(services =>
-            //{
-            //    var sp = services.BuildServiceProvider();
-            //    using (var scope = sp.CreateScope())
-            //    {
-            //        var scopedServices = scope.ServiceProvider;
-            //        var db = scopedServices.GetRequiredService<IntervuPostgreDbContext>();
-            //        db.Database.EnsureCreated();
-            //    }
-            //});
         }
     }
 }

@@ -80,7 +80,7 @@ public class BaseAutomationTest : BaseTest, IAsyncLifetime
         
         try 
         {
-            await Page.GotoAsync(frontendUrl, new PageGotoOptions { Timeout = 15000 });
+            await Page.GotoAsync(frontendUrl, new PageGotoOptions { Timeout = 30000 });
             var title = await Page.TitleAsync();
             await LogPass($"Page loaded. Title: {title}");
         }

@@ -32,7 +32,7 @@ namespace Intervu.API.Test.ApiTests
             };
 
             LogInfo("Login.");
-            var response = await _api.PostAsync("/api/v1/account/login", req, true);
+            var response = await _api.PostAsync("/api/v1/account/login", req, logBody: true);
 
             LogInfo("Verify json content is not null and not empty");
             var apiResponse = await _api.LogDeserializeJson<LoginResponse>(response);

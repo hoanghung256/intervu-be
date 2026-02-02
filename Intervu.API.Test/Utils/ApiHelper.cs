@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 using Intervu.API.Test.Base;
 using Intervu.Application.DTOs.Common;
@@ -34,49 +35,57 @@ namespace Intervu.API.Test.Utils
             }
         }
 
-        public async Task<HttpResponseMessage> GetAsync(string requestUri, bool logBody = false)
+        public async Task<HttpResponseMessage> GetAsync(string requestUri, string jwtToken = "", bool logBody = false)
         {
             return await LogApiActionAsync($"GET {requestUri}", async () =>
             {
-                var response = await _client.GetAsync(requestUri);
+                var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
+                var response = await _client.SendAsync(request);
                 await LogResponseDetails(response, logBody);
                 return response;
             });
         }
 
-        public async Task<HttpResponseMessage> PostAsync<T>(string requestUri, T payload, bool logBody = false)
+        public async Task<HttpResponseMessage> PostAsync<T>(string requestUri, T payload, string jwtToken = "", bool logBody = false)
         {
             return await LogApiActionAsync($"POST {requestUri}", async () =>
             {
+                var request = new HttpRequestMessage(HttpMethod.Post, requestUri);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
                 var jsonPayload = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
                 _test.LogInfo($"Request Body:\n{jsonPayload}");
-                var httpContent = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+                request.Content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
                 
-                var response = await _client.PostAsync(requestUri, httpContent);
+                var response = await _client.SendAsync(request);
                 await LogResponseDetails(response, logBody);
                 return response;
             });
         }
         
-        public async Task<HttpResponseMessage> PutAsync<T>(string requestUri, T payload, bool logBody = false)
+        public async Task<HttpResponseMessage> PutAsync<T>(string requestUri, T payload, string jwtToken = "", bool logBody = false)
         {
             return await LogApiActionAsync($"PUT {requestUri}", async () =>
             {
+                var request = new HttpRequestMessage(HttpMethod.Put, requestUri);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
                 var jsonPayload = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
                 _test.LogInfo($"Request Body:\n{jsonPayload}");
-                var httpContent = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+                request.Content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
                 
-                var response = await _client.PutAsync(requestUri, httpContent);
+                var response = await _client.SendAsync(request);
                 await LogResponseDetails(response, logBody);
                 return response;
             });
         }
 
-        public async Task<HttpResponseMessage> DeleteAsync(string requestUri, bool logBody = false)
+        public async Task<HttpResponseMessage> DeleteAsync(string requestUri, string jwtToken = "", bool logBody = false)
         {
             return await LogApiActionAsync($"DELETE {requestUri}", async () =>
             {
-                var response = await _client.DeleteAsync(requestUri);
+                var request = new HttpRequestMessage(HttpMethod.Delete, requestUri);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
+                var response = await _client.SendAsync(request);
                 await LogResponseDetails(response, logBody);
                 return response;
             });

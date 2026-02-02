@@ -23,6 +23,8 @@ namespace Intervu.Infrastructure
 {
     public static class DependencyInjection
     {
+        private static readonly object _firebaseLock = new object();
+
         public static IServiceCollection AddPersistenceSqlServer(this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
         {
             //services.AddDbContextPool<IntervuDbContext>(options =>
@@ -79,12 +81,15 @@ namespace Intervu.Infrastructure
 
             GoogleCredential credential = GoogleCredential.FromFile(firebaseConfigJson);
 
-            if (FirebaseApp.DefaultInstance == null)
+            lock (_firebaseLock)
             {
-                FirebaseApp.Create(new AppOptions
+                if (FirebaseApp.DefaultInstance == null)
                 {
-                    Credential = credential
-                });
+                    FirebaseApp.Create(new AppOptions
+                    {
+                        Credential = credential
+                    });
+                }
             }
 
             services.AddSingleton(StorageClient.Create(credential));
@@ -156,4 +161,3 @@ namespace Intervu.Infrastructure
         }
     }
 }
-
