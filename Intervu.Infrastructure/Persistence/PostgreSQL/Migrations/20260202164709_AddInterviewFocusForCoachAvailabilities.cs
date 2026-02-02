@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -8,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 {
     /// <inheritdoc />
-    public partial class ChangeKeyDataTypeIntToUUID : Migration
+    public partial class AddInterviewFocusForCoachAvailabilities : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -25,6 +26,23 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Companies", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "InterviewTypes",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: false),
+                    IsCoding = table.Column<bool>(type: "boolean", nullable: false),
+                    DurationMinutes = table.Column<int>(type: "integer", nullable: false),
+                    BasePrice = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    Status = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_InterviewTypes", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -64,33 +82,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     Password = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
                     Role = table.Column<int>(type: "integer", nullable: false),
                     ProfilePicture = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    SlugProfileUrl = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Users", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "InterviewBookingTransaction",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    InterviewerAvailabilityId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Amount = table.Column<int>(type: "integer", nullable: false),
-                    Type = table.Column<int>(type: "integer", nullable: false),
-                    Status = table.Column<int>(type: "integer", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_InterviewBookingTransaction", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_InterviewBookingTransaction_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -100,7 +97,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     CVUrl = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     PortfolioUrl = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
-                    Skills = table.Column<string>(type: "text", nullable: true),
                     Bio = table.Column<string>(type: "text", nullable: true),
                     CurrentAmount = table.Column<int>(type: "integer", nullable: false)
                 },
@@ -116,7 +112,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "InterviewerProfiles",
+                name: "CoachProfiles",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -130,9 +126,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_InterviewerProfiles", x => x.Id);
+                    table.PrimaryKey("PK_CoachProfiles", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_InterviewerProfiles_Users_Id",
+                        name: "FK_CoachProfiles_Users_Id",
                         column: x => x.Id,
                         principalTable: "Users",
                         principalColumn: "Id",
@@ -164,68 +160,143 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "InterviewerAvailabilities",
+                name: "PasswordResetTokens",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    InterviewerId = table.Column<Guid>(type: "uuid", nullable: false),
-                    StartTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    EndTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    IsBooked = table.Column<bool>(type: "boolean", nullable: false)
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Token = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IsUsed = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()")
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_InterviewerAvailabilities", x => x.Id);
+                    table.PrimaryKey("PK_PasswordResetTokens", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_InterviewerAvailabilities_InterviewerProfiles_InterviewerId",
-                        column: x => x.InterviewerId,
-                        principalTable: "InterviewerProfiles",
+                        name: "FK_PasswordResetTokens_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "InterviewerCompanies",
+                name: "RefreshTokens",
                 columns: table => new
                 {
-                    InterviewerProfilesId = table.Column<Guid>(type: "uuid", nullable: false),
-                    CompaniesId = table.Column<Guid>(type: "uuid", nullable: false)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Token = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()")
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_InterviewerCompanies", x => new { x.InterviewerProfilesId, x.CompaniesId });
+                    table.PrimaryKey("PK_RefreshTokens", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_InterviewerCompanies_Companies_CompaniesId",
-                        column: x => x.CompaniesId,
-                        principalTable: "Companies",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_InterviewerCompanies_InterviewerProfiles_InterviewerProfile~",
-                        column: x => x.InterviewerProfilesId,
-                        principalTable: "InterviewerProfiles",
+                        name: "FK_RefreshTokens_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "InterviewerSkills",
+                name: "CandidateSkills",
                 columns: table => new
                 {
-                    InterviewerProfilesId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CandidateProfilesId = table.Column<Guid>(type: "uuid", nullable: false),
                     SkillsId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_InterviewerSkills", x => new { x.InterviewerProfilesId, x.SkillsId });
+                    table.PrimaryKey("PK_CandidateSkills", x => new { x.CandidateProfilesId, x.SkillsId });
                     table.ForeignKey(
-                        name: "FK_InterviewerSkills_InterviewerProfiles_InterviewerProfilesId",
-                        column: x => x.InterviewerProfilesId,
-                        principalTable: "InterviewerProfiles",
+                        name: "FK_CandidateSkills_CandidateProfiles_CandidateProfilesId",
+                        column: x => x.CandidateProfilesId,
+                        principalTable: "CandidateProfiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_InterviewerSkills_Skills_SkillsId",
+                        name: "FK_CandidateSkills_Skills_SkillsId",
+                        column: x => x.SkillsId,
+                        principalTable: "Skills",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CoachAvailabilities",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    CoachId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TypeId = table.Column<Guid>(type: "uuid", nullable: false),
+                    StartTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    EndTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Focus = table.Column<int>(type: "integer", nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CoachAvailabilities", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CoachAvailabilities_CoachProfiles_CoachId",
+                        column: x => x.CoachId,
+                        principalTable: "CoachProfiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_CoachAvailabilities_InterviewTypes_TypeId",
+                        column: x => x.TypeId,
+                        principalTable: "InterviewTypes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CoachCompanies",
+                columns: table => new
+                {
+                    CoachProfilesId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CompaniesId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CoachCompanies", x => new { x.CoachProfilesId, x.CompaniesId });
+                    table.ForeignKey(
+                        name: "FK_CoachCompanies_CoachProfiles_CoachProfilesId",
+                        column: x => x.CoachProfilesId,
+                        principalTable: "CoachProfiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_CoachCompanies_Companies_CompaniesId",
+                        column: x => x.CompaniesId,
+                        principalTable: "Companies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CoachSkills",
+                columns: table => new
+                {
+                    CoachProfilesId = table.Column<Guid>(type: "uuid", nullable: false),
+                    SkillsId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CoachSkills", x => new { x.CoachProfilesId, x.SkillsId });
+                    table.ForeignKey(
+                        name: "FK_CoachSkills_CoachProfiles_CoachProfilesId",
+                        column: x => x.CoachProfilesId,
+                        principalTable: "CoachProfiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_CoachSkills_Skills_SkillsId",
                         column: x => x.SkillsId,
                         principalTable: "Skills",
                         principalColumn: "Id",
@@ -237,8 +308,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    StudentId = table.Column<Guid>(type: "uuid", nullable: true),
-                    InterviewerId = table.Column<Guid>(type: "uuid", nullable: true),
+                    CandidateId = table.Column<Guid>(type: "uuid", nullable: true),
+                    CoachId = table.Column<Guid>(type: "uuid", nullable: true),
                     ScheduledTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     DurationMinutes = table.Column<int>(type: "integer", nullable: true),
                     VideoCallRoomUrl = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
@@ -253,17 +324,47 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 {
                     table.PrimaryKey("PK_InterviewRooms", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_InterviewRooms_CandidateProfiles_StudentId",
-                        column: x => x.StudentId,
+                        name: "FK_InterviewRooms_CandidateProfiles_CandidateId",
+                        column: x => x.CandidateId,
                         principalTable: "CandidateProfiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_InterviewRooms_InterviewerProfiles_InterviewerId",
-                        column: x => x.InterviewerId,
-                        principalTable: "InterviewerProfiles",
+                        name: "FK_InterviewRooms_CoachProfiles_CoachId",
+                        column: x => x.CoachId,
+                        principalTable: "CoachProfiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "InterviewBookingTransaction",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    OrderCode = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityAlwaysColumn),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CoachAvailabilityId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Amount = table.Column<int>(type: "integer", nullable: false),
+                    Type = table.Column<int>(type: "integer", nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_InterviewBookingTransaction", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_InterviewBookingTransaction_CoachAvailabilities_CoachAvailabilityId",
+                        column: x => x.CoachAvailabilityId,
+                        principalTable: "CoachAvailabilities",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_InterviewBookingTransaction_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -271,8 +372,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    InterviewerId = table.Column<Guid>(type: "uuid", nullable: false),
-                    StudentId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CoachId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CandidateId = table.Column<Guid>(type: "uuid", nullable: false),
                     InterviewRoomId = table.Column<Guid>(type: "uuid", nullable: false),
                     Rating = table.Column<int>(type: "integer", nullable: false),
                     Comments = table.Column<string>(type: "text", nullable: false),
@@ -282,21 +383,21 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 {
                     table.PrimaryKey("PK_Feedbacks", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Feedbacks_InterviewRooms_InterviewRoomId",
-                        column: x => x.InterviewRoomId,
-                        principalTable: "InterviewRooms",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Feedbacks_CandidateProfiles_StudentId",
-                        column: x => x.StudentId,
+                        name: "FK_Feedbacks_CandidateProfiles_CandidateId",
+                        column: x => x.CandidateId,
                         principalTable: "CandidateProfiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_Feedbacks_InterviewerProfiles_InterviewerId",
-                        column: x => x.InterviewerId,
-                        principalTable: "InterviewerProfiles",
+                        name: "FK_Feedbacks_CoachProfiles_CoachId",
+                        column: x => x.CoachId,
+                        principalTable: "CoachProfiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Feedbacks_InterviewRooms_InterviewRoomId",
+                        column: x => x.InterviewRoomId,
+                        principalTable: "InterviewRooms",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -316,6 +417,17 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     { new Guid("88888888-8888-4888-8888-888888888888"), "logos/uber.png", "Uber", "https://uber.com" },
                     { new Guid("99999999-9999-4999-8999-999999999999"), "logos/spotify.png", "Spotify", "https://spotify.com" },
                     { new Guid("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"), "logos/stripe.png", "Stripe", "https://stripe.com" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "InterviewTypes",
+                columns: new[] { "Id", "BasePrice", "Description", "DurationMinutes", "IsCoding", "Name", "Status" },
+                values: new object[,]
+                {
+                    { new Guid("5c9e2a14-73bb-4b61-b7e2-91a8f42d3c6e"), 30, "Behavioral interview focused on communication and interpersonal skills.", 45, false, "Soft Skills Interview", 1 },
+                    { new Guid("a3f1c8b2-9d4e-4c7a-8f21-6b7e4d2c91aa"), 20, "Resume review and HR-style interview focusing on background and experience.", 30, false, "CV Interview", 1 },
+                    { new Guid("e8b74d9f-2c41-4c9a-9b13-1f8a6e52d0c3"), 50, "Technical interview with coding problems and system design questions.", 60, true, "Technical Interview", 1 },
+                    { new Guid("f14a7c6d-88b2-4d55-a9fd-2b4e73c91a08"), 70, "Full mock interview simulating a real job interview experience.", 75, true, "Mock Interview", 0 }
                 });
 
             migrationBuilder.InsertData(
@@ -347,32 +459,23 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 
             migrationBuilder.InsertData(
                 table: "Users",
-                columns: new[] { "Id", "Email", "FullName", "Password", "ProfilePicture", "Role", "Status" },
+                columns: new[] { "Id", "Email", "FullName", "Password", "ProfilePicture", "Role", "SlugProfileUrl", "Status" },
                 values: new object[,]
                 {
-                    { new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"), "alice@example.com", "Alice Student", "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=", null, 0, 0 },
-                    { new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), "bob@example.com", "Bob Interviewer", "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=", null, 1, 0 },
-                    { new Guid("2f8c7a6b-6d5e-4e2f-8c7a-9d6e5c4b3a33"), "admin@example.com", "Admin", "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=", null, 2, 0 },
-                    { new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"), "john.doe@example.com", "John Doe", "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=", null, 1, 0 },
-                    { new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"), "sarah.lee@example.com", "Sarah Lee", "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=", null, 1, 0 }
-                });
-
-            migrationBuilder.InsertData(
-                table: "InterviewBookingTransaction",
-                columns: new[] { "Id", "Amount", "InterviewerAvailabilityId", "Status", "Type", "UserId" },
-                values: new object[,]
-                {
-                    { new Guid("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a88"), 1000, new Guid("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77"), 1, 0, new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11") },
-                    { new Guid("8f9a0b1c-d2e3-4f5a-9b0c-1d2e3f4a5b99"), 500, new Guid("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77"), 1, 1, new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22") }
+                    { new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"), "alice@example.com", "Alice Candidate", "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=", null, 0, "alice-candidate_1719000000001", 0 },
+                    { new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), "bob@example.com", "Bob Coach", "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=", null, 1, "bob-Coach_1719000000002", 0 },
+                    { new Guid("2f8c7a6b-6d5e-4e2f-8c7a-9d6e5c4b3a33"), "admin@example.com", "Admin", "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=", null, 2, "admin_1719000000003", 0 },
+                    { new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"), "john.doe@example.com", "John Doe", "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=", null, 1, "john-doe_1719000000004", 0 },
+                    { new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"), "sarah.lee@example.com", "Sarah Lee", "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=", null, 1, "sarah-lee_1719000000005", 0 }
                 });
 
             migrationBuilder.InsertData(
                 table: "CandidateProfiles",
-                columns: new[] { "Id", "Bio", "CVUrl", "CurrentAmount", "PortfolioUrl", "Skills" },
-                values: new object[] { new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"), "Aspiring backend developer.", "https://example.com/cv-alice.pdf", 0, "https://portfolio.example.com/alice", "[C#, SQL]" });
+                columns: new[] { "Id", "Bio", "CVUrl", "CurrentAmount", "PortfolioUrl" },
+                values: new object[] { new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"), "Aspiring backend developer.", "https://example.com/cv-alice.pdf", 0, "https://portfolio.example.com/alice" });
 
             migrationBuilder.InsertData(
-                table: "InterviewerProfiles",
+                table: "CoachProfiles",
                 columns: new[] { "Id", "BankAccountNumber", "BankBinNumber", "Bio", "CurrentAmount", "ExperienceYears", "PortfolioUrl", "Status" },
                 values: new object[,]
                 {
@@ -387,34 +490,38 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 values: new object[] { new Guid("0a1b2c3d-4e5f-4a6b-8c9d-0e1f2a3b4c20"), new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11") });
 
             migrationBuilder.InsertData(
-                table: "InterviewRooms",
-                columns: new[] { "Id", "CurrentLanguage", "DurationMinutes", "InterviewerId", "LanguageCodes", "ProblemDescription", "ProblemShortName", "ScheduledTime", "Status", "StudentId", "TestCases", "VideoCallRoomUrl" },
-                values: new object[] { new Guid("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a66"), null, 60, new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), null, null, null, new DateTime(2025, 11, 1, 9, 0, 0, 0, DateTimeKind.Utc), 0, new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"), null, "https://meet.example/room1" });
-
-            migrationBuilder.InsertData(
-                table: "InterviewerAvailabilities",
-                columns: new[] { "Id", "EndTime", "InterviewerId", "IsBooked", "StartTime" },
-                values: new object[] { new Guid("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77"), new DateTime(2025, 11, 1, 10, 0, 0, 0, DateTimeKind.Utc), new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), false, new DateTime(2025, 11, 1, 9, 0, 0, 0, DateTimeKind.Utc) });
-
-            migrationBuilder.InsertData(
-                table: "InterviewerCompanies",
-                columns: new[] { "CompaniesId", "InterviewerProfilesId" },
+                table: "CandidateSkills",
+                columns: new[] { "CandidateProfilesId", "SkillsId" },
                 values: new object[,]
                 {
-                    { new Guid("11111111-1111-4111-8111-111111111111"), new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22") },
-                    { new Guid("44444444-4444-4444-8444-444444444444"), new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22") },
-                    { new Guid("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"), new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22") },
-                    { new Guid("33333333-3333-4333-8333-333333333333"), new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44") },
-                    { new Guid("66666666-6666-4666-8666-666666666666"), new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44") },
-                    { new Guid("88888888-8888-4888-8888-888888888888"), new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44") },
-                    { new Guid("22222222-2222-4222-8222-222222222222"), new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55") },
-                    { new Guid("77777777-7777-4777-8777-777777777777"), new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55") },
-                    { new Guid("99999999-9999-4999-8999-999999999999"), new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55") }
+                    { new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"), new Guid("02020202-0202-4202-8202-020202020202") },
+                    { new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"), new Guid("b1b1b1b1-b1b1-41b1-81b1-b1b1b1b1b1b1") }
                 });
 
             migrationBuilder.InsertData(
-                table: "InterviewerSkills",
-                columns: new[] { "InterviewerProfilesId", "SkillsId" },
+                table: "CoachAvailabilities",
+                columns: new[] { "Id", "CoachId", "EndTime", "Focus", "StartTime", "Status", "TypeId" },
+                values: new object[] { new Guid("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77"), new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), new DateTime(2025, 11, 1, 10, 0, 0, 0, DateTimeKind.Utc), 0, new DateTime(2025, 11, 1, 9, 0, 0, 0, DateTimeKind.Utc), 0, new Guid("a3f1c8b2-9d4e-4c7a-8f21-6b7e4d2c91aa") });
+
+            migrationBuilder.InsertData(
+                table: "CoachCompanies",
+                columns: new[] { "CoachProfilesId", "CompaniesId" },
+                values: new object[,]
+                {
+                    { new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), new Guid("11111111-1111-4111-8111-111111111111") },
+                    { new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), new Guid("44444444-4444-4444-8444-444444444444") },
+                    { new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), new Guid("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa") },
+                    { new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"), new Guid("33333333-3333-4333-8333-333333333333") },
+                    { new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"), new Guid("66666666-6666-4666-8666-666666666666") },
+                    { new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"), new Guid("88888888-8888-4888-8888-888888888888") },
+                    { new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"), new Guid("22222222-2222-4222-8222-222222222222") },
+                    { new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"), new Guid("77777777-7777-4777-8777-777777777777") },
+                    { new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"), new Guid("99999999-9999-4999-8999-999999999999") }
+                });
+
+            migrationBuilder.InsertData(
+                table: "CoachSkills",
+                columns: new[] { "CoachProfilesId", "SkillsId" },
                 values: new object[,]
                 {
                     { new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), new Guid("02020202-0202-4202-8202-020202020202") },
@@ -434,14 +541,49 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 });
 
             migrationBuilder.InsertData(
+                table: "InterviewRooms",
+                columns: new[] { "Id", "CandidateId", "CoachId", "CurrentLanguage", "DurationMinutes", "LanguageCodes", "ProblemDescription", "ProblemShortName", "ScheduledTime", "Status", "TestCases", "VideoCallRoomUrl" },
+                values: new object[] { new Guid("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a66"), new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"), new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), null, 60, null, null, null, new DateTime(2025, 11, 1, 9, 0, 0, 0, DateTimeKind.Utc), 0, null, "https://meet.example/room1" });
+
+            migrationBuilder.InsertData(
                 table: "Feedbacks",
-                columns: new[] { "Id", "AIAnalysis", "Comments", "InterviewRoomId", "InterviewerId", "Rating", "StudentId" },
-                values: new object[] { new Guid("9a0b1c2d-e3f4-4a5b-8c9d-0e1f2a3b4c10"), "{}", "Great answers and communication.", new Guid("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a66"), new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), 5, new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11") });
+                columns: new[] { "Id", "AIAnalysis", "CandidateId", "CoachId", "Comments", "InterviewRoomId", "Rating" },
+                values: new object[] { new Guid("9a0b1c2d-e3f4-4a5b-8c9d-0e1f2a3b4c10"), "{}", new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"), new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), "Great answers and communication.", new Guid("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a66"), 5 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Feedbacks_InterviewerId",
+                name: "IX_CandidateSkills_SkillsId",
+                table: "CandidateSkills",
+                column: "SkillsId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CoachAvailabilities_CoachId",
+                table: "CoachAvailabilities",
+                column: "CoachId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CoachAvailabilities_TypeId",
+                table: "CoachAvailabilities",
+                column: "TypeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CoachCompanies_CompaniesId",
+                table: "CoachCompanies",
+                column: "CompaniesId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CoachSkills_SkillsId",
+                table: "CoachSkills",
+                column: "SkillsId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Feedbacks_CandidateId",
                 table: "Feedbacks",
-                column: "InterviewerId");
+                column: "CandidateId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Feedbacks_CoachId",
+                table: "Feedbacks",
+                column: "CoachId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Feedbacks_InterviewRoomId",
@@ -450,9 +592,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Feedbacks_StudentId",
-                table: "Feedbacks",
-                column: "StudentId");
+                name: "IX_InterviewBookingTransaction_CoachAvailabilityId",
+                table: "InterviewBookingTransaction",
+                column: "CoachAvailabilityId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_InterviewBookingTransaction_UserId",
@@ -460,29 +602,14 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_InterviewerAvailabilities_InterviewerId",
-                table: "InterviewerAvailabilities",
-                column: "InterviewerId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_InterviewerCompanies_CompaniesId",
-                table: "InterviewerCompanies",
-                column: "CompaniesId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_InterviewerSkills_SkillsId",
-                table: "InterviewerSkills",
-                column: "SkillsId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_InterviewRooms_InterviewerId",
+                name: "IX_InterviewRooms_CandidateId",
                 table: "InterviewRooms",
-                column: "InterviewerId");
+                column: "CandidateId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_InterviewRooms_StudentId",
+                name: "IX_InterviewRooms_CoachId",
                 table: "InterviewRooms",
-                column: "StudentId");
+                column: "CoachId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_NotificationReceives_ReceiverId",
@@ -490,9 +617,35 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 column: "ReceiverId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_PasswordResetTokens_Token",
+                table: "PasswordResetTokens",
+                column: "Token");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PasswordResetTokens_UserId_ExpiresAt",
+                table: "PasswordResetTokens",
+                columns: new[] { "UserId", "ExpiresAt" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RefreshTokens_Token",
+                table: "RefreshTokens",
+                column: "Token");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RefreshTokens_UserId_ExpiresAt",
+                table: "RefreshTokens",
+                columns: new[] { "UserId", "ExpiresAt" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Users_Email",
                 table: "Users",
                 column: "Email",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_SlugProfileUrl",
+                table: "Users",
+                column: "SlugProfileUrl",
                 unique: true);
         }
 
@@ -500,25 +653,28 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "CandidateSkills");
+
+            migrationBuilder.DropTable(
+                name: "CoachCompanies");
+
+            migrationBuilder.DropTable(
+                name: "CoachSkills");
+
+            migrationBuilder.DropTable(
                 name: "Feedbacks");
 
             migrationBuilder.DropTable(
                 name: "InterviewBookingTransaction");
 
             migrationBuilder.DropTable(
-                name: "InterviewerAvailabilities");
-
-            migrationBuilder.DropTable(
-                name: "InterviewerCompanies");
-
-            migrationBuilder.DropTable(
-                name: "InterviewerSkills");
-
-            migrationBuilder.DropTable(
                 name: "NotificationReceives");
 
             migrationBuilder.DropTable(
-                name: "InterviewRooms");
+                name: "PasswordResetTokens");
+
+            migrationBuilder.DropTable(
+                name: "RefreshTokens");
 
             migrationBuilder.DropTable(
                 name: "Companies");
@@ -527,13 +683,22 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 name: "Skills");
 
             migrationBuilder.DropTable(
+                name: "InterviewRooms");
+
+            migrationBuilder.DropTable(
+                name: "CoachAvailabilities");
+
+            migrationBuilder.DropTable(
                 name: "Notifications");
 
             migrationBuilder.DropTable(
                 name: "CandidateProfiles");
 
             migrationBuilder.DropTable(
-                name: "InterviewerProfiles");
+                name: "CoachProfiles");
+
+            migrationBuilder.DropTable(
+                name: "InterviewTypes");
 
             migrationBuilder.DropTable(
                 name: "Users");

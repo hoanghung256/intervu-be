@@ -159,6 +159,10 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             {
                 b.ToTable("CoachAvailabilities");
                 b.HasKey(x => x.Id);
+                b.Property(x => x.Focus)
+                .HasConversion<int>()
+                .IsRequired();
+
                 b.Property(x => x.StartTime).IsRequired();
                 b.Property(x => x.EndTime).IsRequired();
 
@@ -168,12 +172,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 .HasConstraintName("FK_CoachAvailabilities_CoachProfiles_CoachId")
                .OnDelete(DeleteBehavior.Cascade);
 
-              b.HasOne<InterviewType>()
-               .WithMany()
-                .HasForeignKey(x => x.TypeId)
-                .HasConstraintName("FK_CoachAvailabilities_InterviewTypes_TypeId")
-               .OnDelete(DeleteBehavior.Cascade);
-          });
+                b.HasOne<InterviewType>()
+                 .WithMany()
+                  .HasForeignKey(x => x.TypeId)
+                  .HasConstraintName("FK_CoachAvailabilities_InterviewTypes_TypeId")
+                 .OnDelete(DeleteBehavior.Cascade);
+            });
 
             // InterviewRoom
             modelBuilder.Entity<InterviewRoom>(b =>
@@ -493,7 +497,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 PortfolioUrl = "https://portfolio.example.com/alice",
                 Bio = "Aspiring backend developer."
             });
-            
+
             modelBuilder.Entity("CandidateSkills").HasData(
                 new { CandidateProfilesId = user1Id, SkillsId = Guid.Parse("b1b1b1b1-b1b1-41b1-81b1-b1b1b1b1b1b1") },
                 new { CandidateProfilesId = user1Id, SkillsId = Guid.Parse("02020202-0202-4202-8202-020202020202") }
@@ -539,6 +543,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             {
                 Id = CoachAvail1Id,
                 CoachId = user2Id,
+                Focus = InterviewFocus.General_Skills,
                 TypeId = Guid.Parse("a3f1c8b2-9d4e-4c7a-8f21-6b7e4d2c91aa"),
                 StartTime = DateTime.SpecifyKind(new DateTime(2025, 11, 1, 9, 0, 0), DateTimeKind.Utc),
                 EndTime = DateTime.SpecifyKind(new DateTime(2025, 11, 1, 10, 0, 0),

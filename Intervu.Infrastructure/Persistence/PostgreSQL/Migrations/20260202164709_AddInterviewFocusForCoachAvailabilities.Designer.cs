@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 {
     [DbContext(typeof(IntervuPostgreDbContext))]
-    [Migration("20260115055229_FixTransactionCoachAvailabilityRelation")]
-    partial class FixTransactionCoachAvailabilityRelation
+    [Migration("20260202164709_AddInterviewFocusForCoachAvailabilities")]
+    partial class AddInterviewFocusForCoachAvailabilities
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -244,23 +244,26 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<Guid>("CoachId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("CoachProfileId")
-                        .HasColumnType("uuid");
-
                     b.Property<DateTime>("EndTime")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("IsBooked")
-                        .HasColumnType("boolean");
+                    b.Property<int>("Focus")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TypeId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CoachId");
 
-                    b.HasIndex("CoachProfileId");
+                    b.HasIndex("TypeId");
 
                     b.ToTable("CoachAvailabilities", (string)null);
 
@@ -270,8 +273,10 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             Id = new Guid("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77"),
                             CoachId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
                             EndTime = new DateTime(2025, 11, 1, 10, 0, 0, 0, DateTimeKind.Utc),
-                            IsBooked = false,
-                            StartTime = new DateTime(2025, 11, 1, 9, 0, 0, 0, DateTimeKind.Utc)
+                            Focus = 0,
+                            StartTime = new DateTime(2025, 11, 1, 9, 0, 0, 0, DateTimeKind.Utc),
+                            Status = 0,
+                            TypeId = new Guid("a3f1c8b2-9d4e-4c7a-8f21-6b7e4d2c91aa")
                         });
                 });
 
@@ -520,16 +525,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("UserId1")
-                        .HasColumnType("uuid");
-
                     b.HasKey("Id");
 
                     b.HasIndex("CoachAvailabilityId");
 
                     b.HasIndex("UserId");
-
-                    b.HasIndex("UserId1");
 
                     b.ToTable("InterviewBookingTransaction", (string)null);
                 });
@@ -599,6 +599,82 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             ScheduledTime = new DateTime(2025, 11, 1, 9, 0, 0, 0, DateTimeKind.Utc),
                             Status = 0,
                             VideoCallRoomUrl = "https://meet.example/room1"
+                        });
+                });
+
+            modelBuilder.Entity("Intervu.Domain.Entities.InterviewType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("BasePrice")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("DurationMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsCoding")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("InterviewTypes", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("a3f1c8b2-9d4e-4c7a-8f21-6b7e4d2c91aa"),
+                            BasePrice = 20,
+                            Description = "Resume review and HR-style interview focusing on background and experience.",
+                            DurationMinutes = 30,
+                            IsCoding = false,
+                            Name = "CV Interview",
+                            Status = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("e8b74d9f-2c41-4c9a-9b13-1f8a6e52d0c3"),
+                            BasePrice = 50,
+                            Description = "Technical interview with coding problems and system design questions.",
+                            DurationMinutes = 60,
+                            IsCoding = true,
+                            Name = "Technical Interview",
+                            Status = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("5c9e2a14-73bb-4b61-b7e2-91a8f42d3c6e"),
+                            BasePrice = 30,
+                            Description = "Behavioral interview focused on communication and interpersonal skills.",
+                            DurationMinutes = 45,
+                            IsCoding = false,
+                            Name = "Soft Skills Interview",
+                            Status = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("f14a7c6d-88b2-4d55-a9fd-2b4e73c91a08"),
+                            BasePrice = 70,
+                            Description = "Full mock interview simulating a real job interview experience.",
+                            DurationMinutes = 75,
+                            IsCoding = true,
+                            Name = "Mock Interview",
+                            Status = 0
                         });
                 });
 
@@ -976,16 +1052,19 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 
             modelBuilder.Entity("Intervu.Domain.Entities.CoachAvailability", b =>
                 {
-                    b.HasOne("Intervu.Domain.Entities.CoachProfile", null)
+                    b.HasOne("Intervu.Domain.Entities.CoachProfile", "CoachProfile")
                         .WithMany()
                         .HasForeignKey("CoachId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("FK_CoachAvailabilities_CoachProfiles_CoachId");
 
-                    b.HasOne("Intervu.Domain.Entities.CoachProfile", "CoachProfile")
+                    b.HasOne("Intervu.Domain.Entities.InterviewType", null)
                         .WithMany()
-                        .HasForeignKey("CoachProfileId");
+                        .HasForeignKey("TypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_CoachAvailabilities_InterviewTypes_TypeId");
 
                     b.Navigation("CoachProfile");
                 });
@@ -1033,15 +1112,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_InterviewBookingTransaction_CoachAvailabilities_CoachAvailabilityId");
 
-                    b.HasOne("Intervu.Domain.Entities.User", null)
+                    b.HasOne("Intervu.Domain.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Intervu.Domain.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId1");
+                        .IsRequired()
+                        .HasConstraintName("FK_InterviewBookingTransaction_Users_UserId");
 
                     b.Navigation("CoachAvailability");
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Intervu.Domain.Entities;
+using Intervu.Domain.Entities.Constants;
 
 namespace Intervu.Domain.Repositories
 {
@@ -12,8 +13,7 @@ namespace Intervu.Domain.Repositories
         Task<Guid> CreateCoachAvailabilityAsync(CoachAvailability availability);
         Task<Guid> CreateMultipleCoachAvailabilitiesAsync(List<CoachAvailability> availabilities);
         Task<bool> DeleteCoachAvailabilityAsync(Guid availabilityId);
-        Task<bool> UpdateCoachAvailabilityAsync(Guid availabilityId, DateTimeOffset startTime, DateTimeOffset endTime);
-
+        Task<bool> UpdateCoachAvailabilityAsync(Guid availabilityId, InterviewFocus focus,DateTimeOffset startTime, DateTimeOffset endTime, Guid typeId);
         Task<CoachAvailability?> GetAsync(Guid coachId, DateTime startTime);
     }
 }
