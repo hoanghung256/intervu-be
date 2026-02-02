@@ -1,5 +1,7 @@
 ﻿using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
 using Intervu.API.Hubs;
 using Intervu.Application;
 using Intervu.Infrastructure;
@@ -85,7 +87,7 @@ namespace Intervu.API
 
             // --- CUSTOM SERVICES ---
             builder.Services.AddUseCases(builder.Configuration);
-            builder.Services.AddPersistenceSqlServer(builder.Configuration);
+            builder.Services.AddPersistenceSqlServer(builder.Configuration, builder.Environment);
             builder.Services.AddInfrastructureExternalServices(builder.Configuration);
 
             // --- AUTHENTICATION WITH JWT CONFIGURATION ---
@@ -193,10 +195,10 @@ namespace Intervu.API
             app.Logger.LogInformation(
                 "Hosting environment: {Env}",
                 app.Environment.EnvironmentName);
-            Console.WriteLine("IsDEvelopment=" + app.Environment.IsDevelopment());
+            Console.WriteLine("IsDevelopment=" + app.Environment.IsDevelopment());
 
             // --- HTTP REQUEST PIPELINE ---
-            if (app.Environment.IsDevelopment())
+            if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
             {
                 var provider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
 
@@ -223,15 +225,16 @@ namespace Intervu.API
 
             app.MapHub<InterviewRoomHub>("/api/v1/hubs/interviewroom");
 
-            app.UseHttpsRedirection();
-
-            // Add Cross-Origin-Opener-Policy header for Google auth popup
-            app.Use(async (context, next) =>
+            if (!app.Environment.IsEnvironment("Testing"))
             {
-                context.Response.Headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups";
-                context.Response.Headers["Cross-Origin-Embedder-Policy"] = "require-corp";
-                await next();
-            });
+                app.UseHttpsRedirection();
+
+                app.Use(async (context, next) => {
+                    context.Response.Headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups";
+                    context.Response.Headers["Cross-Origin-Embedder-Policy"] = "require-corp";
+                    await next();
+                });
+            }
 
             app.UseAuthentication();
             app.UseAuthorization();
