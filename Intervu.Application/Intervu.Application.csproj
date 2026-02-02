@@ -19,4 +19,8 @@
     <ProjectReference Include="..\Intervu.Domain\Intervu.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="BackgroundJobs\" />
+  </ItemGroup>
+
 </Project>

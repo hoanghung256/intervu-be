@@ -16,6 +16,9 @@ using Intervu.Domain.Repositories;
 using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Intervu.Infrastructure.Persistence.PostgreSQL;
+using Hangfire;
+using Intervu.Application.Utils;
+using Hangfire.PostgreSql;
 
 namespace Intervu.Infrastructure
 {
@@ -129,6 +132,17 @@ namespace Intervu.Infrastructure
 
             services.AddHostedService<InterviewRoomCacheLoader>();
             services.AddHostedService<InterviewMonitorService>();
+
+
+            // HANGFIRE
+            services.AddHangfire(config => config
+                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+                .UseSimpleAssemblyNameTypeSerializer()
+                .UseRecommendedSerializerSettings()
+                .UsePostgreSqlStorage(configuration.GetConnectionString("PostgreSqlDefaultConnection")));
+
+            services.AddHangfireServer();
+            services.AddScoped<IBackgroundService, HangfireBackgroundService>();
 
             return services;
         }
