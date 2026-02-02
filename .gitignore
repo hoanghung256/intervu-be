@@ -367,3 +367,6 @@ FodyWeavers.xsd
 appsettings.Development.json
 appsettings.json
 appsettings.Production.json
+
+# Firebase
+firebase.json
