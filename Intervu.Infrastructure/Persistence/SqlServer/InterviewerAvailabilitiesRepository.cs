@@ -77,7 +77,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             return true;
         }
 
-        public async Task<bool> UpdateCoachAvailabilityAsync(Guid availabilityId, InterviewFocus focus, DateTimeOffset startTime, DateTimeOffset endTime, Guid typeId)
+        public async Task<bool> UpdateCoachAvailabilityAsync(Guid availabilityId, InterviewFocus focus, DateTimeOffset startTime, DateTimeOffset endTime, Guid? typeId)
         {
             var availability = await _context.CoachAvailabilities.FindAsync(availabilityId);
             if (availability == null)

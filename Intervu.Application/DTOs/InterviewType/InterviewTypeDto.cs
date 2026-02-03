@@ -10,6 +10,7 @@ namespace Intervu.Application.DTOs.InterviewType
 {
     public class InterviewTypeDto
     {
+        public Guid Id { get; set; }
         [MaxLength(150)]
         public string Name { get; set; }
 

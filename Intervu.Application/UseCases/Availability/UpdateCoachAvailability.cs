@@ -15,7 +15,7 @@ namespace Intervu.Application.UseCases.Availability
         private readonly IInterviewTypeRepository _interviewTypeRepo;
         private readonly IMapper _mapper;
 
-        public UpdateCoachAvailability(ICoachAvailabilitiesRepository repo, IInterviewTypeRepository interviewTypeRepo,IMapper mapper)
+        public UpdateCoachAvailability(ICoachAvailabilitiesRepository repo, IInterviewTypeRepository interviewTypeRepo, IMapper mapper)
         {
             _repo = repo;
             _interviewTypeRepo = interviewTypeRepo;
@@ -27,10 +27,6 @@ namespace Intervu.Application.UseCases.Availability
             // basic validation
             if (dto == null)
                 throw new ArgumentNullException(nameof(dto));
-            
-            // Ensure StartTime and EndTime are in the same month
-            if (dto.StartTime.Year != dto.EndTime.Year || dto.StartTime.Month != dto.EndTime.Month)
-                throw new ArgumentException("StartTime and EndTime must be within the same month");
 
             var availability = await _repo.GetByIdAsync(availabilityId);
             if (availability == null)
@@ -40,8 +36,8 @@ namespace Intervu.Application.UseCases.Availability
                 throw new ArgumentException("You can only update available slots.");
 
             // Validate times are on the hour (minute = 0)
-            if (dto.StartTime.Minute != 0 || dto.StartTime.Second != 0)
-                throw new ArgumentException("Start time must be on the hour (e.g., 09:00, 14:00)");
+            //if (dto.StartTime.Minute != 0 || dto.StartTime.Second != 0)
+            //    throw new ArgumentException("Start time must be on the hour (e.g., 09:00, 14:00)");
 
             var utcNow = DateTimeOffset.UtcNow;
 
@@ -65,8 +61,8 @@ namespace Intervu.Application.UseCases.Availability
 
                 if (dto.EndTime <= dto.StartTime) throw new ArgumentException("EndTime must be greater than StartTime");
 
-                if (dto.EndTime.Minute != 0 || dto.EndTime.Second != 0)
-                    throw new ArgumentException("End time must be on the hour (e.g., 09:00, 14:00)");
+                //if (dto.EndTime.Minute != 0 || dto.EndTime.Second != 0)
+                //    throw new ArgumentException("End time must be on the hour (e.g., 09:00, 14:00)");
 
                 if (dto.EndTime <= utcNow || dto.StartTime <= utcNow)
                     throw new ArgumentException("Cannot update availability to a time in the past");
@@ -89,7 +85,8 @@ namespace Intervu.Application.UseCases.Availability
                 dto.Focus,
                 dto.StartTime,
                 dto.EndTime,
-                dto.Focus == InterviewFocus.General_Skills ? dto.TypeId.Value : Guid.Empty);
+                dto.TypeId
+            );
 
             if (!updated)
                 throw new InvalidOperationException($"Availability with ID {availabilityId} not found or could not be updated");

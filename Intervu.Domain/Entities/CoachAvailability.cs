@@ -11,7 +11,7 @@ namespace Intervu.Domain.Entities
         /// </summary>
         public Guid CoachId { get; set; }
 
-        public Guid TypeId { get; set; }
+        public Guid? TypeId { get; set; }
 
         public DateTime StartTime { get; set; }
 

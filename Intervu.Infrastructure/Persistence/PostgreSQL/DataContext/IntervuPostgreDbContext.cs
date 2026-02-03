@@ -174,9 +174,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
 
                 b.HasOne<InterviewType>()
                  .WithMany()
-                  .HasForeignKey(x => x.TypeId)
+                  .HasForeignKey(x => x.TypeId).IsRequired(false)
                   .HasConstraintName("FK_CoachAvailabilities_InterviewTypes_TypeId")
-                 .OnDelete(DeleteBehavior.Cascade);
+                 .OnDelete(DeleteBehavior.SetNull);
             });
 
             // InterviewRoom

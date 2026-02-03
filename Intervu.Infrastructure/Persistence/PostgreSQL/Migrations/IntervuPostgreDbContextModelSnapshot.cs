@@ -253,7 +253,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
-                    b.Property<Guid>("TypeId")
+                    b.Property<Guid?>("TypeId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
@@ -1059,8 +1059,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.HasOne("Intervu.Domain.Entities.InterviewType", null)
                         .WithMany()
                         .HasForeignKey("TypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
+                        .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("FK_CoachAvailabilities_InterviewTypes_TypeId");
 
                     b.Navigation("CoachProfile");

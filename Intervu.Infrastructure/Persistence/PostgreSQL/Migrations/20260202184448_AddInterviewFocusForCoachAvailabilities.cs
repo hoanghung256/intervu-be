@@ -232,7 +232,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     CoachId = table.Column<Guid>(type: "uuid", nullable: false),
-                    TypeId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TypeId = table.Column<Guid>(type: "uuid", nullable: true),
                     StartTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     EndTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Focus = table.Column<int>(type: "integer", nullable: false),
@@ -252,7 +252,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         column: x => x.TypeId,
                         principalTable: "InterviewTypes",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(

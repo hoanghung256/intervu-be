@@ -33,19 +33,15 @@ namespace Intervu.Application.UseCases.Availability
 
             // basic validation
             if (dto == null) throw new ArgumentNullException(nameof(dto));
-            
-            // Ensure StartTime and EndTime are in the same month
-            if (dto.StartTime.Year != dto.EndTime.Year || dto.StartTime.Month != dto.EndTime.Month)
-                throw new ArgumentException("StartTime and EndTime must be within the same month");           
 
             // Verify coach exists
             var coachProfile = await _coachProfileRepo.GetProfileByIdAsync(dto.CoachId);
             if (coachProfile == null)
                 throw new InvalidOperationException($"Coach with ID {dto.CoachId} does not exist");
-
+            
             // Prevent creating in the past - proper UTC comparison with DateTimeOffset
-            if (dto.StartTime.Minute != 0 || dto.StartTime.Second != 0)
-                throw new ArgumentException("Start time must be on the hour (e.g., 09:00, 14:00)");
+            //if (dto.StartTime.Minute != 0 || dto.StartTime.Second != 0)
+            //    throw new ArgumentException("Start time must be on the hour (e.g., 09:00, 14:00)");
             // DateTimeOffset automatically handles timezone-aware comparison
             var utcNow = DateTimeOffset.UtcNow;
 
@@ -76,8 +72,8 @@ namespace Intervu.Application.UseCases.Availability
                 if (startTimeUtc <= utcNow.UtcDateTime || endTimeUtc <= utcNow.UtcDateTime)
                     throw new ArgumentException("Cannot create availability in the past");
 
-                if (dto.EndTime.Minute != 0 || dto.EndTime.Second != 0)
-                    throw new ArgumentException("End time must be on the hour (e.g., 09:00, 14:00)");
+                //if (dto.EndTime.Minute != 0 || dto.EndTime.Second != 0)
+                //    throw new ArgumentException("End time must be on the hour (e.g., 09:00, 14:00)");
 
 
                 if (dto.EndTime <= dto.StartTime) throw new ArgumentException("EndTime must be greater than StartTime");
@@ -121,7 +117,7 @@ namespace Intervu.Application.UseCases.Availability
                 {
                     CoachId = dto.CoachId,
                     Focus = dto.Focus,
-                    TypeId = dto.Focus == InterviewFocus.General_Skills ? dto.TypeId.Value : Guid.Empty,
+                    TypeId = dto.TypeId,
                     StartTime = slotStart,
                     EndTime = slotEnd,
                     Status = Domain.Entities.Constants.CoachAvailabilityStatus.Available
