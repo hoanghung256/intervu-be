@@ -28,37 +28,22 @@ namespace Intervu.API.Controllers.v1.Payment
     {
         private readonly ILogger<InterviewBookingController> _logger;
         private readonly ICreateBookingCheckoutUrl _createBookingCheckoutUrl;
-        private readonly IPaymentService _paymentService;
-        private readonly ICreateInterviewRoom _createInterviewRoom;
-        private readonly IUpdateAvailabilityStatus _updateAvailabilityStatus;
+        //private readonly IPaymentService _paymentService;
         private readonly IHandldeInterviewBookingUpdate _handldeInterviewBookingUpdate;
-        private readonly IGetInterviewBooking _getInterviewBooking;
-        private readonly ISendBookingConfirmationEmail _sendBookingConfirmationEmail;
-        private readonly IGetCoachDetails _getCoachDetails;
-        private readonly IGetCandidateDetails _getCandidateDetails;
+        //private readonly IGetInterviewBooking _getInterviewBooking;
 
         public InterviewBookingController(
             ILogger<InterviewBookingController> logger,
             ICreateBookingCheckoutUrl createBookingCheckoutUrl,
-            IPaymentService paymentService,
-            ICreateInterviewRoom createInterviewRoom,
-            IUpdateAvailabilityStatus updateAvailabilityStatus,
-            IGetInterviewBooking getInterviewBooking,
-            IHandldeInterviewBookingUpdate handldeInterviewBookingUpdate,
-            ISendBookingConfirmationEmail sendBookingConfirmationEmail,
-            IGetCoachDetails getCoachDetails,
-            IGetCandidateDetails getCandidateDetails)
+            //IPaymentService paymentService,
+            //IGetInterviewBooking getInterviewBooking,
+            IHandldeInterviewBookingUpdate handldeInterviewBookingUpdate)
         {
             _logger = logger;
             _createBookingCheckoutUrl = createBookingCheckoutUrl;
-            _paymentService = paymentService;
-            _createInterviewRoom = createInterviewRoom;
-            _updateAvailabilityStatus = updateAvailabilityStatus;
+            //_paymentService = paymentService;
             _handldeInterviewBookingUpdate = handldeInterviewBookingUpdate;
-            _getInterviewBooking = getInterviewBooking;
-            _sendBookingConfirmationEmail = sendBookingConfirmationEmail;
-            _getCoachDetails = getCoachDetails;
-            _getCandidateDetails = getCandidateDetails;
+            //_getInterviewBooking = getInterviewBooking;
         }
 
         [HttpPost]
@@ -95,29 +80,29 @@ namespace Intervu.API.Controllers.v1.Payment
             }
         }
 
-        [HttpGet("register-webhook")]
-        public async Task<IActionResult> RegisterAsync()
-        {
-            try
-            {
-                await _paymentService.RegisterWebhooks();
-                return Ok("Registered");
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
-        }
+        //[HttpGet("register-webhook")]
+        //public async Task<IActionResult> RegisterAsync()
+        //{
+        //    try
+        //    {
+        //        await _paymentService.RegisterWebhooks();
+        //        return Ok("Registered");
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return BadRequest(ex.Message);
+        //    }
+        //}
 
-        [HttpGet("{orderCode}")]
-        public async Task<IActionResult> GetTransaction([FromRoute] int orderCode)
-        {
-            InterviewBookingTransaction? t = await _getInterviewBooking.GetByOrderCode(orderCode);
-            return Ok(new
-            {
-                success = true,
-                data = t
-            });
-        }
+        //[HttpGet("{orderCode}")]
+        //public async Task<IActionResult> GetTransaction([FromRoute] int orderCode)
+        //{
+        //    InterviewBookingTransaction? t = await _getInterviewBooking.GetByOrderCode(orderCode);
+        //    return Ok(new
+        //    {
+        //        success = true,
+        //        data = t
+        //    });
+        //}
     }
 }

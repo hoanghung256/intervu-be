@@ -96,5 +96,20 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             return _dbContext.CoachAvailabilities
                 .FirstOrDefaultAsync(a => a.CoachId == coachId && a.StartTime == startTime);
         }
+
+        public Task UpdateStatusById(Guid slotId, CoachAvailabilityStatus status)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task ExpireReservedSlot(Guid availabilityId, Guid reseverForUserId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task ReserveForSlot(Guid availabilityId, Guid reseverForUserId)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

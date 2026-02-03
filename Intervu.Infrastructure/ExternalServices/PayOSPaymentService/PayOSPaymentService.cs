@@ -20,7 +20,7 @@ namespace Intervu.Infrastructure.ExternalServices.PayOSPaymentService
             _cancelUrl = cancelUrl;
         }
 
-        public async Task<string> CreatePaymentOrderAsync(int orderCode, int ammount, string description, string returnUrl)
+        public async Task<string> CreatePaymentOrderAsync(int orderCode, int ammount, string description, string returnUrl, long expiredAfter = 4)
         {
             var paymentRequest = new CreatePaymentLinkRequest
             {
@@ -29,7 +29,7 @@ namespace Intervu.Infrastructure.ExternalServices.PayOSPaymentService
                 Description = description,
                 ReturnUrl = returnUrl,
                 CancelUrl = returnUrl,
-                ExpiredAt = DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeSeconds()
+                ExpiredAt = DateTimeOffset.UtcNow.AddMinutes(expiredAfter).ToUnixTimeSeconds()
             };
 
             CreatePaymentLinkResponse paymentLink = await _paymentClient.Client.PaymentRequests.CreateAsync(paymentRequest);

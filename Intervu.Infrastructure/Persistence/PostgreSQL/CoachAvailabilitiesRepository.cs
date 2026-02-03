@@ -1,4 +1,5 @@
 ﻿using Intervu.Domain.Entities;
+using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Microsoft.EntityFrameworkCore;
@@ -85,6 +86,32 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
         {
             return _context.CoachAvailabilities
                 .FirstOrDefaultAsync(a => a.CoachId == coachId && a.StartTime == startTime);
+        }
+
+        public async Task ExpireReservedSlot(Guid availabilityId, Guid reseverForUserId)
+        {
+            var slot = await _context.CoachAvailabilities.FindAsync(availabilityId);
+            if (slot == null || slot.Status != CoachAvailabilityStatus.Reserved || slot.ReservingForUserId != reseverForUserId)
+            {
+                return;
+            }
+
+            slot.Status = CoachAvailabilityStatus.Available;
+            slot.ReservingForUserId = null;
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task ReserveForSlot(Guid availabilityId, Guid reseverForUserId)
+        {
+            var slot = await _context.CoachAvailabilities.FindAsync(availabilityId);
+            if (slot == null || slot.Status != CoachAvailabilityStatus.Reserved || slot.ReservingForUserId != reseverForUserId)
+            {
+                return;
+            }
+
+            slot.Status = CoachAvailabilityStatus.Reserved;
+            slot.ReservingForUserId = reseverForUserId;
+            await _context.SaveChangesAsync();
         }
     }
 }
