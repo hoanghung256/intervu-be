@@ -12,5 +12,6 @@ namespace Intervu.Domain.Repositories
         Task<IEnumerable<InterviewRoom>> GetListByCandidateId(Guid candidateId);
         Task<IEnumerable<InterviewRoom>> GetListByCoachId(Guid coachId);
         Task<IEnumerable<InterviewRoom>> GetList();
+        Task<IEnumerable<InterviewRoom>> GetConflictingRoomsAsync(Guid userId, DateTime startTime, DateTime endTime);
     }
 }

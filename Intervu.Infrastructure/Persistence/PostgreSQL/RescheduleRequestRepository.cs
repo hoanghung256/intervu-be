@@ -29,13 +29,13 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             return requests;
         }
 
-        public async Task<InterviewRescheduleRequest?> GetPendingRequestByBookingIdAsync(Guid bookingId)
+        public async Task<InterviewRescheduleRequest?> GetPendingRequestByRoomIdAsync(Guid roomId)
         {
             var request = await _context.InterviewRescheduleRequests
                 .Include(r => r.CurrentAvailability)
                 .Include(r => r.ProposedAvailability)
                 .Include(r => r.Requester)
-                .FirstOrDefaultAsync(r => r.InterviewBookingTransactionId == bookingId &&
+                .FirstOrDefaultAsync(r => r.InterviewRoomId == roomId &&
                 r.Status == RescheduleRequestStatus.Pending);
             return request;
         }
@@ -47,7 +47,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Include(r => r.ProposedAvailability)
                 .Include(r => r.Requester)
                 .Include(r => r.Responder)
-                .Include(r => r.Booking)
+                .Include(r => r.InterviewRoom)
                 .FirstOrDefaultAsync(r => r.Id == id);
             return request;
         }
@@ -58,18 +58,19 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Include(r => r.CurrentAvailability)
                 .Include(r => r.ProposedAvailability)
                 .Include(r => r.Requester)
-                .Include(r => r.Booking)
-                    .ThenInclude(b => b.CoachAvailability)
-                .Where(r => r.Booking.CoachAvailability.CoachId == responderId &&
+                .Include(r => r.InterviewRoom)
+                .Where(r => r.InterviewRoom != null && 
+                    (r.InterviewRoom.CoachId == responderId || r.InterviewRoom.CandidateId == responderId) &&
+                    r.RequestedBy != responderId &&
                     r.Status == RescheduleRequestStatus.Pending)
                 .ToListAsync();
             return requests;
         }
 
-        public async Task<bool> HasPendingRequestAsync(Guid bookingId)
+        public async Task<bool> HasPendingRequestAsync(Guid roomId)
         {
             return await _context.InterviewRescheduleRequests
-                .AnyAsync(r => r.InterviewBookingTransactionId == bookingId &&
+                .AnyAsync(r => r.InterviewRoomId == roomId &&
                     r.Status == RescheduleRequestStatus.Pending);
         }
 
@@ -85,13 +86,13 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             return requests;
         }
 
-        public async Task<IEnumerable<InterviewRescheduleRequest>> GetRequestsByBookingIdAsync(Guid bookingId)
+        public async Task<IEnumerable<InterviewRescheduleRequest>> GetRequestsByRoomIdAsync(Guid roomId)
         {
             var requests = await _context.InterviewRescheduleRequests
                 .Include(r => r.CurrentAvailability)
                 .Include(r => r.ProposedAvailability)
                 .Include(r => r.Requester)
-                .Where(r => r.InterviewBookingTransactionId == bookingId)
+                .Where(r => r.InterviewRoomId == roomId)
                 .ToListAsync();
             return requests;
         }

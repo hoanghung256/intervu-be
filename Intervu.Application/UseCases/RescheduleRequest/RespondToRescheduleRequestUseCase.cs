@@ -11,18 +11,18 @@ namespace Intervu.Application.UseCases.RescheduleRequest
     {
         private readonly ILogger<RespondToRescheduleRequestUseCase> _logger;
         private readonly IRescheduleRequestRepository _rescheduleRequestRepository;
-        private readonly ITransactionRepository _transactionRepository;
+        private readonly IInterviewRoomRepository _interviewRoomRepository;
         private readonly ICoachAvailabilitiesRepository _coachAvailabilitiesRepository;
 
         public RespondToRescheduleRequestUseCase(
             ILogger<RespondToRescheduleRequestUseCase> logger,
             IRescheduleRequestRepository rescheduleRequestRepository,
-            ITransactionRepository transactionRepository,
+            IInterviewRoomRepository interviewRoomRepository,
             ICoachAvailabilitiesRepository coachAvailabilitiesRepository)
         {
             _logger = logger;
             _rescheduleRequestRepository = rescheduleRequestRepository;
-            _transactionRepository = transactionRepository;
+            _interviewRoomRepository = interviewRoomRepository;
             _coachAvailabilitiesRepository = coachAvailabilitiesRepository;
         }
 
@@ -47,28 +47,58 @@ namespace Intervu.Application.UseCases.RescheduleRequest
                 throw new ConflictException("Reschedule request has expired");
             }
 
+            // Load the interview room to validate authorization
+            var room = await _interviewRoomRepository.GetByIdAsync(request.InterviewRoomId);
+            if (room == null)
+            {
+                _logger.LogWarning("Interview room with ID {RoomId} not found.", request.InterviewRoomId);
+                throw new NotFoundException("Interview room not found");
+            }
+
+            // Responder must be the other party (not the requester)
+            if (request.RequestedBy == respondedBy)
+            {
+                _logger.LogWarning("User {UserId} cannot respond to their own reschedule request {RequestId}.", respondedBy, requestId);
+                throw new ForbiddenException("You cannot respond to your own reschedule request");
+            }
+
+            // Responder must be either coach or candidate in the room
+            bool isResponderInRoom = room.CoachId == respondedBy || room.CandidateId == respondedBy;
+            if (!isResponderInRoom)
+            {
+                _logger.LogWarning("User {UserId} is not authorized to respond to reschedule request {RequestId}.", respondedBy, requestId);
+                throw new ForbiddenException("You are not authorized to respond to this reschedule request");
+            }
+
             if (isApproved)
             {
                 request.Status = RescheduleRequestStatus.Approved;
-                var booking = await _transactionRepository.GetByIdAsync(request.InterviewBookingTransactionId);
-                if (booking == null)
+                
+                // Room already loaded above
+                if (room == null)
                 {
-                    _logger.LogWarning("Booking with ID {BookingId} not found.", request.InterviewBookingTransactionId);
-                    throw new NotFoundException("Booking not found");
+                    _logger.LogWarning("Interview room with ID {RoomId} not found.", request.InterviewRoomId);
+                    throw new NotFoundException("Interview room not found");
                 }
-                // Chỉ update CoachAvailabilityId, không gọi UpdateAsync để tránh update OrderCode
-                booking.CoachAvailabilityId = request.ProposedAvailabilityId;
-                await _transactionRepository.SaveChangesAsync();
-
+                
+                // Update room scheduled time based on proposed availability
                 var proposedAvailability = await _coachAvailabilitiesRepository.GetByIdAsync(request.ProposedAvailabilityId);
                 if (proposedAvailability == null)
                 {
                     _logger.LogWarning("Proposed availability with ID {ProposedAvailabilityId} not found.", request.ProposedAvailabilityId);
                     throw new NotFoundException("Proposed availability not found");
                 }
+                
+                room.ScheduledTime = proposedAvailability.StartTime;
+                room.RescheduleAttemptCount++;
+                _interviewRoomRepository.UpdateAsync(room);
+                await _interviewRoomRepository.SaveChangesAsync();
+                
+                // Mark proposed availability as booked
                 proposedAvailability.Status = CoachAvailabilityStatus.Booked;
                 await _coachAvailabilitiesRepository.SaveChangesAsync();
 
+                // Release current availability
                 var currentAvailability = await _coachAvailabilitiesRepository.GetByIdAsync(request.CurrentAvailabilityId);
                 if (currentAvailability == null)
                 {

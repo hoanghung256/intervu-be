@@ -5,7 +5,7 @@ namespace Intervu.Application.DTOs.RescheduleRequest
     public class CreateRescheduleRequestDto
     {
         [Required]
-        public Guid BookingId { get; set; }
+        public Guid RoomId { get; set; }
 
         [Required]
         public Guid ProposedAvailabilityId { get; set; }
