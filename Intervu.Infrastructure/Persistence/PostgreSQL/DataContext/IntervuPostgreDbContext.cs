@@ -165,7 +165,13 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 .WithMany()
                 .HasForeignKey(x => x.CoachId)
                 .HasConstraintName("FK_CoachAvailabilities_CoachProfiles_CoachId")
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasOne<User>()
+                .WithOne()
+                .HasForeignKey<CoachAvailability>(x => x.ReservingForUserId)
+                .HasConstraintName("FK_CoachAvailabilities_Users_ReservingForUserId")
+                .OnDelete(DeleteBehavior.Restrict);
             });
 
             // InterviewRoom
@@ -250,7 +256,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             {
                 b.ToTable("InterviewBookingTransaction");
                 b.HasKey(x => x.Id);
-                b.Property(x => x.OrderCode).UseIdentityAlwaysColumn();
+                b.Property(x => x.OrderCode).UseIdentityByDefaultColumn();
                 b.Property(x => x.Amount).IsRequired();
                 b.Property(x => x.CoachAvailabilityId).IsRequired();
                 b.Property(x => x.Type).IsRequired();
