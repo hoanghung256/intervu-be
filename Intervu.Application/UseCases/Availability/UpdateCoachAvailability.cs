@@ -24,7 +24,6 @@ namespace Intervu.Application.UseCases.Availability
 
         public async Task<bool> ExecuteAsync(Guid availabilityId, CoachAvailabilityUpdateDto dto)
         {
-            // basic validation
             if (dto == null)
                 throw new ArgumentNullException(nameof(dto));
 
@@ -34,10 +33,6 @@ namespace Intervu.Application.UseCases.Availability
 
             if (availability.Status != CoachAvailabilityStatus.Available)
                 throw new ArgumentException("You can only update available slots.");
-
-            // Validate times are on the hour (minute = 0)
-            //if (dto.StartTime.Minute != 0 || dto.StartTime.Second != 0)
-            //    throw new ArgumentException("Start time must be on the hour (e.g., 09:00, 14:00)");
 
             var utcNow = DateTimeOffset.UtcNow;
 
@@ -60,9 +55,6 @@ namespace Intervu.Application.UseCases.Availability
             {
 
                 if (dto.EndTime <= dto.StartTime) throw new ArgumentException("EndTime must be greater than StartTime");
-
-                //if (dto.EndTime.Minute != 0 || dto.EndTime.Second != 0)
-                //    throw new ArgumentException("End time must be on the hour (e.g., 09:00, 14:00)");
 
                 if (dto.EndTime <= utcNow || dto.StartTime <= utcNow)
                     throw new ArgumentException("Cannot update availability to a time in the past");

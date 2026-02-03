@@ -39,15 +39,11 @@ namespace Intervu.Application.UseCases.Availability
             if (coachProfile == null)
                 throw new InvalidOperationException($"Coach with ID {dto.CoachId} does not exist");
             
-            // Prevent creating in the past - proper UTC comparison with DateTimeOffset
-            //if (dto.StartTime.Minute != 0 || dto.StartTime.Second != 0)
-            //    throw new ArgumentException("Start time must be on the hour (e.g., 09:00, 14:00)");
             // DateTimeOffset automatically handles timezone-aware comparison
             var utcNow = DateTimeOffset.UtcNow;
 
             // Split into 0.5-hour slots
             var slots = new List<CoachAvailability>();
-            //int numSlots = (int)duration;
             var startTimeUtc = dto.StartTime.UtcDateTime;
 
             //Time gap between slots
@@ -72,9 +68,6 @@ namespace Intervu.Application.UseCases.Availability
                 if (startTimeUtc <= utcNow.UtcDateTime || endTimeUtc <= utcNow.UtcDateTime)
                     throw new ArgumentException("Cannot create availability in the past");
 
-                //if (dto.EndTime.Minute != 0 || dto.EndTime.Second != 0)
-                //    throw new ArgumentException("End time must be on the hour (e.g., 09:00, 14:00)");
-
 
                 if (dto.EndTime <= dto.StartTime) throw new ArgumentException("EndTime must be greater than StartTime");
 
@@ -83,21 +76,6 @@ namespace Intervu.Application.UseCases.Availability
                 if (slotDuration < TimeSpan.FromHours(0.5))
                     throw new ArgumentException("Availability must be at least 30 minutes");
             }
-
-
-            // Calculate duration in hours (use UtcDateTime to get UTC DateTime)
-            //var duration = (dto.EndTime.UtcDateTime - dto.StartTime.UtcDateTime).TotalHours;
-            //if (duration < 0.5)
-            //    throw new ArgumentException("Availability must be at least 30 minutes");
-
-            // Split into 0.5-hour slots
-            //var slots = new List<CoachAvailability>();
-            //int numSlots = (int)duration;
-            //var startTimeUtc = dto.StartTime.UtcDateTime;
-
-            //Time gap between slots
-            //var slotGapDuration = TimeSpan.FromMinutes(15);
-            //var endTimeUtc = dto.EndTime.UtcDateTime;
 
             while (startTimeUtc.Add(slotDuration) <= endTimeUtc)
             {
