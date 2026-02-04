@@ -22,6 +22,8 @@ namespace Intervu.Domain.Entities
 
         public CoachProfile? CoachProfile { get; set; }
 
+        public CandidateProfile? ReservingForUser { get; set; }
+
         public ICollection<InterviewBookingTransaction> InterviewBookingTransactions { get; set; } = [];
     }
 }

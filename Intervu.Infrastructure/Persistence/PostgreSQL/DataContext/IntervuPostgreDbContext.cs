@@ -167,9 +167,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 .HasConstraintName("FK_CoachAvailabilities_CoachProfiles_CoachId")
                 .OnDelete(DeleteBehavior.Restrict);
 
-                b.HasOne<User>()
-                .WithOne()
-                .HasForeignKey<CoachAvailability>(x => x.ReservingForUserId)
+                b.HasOne(x => x.ReservingForUser)
+                .WithMany()
+                .HasForeignKey(x => x.ReservingForUserId)
                 .HasConstraintName("FK_CoachAvailabilities_Users_ReservingForUserId")
                 .OnDelete(DeleteBehavior.Restrict);
             });

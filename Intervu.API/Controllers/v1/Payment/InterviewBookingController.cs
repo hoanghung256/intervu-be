@@ -30,20 +30,20 @@ namespace Intervu.API.Controllers.v1.Payment
         private readonly ICreateBookingCheckoutUrl _createBookingCheckoutUrl;
         //private readonly IPaymentService _paymentService;
         private readonly IHandldeInterviewBookingUpdate _handldeInterviewBookingUpdate;
-        //private readonly IGetInterviewBooking _getInterviewBooking;
+        private readonly IGetInterviewBooking _getInterviewBooking;
 
         public InterviewBookingController(
             ILogger<InterviewBookingController> logger,
             ICreateBookingCheckoutUrl createBookingCheckoutUrl,
             //IPaymentService paymentService,
-            //IGetInterviewBooking getInterviewBooking,
+            IGetInterviewBooking getInterviewBooking,
             IHandldeInterviewBookingUpdate handldeInterviewBookingUpdate)
         {
             _logger = logger;
             _createBookingCheckoutUrl = createBookingCheckoutUrl;
             //_paymentService = paymentService;
             _handldeInterviewBookingUpdate = handldeInterviewBookingUpdate;
-            //_getInterviewBooking = getInterviewBooking;
+            _getInterviewBooking = getInterviewBooking;
         }
 
         [HttpPost]
@@ -94,15 +94,15 @@ namespace Intervu.API.Controllers.v1.Payment
         //    }
         //}
 
-        //[HttpGet("{orderCode}")]
-        //public async Task<IActionResult> GetTransaction([FromRoute] int orderCode)
-        //{
-        //    InterviewBookingTransaction? t = await _getInterviewBooking.GetByOrderCode(orderCode);
-        //    return Ok(new
-        //    {
-        //        success = true,
-        //        data = t
-        //    });
-        //}
+        [HttpGet("{orderCode}")]
+        public async Task<IActionResult> GetTransaction([FromRoute] int orderCode)
+        {
+            InterviewBookingTransaction? t = await _getInterviewBooking.GetByOrderCode(orderCode);
+            return Ok(new
+            {
+                success = true,
+                data = t
+            });
+        }
     }
 }
