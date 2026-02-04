@@ -16,6 +16,7 @@ using Intervu.Domain.Repositories;
 using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Intervu.Infrastructure.Persistence.PostgreSQL;
+using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Hangfire;
 using Intervu.Application.Utils;
 using Hangfire.PostgreSql;
@@ -32,6 +33,8 @@ namespace Intervu.Infrastructure
             // PostgreSQL
             services.AddDbContextPool<IntervuPostgreDbContext>(options =>
                 options.UseNpgsql(configuration.GetConnectionString("PostgreSqlDefaultConnection")));
+
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             // Register your repositories here
             services.AddScoped<IUserRepository, UserRepository>();
