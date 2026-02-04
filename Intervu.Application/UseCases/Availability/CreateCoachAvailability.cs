@@ -37,7 +37,7 @@ namespace Intervu.Application.UseCases.Availability
             // Verify coach exists
             var coachProfile = await _coachProfileRepo.GetProfileByIdAsync(dto.CoachId);
             if (coachProfile == null)
-                throw new InvalidOperationException($"Coach with ID {dto.CoachId} does not exist");
+                throw new ArgumentException($"Coach with ID {dto.CoachId} does not exist");
             
             // DateTimeOffset automatically handles timezone-aware comparison
             var utcNow = DateTimeOffset.UtcNow;
@@ -59,7 +59,7 @@ namespace Intervu.Application.UseCases.Availability
 
                 var type = await _interviewTypeRepo.GetByIdAsync(dto.TypeId.Value);
                 if (type == null)
-                    throw new InvalidOperationException("Interview type not found");
+                    throw new ArgumentException("Interview type not found");
 
                 slotDuration = TimeSpan.FromMinutes(type.DurationMinutes);
             }
@@ -83,13 +83,18 @@ namespace Intervu.Application.UseCases.Availability
 
                 var slotEnd = slotStart.Add(slotDuration);
 
-                // Check overlap for each slot
+                // Check overlap for each slot and enforce minimum gap
                 var startOffset = new DateTimeOffset(slotStart, TimeSpan.Zero);
                 var endOffset = new DateTimeOffset(slotEnd, TimeSpan.Zero);
 
-                bool isAvailable = await _repo.IsCoachAvailableAsync(dto.CoachId, startOffset, endOffset);
+                var minGap = TimeSpan.FromMinutes(15);
+
+                var bufferStart = startOffset.Add(-minGap);
+                var bufferEnd = endOffset.Add(minGap);
+
+                bool isAvailable = await _repo.IsCoachAvailableAsync(dto.CoachId, bufferStart, bufferEnd);
                 if (!isAvailable)
-                    throw new InvalidOperationException($"Time slot {slotStart:HH:mm} - {slotEnd:HH:mm} conflicts with existing availability");
+                    throw new ArgumentException($"Time slot gap is within {minGap.TotalMinutes} minutes");
 
                 slots.Add(new CoachAvailability
                 {

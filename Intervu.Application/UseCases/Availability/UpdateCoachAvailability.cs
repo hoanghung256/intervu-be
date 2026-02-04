@@ -29,14 +29,12 @@ namespace Intervu.Application.UseCases.Availability
 
             var availability = await _repo.GetByIdAsync(availabilityId);
             if (availability == null)
-                throw new InvalidOperationException("Availability not found");
+                throw new ArgumentException("Availability not found");
 
             if (availability.Status != CoachAvailabilityStatus.Available)
                 throw new ArgumentException("You can only update available slots.");
 
             var utcNow = DateTimeOffset.UtcNow;
-
-            var slotGap = TimeSpan.FromMinutes(15);
 
             TimeSpan slotDuration;
 
@@ -47,7 +45,7 @@ namespace Intervu.Application.UseCases.Availability
 
                 var type = await _interviewTypeRepo.GetByIdAsync(dto.TypeId.Value);
                 if (type == null)
-                    throw new InvalidOperationException("Interview type not found");
+                    throw new ArgumentException("Interview type not found");
 
                 slotDuration = TimeSpan.FromMinutes(type.DurationMinutes);
             }
@@ -67,10 +65,17 @@ namespace Intervu.Application.UseCases.Availability
 
             dto.EndTime = dto.StartTime.Add(slotDuration);
 
-            var checkStart = dto.StartTime.Subtract(slotGap);
-            var checkEnd = dto.EndTime.Add(slotGap);
+            var startOffset = new DateTimeOffset(dto.StartTime.UtcDateTime, TimeSpan.Zero);
+            var endOffset = new DateTimeOffset(dto.EndTime.UtcDateTime, TimeSpan.Zero);
 
-            bool isValidSlotGap = await _repo.IsCoachAvailableAsync(availability.CoachId, checkStart, checkEnd);
+            var minGap = TimeSpan.FromMinutes(15);
+
+            var bufferStart = startOffset.Add(-minGap);
+            var bufferEnd = endOffset.Add(minGap);
+
+            bool isAvailable = await _repo.IsCoachAvailableAsync(dto.CoachId, bufferStart, bufferEnd);
+            if (!isAvailable)
+                throw new ArgumentException($"Time slot gap is within {minGap.TotalMinutes} minutes");
 
             var updated = await _repo.UpdateCoachAvailabilityAsync(
                 availabilityId,
@@ -81,7 +86,7 @@ namespace Intervu.Application.UseCases.Availability
             );
 
             if (!updated)
-                throw new InvalidOperationException($"Availability with ID {availabilityId} not found or could not be updated");
+                throw new ArgumentException($"Availability with ID {availabilityId} not found or could not be updated");
 
             return true;
         }
