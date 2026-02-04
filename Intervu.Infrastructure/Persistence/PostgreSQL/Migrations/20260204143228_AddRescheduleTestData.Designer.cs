@@ -3,6 +3,7 @@ using System;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 {
     [DbContext(typeof(IntervuPostgreDbContext))]
-    partial class IntervuPostgreDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260204143228_AddRescheduleTestData")]
+    partial class AddRescheduleTestData
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -261,9 +264,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         {
                             Id = new Guid("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77"),
                             CoachId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
-                            EndTime = new DateTime(2026, 2, 10, 10, 0, 0, 0, DateTimeKind.Utc),
-                            StartTime = new DateTime(2026, 2, 10, 9, 0, 0, 0, DateTimeKind.Utc),
-                            Status = 2
+                            EndTime = new DateTime(2025, 11, 1, 10, 0, 0, 0, DateTimeKind.Utc),
+                            StartTime = new DateTime(2025, 11, 1, 9, 0, 0, 0, DateTimeKind.Utc),
+                            Status = 0
                         },
                         new
                         {

@@ -575,20 +575,21 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             );
 
             modelBuilder.Entity<CoachAvailability>().HasData(
+                // Current availability for room1 (already booked by Alice)
                 new CoachAvailability
                 {
                     Id = CoachAvail1Id,
                     CoachId = user2Id,
-                    StartTime = DateTime.SpecifyKind(new DateTime(2025, 11, 1, 9, 0, 0), DateTimeKind.Utc),
-                    EndTime = DateTime.SpecifyKind(new DateTime(2025, 11, 1, 10, 0, 0), DateTimeKind.Utc),
-                    Status = CoachAvailabilityStatus.Available
+                    StartTime = DateTime.SpecifyKind(new DateTime(2026, 2, 10, 9, 0, 0), DateTimeKind.Utc), // Match room1's ScheduledTime
+                    EndTime = DateTime.SpecifyKind(new DateTime(2026, 2, 10, 10, 0, 0), DateTimeKind.Utc),
+                    Status = CoachAvailabilityStatus.Booked // Already booked
                 },
-                // Additional availability for reschedule testing (future date)
+                // Proposed availability for reschedule (available future slot)
                 new CoachAvailability
                 {
                     Id = CoachAvail2Id,
                     CoachId = user2Id,
-                    StartTime = DateTime.SpecifyKind(new DateTime(2026, 3, 15, 14, 0, 0), DateTimeKind.Utc), // Future date
+                    StartTime = DateTime.SpecifyKind(new DateTime(2026, 3, 15, 14, 0, 0), DateTimeKind.Utc), // Future date for reschedule
                     EndTime = DateTime.SpecifyKind(new DateTime(2026, 3, 15, 15, 0, 0), DateTimeKind.Utc),
                     Status = CoachAvailabilityStatus.Available
                 }
