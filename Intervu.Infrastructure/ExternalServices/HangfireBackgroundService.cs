@@ -20,5 +20,15 @@ namespace Intervu.Infrastructure.ExternalServices
         {
             BackgroundJob.Schedule<T>(methodCall, delay);
         }
+
+        public bool Delete(string jobId)
+        {
+            return BackgroundJob.Delete(jobId);
+        }
+
+        public void RemoveRecurring(Guid jobId)
+        {
+            RecurringJob.RemoveIfExists(jobId.ToString());
+        }
     }
 }

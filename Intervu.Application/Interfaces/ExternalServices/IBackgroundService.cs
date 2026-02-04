@@ -62,5 +62,9 @@ namespace Intervu.Application.Interfaces.ExternalServices
         /// </code>
         /// </example>
         void AddOrUpdateRecurring<T>(Guid jobId, Expression<Action<T>> methodCall, string cronExpression);
+
+        bool Delete(string jobId);
+
+        void RemoveRecurring(Guid jobId);
     }
 }
