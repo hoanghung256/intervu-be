@@ -455,6 +455,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
 
             var room1Id = Guid.Parse("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a66");
             var CoachAvail1Id = Guid.Parse("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77");
+            
+            // Additional test data for reschedule functionality
+            var CoachAvail2Id = Guid.Parse("aaaaaaaa-1111-4a1a-8a1a-111111111111"); // For reschedule testing
 
             // Users
             var user1 = new User
@@ -571,49 +574,63 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             }
             );
 
-            modelBuilder.Entity<CoachAvailability>().HasData(new CoachAvailability
-            {
-                Id = CoachAvail1Id,
-                CoachId = user2Id,
-                StartTime = DateTime.SpecifyKind(new DateTime(2025, 11, 1, 9, 0, 0), DateTimeKind.Utc),
-                EndTime = DateTime.SpecifyKind(new DateTime(2025, 11, 1, 10, 0, 0),
-                DateTimeKind.Utc),
-                Status = CoachAvailabilityStatus.Available
-            });
+            modelBuilder.Entity<CoachAvailability>().HasData(
+                new CoachAvailability
+                {
+                    Id = CoachAvail1Id,
+                    CoachId = user2Id,
+                    StartTime = DateTime.SpecifyKind(new DateTime(2025, 11, 1, 9, 0, 0), DateTimeKind.Utc),
+                    EndTime = DateTime.SpecifyKind(new DateTime(2025, 11, 1, 10, 0, 0), DateTimeKind.Utc),
+                    Status = CoachAvailabilityStatus.Available
+                },
+                // Additional availability for reschedule testing (future date)
+                new CoachAvailability
+                {
+                    Id = CoachAvail2Id,
+                    CoachId = user2Id,
+                    StartTime = DateTime.SpecifyKind(new DateTime(2026, 3, 15, 14, 0, 0), DateTimeKind.Utc), // Future date
+                    EndTime = DateTime.SpecifyKind(new DateTime(2026, 3, 15, 15, 0, 0), DateTimeKind.Utc),
+                    Status = CoachAvailabilityStatus.Available
+                }
+            );
+
+            // Seed transactions for testing
+            var transaction1Id = Guid.Parse("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a88");
+            var transaction2Id = Guid.Parse("8f9a0b1c-d2e3-4f5a-9b0c-1d2e3f4a5b99");
+
+            modelBuilder.Entity<InterviewBookingTransaction>().HasData(
+                new InterviewBookingTransaction
+                {
+                    Id = transaction1Id,
+                    UserId = user1Id,
+                    CoachAvailabilityId = CoachAvail1Id,
+                    Amount = 1000,
+                    Type = TransactionType.Payment,
+                    Status = TransactionStatus.Paid
+                },
+                new InterviewBookingTransaction
+                {
+                    Id = transaction2Id,
+                    UserId = user2Id,
+                    CoachAvailabilityId = CoachAvail1Id,
+                    Amount = 500,
+                    Type = TransactionType.Payout,
+                    Status = TransactionStatus.Paid
+                }
+            );
 
             modelBuilder.Entity<InterviewRoom>().HasData(new InterviewRoom
             {
                 Id = room1Id,
                 CandidateId = user1Id,
                 CoachId = user2Id,
-                ScheduledTime = DateTime.SpecifyKind(new DateTime(2025, 11, 1, 9, 0, 0), DateTimeKind.Utc),
+                TransactionId = transaction1Id, // Link to transaction
+                ScheduledTime = DateTime.SpecifyKind(new DateTime(2026, 2, 10, 9, 0, 0), DateTimeKind.Utc), // Future date for reschedule testing
                 DurationMinutes = 60,
                 VideoCallRoomUrl = "https://meet.example/room1",
-                Status = InterviewRoomStatus.Scheduled
+                Status = InterviewRoomStatus.Scheduled,
+                RescheduleAttemptCount = 0 // Allow reschedule
             });
-
-            //modelBuilder.Entity<InterviewBookingTransaction>().HasData(new InterviewBookingTransaction
-            //{
-            //    Id = Guid.Parse("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a88"),
-            //    UserId = user1Id,
-            //    CoachAvailabilityId = CoachAvail1Id,
-            //    Amount = 1000,
-            //    Type = TransactionType.Payment,
-            //    Status = TransactionStatus.Paid,
-            //    //CreatedAt = new DateTime(2025, 11, 17, 0, 0, 0),
-            //    //UpdatedAt = new DateTime(2025, 11, 17, 0, 0, 0)
-            //},
-            //new InterviewBookingTransaction
-            //{
-            //    Id = Guid.Parse("8f9a0b1c-d2e3-4f5a-9b0c-1d2e3f4a5b99"),
-            //    UserId = user2Id,
-            //    CoachAvailabilityId = CoachAvail1Id,
-            //    Amount = 500,
-            //    Type = TransactionType.Payout,
-            //    Status = TransactionStatus.Paid,
-            //    //CreatedAt = new DateTime(2025, 11, 17, 0, 0, 0),
-            //    //UpdatedAt = new DateTime(2025, 11, 17, 0, 0, 0)
-            //});
 
             modelBuilder.Entity<Feedback>().HasData(new Feedback
             {
