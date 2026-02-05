@@ -38,5 +38,10 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
         {
             throw new NotImplementedException();
         }
+
+        public Task<InterviewRoom?> GetByIdWithDetailsAsync(Guid id)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -13,7 +13,6 @@ namespace Intervu.Application.UseCases.RescheduleRequest
         private readonly IRescheduleRequestRepository _rescheduleRequestRepository;
         private readonly IInterviewRoomRepository _interviewRoomRepository;
         private readonly ICoachAvailabilitiesRepository _coachAvailabilitiesRepository;
-
         public RespondToRescheduleRequestUseCase(
             ILogger<RespondToRescheduleRequestUseCase> logger,
             IRescheduleRequestRepository rescheduleRequestRepository,
@@ -48,7 +47,7 @@ namespace Intervu.Application.UseCases.RescheduleRequest
             }
 
             // Load the interview room to validate authorization
-            var room = await _interviewRoomRepository.GetByIdAsync(request.InterviewRoomId);
+            var room = await _interviewRoomRepository.GetByIdWithDetailsAsync(request.InterviewRoomId);
             if (room == null)
             {
                 _logger.LogWarning("Interview room with ID {RoomId} not found.", request.InterviewRoomId);
@@ -89,8 +88,15 @@ namespace Intervu.Application.UseCases.RescheduleRequest
                     throw new NotFoundException("Proposed availability not found");
                 }
                 
+                // Update CurrentAvailabilityId
+                room.CurrentAvailabilityId = request.ProposedAvailabilityId;
+                
+                // Keep ScheduledTime in sync for backward compatibility (will be removed in future)
                 room.ScheduledTime = proposedAvailability.StartTime;
+                
+                // Increment reschedule attempt count
                 room.RescheduleAttemptCount++;
+                
                 _interviewRoomRepository.UpdateAsync(room);
                 await _interviewRoomRepository.SaveChangesAsync();
                 
@@ -98,7 +104,7 @@ namespace Intervu.Application.UseCases.RescheduleRequest
                 proposedAvailability.Status = CoachAvailabilityStatus.Booked;
                 await _coachAvailabilitiesRepository.SaveChangesAsync();
 
-                // Release current availability
+                // Release current availability (mark as available again)
                 var currentAvailability = await _coachAvailabilitiesRepository.GetByIdAsync(request.CurrentAvailabilityId);
                 if (currentAvailability == null)
                 {

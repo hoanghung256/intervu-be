@@ -35,7 +35,7 @@ namespace Intervu.Application.UseCases.RescheduleRequest
 
         public async Task<Guid> ExecuteAsync(Guid roomId, Guid proposedAvailabilityId, Guid requestedBy, string reason)
         {
-            var room = await _interviewRoomRepository.GetByIdAsync(roomId);
+            var room = await _interviewRoomRepository.GetByIdWithDetailsAsync(roomId);
             if (room == null)
             {
                 _logger.LogWarning("Interview room with ID {RoomId} not found.", roomId);
@@ -60,21 +60,32 @@ namespace Intervu.Application.UseCases.RescheduleRequest
                 throw new ConflictException("Interview room has no transaction");
             }
 
-            // BR-05: 12-hour rule - Cannot reschedule within 12 hours of scheduled time
-            var timeUntilInterview = room.ScheduledTime.Value - DateTime.UtcNow;
-            if (timeUntilInterview < TimeSpan.FromHours(12))
+            if (room.CurrentAvailabilityId == null)
             {
-                _logger.LogWarning("Cannot reschedule room {RoomId} within 12 hours of scheduled time. Time remaining: {TimeRemaining}", 
-                    roomId, timeUntilInterview);
-                throw new ConflictException("Cannot reschedule within 12 hours of the scheduled interview time. Please cancel if you cannot attend.");
+                _logger.LogWarning("Interview room {RoomId} has no current availability.", roomId);
+                throw new ConflictException("Interview room has no current availability");
             }
 
-            // BR-05: Limit 1 reschedule attempt per interview
-            if (room.RescheduleAttemptCount >= 1)
+            // Use room's built-in validation method (checks 12-hour rule and reschedule count)
+            if (!room.IsAvailableForReschedule())
             {
-                _logger.LogWarning("Room {RoomId} has already been rescheduled {Count} time(s). Maximum attempts reached.", 
-                    roomId, room.RescheduleAttemptCount);
-                throw new ConflictException("This interview has already been rescheduled once. Only cancellation is allowed.");
+                var timeUntilInterview = room.ScheduledTime.Value - DateTime.UtcNow;
+                
+                if (timeUntilInterview < TimeSpan.FromHours(12))
+                {
+                    _logger.LogWarning("Cannot reschedule room {RoomId} within 12 hours of scheduled time. Time remaining: {TimeRemaining}", 
+                        roomId, timeUntilInterview);
+                    throw new ConflictException("Cannot reschedule within 12 hours of the scheduled interview time. Please cancel if you cannot attend.");
+                }
+                
+                if (room.RescheduleAttemptCount >= 1)
+                {
+                    _logger.LogWarning("Room {RoomId} has already been rescheduled {Count} time(s). Maximum attempts reached.", 
+                        roomId, room.RescheduleAttemptCount);
+                    throw new ConflictException("This interview has already been rescheduled once. Only cancellation is allowed.");
+                }
+                
+                throw new ConflictException("This interview is not available for rescheduling.");
             }
 
             // Get current booking transaction
@@ -106,10 +117,11 @@ namespace Intervu.Application.UseCases.RescheduleRequest
                 throw new ConflictException("Proposed time must be in the future");
             }
 
-            // Proposed availability must be different from current
-            if (currentTransaction.CoachAvailabilityId == proposedAvailabilityId)
+            // Proposed availability must be different from current (CurrentAvailabilityId is required)
+            if (room.CurrentAvailabilityId == proposedAvailabilityId)
             {
-                _logger.LogWarning("Proposed availability {ProposedAvailabilityId} is the same as current availability.", proposedAvailabilityId);
+                _logger.LogWarning("Proposed availability {ProposedAvailabilityId} is the same as current availability {CurrentAvailabilityId}.", 
+                    proposedAvailabilityId, room.CurrentAvailabilityId);
                 throw new ConflictException("Proposed availability must be different from the current scheduled time");
             }
 
@@ -153,12 +165,12 @@ namespace Intervu.Application.UseCases.RescheduleRequest
             {
                 Id = Guid.NewGuid(),
                 InterviewRoomId = room.Id,
-                CurrentAvailabilityId = currentTransaction.CoachAvailabilityId,
+                CurrentAvailabilityId = room.CurrentAvailabilityId,
                 ProposedAvailabilityId = proposedAvailability.Id,
                 RequestedBy = requester.Id,
                 Reason = reason,
                 Status = RescheduleRequestStatus.Pending,
-                ExpiresAt = DateTime.UtcNow.AddDays(2)
+                ExpiresAt = DateTime.UtcNow.AddDays(1)
             };
 
             await _rescheduleRequestRepository.AddAsync(rescheduleRequest);

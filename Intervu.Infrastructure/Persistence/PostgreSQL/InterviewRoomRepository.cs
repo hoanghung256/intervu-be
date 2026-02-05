@@ -36,5 +36,13 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                     r.ScheduledTime.Value.AddMinutes(r.DurationMinutes ?? 60) > startTime)
                 .ToListAsync();
         }
+        public async Task<InterviewRoom?> GetByIdWithDetailsAsync(Guid id)
+        {
+            return await _context.InterviewRooms
+                .Include(r => r.Transaction)
+                .Include(r => r.CurrentAvailability)
+                .Include(r => r.RescheduleRequests)
+                .FirstOrDefaultAsync(r => r.Id == id);
+        }
     }
 }

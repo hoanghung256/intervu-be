@@ -80,8 +80,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Include(r => r.CurrentAvailability)
                 .Include(r => r.ProposedAvailability)
                 .Include(r => r.Requester)
-                .Where(r => r.RequestedBy == userId &&
-                    r.Status == RescheduleRequestStatus.Pending)
+                .Where(r => r.RequestedBy == userId || r.RespondedBy == userId)
                 .ToListAsync();
             return requests;
         }
