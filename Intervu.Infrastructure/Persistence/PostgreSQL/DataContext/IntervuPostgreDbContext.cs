@@ -221,6 +221,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                  .HasForeignKey(x => x.TransactionId)
                  .HasConstraintName("FK_InterviewRooms_InterviewBookingTransaction_TransactionId")
                  .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasOne(x => x.CurrentAvailability)
+                 .WithMany()
+                 .HasForeignKey(x => x.CurrentAvailabilityId)
+                 .HasConstraintName("FK_InterviewRooms_CoachAvailabilities_CurrentAvailabilityId")
+                 .OnDelete(DeleteBehavior.Restrict);
             });
 
             // Feedback
@@ -625,12 +631,13 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 Id = room1Id,
                 CandidateId = user1Id,
                 CoachId = user2Id,
-                TransactionId = transaction1Id, // Link to transaction
-                ScheduledTime = DateTime.SpecifyKind(new DateTime(2026, 2, 10, 9, 0, 0), DateTimeKind.Utc), // Future date for reschedule testing
+                TransactionId = transaction1Id,
+                CurrentAvailabilityId = CoachAvail1Id, // Link to current availability
+                ScheduledTime = DateTime.SpecifyKind(new DateTime(2026, 2, 10, 9, 0, 0), DateTimeKind.Utc),
                 DurationMinutes = 60,
                 VideoCallRoomUrl = "https://meet.example/room1",
                 Status = InterviewRoomStatus.Scheduled,
-                RescheduleAttemptCount = 0 // Allow reschedule
+                RescheduleAttemptCount = 0
             });
 
             modelBuilder.Entity<Feedback>().HasData(new Feedback
