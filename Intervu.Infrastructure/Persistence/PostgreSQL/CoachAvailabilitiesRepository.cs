@@ -67,7 +67,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             return true;
         }
 
-        public async Task<bool> UpdateCoachAvailabilityAsync(Guid availabilityId, DateTimeOffset startTime, DateTimeOffset endTime)
+        public async Task<bool> UpdateCoachAvailabilityAsync(Guid availabilityId, DateTimeOffset startTime, DateTimeOffset endTime, Guid typeId)
         {
             var availability = await _context.CoachAvailabilities.FindAsync(availabilityId);
             if (availability == null)
@@ -75,6 +75,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
             availability.StartTime = startTime.UtcDateTime;
             availability.EndTime = endTime.UtcDateTime;
+            availability.TypeId = typeId;
 
             _context.CoachAvailabilities.Update(availability);
             await _context.SaveChangesAsync();

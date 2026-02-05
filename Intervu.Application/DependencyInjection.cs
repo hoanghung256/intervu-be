@@ -29,6 +29,7 @@ using Intervu.Application.UseCases.Feedbacks;
 using Intervu.Application.Interfaces.UseCases.UserProfile;
 using Intervu.Application.UseCases.UserProfile;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
+using Intervu.Application.Interfaces.UseCases.InterviewType;
 using Intervu.Application.UseCases.InterviewBooking;
 using Intervu.Application.UseCases.InterviewRoom;
 using Intervu.Application.Utils;
@@ -39,6 +40,7 @@ using Intervu.Application.UseCases.Candidate;
 using Intervu.Application.UseCases.CandidateProfile;
 using Intervu.Application.Interfaces.UseCases.RescheduleRequest;
 using Intervu.Application.UseCases.RescheduleRequest;
+using Intervu.Application.UseCases.InterviewType;
 
 namespace Intervu.Application
 {
@@ -129,6 +131,11 @@ namespace Intervu.Application
             services.AddScoped<ICreateRescheduleRequestUseCase, CreateRescheduleRequestUseCase>();
             services.AddScoped<IRespondToRescheduleRequestUseCase, RespondToRescheduleRequestUseCase>();
             services.AddScoped<IExpireRescheduleRequestsUseCase, ExpireRescheduleRequestsUseCase>();
+            // ----- InterviewType ----
+            services.AddScoped<IGetInterviewType, GetInterviewType>();
+            services.AddScoped<IUpdateInterviewType, UpdateInterviewType>();
+            services.AddScoped<ICreateInterviewType, CreateInterviewType>();
+            services.AddScoped<IDeleteInterviewType, DeleteInterviewType>();
 
             return services;
         }
