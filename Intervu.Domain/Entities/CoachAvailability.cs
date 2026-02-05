@@ -25,5 +25,10 @@ namespace Intervu.Domain.Entities
         public CandidateProfile? ReservingForUser { get; set; }
 
         public ICollection<InterviewBookingTransaction> InterviewBookingTransactions { get; set; } = [];
+
+        public bool IsUserAbleToBook(Guid userId)
+        {
+            return Status == CoachAvailabilityStatus.Available || (Status == CoachAvailabilityStatus.Reserved && ReservingForUserId == userId);
+        }
     }
 }

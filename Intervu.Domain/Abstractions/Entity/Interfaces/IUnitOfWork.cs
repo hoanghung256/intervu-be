@@ -9,7 +9,7 @@ namespace Intervu.Domain.Abstractions.Entity.Interfaces
 {
     public interface IUnitOfWork : IDisposable
     {
-        IRepositoryBase<T> Repository<T>() where T : class;
+        TRepository GetRepository<TRepository>() where TRepository : class;
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
         Task BeginTransactionAsync();
         Task CommitTransactionAsync();

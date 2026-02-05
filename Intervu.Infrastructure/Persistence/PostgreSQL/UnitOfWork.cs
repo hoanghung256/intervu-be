@@ -1,37 +1,26 @@
 ﻿using Intervu.Domain.Abstractions.Entity.Interfaces;
-using Intervu.Domain.Repositories;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Microsoft.EntityFrameworkCore.Storage;
-using System.Collections;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Intervu.Infrastructure.Persistence.PostgreSQL
 {
     public class UnitOfWork : IUnitOfWork
     {
         private readonly IntervuPostgreDbContext _context;
-        private Hashtable _repositories;
+        private readonly IServiceProvider _serviceProvider;
         private IDbContextTransaction? _currentTransaction;
 
-        public UnitOfWork(IntervuPostgreDbContext context)
+        public UnitOfWork(IntervuPostgreDbContext context, IServiceProvider serviceProvider)
         {
             _context = context;
+            _serviceProvider = serviceProvider;
         }
 
-        public IRepositoryBase<TEntity> Repository<TEntity>() where TEntity : class
+        public TRepository GetRepository<TRepository>() where TRepository : class
         {
-            if (_repositories == null) _repositories = new Hashtable();
-
-            var type = typeof(TEntity).Name;
-
-            if (!_repositories.ContainsKey(type))
-            {
-                var repositoryType = typeof(RepositoryBase<>);
-                var repositoryInstance = Activator.CreateInstance(repositoryType.MakeGenericType(typeof(TEntity)), _context);
-
-                _repositories.Add(type, repositoryInstance);
-            }
-
-            return (IRepositoryBase<TEntity>)_repositories[type]!;
+            var repository = _serviceProvider.GetRequiredService<TRepository>();
+            return repository;
         }
 
         public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

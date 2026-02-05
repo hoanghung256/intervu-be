@@ -2,9 +2,12 @@
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
 using Intervu.Application.Utils;
+using Intervu.Domain.Abstractions.Entity.Interfaces;
+using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 using Microsoft.Extensions.Logging;
+using System.Transactions;
 
 namespace Intervu.Application.UseCases.InterviewBooking
 {
@@ -12,45 +15,47 @@ namespace Intervu.Application.UseCases.InterviewBooking
     {
         private readonly ILogger<CreateBookingCheckoutUrl> _logger;
         private readonly IPaymentService _paymentService;
-        private readonly ICoachProfileRepository _coachProfileRepository;
-        private readonly ITransactionRepository _transactionRepository;
-        private readonly ICoachAvailabilitiesRepository _coachAvailabilitiesRepository;
         private readonly IBackgroundService _jobService;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public CreateBookingCheckoutUrl(ILogger<CreateBookingCheckoutUrl> logger, IPaymentService paymentService, ICoachProfileRepository coachProfileRepository, ITransactionRepository transactionRepository, ICoachAvailabilitiesRepository coachAvailabilitiesRepository, IBackgroundService jobService) 
+        public CreateBookingCheckoutUrl(
+            ILogger<CreateBookingCheckoutUrl> logger,
+            IPaymentService paymentService,
+            IBackgroundService jobService,
+            IUnitOfWork unitOfWork)
         {
             _logger = logger;
             _paymentService = paymentService;
-            _coachProfileRepository = coachProfileRepository;
-            _transactionRepository = transactionRepository;
-            _coachAvailabilitiesRepository = coachAvailabilitiesRepository;
             _jobService = jobService;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<string?> ExecuteAsync(Guid candidateId, Guid coachId, Guid coachAvailabilityId, string returnUrl)
         {
+            await _unitOfWork.BeginTransactionAsync();
             try
             {
-                var availability = await _coachAvailabilitiesRepository.GetByIdAsync(coachAvailabilityId) ?? throw new NotFoundException("Coach availability not found");
+                var availabilityRepo = _unitOfWork.GetRepository<ICoachAvailabilitiesRepository>();
+                var transactionRepo = _unitOfWork.GetRepository<ITransactionRepository>();
+                var coachRepo = _unitOfWork.GetRepository<ICoachProfileRepository>();
+
+                var availability = await availabilityRepo.GetByIdAsync(coachAvailabilityId) ?? throw new NotFoundException("Coach availability not found");
 
                 if (availability.CoachId != coachId) throw new Exception("Coach availability does not belong to the specified coach");
 
-                if (availability.Status != CoachAvailabilityStatus.Available) throw new CoachAvailabilityNotAvailableException("Coach availability is not available for booking");
+                if (availability.IsUserAbleToBook(candidateId))
+                {
+                    throw new Exception("Availability not able to book");
+                }
 
                 // Reserve the slot for booking user
                 availability.Status = CoachAvailabilityStatus.Reserved;
                 availability.ReservingForUserId = candidateId;
 
-                // Auto expired reserve after 5mins
-                _jobService.Schedule<ICoachAvailabilitiesRepository>(
-                    repo => repo.ExpireReservedSlot(coachAvailabilityId, candidateId),
-                    TimeSpan.FromMinutes(5)
-                );
-
-                var coach = await _coachProfileRepository.GetProfileByIdAsync(coachId) ?? throw new NotFoundException("Interviewer not found");
+                var coach = await coachRepo.GetProfileByIdAsync(coachId) ?? throw new NotFoundException("Interviewer not found");
 
                 // Create payment and payout transactions with status 'Created'
-                Domain.Entities.InterviewBookingTransaction t = new()
+                InterviewBookingTransaction t = new()
                 {
                     OrderCode = RandomGenerator.GenerateOrderCode(),
                     UserId = candidateId,
@@ -60,7 +65,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     CoachAvailabilityId = coachAvailabilityId,
                 };
 
-                Domain.Entities.InterviewBookingTransaction t2 = new()
+                InterviewBookingTransaction t2 = new()
                 {
                     OrderCode = RandomGenerator.GenerateOrderCode(),
                     UserId = coachId,
@@ -70,11 +75,10 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     CoachAvailabilityId = coachAvailabilityId,
                 };
 
-                await _transactionRepository.AddAsync(t);
-                await _transactionRepository.AddAsync(t2);
-                await _transactionRepository.SaveChangesAsync();
-                await _coachAvailabilitiesRepository.SaveChangesAsync();
+                await transactionRepo.AddAsync(t);
+                await transactionRepo.AddAsync(t2);
 
+                // No need to payment case
                 if (t.Amount == 0) return null;
 
                 // Create PAYOS payment order and get checkout URL
@@ -85,11 +89,22 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     returnUrl,
                     4
                 );
+
+                await _unitOfWork.SaveChangesAsync();
+                await _unitOfWork.CommitTransactionAsync();
+
+                // Auto expire reserve after 5mins (schedule only after DB commit)
+                _jobService.Schedule<ICoachAvailabilitiesRepository>(
+                    repo => repo.ExpireReservedSlot(coachAvailabilityId, candidateId),
+                    TimeSpan.FromMinutes(5)
+                );
+
                 return checkoutUrl;
-            } 
+            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to create checkout URL");
+                await _unitOfWork.RollbackTransactionAsync();
+                _logger.LogError(ex, "Failed to checkout");
                 throw;
             }
         }
