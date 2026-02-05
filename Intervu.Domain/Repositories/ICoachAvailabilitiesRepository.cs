@@ -8,7 +8,7 @@ namespace Intervu.Domain.Repositories
 {
     public interface ICoachAvailabilitiesRepository : IRepositoryBase<CoachAvailability>
     {
-        Task<bool> IsCoachAvailableAsync(Guid coachId, DateTimeOffset startTime, DateTimeOffset endTime);
+        Task<bool> IsCoachAvailableAsync(Guid coachId, DateTimeOffset startTime, DateTimeOffset endTime, Guid? excludeId = null);
         Task<IEnumerable<CoachAvailability>> GetCoachAvailabilitiesByMonthAsync(Guid coachId, int month = 0, int year = 0);
         Task<Guid> CreateCoachAvailabilityAsync(CoachAvailability availability);
         Task<Guid> CreateMultipleCoachAvailabilitiesAsync(List<CoachAvailability> availabilities);

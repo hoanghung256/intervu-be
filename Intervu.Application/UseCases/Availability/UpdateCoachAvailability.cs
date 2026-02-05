@@ -73,7 +73,7 @@ namespace Intervu.Application.UseCases.Availability
             var bufferStart = startOffset.Add(-minGap);
             var bufferEnd = endOffset.Add(minGap);
 
-            bool isAvailable = await _repo.IsCoachAvailableAsync(dto.CoachId, bufferStart, bufferEnd);
+            bool isAvailable = await _repo.IsCoachAvailableAsync(dto.CoachId, bufferStart, bufferEnd, availabilityId);
             if (!isAvailable)
                 throw new ArgumentException($"Time slot gap is within {minGap.TotalMinutes} minutes");
 

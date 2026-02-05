@@ -42,12 +42,13 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             return result;
         }
 
-        public async Task<bool> IsCoachAvailableAsync(Guid coachId, DateTimeOffset startTime, DateTimeOffset endTime)
+        public async Task<bool> IsCoachAvailableAsync(Guid coachId, DateTimeOffset startTime, DateTimeOffset endTime, Guid? excludeId = null)
         {
             // return true if no overlapping availability or booking exists
             var overlaps = await _dbContext.CoachAvailabilities
                 .Where(x => x.CoachId == coachId)
                 .Where(x => !(x.EndTime <= startTime.UtcDateTime || x.StartTime >= endTime.UtcDateTime))
+                .Where(x => x.Id != excludeId)
                 .AnyAsync();
             return !overlaps;
         }
