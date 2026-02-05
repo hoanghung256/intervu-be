@@ -100,6 +100,15 @@ namespace Intervu.Application.UseCases.RescheduleRequest
                 _interviewRoomRepository.UpdateAsync(room);
                 await _interviewRoomRepository.SaveChangesAsync();
                 
+                // Update transaction to point to new availability
+                if (room.Transaction != null)
+                {
+                    room.Transaction.CoachAvailabilityId = request.ProposedAvailabilityId;
+                    await _interviewRoomRepository.SaveChangesAsync();
+                    _logger.LogInformation("Updated transaction {TransactionId} to new availability {AvailabilityId}", 
+                        room.TransactionId, request.ProposedAvailabilityId);
+                }
+                
                 // Mark proposed availability as booked
                 proposedAvailability.Status = CoachAvailabilityStatus.Booked;
                 await _coachAvailabilitiesRepository.SaveChangesAsync();
