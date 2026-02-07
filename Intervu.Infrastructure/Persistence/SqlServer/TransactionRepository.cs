@@ -20,5 +20,10 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
         {
             return await _context.InterviewBookingTransaction.FirstOrDefaultAsync(t => t.CoachAvailabilityId == id);
         }
+
+        public Task<InterviewBookingTransaction?> GetByOrderCode(int orderCode)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

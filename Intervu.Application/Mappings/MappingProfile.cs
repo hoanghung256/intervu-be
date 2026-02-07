@@ -61,11 +61,9 @@ namespace Intervu.Application.Mappings
             // InterviewerAdminDto is manually mapped in use case to include User data
             // Availability mappings
             CreateMap<CoachAvailabilityCreateDto, CoachAvailability>()
-                .ForMember(dest => dest.IsBooked, opt => opt.MapFrom(src => false))
                 .ForMember(dest => dest.Id, opt => opt.Ignore());
 
             CreateMap<CoachAvailabilityUpdateDto, CoachAvailability>()
-                .ForMember(dest => dest.IsBooked, opt => opt.Ignore())
                 .ForMember(dest => dest.CoachId, opt => opt.Ignore());
 
             CreateMap<InterviewType, InterviewTypeDto>().ReverseMap();

@@ -14,6 +14,7 @@ using Microsoft.IdentityModel.Tokens;
 using Intervu.Domain.Entities.Constants;
 using Intervu.API.Utils.Constant;
 using Intervu.API.Utils;
+using Intervu.API.Middlewares;
 
 namespace Intervu.API
 {
@@ -196,6 +197,10 @@ namespace Intervu.API
                 "Hosting environment: {Env}",
                 app.Environment.EnvironmentName);
             Console.WriteLine("IsDevelopment=" + app.Environment.IsDevelopment());
+
+            app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+            app.UseHttpsRedirection();
 
             // --- HTTP REQUEST PIPELINE ---
             if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))

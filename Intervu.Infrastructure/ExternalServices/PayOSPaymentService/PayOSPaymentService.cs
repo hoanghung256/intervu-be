@@ -20,11 +20,11 @@ namespace Intervu.Infrastructure.ExternalServices.PayOSPaymentService
             _cancelUrl = cancelUrl;
         }
 
-        public async Task<string> CreatePaymentOrderAsync(int? orderCode, int ammount, string description, string returnUrl)
+        public async Task<string> CreatePaymentOrderAsync(int orderCode, int ammount, string description, string returnUrl)
         {
             var paymentRequest = new CreatePaymentLinkRequest
             {
-                OrderCode = orderCode ?? CreateOrderCode(),
+                OrderCode = orderCode,
                 Amount = ammount,
                 Description = description,
                 ReturnUrl = returnUrl,
@@ -66,9 +66,9 @@ namespace Intervu.Infrastructure.ExternalServices.PayOSPaymentService
             }
         }
 
-        public bool VerifyPaymentAsync(object payload)
+        public (bool isValid, int orderCode) VerifyPayment(object payload)
         {
-            if (payload is not Webhook payloadCasting) return false;
+            if (payload is not Webhook payloadCasting) return (false, 0);
 
             //WebhookData webhookData = await _paymentClient.Client.Webhooks.VerifyAsync(payloadCasting);
 
@@ -76,23 +76,15 @@ namespace Intervu.Infrastructure.ExternalServices.PayOSPaymentService
 
             if (!string.IsNullOrEmpty(calculated) && !string.IsNullOrEmpty(payloadCasting.Signature))
             {
-                return true;
+                return (true, (int) payloadCasting.Data.OrderCode);
             }
 
-            return false;
+            return (false, 0);
         }
 
         public async Task RegisterWebhooks()
         {
             await _paymentClient.Client.Webhooks.ConfirmAsync("https://pn3tc7bj-7118.asse.devtunnels.ms/api/v1/interview-booking/webhook");
-        }
-
-        private int CreateOrderCode()
-        {
-            int timePart = (int)(DateTime.UtcNow.Ticks % 1_000_000_000); // Under 1 billion
-            int randomPart = Random.Shared.Next(100, 999); // 3-digit
-
-            return timePart ^ randomPart;
         }
     }
 }

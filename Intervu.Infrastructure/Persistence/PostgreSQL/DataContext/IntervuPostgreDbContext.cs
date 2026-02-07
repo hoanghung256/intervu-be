@@ -156,24 +156,28 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
 
             // CoachAvailability (many availabilities per coach)
             modelBuilder.Entity<CoachAvailability>(b =>
-          {
-              b.ToTable("CoachAvailabilities");
-              b.HasKey(x => x.Id);
-              b.Property(x => x.StartTime).IsRequired();
-              b.Property(x => x.EndTime).IsRequired();
+            {
+                b.ToTable("CoachAvailabilities");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Focus)
+                .HasConversion<int>()
+                .IsRequired();
 
-              b.HasOne<CoachProfile>()
-               .WithMany()
+                b.Property(x => x.StartTime).IsRequired();
+                b.Property(x => x.EndTime).IsRequired();
+
+                b.HasOne(x => x.CoachProfile)
+                .WithMany()
                 .HasForeignKey(x => x.CoachId)
                 .HasConstraintName("FK_CoachAvailabilities_CoachProfiles_CoachId")
                .OnDelete(DeleteBehavior.Cascade);
 
-              b.HasOne<InterviewType>()
-               .WithMany()
-                .HasForeignKey(x => x.TypeId)
-                .HasConstraintName("FK_CoachAvailabilities_InterviewTypes_TypeId")
-               .OnDelete(DeleteBehavior.Cascade);
-          });
+                b.HasOne<InterviewType>()
+                 .WithMany()
+                  .HasForeignKey(x => x.TypeId).IsRequired(false)
+                  .HasConstraintName("FK_CoachAvailabilities_InterviewTypes_TypeId")
+                 .OnDelete(DeleteBehavior.SetNull);
+            });
 
             // InterviewRoom
             modelBuilder.Entity<InterviewRoom>(b =>
@@ -257,17 +261,23 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             {
                 b.ToTable("InterviewBookingTransaction");
                 b.HasKey(x => x.Id);
+                b.Property(x => x.OrderCode).UseIdentityAlwaysColumn();
                 b.Property(x => x.Amount).IsRequired();
-                //b.Property(x => x.CreatedAt).IsRequired();
-                //b.Property(x => x.UpdatedAt).IsRequired();
                 b.Property(x => x.CoachAvailabilityId).IsRequired();
                 b.Property(x => x.Type).IsRequired();
                 b.Property(x => x.Status).IsRequired();
 
-                b.HasOne<User>()
-                 .WithMany()
-                 .HasForeignKey(x => x.UserId)
-                 .OnDelete(DeleteBehavior.Cascade);
+                b.HasOne(x => x.CoachAvailability)
+                .WithMany(x => x.InterviewBookingTransactions)
+                .HasForeignKey(x => x.CoachAvailabilityId)
+                .HasConstraintName("FK_InterviewBookingTransaction_CoachAvailabilities_CoachAvailabilityId")
+                .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .HasConstraintName("FK_InterviewBookingTransaction_Users_UserId")
+                .OnDelete(DeleteBehavior.Cascade);
             });
 
             // Notification
@@ -487,7 +497,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 PortfolioUrl = "https://portfolio.example.com/alice",
                 Bio = "Aspiring backend developer."
             });
-            
+
             modelBuilder.Entity("CandidateSkills").HasData(
                 new { CandidateProfilesId = user1Id, SkillsId = Guid.Parse("b1b1b1b1-b1b1-41b1-81b1-b1b1b1b1b1b1") },
                 new { CandidateProfilesId = user1Id, SkillsId = Guid.Parse("02020202-0202-4202-8202-020202020202") }
@@ -533,11 +543,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             {
                 Id = CoachAvail1Id,
                 CoachId = user2Id,
+                Focus = InterviewFocus.General_Skills,
                 TypeId = Guid.Parse("a3f1c8b2-9d4e-4c7a-8f21-6b7e4d2c91aa"),
                 StartTime = DateTime.SpecifyKind(new DateTime(2025, 11, 1, 9, 0, 0), DateTimeKind.Utc),
                 EndTime = DateTime.SpecifyKind(new DateTime(2025, 11, 1, 10, 0, 0),
                 DateTimeKind.Utc),
-                IsBooked = false
+                Status = CoachAvailabilityStatus.Available
             });
 
             modelBuilder.Entity<InterviewRoom>().HasData(new InterviewRoom
@@ -551,28 +562,28 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 Status = InterviewRoomStatus.Scheduled
             });
 
-            modelBuilder.Entity<InterviewBookingTransaction>().HasData(new InterviewBookingTransaction
-            {
-                Id = Guid.Parse("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a88"),
-                UserId = user1Id,
-                CoachAvailabilityId = CoachAvail1Id,
-                Amount = 1000,
-                Type = TransactionType.Payment,
-                Status = TransactionStatus.Paid,
-                //CreatedAt = new DateTime(2025, 11, 17, 0, 0, 0),
-                //UpdatedAt = new DateTime(2025, 11, 17, 0, 0, 0)
-            },
-            new InterviewBookingTransaction
-            {
-                Id = Guid.Parse("8f9a0b1c-d2e3-4f5a-9b0c-1d2e3f4a5b99"),
-                UserId = user2Id,
-                CoachAvailabilityId = CoachAvail1Id,
-                Amount = 500,
-                Type = TransactionType.Payout,
-                Status = TransactionStatus.Paid,
-                //CreatedAt = new DateTime(2025, 11, 17, 0, 0, 0),
-                //UpdatedAt = new DateTime(2025, 11, 17, 0, 0, 0)
-            });
+            //modelBuilder.Entity<InterviewBookingTransaction>().HasData(new InterviewBookingTransaction
+            //{
+            //    Id = Guid.Parse("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a88"),
+            //    UserId = user1Id,
+            //    CoachAvailabilityId = CoachAvail1Id,
+            //    Amount = 1000,
+            //    Type = TransactionType.Payment,
+            //    Status = TransactionStatus.Paid,
+            //    //CreatedAt = new DateTime(2025, 11, 17, 0, 0, 0),
+            //    //UpdatedAt = new DateTime(2025, 11, 17, 0, 0, 0)
+            //},
+            //new InterviewBookingTransaction
+            //{
+            //    Id = Guid.Parse("8f9a0b1c-d2e3-4f5a-9b0c-1d2e3f4a5b99"),
+            //    UserId = user2Id,
+            //    CoachAvailabilityId = CoachAvail1Id,
+            //    Amount = 500,
+            //    Type = TransactionType.Payout,
+            //    Status = TransactionStatus.Paid,
+            //    //CreatedAt = new DateTime(2025, 11, 17, 0, 0, 0),
+            //    //UpdatedAt = new DateTime(2025, 11, 17, 0, 0, 0)
+            //});
 
             modelBuilder.Entity<Feedback>().HasData(new Feedback
             {
