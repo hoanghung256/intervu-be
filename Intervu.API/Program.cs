@@ -15,6 +15,7 @@ using Intervu.Domain.Entities.Constants;
 using Intervu.API.Utils.Constant;
 using Intervu.API.Utils;
 using Intervu.API.Middlewares;
+using Hangfire;
 
 namespace Intervu.API
 {
@@ -240,6 +241,8 @@ namespace Intervu.API
                     await next();
                 });
             }
+
+            app.UseHangfireDashboard("/hangfire");
 
             app.UseAuthentication();
             app.UseAuthorization();

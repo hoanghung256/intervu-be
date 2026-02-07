@@ -10,6 +10,10 @@ using Intervu.Infrastructure.ExternalServices.EmailServices;
 using Intervu.Infrastructure.ExternalServices.FirebaseStorageService;
 using Intervu.Infrastructure.ExternalServices.PayOSPaymentService;
 using Intervu.Infrastructure.Persistence.PostgreSQL;
+using Intervu.Domain.Abstractions.Entity.Interfaces;
+using Hangfire;
+using Intervu.Application.Utils;
+using Hangfire.PostgreSql;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
 using Microsoft.EntityFrameworkCore;
@@ -53,6 +57,8 @@ namespace Intervu.Infrastructure
                     db.Database.EnsureCreated();
                 }
             }
+
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             // Register your repositories here
             services.AddScoped<IUserRepository, UserRepository>();
@@ -157,6 +163,17 @@ namespace Intervu.Infrastructure
 
             services.AddHostedService<InterviewRoomCacheLoader>();
             services.AddHostedService<InterviewMonitorService>();
+
+
+            // HANGFIRE
+            services.AddHangfire(config => config
+                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+                .UseSimpleAssemblyNameTypeSerializer()
+                .UseRecommendedSerializerSettings()
+                .UsePostgreSqlStorage(configuration.GetConnectionString("PostgreSqlDefaultConnection")));
+
+            services.AddHangfireServer();
+            services.AddScoped<IBackgroundService, HangfireBackgroundService>();
 
             return services;
         }

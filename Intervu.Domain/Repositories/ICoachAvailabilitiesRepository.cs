@@ -15,5 +15,9 @@ namespace Intervu.Domain.Repositories
         Task<bool> DeleteCoachAvailabilityAsync(Guid availabilityId);
         Task<bool> UpdateCoachAvailabilityAsync(Guid availabilityId, InterviewFocus focus,DateTimeOffset startTime, DateTimeOffset endTime, Guid? typeId);
         Task<CoachAvailability?> GetAsync(Guid coachId, DateTime startTime);
+
+        Task ExpireReservedSlot(Guid availabilityId, Guid reseverForUserId);
+
+        Task ReserveForSlot(Guid availabilityId, Guid reseverForUserId);
     }
 }

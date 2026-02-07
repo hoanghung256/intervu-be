@@ -4,7 +4,7 @@ using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 
 namespace Intervu.Infrastructure.Persistence.PostgreSQL
 {
-    public abstract class RepositoryBase<T>(IntervuPostgreDbContext context) : IRepositoryBase<T> where T : class
+    public class RepositoryBase<T>(IntervuPostgreDbContext context) : IRepositoryBase<T> where T : class
     {
         protected readonly IntervuPostgreDbContext _context = context;
 
