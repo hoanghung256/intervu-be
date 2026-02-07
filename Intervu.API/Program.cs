@@ -1,5 +1,7 @@
 ﻿using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
 using Intervu.API.Hubs;
 using Intervu.Application;
 using Intervu.Infrastructure;
@@ -87,7 +89,7 @@ namespace Intervu.API
 
             // --- CUSTOM SERVICES ---
             builder.Services.AddUseCases(builder.Configuration);
-            builder.Services.AddPersistenceSqlServer(builder.Configuration);
+            builder.Services.AddPersistenceSqlServer(builder.Configuration, builder.Environment);
             builder.Services.AddInfrastructureExternalServices(builder.Configuration);
 
             // --- AUTHENTICATION WITH JWT CONFIGURATION ---
@@ -192,13 +194,17 @@ namespace Intervu.API
             builder.Services.AddSignalR();
 
             var app = builder.Build();
+            app.Logger.LogInformation(
+                "Hosting environment: {Env}",
+                app.Environment.EnvironmentName);
+            Console.WriteLine("IsDevelopment=" + app.Environment.IsDevelopment());
 
             app.UseMiddleware<ExceptionHandlingMiddleware>();
 
             app.UseHttpsRedirection();
 
             // --- HTTP REQUEST PIPELINE ---
-            if (app.Environment.IsDevelopment())
+            if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
             {
                 var provider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
 
@@ -215,27 +221,32 @@ namespace Intervu.API
                 });
 
                 app.UseCors(CorsPolicies.DevCorsPolicy);
+                Console.WriteLine("in dev");
             }
             else
             {
                 app.UseCors(CorsPolicies.ProdCorsPolicy);
+                Console.WriteLine("in pro");
             }
 
-            // Add Cross-Origin-Opener-Policy header for Google auth popup
-            app.Use(async (context, next) =>
+            app.MapHub<InterviewRoomHub>("/api/v1/hubs/interviewroom");
+
+            if (!app.Environment.IsEnvironment("Testing"))
             {
-                context.Response.Headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups";
-                context.Response.Headers["Cross-Origin-Embedder-Policy"] = "require-corp";
-                await next();
-            });
+                app.UseHttpsRedirection();
+
+                app.Use(async (context, next) => {
+                    context.Response.Headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups";
+                    context.Response.Headers["Cross-Origin-Embedder-Policy"] = "require-corp";
+                    await next();
+                });
+            }
 
             app.UseHangfireDashboard("/hangfire");
 
             app.UseAuthentication();
             app.UseAuthorization();
-
             app.MapControllers();
-            app.MapHub<InterviewRoomHub>("/api/v1/hubs/interviewroom");
 
             app.Run();
         }

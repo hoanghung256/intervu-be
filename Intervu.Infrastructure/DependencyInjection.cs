@@ -1,38 +1,62 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.EntityFrameworkCore;
-using Intervu.Infrastructure.ExternalServices;
-using Intervu.Application.Interfaces.ExternalServices;
-using Intervu.Infrastructure.ExternalServices.EmailServices;
-using Intervu.Application.Interfaces.ExternalServices.Email;
-using PayOS;
-using Intervu.Infrastructure.ExternalServices.PayOSPaymentService;
+﻿using Firebase.Storage;
+using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Storage.V1;
-using Firebase.Storage;
-using FirebaseAdmin;
-using Intervu.Infrastructure.ExternalServices.FirebaseStorageService;
+using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.ExternalServices.Email;
 using Intervu.Domain.Repositories;
-using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
-using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
+using Intervu.Infrastructure.ExternalServices;
+using Intervu.Infrastructure.ExternalServices.EmailServices;
+using Intervu.Infrastructure.ExternalServices.FirebaseStorageService;
+using Intervu.Infrastructure.ExternalServices.PayOSPaymentService;
 using Intervu.Infrastructure.Persistence.PostgreSQL;
 using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Hangfire;
 using Intervu.Application.Utils;
 using Hangfire.PostgreSql;
+using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
+using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using PayOS;
+using System;
 
 namespace Intervu.Infrastructure
 {
     public static class DependencyInjection
     {
-        public static IServiceCollection AddPersistenceSqlServer(this IServiceCollection services, IConfiguration configuration)
+        private static readonly object _firebaseLock = new object();
+
+        public static IServiceCollection AddPersistenceSqlServer(this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
         {
             //services.AddDbContextPool<IntervuDbContext>(options =>
             //options.UseSqlServer(configuration.GetConnectionString("SqlDefeaultConnection")));
 
             // PostgreSQL
             services.AddDbContextPool<IntervuPostgreDbContext>(options =>
-                options.UseNpgsql(configuration.GetConnectionString("PostgreSqlDefaultConnection")));
+            {
+                if (environment.IsEnvironment("Testing"))
+                {
+                    options.UseInMemoryDatabase("Intervu_TestDb");
+                }
+                else
+                {
+                    options.UseNpgsql(configuration.GetConnectionString("PostgreSqlDefaultConnection"));
+                }
+            });
+
+            if (environment.IsEnvironment("Testing"))
+            {
+                var sp = services.BuildServiceProvider();
+                using (var scope = sp.CreateScope())
+                {
+                    var scopedServices = scope.ServiceProvider;
+                    var db = scopedServices.GetRequiredService<IntervuPostgreDbContext>();
+                    db.Database.EnsureCreated();
+                }
+            }
 
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
@@ -49,6 +73,7 @@ namespace Intervu.Infrastructure
             services.AddScoped<IFeedbackRepository, FeedbackRepository>();
             services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+            services.AddScoped<IInterviewTypeRepository, InterviewTypeRepository>();
 
             return services;
         }
@@ -61,14 +86,17 @@ namespace Intervu.Infrastructure
             if (string.IsNullOrWhiteSpace(firebaseConfigJson))
                 throw new ArgumentNullException(nameof(firebaseConfigJson), "Firebase credential JSON is missing.");
 
-            GoogleCredential credential = GoogleCredential.FromJson(firebaseConfigJson);
+            GoogleCredential credential = GoogleCredential.FromFile(firebaseConfigJson);
 
-            if (FirebaseApp.DefaultInstance == null)
+            lock (_firebaseLock)
             {
-                FirebaseApp.Create(new AppOptions
+                if (FirebaseApp.DefaultInstance == null)
                 {
-                    Credential = credential
-                });
+                    FirebaseApp.Create(new AppOptions
+                    {
+                        Credential = credential
+                    });
+                }
             }
 
             services.AddSingleton(StorageClient.Create(credential));
@@ -151,4 +179,3 @@ namespace Intervu.Infrastructure
         }
     }
 }
-
