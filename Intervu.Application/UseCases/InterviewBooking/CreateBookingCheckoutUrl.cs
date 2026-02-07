@@ -7,7 +7,6 @@ using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 using Microsoft.Extensions.Logging;
-using System.Transactions;
 
 namespace Intervu.Application.UseCases.InterviewBooking
 {
@@ -43,10 +42,8 @@ namespace Intervu.Application.UseCases.InterviewBooking
 
                 if (availability.CoachId != coachId) throw new Exception("Coach availability does not belong to the specified coach");
 
-                if (availability.IsUserAbleToBook(candidateId))
-                {
-                    throw new Exception("Availability not able to book");
-                }
+                if (!availability.IsUserAbleToBook(candidateId))
+                    throw new CoachAvailabilityNotAvailableException("Availability not able to book");
 
                 // Reserve the slot for booking user
                 availability.Status = CoachAvailabilityStatus.Reserved;
@@ -78,8 +75,22 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 await transactionRepo.AddAsync(t);
                 await transactionRepo.AddAsync(t2);
 
-                // No need to payment case
-                if (t.Amount == 0) return null;
+                // No payment required: finalize booking immediately
+                if (t.Amount == 0)
+                {
+                    availability.Status = CoachAvailabilityStatus.Booked;
+                    t.Status = TransactionStatus.Paid;
+                    t2.Status = TransactionStatus.Paid;
+
+                    await _unitOfWork.SaveChangesAsync();
+                    await _unitOfWork.CommitTransactionAsync();
+
+                    _jobService.Enqueue<Interfaces.UseCases.InterviewRoom.ICreateInterviewRoom>(
+                        uc => uc.ExecuteAsync(candidateId, coachId, availability.StartTime)
+                    );
+
+                    return null;
+                }
 
                 // Create PAYOS payment order and get checkout URL
                 string? checkoutUrl = await _paymentService.CreatePaymentOrderAsync(

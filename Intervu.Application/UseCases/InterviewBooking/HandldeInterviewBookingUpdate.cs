@@ -1,4 +1,5 @@
-﻿using Intervu.Application.Interfaces.ExternalServices;
+﻿using Intervu.Application.Exceptions;
+using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Intervu.Domain.Abstractions.Entity.Interfaces;
@@ -41,10 +42,8 @@ namespace Intervu.Application.UseCases.InterviewBooking
 
                 CoachAvailability availability = await availabilityRepo.GetByIdAsync(transaction.CoachAvailabilityId) ?? throw new Exception("Coach availability not found");
 
-                if (availability.IsUserAbleToBook(transaction.UserId))
-                {
-                    throw new Exception("Availability not able to book");
-                }
+                if (!availability.IsUserAbleToBook(transaction.UserId))
+                    throw new CoachAvailabilityNotAvailableException("Availability not able to book");
 
                 availability.Status = CoachAvailabilityStatus.Booked;
                 transaction.Status = TransactionStatus.Paid;
