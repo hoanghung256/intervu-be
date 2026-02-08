@@ -244,10 +244,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<DateTime>("EndTime")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid?>("ReservingForUserId")
-                        .HasColumnType("uuid");
                     b.Property<int>("Focus")
                         .HasColumnType("integer");
+
+                    b.Property<Guid?>("ReservingForUserId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("timestamp with time zone");
@@ -263,7 +264,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.HasIndex("CoachId");
 
                     b.HasIndex("ReservingForUserId");
-                    
+
                     b.HasIndex("TypeId");
 
                     b.ToTable("CoachAvailabilities", (string)null);
@@ -274,6 +275,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             Id = new Guid("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77"),
                             CoachId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
                             EndTime = new DateTime(2026, 2, 10, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Focus = 0,
                             StartTime = new DateTime(2026, 2, 10, 9, 0, 0, 0, DateTimeKind.Utc),
                             Status = 2
                         },
@@ -282,10 +284,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             Id = new Guid("aaaaaaaa-1111-4a1a-8a1a-111111111111"),
                             CoachId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
                             EndTime = new DateTime(2026, 3, 15, 15, 0, 0, 0, DateTimeKind.Utc),
+                            Focus = 0,
                             StartTime = new DateTime(2026, 3, 15, 14, 0, 0, 0, DateTimeKind.Utc),
-                            Status = 0,
-                            IsBooked = false,
-                            TypeId = new Guid("a3f1c8b2-9d4e-4c7a-8f21-6b7e4d2c91aa")
+                            Status = 0
                         });
                 });
 
@@ -634,7 +635,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<Guid?>("CoachId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("CurrentAvailabilityId")
+                    b.Property<Guid>("CurrentAvailabilityId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("CurrentLanguage")
@@ -1168,7 +1169,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .HasForeignKey("ReservingForUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("FK_CoachAvailabilities_Users_ReservingForUserId");
-                        
+
                     b.HasOne("Intervu.Domain.Entities.InterviewType", null)
                         .WithMany()
                         .HasForeignKey("TypeId")
@@ -1300,6 +1301,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .WithMany()
                         .HasForeignKey("CurrentAvailabilityId")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
                         .HasConstraintName("FK_InterviewRooms_CoachAvailabilities_CurrentAvailabilityId");
 
                     b.HasOne("Intervu.Domain.Entities.InterviewBookingTransaction", "Transaction")
