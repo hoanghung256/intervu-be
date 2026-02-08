@@ -8,7 +8,7 @@ namespace Intervu.Domain.Entities.Constants
 {
     public enum InterviewFocus
     {
-        General_Skills,
-        Job_Description
+        GeneralSkills,
+        JobDescription
     }
 }

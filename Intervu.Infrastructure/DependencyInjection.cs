@@ -24,7 +24,7 @@ using PayOS;
 using System;
 
 namespace Intervu.Infrastructure
-{
+{   
     public static class DependencyInjection
     {
         private static readonly object _firebaseLock = new object();
