@@ -52,7 +52,7 @@ namespace Intervu.Application.UseCases.Availability
 
             TimeSpan slotDuration;
 
-            if (dto.Focus == InterviewFocus.General_Skills)
+            if (dto.Focus == InterviewFocus.GeneralSkills)
             {
                 if (!dto.TypeId.HasValue)
                     throw new ArgumentException("TypeId is required for General Skill interview");

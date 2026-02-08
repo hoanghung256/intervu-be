@@ -87,7 +87,7 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             availability.Focus = focus;
             availability.StartTime = startTime.UtcDateTime;
             availability.EndTime = endTime.UtcDateTime;
-            availability.TypeId = focus == InterviewFocus.General_Skills ? typeId : Guid.Empty;
+            availability.TypeId = focus == InterviewFocus.GeneralSkills ? typeId : Guid.Empty;
 
             _context.CoachAvailabilities.Update(availability);
             await _context.SaveChangesAsync();
