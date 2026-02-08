@@ -163,6 +163,7 @@ jobs:
         publish_dir: ./public
         user_name: 'github-actions[bot]'
         user_email: 'github-actions[bot]@users.noreply.github.com'
+        keep_files: true
 
     # - name: Checkout gh-pages branch (create if missing)
     #   if: always()
