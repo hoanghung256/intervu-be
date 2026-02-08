@@ -283,7 +283,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             CoachId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
                             EndTime = new DateTime(2026, 3, 15, 15, 0, 0, 0, DateTimeKind.Utc),
                             StartTime = new DateTime(2026, 3, 15, 14, 0, 0, 0, DateTimeKind.Utc),
-                            Status = 0
+                            Status = 0,
                             IsBooked = false,
                             TypeId = new Guid("a3f1c8b2-9d4e-4c7a-8f21-6b7e4d2c91aa")
                         });
