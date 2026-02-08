@@ -127,7 +127,7 @@ jobs:
         Firebase__CredentialPath: ${{ github.workspace }}/intervu-be/Intervu.API/firebase.json
       run: |
         cd ./intervu-be
-        dotnet test --verbosity minimal --no-build --configuration Release --blame --blame-hang --blame-hang-timeout 5m -- RunConfiguration.DisableParallelization=true
+        dotnet test --verbosity minimal --no-build --configuration Release --blame --blame-hang --blame-hang-timeout 5m 
     
     - name: Upload test results
       if: always()

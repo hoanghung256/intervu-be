@@ -132,7 +132,7 @@ namespace Intervu.API.Test.Utils
             
             if (!string.IsNullOrWhiteSpace(responseBody) && logBody)
             {
-                _test.LogInfo($"\nResponse Body:\n{responseBody}");
+                _test.LogInfo($"\nResponse Body:\n{TruncateLog(responseBody)}");
             }
         }
 
@@ -147,7 +147,7 @@ namespace Intervu.API.Test.Utils
                 await _test.LogPass($"Deserializing content to {typeof(ApiResponse<T>).Name} successful");
                 if (logBody && !string.IsNullOrWhiteSpace(content))
                 {
-                    _test.LogInfo($"\nResponse Body:\n{content}");
+                    _test.LogInfo($"\nResponse Body:\n{TruncateLog(content)}");
                 }
                 return json;
             }
@@ -157,6 +157,13 @@ namespace Intervu.API.Test.Utils
                 await _test.LogFail(errorMsg);
                 throw new Exception(errorMsg, ex);
             }
+        }
+
+        private string TruncateLog(string content)
+        {
+            const int MaxLength = 5000; // Limit log size to 5KB to prevent OOM
+            if (string.IsNullOrEmpty(content) || content.Length <= MaxLength) return content;
+            return content.Substring(0, MaxLength) + $"\n... [Truncated {content.Length - MaxLength} chars to prevent OOM]";
         }
             
         public class ApiResponse<T>
