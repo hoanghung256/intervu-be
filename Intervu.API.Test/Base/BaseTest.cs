@@ -24,6 +24,8 @@ namespace Intervu.API.Test.Base
         // Delegate to capture screenshot (to be set by derived classes like BaseAutomationTest)
         public Func<Task<byte[]>>? ScreenshotProvider { get; set; }
 
+        protected readonly string ACCOUNT_PASSWORD = Environment.GetEnvironmentVariable("ACCOUNT_PASSWORD") ?? "123";
+
         public BaseTest(ITestOutputHelper output)
         {
             Current.Value = this;

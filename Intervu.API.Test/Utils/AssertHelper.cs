@@ -128,5 +128,35 @@ namespace Intervu.API.Test.Utils
                 throw;
             }
         }
+
+        public static async Task AssertToastSuccessAsync(Toast toast, string userMessage)
+        {
+            var test = BaseTest.Current.Value;
+            try
+            {
+                await toast.WaitForSuccessMarkAsync();
+                if (test != null) await test.LogPass($"Assertion passed: {userMessage}");
+            }
+            catch (Exception ex)
+            {
+                if (test != null) await test.LogFail($"Assertion failed: {userMessage}", ex);
+                throw;
+            }
+        }
+
+        public static async Task AssertToastErrorAsync(Toast toast, string userMessage)
+        {
+            var test = BaseTest.Current.Value;
+            try
+            {
+                await toast.WaitForErrorMarkAsync();
+                if (test != null) await test.LogPass($"Assertion passed: {userMessage}");
+            }
+            catch (Exception ex)
+            {
+                if (test != null) await test.LogFail($"Assertion failed: {userMessage}", ex);
+                throw;
+            }
+        }
     }
 }
