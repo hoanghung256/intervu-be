@@ -34,5 +34,10 @@ namespace Intervu.Domain.Entities
         {
             return Status == CoachAvailabilityStatus.Available || (Status == CoachAvailabilityStatus.Reserved && ReservingForUserId == userId);
         }
+
+        public bool WillInterviewWithGeneralSkill()
+        {
+            return Focus == InterviewFocus.General_Skills;
+        }
     }
 }

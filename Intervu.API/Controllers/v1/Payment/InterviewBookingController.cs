@@ -1,22 +1,10 @@
 ﻿using Asp.Versioning;
-using Intervu.API.Utils.Constant;
-using Intervu.Application.DTOs.Email;
-using Intervu.Application.Interfaces.ExternalServices;
-using Intervu.Application.Interfaces.UseCases.Availability;
-using Intervu.Application.Interfaces.UseCases.Email;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
-using Intervu.Application.Interfaces.UseCases.InterviewRoom;
-using Intervu.Application.UseCases.InterviewBooking;
 using Intervu.Domain.Entities;
-using Intervu.Domain.Entities.Constants;
 using Microsoft.AspNetCore.Authorization;
-using Intervu.Application.Interfaces.UseCases.Coach;
 using Microsoft.AspNetCore.Mvc;
 using PayOS.Models.Webhooks;
 using System.Security.Claims;
-using System.IdentityModel.Tokens.Jwt;
-using System;
-using Intervu.Application.Interfaces.UseCases.Candidate;
 using Intervu.Application.DTOs.InterviewBooking;
 
 namespace Intervu.API.Controllers.v1.Payment
@@ -28,20 +16,17 @@ namespace Intervu.API.Controllers.v1.Payment
     {
         private readonly ILogger<InterviewBookingController> _logger;
         private readonly ICreateBookingCheckoutUrl _createBookingCheckoutUrl;
-        //private readonly IPaymentService _paymentService;
         private readonly IHandldeInterviewBookingUpdate _handldeInterviewBookingUpdate;
         private readonly IGetInterviewBooking _getInterviewBooking;
 
         public InterviewBookingController(
             ILogger<InterviewBookingController> logger,
             ICreateBookingCheckoutUrl createBookingCheckoutUrl,
-            //IPaymentService paymentService,
             IGetInterviewBooking getInterviewBooking,
             IHandldeInterviewBookingUpdate handldeInterviewBookingUpdate)
         {
             _logger = logger;
             _createBookingCheckoutUrl = createBookingCheckoutUrl;
-            //_paymentService = paymentService;
             _handldeInterviewBookingUpdate = handldeInterviewBookingUpdate;
             _getInterviewBooking = getInterviewBooking;
         }
@@ -50,7 +35,7 @@ namespace Intervu.API.Controllers.v1.Payment
         [Authorize]
         public async Task<IActionResult> CreatePaymentUrl([FromBody] InterviewBookingRequest request)
         {
-            Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
+            _ = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
 
             string? checkOutUrl = await _createBookingCheckoutUrl.ExecuteAsync(userId, request.CoachId, request.CoachAvailabilityId, request.ReturnUrl);
 
