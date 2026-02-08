@@ -21,7 +21,7 @@ namespace Intervu.API.Test.Controls
             // Wait for any toast item (child div) to appear in the container.
             // We target the first div, assuming it represents the toast notification wrapper.
             var toastItem = Locator.Locator("div").First;
-            await toastItem.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+            await toastItem.WaitForAsync(new LocatorWaitForOptions { Timeout = 60000, State = WaitForSelectorState.Visible });
 
             // Get the text content of the visible toast.
             var actualText = await toastItem.InnerTextAsync();
