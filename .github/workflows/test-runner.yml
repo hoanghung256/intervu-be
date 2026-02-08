@@ -14,7 +14,8 @@ on:
 jobs:
   build-and-run-test:
     runs-on: ubuntu-latest
-
+    permissions:
+        contents: write
     steps:
     - name: Try checkout (head_ref)
       id: checkout_try
@@ -126,7 +127,7 @@ jobs:
         Firebase__CredentialPath: ${{ github.workspace }}/intervu-be/Intervu.API/firebase.json
       run: |
         cd ./intervu-be
-        dotnet test --verbosity minimal --no-build --configuration Release
+        dotnet test --verbosity minimal --no-build --configuration Release --blame --blame-hang --blame-hang-timeout 5m -- RunConfiguration.DisableParallelization=true
     
     - name: Upload test results
       if: always()
@@ -135,48 +136,74 @@ jobs:
         name: test-results
         path: ./intervu-be/Intervu.API.Test/bin/Release/net8.0/TestResults/ExtentReport.html
 
-    - name: Checkout gh-pages branch (create if missing)
-      if: always()
-      uses: actions/checkout@v4
-      with:
-        ref: gh-pages
-        path: gh-pages
-        fetch-depth: 0
-
-    - name: Ensure gh-pages branch exists
+    - name: Prepare Pages content
       if: always()
       run: |
-        git fetch origin
-        if ! git show-ref --verify --quiet refs/remotes/origin/gh-pages; then
-          git checkout --orphan gh-pages
-          git rm -rf .
-          echo "<h1>GitHub Pages initialized</h1>" > index.html
-          git add index.html
-          git commit -m "Initialize gh-pages"
-          git push origin gh-pages
-          git checkout -
+        REPORT_PATH="./intervu-be/Intervu.API.Test/bin/Release/net8.0/TestResults/ExtentReport.html"
+
+        if [ ! -f "$REPORT_PATH" ]; then
+          echo "Test report not found, skipping publish"
+          exit 0
         fi
 
-    - name: Save test report to GitHub Pages (by branch)
-      if: always()
-      run: |
         BRANCH_NAME="${{ github.head_ref || github.ref_name }}"
-        TARGET_DIR="gh-pages/${BRANCH_NAME}"
 
-        mkdir -p "$TARGET_DIR"
-        cp ./intervu-be/Intervu.API.Test/bin/Release/net8.0/TestResults/ExtentReport.html \
-           "$TARGET_DIR/index.html"
+        mkdir -p public/$BRANCH_NAME
+        cp "$REPORT_PATH" "./public/$BRANCH_NAME/index.html"
 
-    - name: Commit and push report
+        # Ensure root index exists (prevents gh-pages glob error)
+        touch public/.nojekyll
+
+    - name: Deploy to GitHub Pages
       if: always()
-      run: |
-        cd gh-pages
-        git config user.name "github-actions[bot]"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_branch: gh-pages
+        publish_dir: ./public
 
-        git add .
-        git commit -m "Update report for ${{ github.ref_name }}" || echo "No changes"
-        git push
+    # - name: Checkout gh-pages branch (create if missing)
+    #   if: always()
+    #   uses: actions/checkout@v4
+    #   with:
+    #     ref: gh-pages
+    #     path: gh-pages
+    #     fetch-depth: 0
+
+    # - name: Ensure gh-pages branch exists
+    #   if: always()
+    #   run: |
+    #     git fetch origin
+    #     if ! git show-ref --verify --quiet refs/remotes/origin/gh-pages; then
+    #       git checkout --orphan gh-pages
+    #       git rm -rf .
+    #       echo "<h1>GitHub Pages initialized</h1>" > index.html
+    #       git add index.html
+    #       git commit -m "Initialize gh-pages"
+    #       git push origin gh-pages
+    #       git checkout -
+    #     fi
+
+    # - name: Save test report to GitHub Pages (by branch)
+    #   if: always()
+    #   run: |
+    #     BRANCH_NAME="${{ github.head_ref || github.ref_name }}"
+    #     TARGET_DIR="gh-pages/${BRANCH_NAME}"
+
+    #     mkdir -p "$TARGET_DIR"
+    #     cp ./intervu-be/Intervu.API.Test/bin/Release/net8.0/TestResults/ExtentReport.html \
+    #        "$TARGET_DIR/index.html"
+
+    # - name: Commit and push report
+    #   if: always()
+    #   run: |
+    #     cd gh-pages
+    #     git config user.name "github-actions[bot]"
+    #     git config user.email "github-actions[bot]@users.noreply.github.com"
+
+    #     git add .
+    #     git commit -m "Update report for ${{ github.ref_name }}" || echo "No changes"
+    #     git push origin gh-pages
 
     - name: Show GitHub Pages URL
       if: always()
