@@ -33,5 +33,15 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
         {
             return await _context.InterviewRooms.ToListAsync();
         }
+
+        public Task<IEnumerable<InterviewRoom>> GetConflictingRoomsAsync(Guid userId, DateTime startTime, DateTime endTime)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<InterviewRoom?> GetByIdWithDetailsAsync(Guid id)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

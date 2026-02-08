@@ -12,6 +12,10 @@ namespace Intervu.Domain.Entities
 
         public Guid? CoachId { get; set; }
 
+        public Guid? TransactionId { get; set; }
+
+        public Guid CurrentAvailabilityId { get; set; }
+
         public DateTime? ScheduledTime { get; set; }
 
         public int? DurationMinutes { get; set; }
@@ -32,5 +36,28 @@ namespace Intervu.Domain.Entities
         /// Scheduled, Completed, Cancelled, No-Show
         /// </summary>
         public InterviewRoomStatus Status { get; set; }
+
+        public int RescheduleAttemptCount { get; set; } = 0;
+
+        // Navigation Properties
+        public InterviewBookingTransaction? Transaction { get; set; }
+        
+        public CoachAvailability CurrentAvailability { get; set; }
+        
+        public ICollection<InterviewRescheduleRequest>? RescheduleRequests { get; set; }
+        public bool IsAvailableForReschedule()
+        {
+            var timeUntilInterview = CurrentAvailability.StartTime - DateTime.UtcNow;
+            if (timeUntilInterview < TimeSpan.FromHours(12))
+            {
+                return false;
+            }
+            // Limit 1 reschedule attempt per interview
+            if (RescheduleAttemptCount >= 1)
+            {
+                return false;
+            }
+            return true;
+        }
     }
 }

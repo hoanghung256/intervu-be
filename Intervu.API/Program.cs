@@ -201,8 +201,6 @@ namespace Intervu.API
 
             app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-            app.UseHttpsRedirection();
-
             // --- HTTP REQUEST PIPELINE ---
             if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
             {
@@ -246,7 +244,9 @@ namespace Intervu.API
 
             app.UseAuthentication();
             app.UseAuthorization();
+
             app.MapControllers();
+            app.MapHub<InterviewRoomHub>("/api/v1/hubs/interviewroom");
 
             app.Run();
         }
