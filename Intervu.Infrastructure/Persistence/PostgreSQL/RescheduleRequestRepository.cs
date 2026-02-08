@@ -61,8 +61,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Include(r => r.InterviewRoom)
                 .Where(r => r.InterviewRoom != null && 
                     (r.InterviewRoom.CoachId == responderId || r.InterviewRoom.CandidateId == responderId) &&
-                    r.RequestedBy != responderId &&
-                    r.Status == RescheduleRequestStatus.Pending)
+                    r.RequestedBy != responderId)
                 .ToListAsync();
             return requests;
         }
@@ -74,7 +73,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                     r.Status == RescheduleRequestStatus.Pending);
         }
 
-        public async Task<IEnumerable<InterviewRescheduleRequest>> GetPendingRequestsByUserIdAsync(Guid userId)
+        public async Task<IEnumerable<InterviewRescheduleRequest>> GetRescheduleRequestsByUserIdAsync(Guid userId)
         {
             var requests = await _context.InterviewRescheduleRequests
                 .Include(r => r.CurrentAvailability)

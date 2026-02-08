@@ -13,7 +13,7 @@ namespace Intervu.Domain.Repositories
         Task<InterviewRescheduleRequest?> GetPendingRequestByRoomIdAsync(Guid roomId);
         Task<InterviewRescheduleRequest?> GetByIdWithDetailsAsync(Guid id);
         Task<IEnumerable<InterviewRescheduleRequest>> GetExpiredRequestsAsync();
-        Task<IEnumerable<InterviewRescheduleRequest>>   GetPendingRequestsByUserIdAsync(Guid userId);
+        Task<IEnumerable<InterviewRescheduleRequest>>   GetRescheduleRequestsByUserIdAsync(Guid userId);
         Task<IEnumerable<InterviewRescheduleRequest>> GetPendingRequestsForResponderAsync(Guid responderId);
         Task<bool> HasPendingRequestAsync(Guid roomId);
     }
