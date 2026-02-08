@@ -59,10 +59,18 @@ namespace Intervu.API.Controllers.v1.Authentication
             
             if (!success)
             {
-                return BadRequest(new { message = "Registration failed. Email may already exist." });
+                return BadRequest(new 
+                {
+                    success = success,
+                    message = "Registration failed. Email may already exist." 
+                });
             }
             
-            return Ok(new { message = "Registration successful" });
+            return Ok(new 
+            {
+                success = success,
+                message = "Registration successful" 
+            });
         }
         [AllowAnonymous]
         [HttpPost("refresh-token")]

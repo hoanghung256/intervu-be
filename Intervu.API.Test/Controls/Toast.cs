@@ -32,5 +32,23 @@ namespace Intervu.API.Test.Controls
                 throw new Exception($"Toast message mismatch. Expected '{message}', but found '{actualText}'.");
             }
         }
+
+        /// <summary>
+        /// Waits for the success mark to appear inside the toast container.
+        /// </summary>
+        public async Task WaitForSuccessMarkAsync()
+        {
+            var successMark = Locator.Locator("div.go2344853693").First;
+            await successMark.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        }
+
+        /// <summary>
+        /// Waits for the error mark (x mark) to appear inside the toast container.
+        /// </summary>
+        public async Task WaitForErrorMarkAsync()
+        {
+            var errorMark = Locator.Locator("div.go2534082608").First;
+            await errorMark.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        }
     }
 }

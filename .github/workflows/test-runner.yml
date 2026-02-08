@@ -135,6 +135,69 @@ jobs:
         name: test-results
         path: ./intervu-be/Intervu.API.Test/bin/Release/net8.0/TestResults/ExtentReport.html
 
+    - name: Checkout gh-pages branch (create if missing)
+      if: always()
+      uses: actions/checkout@v4
+      with:
+        ref: gh-pages
+        path: gh-pages
+        fetch-depth: 0
+
+    - name: Ensure gh-pages branch exists
+      if: always()
+      run: |
+        git fetch origin
+        if ! git show-ref --verify --quiet refs/remotes/origin/gh-pages; then
+          git checkout --orphan gh-pages
+          git rm -rf .
+          echo "<h1>GitHub Pages initialized</h1>" > index.html
+          git add index.html
+          git commit -m "Initialize gh-pages"
+          git push origin gh-pages
+          git checkout -
+        fi
+
+    - name: Save test report to GitHub Pages (by branch)
+      if: always()
+      run: |
+        BRANCH_NAME="${{ github.head_ref || github.ref_name }}"
+        TARGET_DIR="gh-pages/${BRANCH_NAME}"
+
+        mkdir -p "$TARGET_DIR"
+        cp ./intervu-be/Intervu.API.Test/bin/Release/net8.0/TestResults/ExtentReport.html \
+           "$TARGET_DIR/index.html"
+
+    - name: Commit and push report
+      if: always()
+      run: |
+        cd gh-pages
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+
+        git add .
+        git commit -m "Update report for ${{ github.ref_name }}" || echo "No changes"
+        git push
+
+    - name: Show GitHub Pages URL
+      if: always()
+      run: |
+        BRANCH_NAME="${{ github.head_ref || github.ref_name }}"
+        echo "Test report URL:"
+        echo "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/${BRANCH_NAME}/"
+
+    - name: Add report URL to job summary
+      if: always()
+      run: |
+        BRANCH_NAME="${{ github.head_ref || github.ref_name }}"
+        REPORT_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/${BRANCH_NAME}/"
+
+        {
+          echo "## 🧪 Test Report"
+          echo ""
+          echo "- **Branch:** \`${{ github.ref_name }}\`"
+          echo "- **Report:** [$REPORT_URL]($REPORT_URL)"
+        } >> "$GITHUB_STEP_SUMMARY"
+
     - name: Fail job if tests failed
       if: steps.test_step.outcome == 'failure'
       run: |
