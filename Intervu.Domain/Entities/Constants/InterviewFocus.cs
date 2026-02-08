@@ -4,10 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Intervu.Domain.Repositories
+namespace Intervu.Domain.Entities.Constants
 {
-    public interface IRepositoryUnitOfWork : IDisposable
+    public enum InterviewFocus
     {
-        Task<int> CommitAsync();
+        General_Skills,
+        Job_Description
     }
 }

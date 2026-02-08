@@ -11,7 +11,7 @@
         /// <param name="ammount">Total amount of the payment.</param>
         /// <param name="description">Description shown on the payment page.</param>
         /// <returns>The checkout URL for the created payment order.</returns>
-        Task<string> CreatePaymentOrderAsync(int orderCode, int ammount, string description, string returnUrl);
+        Task<string> CreatePaymentOrderAsync(int orderCode, int ammount, string description, string returnUrl, long expiredAfter = 4);
 
         (bool isValid, int orderCode) VerifyPayment(object payload);
 

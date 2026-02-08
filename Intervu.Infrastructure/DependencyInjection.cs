@@ -10,6 +10,10 @@ using Intervu.Infrastructure.ExternalServices.EmailServices;
 using Intervu.Infrastructure.ExternalServices.FirebaseStorageService;
 using Intervu.Infrastructure.ExternalServices.PayOSPaymentService;
 using Intervu.Infrastructure.Persistence.PostgreSQL;
+using Intervu.Domain.Abstractions.Entity.Interfaces;
+using Hangfire;
+using Intervu.Application.Utils;
+using Hangfire.PostgreSql;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
 using Microsoft.EntityFrameworkCore;
@@ -54,6 +58,8 @@ namespace Intervu.Infrastructure
                 }
             }
 
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
+
             // Register your repositories here
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IInterviewRoomRepository, InterviewRoomRepository>();
@@ -81,20 +87,20 @@ namespace Intervu.Infrastructure
             if (string.IsNullOrWhiteSpace(firebaseConfigJson))
                 throw new ArgumentNullException(nameof(firebaseConfigJson), "Firebase credential JSON is missing.");
 
-            GoogleCredential credential = GoogleCredential.FromFile(firebaseConfigJson);
+            //GoogleCredential credential = GoogleCredential.FromFile(firebaseConfigJson);
 
-            lock (_firebaseLock)
-            {
-                if (FirebaseApp.DefaultInstance == null)
-                {
-                    FirebaseApp.Create(new AppOptions
-                    {
-                        Credential = credential
-                    });
-                }
-            }
+            //lock (_firebaseLock)
+            //{
+            //    if (FirebaseApp.DefaultInstance == null)
+            //    {
+            //        FirebaseApp.Create(new AppOptions
+            //        {
+            //            Credential = credential
+            //        });
+            //    }
+            //}
 
-            services.AddSingleton(StorageClient.Create(credential));
+            //services.AddSingleton(StorageClient.Create(credential));
 
             services.AddSingleton<string>(sp => bucketName);
 
@@ -158,6 +164,17 @@ namespace Intervu.Infrastructure
 
             services.AddHostedService<InterviewRoomCacheLoader>();
             services.AddHostedService<InterviewMonitorService>();
+
+
+            // HANGFIRE
+            services.AddHangfire(config => config
+                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+                .UseSimpleAssemblyNameTypeSerializer()
+                .UseRecommendedSerializerSettings()
+                .UsePostgreSqlStorage(configuration.GetConnectionString("PostgreSqlDefaultConnection")));
+
+            services.AddHangfireServer();
+            services.AddScoped<IBackgroundService, HangfireBackgroundService>();
 
             return services;
         }

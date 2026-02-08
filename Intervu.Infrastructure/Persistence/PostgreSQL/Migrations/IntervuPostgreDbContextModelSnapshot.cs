@@ -244,18 +244,26 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<DateTime>("EndTime")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("ReservingForUserId")
+                        .HasColumnType("uuid");
+                    b.Property<int>("Focus")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
-                    b.Property<Guid>("TypeId")
+
+                    b.Property<Guid?>("TypeId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CoachId");
 
+                    b.HasIndex("ReservingForUserId");
+                    
                     b.HasIndex("TypeId");
 
                     b.ToTable("CoachAvailabilities", (string)null);
@@ -515,7 +523,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("OrderCode"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("OrderCode"));
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
@@ -1151,18 +1159,25 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.HasOne("Intervu.Domain.Entities.CoachProfile", "CoachProfile")
                         .WithMany()
                         .HasForeignKey("CoachId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("FK_CoachAvailabilities_CoachProfiles_CoachId");
 
-                    b.Navigation("CoachProfile");
-                    
+                    b.HasOne("Intervu.Domain.Entities.CandidateProfile", "ReservingForUser")
+                        .WithMany()
+                        .HasForeignKey("ReservingForUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_CoachAvailabilities_Users_ReservingForUserId");
+                        
                     b.HasOne("Intervu.Domain.Entities.InterviewType", null)
                         .WithMany()
                         .HasForeignKey("TypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
+                        .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("FK_CoachAvailabilities_InterviewTypes_TypeId");
+
+                    b.Navigation("CoachProfile");
+
+                    b.Navigation("ReservingForUser");
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.CoachProfile", b =>

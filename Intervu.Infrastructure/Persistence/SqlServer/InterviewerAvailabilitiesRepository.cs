@@ -42,12 +42,13 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             return result;
         }
 
-        public async Task<bool> IsCoachAvailableAsync(Guid coachId, DateTimeOffset startTime, DateTimeOffset endTime)
+        public async Task<bool> IsCoachAvailableAsync(Guid coachId, DateTimeOffset startTime, DateTimeOffset endTime, Guid? excludeId = null)
         {
             // return true if no overlapping availability or booking exists
             var overlaps = await _dbContext.CoachAvailabilities
                 .Where(x => x.CoachId == coachId)
                 .Where(x => !(x.EndTime <= startTime.UtcDateTime || x.StartTime >= endTime.UtcDateTime))
+                .Where(x => x.Id != excludeId)
                 .AnyAsync();
             return !overlaps;
         }
@@ -77,15 +78,16 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             return true;
         }
 
-        public async Task<bool> UpdateCoachAvailabilityAsync(Guid availabilityId, DateTimeOffset startTime, DateTimeOffset endTime, Guid typeId)
+        public async Task<bool> UpdateCoachAvailabilityAsync(Guid availabilityId, InterviewFocus focus, DateTimeOffset startTime, DateTimeOffset endTime, Guid? typeId)
         {
             var availability = await _context.CoachAvailabilities.FindAsync(availabilityId);
             if (availability == null)
                 return false;
 
+            availability.Focus = focus;
             availability.StartTime = startTime.UtcDateTime;
             availability.EndTime = endTime.UtcDateTime;
-            availability.TypeId = typeId;
+            availability.TypeId = focus == InterviewFocus.General_Skills ? typeId : Guid.Empty;
 
             _context.CoachAvailabilities.Update(availability);
             await _context.SaveChangesAsync();
@@ -96,6 +98,21 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
         {
             return _dbContext.CoachAvailabilities
                 .FirstOrDefaultAsync(a => a.CoachId == coachId && a.StartTime == startTime);
+        }
+
+        public Task UpdateStatusById(Guid slotId, CoachAvailabilityStatus status)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task ExpireReservedSlot(Guid availabilityId, Guid reseverForUserId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task ReserveForSlot(Guid availabilityId, Guid reseverForUserId)
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -160,6 +160,10 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             {
                 b.ToTable("CoachAvailabilities");
                 b.HasKey(x => x.Id);
+                b.Property(x => x.Focus)
+                .HasConversion<int>()
+                .IsRequired();
+
                 b.Property(x => x.StartTime).IsRequired();
                 b.Property(x => x.EndTime).IsRequired();
 
@@ -167,14 +171,20 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 .WithMany()
                 .HasForeignKey(x => x.CoachId)
                 .HasConstraintName("FK_CoachAvailabilities_CoachProfiles_CoachId")
-               .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
-              b.HasOne<InterviewType>()
-               .WithMany()
-                .HasForeignKey(x => x.TypeId)
-                .HasConstraintName("FK_CoachAvailabilities_InterviewTypes_TypeId")
-               .OnDelete(DeleteBehavior.Cascade);
-          });
+                b.HasOne(x => x.ReservingForUser)
+                .WithMany()
+                .HasForeignKey(x => x.ReservingForUserId)
+                .HasConstraintName("FK_CoachAvailabilities_Users_ReservingForUserId")
+                .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasOne<InterviewType>()
+                 .WithMany()
+                  .HasForeignKey(x => x.TypeId).IsRequired(false)
+                  .HasConstraintName("FK_CoachAvailabilities_InterviewTypes_TypeId")
+                 .OnDelete(DeleteBehavior.SetNull);
+            });
 
             // InterviewRoom
             modelBuilder.Entity<InterviewRoom>(b =>
@@ -270,7 +280,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             {
                 b.ToTable("InterviewBookingTransaction");
                 b.HasKey(x => x.Id);
-                b.Property(x => x.OrderCode).UseIdentityAlwaysColumn();
+                b.Property(x => x.OrderCode).UseIdentityByDefaultColumn();
                 b.Property(x => x.Amount).IsRequired();
                 b.Property(x => x.CoachAvailabilityId).IsRequired();
                 b.Property(x => x.Type).IsRequired();
@@ -562,7 +572,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 PortfolioUrl = "https://portfolio.example.com/alice",
                 Bio = "Aspiring backend developer."
             });
-            
+
             modelBuilder.Entity("CandidateSkills").HasData(
                 new { CandidateProfilesId = user1Id, SkillsId = Guid.Parse("b1b1b1b1-b1b1-41b1-81b1-b1b1b1b1b1b1") },
                 new { CandidateProfilesId = user1Id, SkillsId = Guid.Parse("02020202-0202-4202-8202-020202020202") }
