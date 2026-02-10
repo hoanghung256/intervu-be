@@ -1,5 +1,6 @@
 ﻿using Asp.Versioning;
 using Intervu.API.Utils.Constant;
+using Intervu.Application.DTOs.InterviewRoom;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Intervu.Domain.Entities.Constants;
 using Microsoft.AspNetCore.Authorization;
@@ -25,45 +26,54 @@ namespace Intervu.API.Controllers.v1
             _createRoom = createRoom;
         }
 
+        /// <summary>
+        /// Get list of interview rooms with reschedule status
+        /// </summary>
         [Authorize(Policy = AuthorizationPolicies.CandidateOrInterviewer)]
         [HttpGet]
-        public async Task<IActionResult> GetList()
+        public async Task<IActionResult> GetList([FromQuery] GetInterviewRoomsRequestDto request)
         {
             bool isGetUserIdSuccess = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
             bool isGetRoleSuccess = Enum.TryParse<UserRole>(User.FindFirstValue(ClaimTypes.Role), out UserRole role);
 
-            var list = await _getRoomHistory.ExecuteAsync(role, userId);
-
-            return Ok(new
+            if (!isGetUserIdSuccess || !isGetRoleSuccess)
             {
-                success = true, 
-                message = "Success",
-                data = list
-            });
-        }
+                return Unauthorized(new
+                {
+                    success = false,
+                    message = "Invalid user credentials"
+                });
+            }
 
-        [HttpPost]
-        public async Task<IActionResult> CreateRoom([FromBody] CreateRoomDto createRoomDto)
-        {
-            Guid roomId = createRoomDto.coachId == null 
-                ? await _createRoom.ExecuteAsync(createRoomDto.candidateId) 
-                : await _createRoom.ExecuteAsync(createRoomDto.candidateId, createRoomDto.coachId, DateTime.Now.AddDays(1));
+            var result = await _getRoomHistory.ExecuteWithPaginationAsync(role, userId, request);
 
             return Ok(new
             {
                 success = true,
                 message = "Success",
+                data = result.Items
+            });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CreateRoom([FromBody] CreateInterviewRoomDto createRoomDto)
+        {
+            Guid roomId = createRoomDto.CoachId == null 
+                ? await _createRoom.ExecuteAsync(createRoomDto.CandidateId) 
+                : await _createRoom.ExecuteAsync(
+                    createRoomDto.CandidateId, 
+                    createRoomDto.CoachId.Value, 
+                    createRoomDto.ScheduledTime ?? DateTime.UtcNow.AddDays(1));
+
+            return Ok(new
+            {
+                success = true,
+                message = "Interview room created successfully",
                 data = new
                 {
                     roomId = roomId
                 }
             });
-        }
-
-        public class CreateRoomDto
-        {
-            public Guid candidateId { get; set; }
-            public Guid coachId { get; set; }
         }
     }
 }

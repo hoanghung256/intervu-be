@@ -23,6 +23,70 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             return await _context.InterviewRooms.ToListAsync();
         }
 
+        public async Task<IEnumerable<(InterviewRoom Room, string? CandidateName, string? CoachName)>> GetListWithNamesByCandidateIdAsync(Guid candidateId)
+        {
+            var rooms = await _context.InterviewRooms
+                .Include(r => r.CurrentAvailability)
+                .Where(r => r.CandidateId == candidateId)
+                .ToListAsync();
+
+            var result = new List<(InterviewRoom, string?, string?)>();
+            
+            foreach (var room in rooms)
+            {
+                string? candidateName = null;
+                string? coachName = null;
+
+                if (room.CandidateId.HasValue)
+                {
+                    var candidateUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == room.CandidateId.Value);
+                    candidateName = candidateUser?.FullName;
+                }
+
+                if (room.CoachId.HasValue)
+                {
+                    var coachUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == room.CoachId.Value);
+                    coachName = coachUser?.FullName;
+                }
+
+                result.Add((room, candidateName, coachName));
+            }
+
+            return result;
+        }
+
+        public async Task<IEnumerable<(InterviewRoom Room, string? CandidateName, string? CoachName)>> GetListWithNamesByCoachIdAsync(Guid coachId)
+        {
+            var rooms = await _context.InterviewRooms
+                .Include(r => r.CurrentAvailability)
+                .Where(r => r.CoachId == coachId)
+                .ToListAsync();
+
+            var result = new List<(InterviewRoom, string?, string?)>();
+            
+            foreach (var room in rooms)
+            {
+                string? candidateName = null;
+                string? coachName = null;
+
+                if (room.CandidateId.HasValue)
+                {
+                    var candidateUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == room.CandidateId.Value);
+                    candidateName = candidateUser?.FullName;
+                }
+
+                if (room.CoachId.HasValue)
+                {
+                    var coachUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == room.CoachId.Value);
+                    coachName = coachUser?.FullName;
+                }
+
+                result.Add((room, candidateName, coachName));
+            }
+
+            return result;
+        }
+
         public async Task<IEnumerable<InterviewRoom>> GetConflictingRoomsAsync(Guid userId, DateTime startTime, DateTime endTime)
         {
             return await _context.InterviewRooms

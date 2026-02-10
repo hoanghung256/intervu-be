@@ -43,5 +43,15 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
         {
             throw new NotImplementedException();
         }
+
+        public Task<IEnumerable<(InterviewRoom Room, string? CandidateName, string? CoachName)>> GetListWithNamesByCandidateIdAsync(Guid candidateId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<IEnumerable<(InterviewRoom Room, string? CandidateName, string? CoachName)>> GetListWithNamesByCoachIdAsync(Guid coachId)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
