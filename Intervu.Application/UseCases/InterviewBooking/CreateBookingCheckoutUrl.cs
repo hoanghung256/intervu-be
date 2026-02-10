@@ -54,14 +54,17 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 var coach = await coachRepo.GetProfileByIdAsync(coachId) ?? throw new NotFoundException("Interviewer not found");
 
                 int paymentAmount = 0;
+                int duration = 0;
 
                 if (availability.WillInterviewWithGeneralSkill())
                 {
                     Domain.Entities.InterviewType interviewType = await interviewTypeRepo.GetByIdAsync((Guid) availability.TypeId) ?? throw new NotFoundException("Interview type not found");
                     paymentAmount = interviewType.BasePrice;
+                    duration = interviewType.DurationMinutes;
                 } else
                 {
                     paymentAmount = 2000;
+                    duration = (int)(availability.EndTime - availability.StartTime).TotalMinutes;
                 }
 
                 // Create payment and payout transactions with status 'Created'
@@ -97,7 +100,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     t2.Status = TransactionStatus.Paid;
 
                     _jobService.Enqueue<ICreateInterviewRoom>(
-                        uc => uc.ExecuteAsync(candidateId, coachId, availability.Id, availability.StartTime)
+                        uc => uc.ExecuteAsync(candidateId, coachId, availability.Id, availability.StartTime, t.Id, duration)
                     );
                 } 
                 else

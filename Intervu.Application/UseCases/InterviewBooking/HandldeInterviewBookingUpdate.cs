@@ -48,9 +48,11 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 availability.Status = CoachAvailabilityStatus.Booked;
                 transaction.Status = TransactionStatus.Paid;
 
+                int durationMinutes = (int)(availability.EndTime - availability.StartTime).TotalMinutes;
+
                 // TODO: Create Interview Room include avai Id (for reschedule purpose)
                 _backgroundService.Enqueue<ICreateInterviewRoom>(
-                    uc => uc.ExecuteAsync(transaction.UserId, availability.CoachId, availability.Id, availability.StartTime)
+                    uc => uc.ExecuteAsync(transaction.UserId, availability.CoachId, availability.Id, availability.StartTime, transaction.Id, durationMinutes)
                 );
 
                 // TODO: Notify candidate and coach
