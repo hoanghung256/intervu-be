@@ -37,7 +37,7 @@ namespace Intervu.Domain.Entities
 
         public bool WillInterviewWithGeneralSkill()
         {
-            return Focus == InterviewFocus.General_Skills;
+            return Focus == InterviewFocus.GeneralSkills;
         }
     }
 }

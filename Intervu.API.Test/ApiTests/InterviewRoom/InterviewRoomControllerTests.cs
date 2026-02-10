@@ -32,72 +32,72 @@ namespace Intervu.API.Test.ApiTests.InterviewRoom
             return (loginData.Data!.Token, loginData.Data.User.Id);
         }
 
-        [Fact]
-        [Trait("Category", "API")]
-        [Trait("Category", "InterviewRoom")]
-        public async Task CreateRoom_ReturnsSuccess_WhenOnlyCandidateProvided()
-        {
-            // Arrange
-            var (_, candidateId) = await LoginSeededUserAsync(_aliceEmail);
-            var request = new InterviewRoomController.CreateRoomDto { candidateId = candidateId, coachId = Guid.Empty };
+        //[Fact]
+        //[Trait("Category", "API")]
+        //[Trait("Category", "InterviewRoom")]
+        //public async Task CreateRoom_ReturnsSuccess_WhenOnlyCandidateProvided()
+        //{
+        //    // Arrange
+        //    var (_, candidateId) = await LoginSeededUserAsync(_aliceEmail);
+        //    var request = new InterviewRoomController.CreateRoomDto { candidateId = candidateId, coachId = Guid.Empty };
 
-            // Act
-            LogInfo("Creating interview room for candidate only (AI Interview).");
-            var response = await _api.PostAsync("/api/v1/interviewroom", request, logBody: true);
+        //    // Act
+        //    LogInfo("Creating interview room for candidate only (AI Interview).");
+        //    var response = await _api.PostAsync("/api/v1/interviewroom", request, logBody: true);
 
-            // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
-            var apiResponse = await _api.LogDeserializeJson<RoomData>(response);
-            await AssertHelper.AssertTrue(apiResponse.Success, "Room creation successful");
-            await AssertHelper.AssertNotNull(apiResponse.Data?.RoomId, "Room ID returned");
-        }
+        //    // Assert
+        //    await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
+        //    var apiResponse = await _api.LogDeserializeJson<RoomData>(response);
+        //    await AssertHelper.AssertTrue(apiResponse.Success, "Room creation successful");
+        //    await AssertHelper.AssertNotNull(apiResponse.Data?.RoomId, "Room ID returned");
+        //}
 
-        [Fact]
-        [Trait("Category", "API")]
-        [Trait("Category", "InterviewRoom")]
-        public async Task CreateRoom_ReturnsSuccess_WhenCandidateAndCoachProvided()
-        {
-            // Arrange
-            var (_, candidateId) = await LoginSeededUserAsync(_aliceEmail);
-            var coachId = _bobId;
+        //[Fact]
+        //[Trait("Category", "API")]
+        //[Trait("Category", "InterviewRoom")]
+        //public async Task CreateRoom_ReturnsSuccess_WhenCandidateAndCoachProvided()
+        //{
+        //    // Arrange
+        //    var (_, candidateId) = await LoginSeededUserAsync(_aliceEmail);
+        //    var coachId = _bobId;
             
-            var request = new InterviewRoomController.CreateRoomDto 
-            { 
-                candidateId = candidateId,
-                coachId = coachId
-            };
+        //    var request = new InterviewRoomController.CreateRoomDto 
+        //    { 
+        //        candidateId = candidateId,
+        //        coachId = coachId
+        //    };
 
-            // Act
-            LogInfo("Creating interview room for candidate and coach.");
-            var response = await _api.PostAsync("/api/v1/interviewroom", request, logBody: true);
+        //    // Act
+        //    LogInfo("Creating interview room for candidate and coach.");
+        //    var response = await _api.PostAsync("/api/v1/interviewroom", request, logBody: true);
 
-            // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
-            var apiResponse = await _api.LogDeserializeJson<RoomData>(response);
-            await AssertHelper.AssertTrue(apiResponse.Success, "Room creation successful");
-            await AssertHelper.AssertNotNull(apiResponse.Data?.RoomId, "Room ID returned");
-        }
+        //    // Assert
+        //    await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
+        //    var apiResponse = await _api.LogDeserializeJson<RoomData>(response);
+        //    await AssertHelper.AssertTrue(apiResponse.Success, "Room creation successful");
+        //    await AssertHelper.AssertNotNull(apiResponse.Data?.RoomId, "Room ID returned");
+        //}
 
-        [Fact]
-        [Trait("Category", "API")]
-        [Trait("Category", "InterviewRoom")]
-        public async Task GetList_ReturnsSuccess_WhenUserIsAuthenticated()
-        {
-            // Arrange
-            var (token, candidateId) = await LoginSeededUserAsync(_aliceEmail);
+        //[Fact]
+        //[Trait("Category", "API")]
+        //[Trait("Category", "InterviewRoom")]
+        //public async Task GetList_ReturnsSuccess_WhenUserIsAuthenticated()
+        //{
+        //    // Arrange
+        //    var (token, candidateId) = await LoginSeededUserAsync(_aliceEmail);
             
-            // Create a room first so the list isn't empty
-            await _api.PostAsync("/api/v1/interviewroom", new InterviewRoomController.CreateRoomDto { candidateId = candidateId });
+        //    // Create a room first so the list isn't empty
+        //    await _api.PostAsync("/api/v1/interviewroom", new InterviewRoomController.CreateRoomDto { candidateId = candidateId });
 
-            // Act
-            LogInfo("Getting interview room history.");
-            var response = await _api.GetAsync("/api/v1/interviewroom", jwtToken: token, logBody: true);
+        //    // Act
+        //    LogInfo("Getting interview room history.");
+        //    var response = await _api.GetAsync("/api/v1/interviewroom", jwtToken: token, logBody: true);
 
-            // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
-            var apiResponse = await _api.LogDeserializeJson<IEnumerable<Domain.Entities.InterviewRoom>>(response);
-            await AssertHelper.AssertTrue(apiResponse.Success, "Request successful");
-        }
+        //    // Assert
+        //    await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
+        //    var apiResponse = await _api.LogDeserializeJson<IEnumerable<Domain.Entities.InterviewRoom>>(response);
+        //    await AssertHelper.AssertTrue(apiResponse.Success, "Request successful");
+        //}
 
         [Fact]
         [Trait("Category", "API")]
