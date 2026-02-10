@@ -50,7 +50,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
 
                 // TODO: Create Interview Room include avai Id (for reschedule purpose)
                 _backgroundService.Enqueue<ICreateInterviewRoom>(
-                    uc => uc.ExecuteAsync(transaction.UserId, availability.CoachId, availability)
+                    uc => uc.ExecuteAsync(transaction.UserId, availability.CoachId, availability.Id, availability.StartTime)
                 );
 
                 // TODO: Notify candidate and coach

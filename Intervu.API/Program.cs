@@ -16,6 +16,7 @@ using Intervu.API.Utils.Constant;
 using Intervu.API.Utils;
 using Intervu.API.Middlewares;
 using Hangfire;
+using Newtonsoft.Json;
 
 namespace Intervu.API
 {
@@ -47,7 +48,7 @@ namespace Intervu.API
                 options.Conventions.Add(new LowercaseControllerRouteConvention());
             }).AddNewtonsoftJson(options =>
             {
-                options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+                options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
             });
 
             // --- SWAGGER CONFIGURATION ---
