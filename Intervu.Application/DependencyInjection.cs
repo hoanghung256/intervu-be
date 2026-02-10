@@ -85,10 +85,15 @@ namespace Intervu.Application
             // ----- Admin ----
             services.AddScoped<IGetDashboardStats, AdminUseCases.GetDashboardStats>();
             services.AddScoped<IGetAllUsersForAdmin, AdminUseCases.GetAllUsers>();
+            services.AddScoped<IFilterUsersForAdmin, AdminUseCases.FilterUsersForAdmin>();
             services.AddScoped<IGetAllCompaniesForAdmin, AdminUseCases.GetAllCompanies>();
             services.AddScoped<IGetAllPayments, AdminUseCases.GetAllPayments>();
             services.AddScoped<IGetAllFeedbacks, AdminUseCases.GetAllFeedbacks>();
             services.AddScoped<IGetAllCoachForAdmin, AdminUseCases.GetAllCoachForAdmin>();
+            services.AddScoped<ICreateUserForAdmin, AdminUseCases.CreateUserForAdmin>();
+            services.AddScoped<IGetUserByIdForAdmin, AdminUseCases.GetUserByIdForAdmin>();
+            services.AddScoped<IUpdateUserForAdmin, AdminUseCases.UpdateUserForAdmin>();
+            services.AddScoped<IDeleteUserForAdmin, AdminUseCases.DeleteUserForAdmin>();
             // ----- Feedback ----
             services.AddScoped<IGetFeedbacks, GetFeedbacks>();
             services.AddScoped<ICreateFeedback, CreateFeedback>();

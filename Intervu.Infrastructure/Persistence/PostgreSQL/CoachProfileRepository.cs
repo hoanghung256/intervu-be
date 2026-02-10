@@ -35,7 +35,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
         public void DeleteCoachProfile(Guid id)
         {
-            throw new NotImplementedException();
+            var profile = _context.CoachProfiles.Find(id);
+            if (profile != null)
+            {
+                _context.CoachProfiles.Remove(profile);
+            }
         }
 
         public async Task<CoachProfile?> GetProfileBySlugAsync(string slug)
