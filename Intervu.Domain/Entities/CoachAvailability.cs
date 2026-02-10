@@ -1,5 +1,6 @@
 using Intervu.Domain.Abstractions.Entity;
 using Intervu.Domain.Entities.Constants;
+using System.Text.Json.Serialization;
 
 namespace Intervu.Domain.Entities
 {

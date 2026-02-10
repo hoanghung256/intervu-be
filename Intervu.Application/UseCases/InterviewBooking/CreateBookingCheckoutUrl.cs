@@ -97,7 +97,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     t2.Status = TransactionStatus.Paid;
 
                     _jobService.Enqueue<ICreateInterviewRoom>(
-                        uc => uc.ExecuteAsync(candidateId, coachId, availability)
+                        uc => uc.ExecuteAsync(candidateId, coachId, availability.Id, availability.StartTime)
                     );
                 } 
                 else

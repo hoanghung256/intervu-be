@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using PayOS.Models.Webhooks;
 using System.Security.Claims;
 using Intervu.Application.DTOs.InterviewBooking;
+using Intervu.Domain.Entities.Constants;
 
 namespace Intervu.API.Controllers.v1.Payment
 {
@@ -82,7 +83,7 @@ namespace Intervu.API.Controllers.v1.Payment
         [HttpGet("{orderCode}")]
         public async Task<IActionResult> GetTransaction([FromRoute] int orderCode)
         {
-            InterviewBookingTransaction? t = await _getInterviewBooking.GetByOrderCode(orderCode);
+            InterviewBookingTransaction? t = await _getInterviewBooking.Get(orderCode, TransactionType.Payment);
             return Ok(new
             {
                 success = true,
