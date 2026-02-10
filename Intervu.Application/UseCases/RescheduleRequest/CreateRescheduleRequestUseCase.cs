@@ -165,7 +165,7 @@ namespace Intervu.Application.UseCases.RescheduleRequest
             {
                 Id = Guid.NewGuid(),
                 InterviewRoomId = room.Id,
-                CurrentAvailabilityId = room.CurrentAvailabilityId,
+                CurrentAvailabilityId = room.CurrentAvailabilityId, // Safe because validated earlier
                 ProposedAvailabilityId = proposedAvailability.Id,
                 RequestedBy = requester.Id,
                 Reason = reason,

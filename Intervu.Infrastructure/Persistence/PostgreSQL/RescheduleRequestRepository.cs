@@ -61,8 +61,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Include(r => r.InterviewRoom)
                 .Where(r => r.InterviewRoom != null && 
                     (r.InterviewRoom.CoachId == responderId || r.InterviewRoom.CandidateId == responderId) &&
-                    r.RequestedBy != responderId &&
-                    r.Status == RescheduleRequestStatus.Pending)
+                    r.RequestedBy != responderId)
                 .ToListAsync();
             return requests;
         }
@@ -74,13 +73,23 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                     r.Status == RescheduleRequestStatus.Pending);
         }
 
-        public async Task<IEnumerable<InterviewRescheduleRequest>> GetPendingRequestsByUserIdAsync(Guid userId)
+        public async Task<IEnumerable<InterviewRescheduleRequest>> GetRescheduleRequestsByUserIdAsync(Guid userId)
         {
+            // Get all requests where:
+            // 1. User is the requester (RequestedBy == userId), OR
+            // 2. User is the intended responder (they are Coach or Candidate of the room, but NOT the requester)
             var requests = await _context.InterviewRescheduleRequests
                 .Include(r => r.CurrentAvailability)
                 .Include(r => r.ProposedAvailability)
                 .Include(r => r.Requester)
-                .Where(r => r.RequestedBy == userId || r.RespondedBy == userId)
+                .Include(r => r.Responder)
+                .Include(r => r.InterviewRoom)
+                .Where(r => 
+                    // User sent the request
+                    r.RequestedBy == userId || 
+                    // User is the coach/candidate of the room (intended responder) but not the requester
+                    (r.InterviewRoom != null && (r.InterviewRoom.CoachId == userId || r.InterviewRoom.CandidateId == userId)))
+                .OrderByDescending(r => r.ExpiresAt)
                 .ToListAsync();
             return requests;
         }

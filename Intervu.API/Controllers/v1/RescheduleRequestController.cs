@@ -135,7 +135,7 @@ namespace Intervu.API.Controllers.v1
                 });
             }
 
-            var requests = await _rescheduleRequestRepository.GetPendingRequestsByUserIdAsync(userId);
+            var requests = await _rescheduleRequestRepository.GetRescheduleRequestsByUserIdAsync(userId);
             
             return Ok(new
             {
@@ -145,6 +145,7 @@ namespace Intervu.API.Controllers.v1
             });
         }
 
+        // Unused endpoint
         [Authorize]
         [HttpGet("pending-responses")]
         public async Task<IActionResult> GetPendingResponses()
