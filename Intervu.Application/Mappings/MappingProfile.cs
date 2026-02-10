@@ -55,6 +55,7 @@ namespace Intervu.Application.Mappings
 
             // Admin mappings
             CreateMap<User, DTOs.Admin.UserDto>();
+            CreateMap<User, DTOs.Admin.AdminUserResponseDto>();
             CreateMap<Company, DTOs.Admin.CompanyDto>();
             //CreateMap<Payment, PaymentDto>();
             CreateMap<Feedback, FeedbackDto>();

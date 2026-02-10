@@ -18,12 +18,10 @@ namespace Intervu.API.Controllers.v1
     public class InterviewRoomController : Controller
     {
         private readonly IGetRoomHistory _getRoomHistory;
-        private readonly ICreateInterviewRoom _createRoom;
 
-        public InterviewRoomController(IGetRoomHistory getRoomHistory, ICreateInterviewRoom createRoom)
+        public InterviewRoomController(IGetRoomHistory getRoomHistory)
         {
             _getRoomHistory = getRoomHistory;
-            _createRoom = createRoom;
         }
 
         /// <summary>
@@ -33,8 +31,8 @@ namespace Intervu.API.Controllers.v1
         [HttpGet]
         public async Task<IActionResult> GetList([FromQuery] GetInterviewRoomsRequestDto request)
         {
-            bool isGetUserIdSuccess = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
-            bool isGetRoleSuccess = Enum.TryParse<UserRole>(User.FindFirstValue(ClaimTypes.Role), out UserRole role);
+            _ = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
+            _ = Enum.TryParse(User.FindFirstValue(ClaimTypes.Role), out UserRole role);
 
             if (!isGetUserIdSuccess || !isGetRoleSuccess)
             {

@@ -199,8 +199,6 @@ namespace Intervu.API
                 app.Environment.EnvironmentName);
             Console.WriteLine("IsDevelopment=" + app.Environment.IsDevelopment());
 
-            app.UseMiddleware<ExceptionHandlingMiddleware>();
-
             // --- HTTP REQUEST PIPELINE ---
             if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
             {
@@ -231,6 +229,8 @@ namespace Intervu.API
 
             if (!app.Environment.IsEnvironment("Testing"))
             {
+                app.UseMiddleware<ExceptionHandlingMiddleware>();
+
                 app.UseHttpsRedirection();
 
                 app.Use(async (context, next) => {

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Intervu.Domain.Entities;
+using Intervu.Domain.Entities.Constants;
 
 namespace Intervu.Domain.Repositories
 {
@@ -14,6 +15,7 @@ namespace Intervu.Domain.Repositories
         Task<User?> GetByEmailAndPasswordAsync(string email, string password);
         Task<bool> EmailExistsAsync(string email);
         Task<(IReadOnlyList<User> Items, int TotalCount)> GetPagedUsersAsync(int page, int pageSize);
+        Task<(IReadOnlyList<User> Items, int TotalCount)> GetPagedUsersByFilterAsync(int page, int pageSize, UserRole? role, string? search);
         Task<int> GetTotalUsersCountAsync();
         Task<bool> UpdateProfileAsync(Guid userId, string fullName);
         Task<bool> UpdatePasswordAsync(Guid userId, string hashedPassword);

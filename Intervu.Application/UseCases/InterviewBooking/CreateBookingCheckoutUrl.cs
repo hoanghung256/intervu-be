@@ -1,6 +1,7 @@
 ﻿using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
+using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Intervu.Application.Utils;
 using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Intervu.Domain.Entities;
@@ -37,6 +38,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 var availabilityRepo = _unitOfWork.GetRepository<ICoachAvailabilitiesRepository>();
                 var transactionRepo = _unitOfWork.GetRepository<ITransactionRepository>();
                 var coachRepo = _unitOfWork.GetRepository<ICoachProfileRepository>();
+                var interviewTypeRepo = _unitOfWork.GetRepository<IInterviewTypeRepository>();
 
                 var availability = await availabilityRepo.GetByIdAsync(coachAvailabilityId) ?? throw new NotFoundException("Coach availability not found");
 
@@ -51,13 +53,24 @@ namespace Intervu.Application.UseCases.InterviewBooking
 
                 var coach = await coachRepo.GetProfileByIdAsync(coachId) ?? throw new NotFoundException("Interviewer not found");
 
+                int paymentAmount = 0;
+
+                if (availability.WillInterviewWithGeneralSkill())
+                {
+                    Domain.Entities.InterviewType interviewType = await interviewTypeRepo.GetByIdAsync((Guid) availability.TypeId) ?? throw new NotFoundException("Interview type not found");
+                    paymentAmount = interviewType.BasePrice;
+                } else
+                {
+                    paymentAmount = 2000;
+                }
+
                 // Create payment and payout transactions with status 'Created'
                 InterviewBookingTransaction t = new()
                 {
                     OrderCode = RandomGenerator.GenerateOrderCode(),
                     UserId = candidateId,
-                    Amount = coach.CurrentAmount ?? 0,
-                    Status = coach.CurrentAmount == 0 ? TransactionStatus.Paid : TransactionStatus.Created,
+                    Amount = paymentAmount,
+                    Status = TransactionStatus.Created,
                     Type = TransactionType.Payment,
                     CoachAvailabilityId = coachAvailabilityId,
                 };
@@ -66,8 +79,8 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 {
                     OrderCode = RandomGenerator.GenerateOrderCode(),
                     UserId = coachId,
-                    Amount = coach.CurrentAmount ?? 0,
-                    Status = coach.CurrentAmount == 0 ? TransactionStatus.Paid : TransactionStatus.Created,
+                    Amount = paymentAmount,
+                    Status = TransactionStatus.Created,
                     Type = TransactionType.Payout,
                     CoachAvailabilityId = coachAvailabilityId,
                 };
@@ -76,46 +89,46 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 await transactionRepo.AddAsync(t2);
 
                 // No payment required: finalize booking immediately
+                string? checkoutUrl = null;
                 if (t.Amount == 0)
                 {
                     availability.Status = CoachAvailabilityStatus.Booked;
                     t.Status = TransactionStatus.Paid;
                     t2.Status = TransactionStatus.Paid;
 
-                    await _unitOfWork.SaveChangesAsync();
-                    await _unitOfWork.CommitTransactionAsync();
-
-                    _jobService.Enqueue<Interfaces.UseCases.InterviewRoom.ICreateInterviewRoom>(
-                        uc => uc.ExecuteAsync(candidateId, coachId, availability.StartTime)
+                    _jobService.Enqueue<ICreateInterviewRoom>(
+                        uc => uc.ExecuteAsync(candidateId, coachId, availability)
                     );
-
-                    return null;
+                } 
+                else
+                {
+                    // Create PAYOS payment order and get checkout URL
+                    checkoutUrl = await _paymentService.CreatePaymentOrderAsync(
+                        t.OrderCode,
+                        t.Amount,
+                        $"Book interview",
+                        returnUrl,
+                        4
+                    );
                 }
-
-                // Create PAYOS payment order and get checkout URL
-                string? checkoutUrl = await _paymentService.CreatePaymentOrderAsync(
-                    t.OrderCode,
-                    t.Amount,
-                    $"Book interview",
-                    returnUrl,
-                    4
-                );
 
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
 
-                // Auto expire reserve after 5mins (schedule only after DB commit)
-                _jobService.Schedule<ICoachAvailabilitiesRepository>(
-                    repo => repo.ExpireReservedSlot(coachAvailabilityId, candidateId),
-                    TimeSpan.FromMinutes(5)
-                );
+                if (checkoutUrl != null)
+                {
+                    // Auto expire reserve after 5mins (schedule only after DB commit)
+                    _jobService.Schedule<ICoachAvailabilitiesRepository>(
+                        repo => repo.ExpireReservedSlot(coachAvailabilityId, candidateId),
+                        TimeSpan.FromMinutes(5)
+                    );
+                }
 
                 return checkoutUrl;
             }
-            catch (Exception ex)
+            catch
             {
                 await _unitOfWork.RollbackTransactionAsync();
-                _logger.LogError(ex, "Failed to checkout");
                 throw;
             }
         }

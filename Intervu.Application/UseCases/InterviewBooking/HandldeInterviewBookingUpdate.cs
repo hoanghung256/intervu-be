@@ -38,9 +38,9 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 var transactionRepo = _unitOfWork.GetRepository<ITransactionRepository>();
                 var availabilityRepo = _unitOfWork.GetRepository<ICoachAvailabilitiesRepository>();
 
-                InterviewBookingTransaction transaction = await transactionRepo.GetByOrderCode(orderCode) ?? throw new Exception("Booking transaction not found");
+                InterviewBookingTransaction transaction = await transactionRepo.GetByOrderCode(orderCode) ?? throw new NotFoundException("Booking transaction not found");
 
-                CoachAvailability availability = await availabilityRepo.GetByIdAsync(transaction.CoachAvailabilityId) ?? throw new Exception("Coach availability not found");
+                CoachAvailability availability = await availabilityRepo.GetByIdAsync(transaction.CoachAvailabilityId) ?? throw new NotFoundException("Coach availability not found");
 
                 if (!availability.IsUserAbleToBook(transaction.UserId))
                     throw new CoachAvailabilityNotAvailableException("Availability not able to book");
@@ -50,7 +50,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
 
                 // TODO: Create Interview Room include avai Id (for reschedule purpose)
                 _backgroundService.Enqueue<ICreateInterviewRoom>(
-                    uc => uc.ExecuteAsync(transaction.UserId, availability.CoachId, availability.StartTime)
+                    uc => uc.ExecuteAsync(transaction.UserId, availability.CoachId, availability)
                 );
 
                 // TODO: Notify candidate and coach
