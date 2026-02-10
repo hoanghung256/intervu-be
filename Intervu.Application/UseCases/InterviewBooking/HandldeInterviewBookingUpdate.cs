@@ -38,7 +38,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 var transactionRepo = _unitOfWork.GetRepository<ITransactionRepository>();
                 var availabilityRepo = _unitOfWork.GetRepository<ICoachAvailabilitiesRepository>();
 
-                InterviewBookingTransaction transaction = await transactionRepo.GetByOrderCode(orderCode) ?? throw new NotFoundException("Booking transaction not found");
+                InterviewBookingTransaction transaction = await transactionRepo.Get(orderCode, TransactionType.Payment) ?? throw new NotFoundException("Booking transaction not found");
 
                 CoachAvailability availability = await availabilityRepo.GetByIdAsync(transaction.CoachAvailabilityId) ?? throw new NotFoundException("Coach availability not found");
 

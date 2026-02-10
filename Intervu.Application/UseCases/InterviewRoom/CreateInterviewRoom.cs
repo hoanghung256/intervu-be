@@ -2,6 +2,7 @@
 using Intervu.Application.Services;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Repositories;
+using Microsoft.Extensions.Logging;
 
 namespace Intervu.Application.UseCases.InterviewRoom
 {
@@ -9,11 +10,13 @@ namespace Intervu.Application.UseCases.InterviewRoom
     {
         private readonly IInterviewRoomRepository _interviewRoomRepo;
         private readonly InterviewRoomCache _cache;
+        private readonly ILogger<CreateInterviewRoom> _logger;
 
-        public CreateInterviewRoom(IInterviewRoomRepository interviewRoomRepo, InterviewRoomCache cache)
+        public CreateInterviewRoom(IInterviewRoomRepository interviewRoomRepo, InterviewRoomCache cache, ILogger<CreateInterviewRoom> logger)
         {
             _interviewRoomRepo = interviewRoomRepo;
             _cache = cache;
+            _logger = logger;
         }
 
         public async Task<Guid> ExecuteAsync(Guid candidateId)
@@ -44,6 +47,8 @@ namespace Intervu.Application.UseCases.InterviewRoom
             };
             await _interviewRoomRepo.AddAsync(room);
             await _interviewRoomRepo.SaveChangesAsync();
+
+            _logger.LogInformation("Created room");
 
             //Notify SQL Changes
             _cache.Add(room);
