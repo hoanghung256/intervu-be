@@ -41,6 +41,8 @@ using Intervu.Application.UseCases.CandidateProfile;
 using Intervu.Application.Interfaces.UseCases.RescheduleRequest;
 using Intervu.Application.UseCases.RescheduleRequest;
 using Intervu.Application.UseCases.InterviewType;
+using Intervu.Domain.Abstractions.Policies.Interfaces;
+using Intervu.Domain.Abstractions.Policies;
 
 namespace Intervu.Application
 {
@@ -120,6 +122,7 @@ namespace Intervu.Application
             services.AddScoped<ICreateBookingCheckoutUrl, CreateBookingCheckoutUrl>();
             services.AddScoped<IHandldeInterviewBookingUpdate, HandldeInterviewBookingUpdate>();
             services.AddScoped<IGetInterviewBooking, GetInterviewBooking>();
+            services.AddScoped<ICancelInterview, CancelInterview>();
             services.AddScoped<IPayoutForCoachAfterInterview, PayoutForCoachAfterInterview>();
 
             // ----- Coach & Candidate Details ---
@@ -136,11 +139,19 @@ namespace Intervu.Application
             services.AddScoped<ICreateRescheduleRequestUseCase, CreateRescheduleRequestUseCase>();
             services.AddScoped<IRespondToRescheduleRequestUseCase, RespondToRescheduleRequestUseCase>();
             services.AddScoped<IExpireRescheduleRequestsUseCase, ExpireRescheduleRequestsUseCase>();
+
             // ----- InterviewType ----
             services.AddScoped<IGetInterviewType, GetInterviewType>();
             services.AddScoped<IUpdateInterviewType, UpdateInterviewType>();
             services.AddScoped<ICreateInterviewType, CreateInterviewType>();
             services.AddScoped<IDeleteInterviewType, DeleteInterviewType>();
+
+            return services;
+        }
+
+        public static IServiceCollection AddDomainBusinessRules(this IServiceCollection services)
+        {
+            services.AddScoped<IRefundPolicy, RefundPolicy>();
 
             return services;
         }

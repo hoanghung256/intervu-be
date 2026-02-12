@@ -89,6 +89,7 @@ namespace Intervu.API
             });
 
             // --- CUSTOM SERVICES ---
+            builder.Services.AddDomainBusinessRules();
             builder.Services.AddUseCases(builder.Configuration);
             builder.Services.AddPersistenceSqlServer(builder.Configuration, builder.Environment);
             builder.Services.AddInfrastructureExternalServices(builder.Configuration);

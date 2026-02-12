@@ -7,6 +7,8 @@ namespace Intervu.Domain.Repositories
     {
         Task<InterviewBookingTransaction?> GetByAvailabilityId(Guid id);
 
+        Task<InterviewBookingTransaction?> GetByAvailabilityId(Guid id, TransactionType type);
+
         Task<InterviewBookingTransaction?> Get(int orderCode, TransactionType type);
     }
 }

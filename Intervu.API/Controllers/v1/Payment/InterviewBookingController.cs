@@ -7,6 +7,7 @@ using PayOS.Models.Webhooks;
 using System.Security.Claims;
 using Intervu.Application.DTOs.InterviewBooking;
 using Intervu.Domain.Entities.Constants;
+using Intervu.API.Utils.Constant;
 
 namespace Intervu.API.Controllers.v1.Payment
 {
@@ -19,17 +20,20 @@ namespace Intervu.API.Controllers.v1.Payment
         private readonly ICreateBookingCheckoutUrl _createBookingCheckoutUrl;
         private readonly IHandldeInterviewBookingUpdate _handldeInterviewBookingUpdate;
         private readonly IGetInterviewBooking _getInterviewBooking;
+        private readonly ICancelInterview _cancelInterview;
 
         public InterviewBookingController(
             ILogger<InterviewBookingController> logger,
             ICreateBookingCheckoutUrl createBookingCheckoutUrl,
             IGetInterviewBooking getInterviewBooking,
-            IHandldeInterviewBookingUpdate handldeInterviewBookingUpdate)
+            IHandldeInterviewBookingUpdate handldeInterviewBookingUpdate,
+            ICancelInterview cancelInterview)
         {
             _logger = logger;
             _createBookingCheckoutUrl = createBookingCheckoutUrl;
             _handldeInterviewBookingUpdate = handldeInterviewBookingUpdate;
             _getInterviewBooking = getInterviewBooking;
+            _cancelInterview = cancelInterview;
         }
 
         [HttpPost]
@@ -66,21 +70,8 @@ namespace Intervu.API.Controllers.v1.Payment
             }
         }
 
-        //[HttpGet("register-webhook")]
-        //public async Task<IActionResult> RegisterAsync()
-        //{
-        //    try
-        //    {
-        //        await _paymentService.RegisterWebhooks();
-        //        return Ok("Registered");
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return BadRequest(ex.Message);
-        //    }
-        //}
-
         [HttpGet("{orderCode}")]
+
         public async Task<IActionResult> GetTransaction([FromRoute] int orderCode)
         {
             InterviewBookingTransaction? t = await _getInterviewBooking.Get(orderCode, TransactionType.Payment);
@@ -88,6 +79,26 @@ namespace Intervu.API.Controllers.v1.Payment
             {
                 success = true,
                 data = t
+            });
+        }
+
+        [HttpPost("cancel/{interviewRoomId}")]
+        [Authorize(Policy = AuthorizationPolicies.Candidate)]
+        public async Task<IActionResult> CancelInverview([FromRoute] Guid interviewRoomId)
+        {
+            int refundAmount = await _cancelInterview.ExecuteAsync(interviewRoomId);
+            var message = refundAmount > 0
+                ? $"Interview cancelled successfully. You will be refund {refundAmount} VND after 1 business day"
+                : "Interview cancelled successfully. No refund applied.";
+
+            return Ok(new
+            {
+                success = true,
+                data = new
+                {
+                    refundAmount
+                },
+                message
             });
         }
     }
