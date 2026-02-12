@@ -17,5 +17,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
         {
             return await _context.InterviewBookingTransaction.FirstOrDefaultAsync(t => t.CoachAvailabilityId == id);
         }
+
+        public async Task<InterviewBookingTransaction?> GetByAvailabilityId(Guid id, TransactionType type)
+        {
+            return await _context.InterviewBookingTransaction
+                .FirstOrDefaultAsync(t => t.CoachAvailabilityId == id && t.Type == type);
+        }
     }
 }

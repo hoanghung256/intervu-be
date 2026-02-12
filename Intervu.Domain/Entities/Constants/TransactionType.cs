@@ -9,6 +9,7 @@ namespace Intervu.Domain.Entities.Constants
     public enum TransactionType
     {
         Payment,
-        Payout
+        Payout,
+        Refund
     }
 }

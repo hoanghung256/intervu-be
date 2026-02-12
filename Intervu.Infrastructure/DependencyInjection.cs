@@ -87,20 +87,20 @@ namespace Intervu.Infrastructure
             if (string.IsNullOrWhiteSpace(firebaseConfigJson))
                 throw new ArgumentNullException(nameof(firebaseConfigJson), "Firebase credential JSON is missing.");
 
-            //GoogleCredential credential = GoogleCredential.FromFile(firebaseConfigJson);
+            GoogleCredential credential = GoogleCredential.FromFile(firebaseConfigJson);
 
-            //lock (_firebaseLock)
-            //{
-            //    if (FirebaseApp.DefaultInstance == null)
-            //    {
-            //        FirebaseApp.Create(new AppOptions
-            //        {
-            //            Credential = credential
-            //        });
-            //    }
-            //}
+            lock (_firebaseLock)
+            {
+                if (FirebaseApp.DefaultInstance == null)
+                {
+                    FirebaseApp.Create(new AppOptions
+                    {
+                        Credential = credential
+                    });
+                }
+            }
 
-            //services.AddSingleton(StorageClient.Create(credential));
+            services.AddSingleton(StorageClient.Create(credential));
 
             services.AddSingleton<string>(sp => bucketName);
 

@@ -17,14 +17,21 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
         {
         }
 
-        public Task<InterviewBookingTransaction?> Get(int orderCode, TransactionType type)
+        public async Task<InterviewBookingTransaction?> Get(int orderCode, TransactionType type)
         {
-            throw new NotImplementedException();
+            return await _context.InterviewBookingTransaction
+                .FirstOrDefaultAsync(t => t.OrderCode == orderCode && t.Type == type);
         }
 
         public async Task<InterviewBookingTransaction?> GetByAvailabilityId(Guid id)
         {
             return await _context.InterviewBookingTransaction.FirstOrDefaultAsync(t => t.CoachAvailabilityId == id);
+        }
+
+        public async Task<InterviewBookingTransaction?> GetByAvailabilityId(Guid id, TransactionType type)
+        {
+            return await _context.InterviewBookingTransaction
+                .FirstOrDefaultAsync(t => t.CoachAvailabilityId == id && t.Type == type);
         }
     }
 }
