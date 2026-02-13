@@ -193,7 +193,14 @@ namespace Intervu.API
             });
 
             // --- SIGNALR ---
-            builder.Services.AddSignalR();
+            builder.Services.AddSignalR(options =>
+            {
+                // Enable this to see the specific exception message on the frontend
+                options.EnableDetailedErrors = true;
+
+                // Changing the default behavior of injected services
+                options.DisableImplicitFromServicesParameters = true;
+            });
 
             var app = builder.Build();
             app.Logger.LogInformation(
