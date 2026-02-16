@@ -15,7 +15,6 @@ using Hangfire;
 using Intervu.Application.Utils;
 using Hangfire.PostgreSql;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
-using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
