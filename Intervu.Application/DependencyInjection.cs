@@ -29,6 +29,7 @@ using Intervu.Application.UseCases.Feedbacks;
 using Intervu.Application.Interfaces.UseCases.UserProfile;
 using Intervu.Application.UseCases.UserProfile;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
+using Intervu.Application.Interfaces.UseCases.InterviewType;
 using Intervu.Application.UseCases.InterviewBooking;
 using Intervu.Application.UseCases.InterviewRoom;
 using Intervu.Application.Utils;
@@ -37,6 +38,11 @@ using Intervu.Application.Interfaces.UseCases.PasswordReset;
 using Intervu.Application.UseCases.PasswordReset;
 using Intervu.Application.UseCases.Candidate;
 using Intervu.Application.UseCases.CandidateProfile;
+using Intervu.Application.Interfaces.UseCases.RescheduleRequest;
+using Intervu.Application.UseCases.RescheduleRequest;
+using Intervu.Application.UseCases.InterviewType;
+using Intervu.Domain.Abstractions.Policies.Interfaces;
+using Intervu.Domain.Abstractions.Policies;
 
 namespace Intervu.Application
 {
@@ -81,10 +87,15 @@ namespace Intervu.Application
             // ----- Admin ----
             services.AddScoped<IGetDashboardStats, AdminUseCases.GetDashboardStats>();
             services.AddScoped<IGetAllUsersForAdmin, AdminUseCases.GetAllUsers>();
+            services.AddScoped<IFilterUsersForAdmin, AdminUseCases.FilterUsersForAdmin>();
             services.AddScoped<IGetAllCompaniesForAdmin, AdminUseCases.GetAllCompanies>();
             services.AddScoped<IGetAllPayments, AdminUseCases.GetAllPayments>();
             services.AddScoped<IGetAllFeedbacks, AdminUseCases.GetAllFeedbacks>();
             services.AddScoped<IGetAllCoachForAdmin, AdminUseCases.GetAllCoachForAdmin>();
+            services.AddScoped<ICreateUserForAdmin, AdminUseCases.CreateUserForAdmin>();
+            services.AddScoped<IGetUserByIdForAdmin, AdminUseCases.GetUserByIdForAdmin>();
+            services.AddScoped<IUpdateUserForAdmin, AdminUseCases.UpdateUserForAdmin>();
+            services.AddScoped<IDeleteUserForAdmin, AdminUseCases.DeleteUserForAdmin>();
             // ----- Feedback ----
             services.AddScoped<IGetFeedbacks, GetFeedbacks>();
             services.AddScoped<ICreateFeedback, CreateFeedback>();
@@ -109,8 +120,9 @@ namespace Intervu.Application
 
             // ----- Interview Booking ---
             services.AddScoped<ICreateBookingCheckoutUrl, CreateBookingCheckoutUrl>();
-            services.AddScoped<IUpdateBookingStatus, UpdateBookingStatus>();
+            services.AddScoped<IHandldeInterviewBookingUpdate, HandldeInterviewBookingUpdate>();
             services.AddScoped<IGetInterviewBooking, GetInterviewBooking>();
+            services.AddScoped<ICancelInterview, CancelInterview>();
             services.AddScoped<IPayoutForCoachAfterInterview, PayoutForCoachAfterInterview>();
 
             // ----- Coach & Candidate Details ---
@@ -122,6 +134,24 @@ namespace Intervu.Application
             services.AddScoped<IUpdateCandidateProfile, UpdateCandidateProfile>();
             services.AddScoped<IViewCandidateProfile, ViewCandidateProfile>();
             services.AddScoped<IDeleteCandidateProfile, DeleteCandidateProfile>();
+
+            // ----- Reschedule Request ----
+            services.AddScoped<ICreateRescheduleRequestUseCase, CreateRescheduleRequestUseCase>();
+            services.AddScoped<IRespondToRescheduleRequestUseCase, RespondToRescheduleRequestUseCase>();
+            services.AddScoped<IExpireRescheduleRequestsUseCase, ExpireRescheduleRequestsUseCase>();
+
+            // ----- InterviewType ----
+            services.AddScoped<IGetInterviewType, GetInterviewType>();
+            services.AddScoped<IUpdateInterviewType, UpdateInterviewType>();
+            services.AddScoped<ICreateInterviewType, CreateInterviewType>();
+            services.AddScoped<IDeleteInterviewType, DeleteInterviewType>();
+
+            return services;
+        }
+
+        public static IServiceCollection AddDomainBusinessRules(this IServiceCollection services)
+        {
+            services.AddScoped<IRefundPolicy, RefundPolicy>();
 
             return services;
         }

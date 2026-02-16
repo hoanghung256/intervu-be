@@ -365,3 +365,9 @@ FodyWeavers.xsd
 
 # Ignore appsettings for development
 appsettings.Development.json
+appsettings.json
+appsettings.Production.json
+firebase.json
+
+# Ignore appsettings for testing
+appsettings.Testing.json

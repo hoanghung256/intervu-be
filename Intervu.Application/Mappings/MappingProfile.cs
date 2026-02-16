@@ -2,8 +2,9 @@
 using Intervu.Application.DTOs.Admin;
 using Intervu.Application.DTOs.Availability;
 using Intervu.Application.DTOs.Candidate;
-using Intervu.Application.DTOs.Company;
 using Intervu.Application.DTOs.Coach;
+using Intervu.Application.DTOs.Company;
+using Intervu.Application.DTOs.InterviewType;
 using Intervu.Application.DTOs.Skill;
 using Intervu.Application.DTOs.User;
 using Intervu.Domain.Entities;
@@ -54,18 +55,19 @@ namespace Intervu.Application.Mappings
 
             // Admin mappings
             CreateMap<User, DTOs.Admin.UserDto>();
+            CreateMap<User, DTOs.Admin.AdminUserResponseDto>();
             CreateMap<Company, DTOs.Admin.CompanyDto>();
             //CreateMap<Payment, PaymentDto>();
             CreateMap<Feedback, FeedbackDto>();
             // InterviewerAdminDto is manually mapped in use case to include User data
             // Availability mappings
             CreateMap<CoachAvailabilityCreateDto, CoachAvailability>()
-                .ForMember(dest => dest.IsBooked, opt => opt.MapFrom(src => false))
                 .ForMember(dest => dest.Id, opt => opt.Ignore());
 
             CreateMap<CoachAvailabilityUpdateDto, CoachAvailability>()
-                .ForMember(dest => dest.IsBooked, opt => opt.Ignore())
                 .ForMember(dest => dest.CoachId, opt => opt.Ignore());
+
+            CreateMap<InterviewType, InterviewTypeDto>().ReverseMap();
         }
     }
 }

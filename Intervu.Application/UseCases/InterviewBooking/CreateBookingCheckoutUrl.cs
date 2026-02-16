@@ -1,61 +1,139 @@
-﻿using Intervu.Application.Interfaces.ExternalServices;
+﻿using Intervu.Application.Exceptions;
+using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
+using Intervu.Application.Interfaces.UseCases.InterviewRoom;
+using Intervu.Application.Utils;
+using Intervu.Domain.Abstractions.Entity.Interfaces;
+using Intervu.Domain.Entities;
+using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
+using Microsoft.Extensions.Logging;
 
 namespace Intervu.Application.UseCases.InterviewBooking
 {
     internal class CreateBookingCheckoutUrl : ICreateBookingCheckoutUrl
     {
+        private readonly ILogger<CreateBookingCheckoutUrl> _logger;
         private readonly IPaymentService _paymentService;
-        private readonly ICoachProfileRepository _coachProfileRepository;
-        private readonly ITransactionRepository _transactionRepository;
+        private readonly IBackgroundService _jobService;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public CreateBookingCheckoutUrl(IPaymentService paymentService, ICoachProfileRepository coachProfileRepository, ITransactionRepository transactionRepository) 
+        public CreateBookingCheckoutUrl(
+            ILogger<CreateBookingCheckoutUrl> logger,
+            IPaymentService paymentService,
+            IBackgroundService jobService,
+            IUnitOfWork unitOfWork)
         {
+            _logger = logger;
             _paymentService = paymentService;
-            _coachProfileRepository = coachProfileRepository;
-            _transactionRepository = transactionRepository;
+            _jobService = jobService;
+            _unitOfWork = unitOfWork;
         }
 
-        public async Task<string> ExecuteAsync(Guid candidateId, Guid coachId, Guid coachAvailabilityId, string returnUrl)
+        public async Task<string?> ExecuteAsync(Guid candidateId, Guid coachId, Guid coachAvailabilityId, string returnUrl)
         {
-            var coach = await _coachProfileRepository.GetProfileByIdAsync(coachId);
-
-            if (coach == null)
+            await _unitOfWork.BeginTransactionAsync();
+            try
             {
-                throw new Exception("Interviewer not found");
+                var availabilityRepo = _unitOfWork.GetRepository<ICoachAvailabilitiesRepository>();
+                var transactionRepo = _unitOfWork.GetRepository<ITransactionRepository>();
+                var coachRepo = _unitOfWork.GetRepository<ICoachProfileRepository>();
+                var interviewTypeRepo = _unitOfWork.GetRepository<IInterviewTypeRepository>();
+
+                var availability = await availabilityRepo.GetByIdAsync(coachAvailabilityId) ?? throw new NotFoundException("Coach availability not found");
+
+                if (availability.CoachId != coachId) throw new Exception("Coach availability does not belong to the specified coach");
+
+                if (!availability.IsUserAbleToBook(candidateId))
+                    throw new CoachAvailabilityNotAvailableException("Availability not able to book");
+
+                // Reserve the slot for booking user
+                availability.Status = CoachAvailabilityStatus.Reserved;
+                availability.ReservingForUserId = candidateId;
+
+                var coach = await coachRepo.GetProfileByIdAsync(coachId) ?? throw new NotFoundException("Interviewer not found");
+
+                int paymentAmount = 0;
+                int duration = 0;
+
+                if (availability.WillInterviewWithGeneralSkill())
+                {
+                    Domain.Entities.InterviewType interviewType = await interviewTypeRepo.GetByIdAsync((Guid) availability.TypeId) ?? throw new NotFoundException("Interview type not found");
+                    paymentAmount = interviewType.BasePrice;
+                    duration = interviewType.DurationMinutes;
+                } else
+                {
+                    paymentAmount = 2000;
+                    duration = (int)(availability.EndTime - availability.StartTime).TotalMinutes;
+                }
+
+                // Create payment and payout transactions with status 'Created'
+                InterviewBookingTransaction t = new()
+                {
+                    OrderCode = RandomGenerator.GenerateOrderCode(),
+                    UserId = candidateId,
+                    Amount = paymentAmount,
+                    Status = TransactionStatus.Created,
+                    Type = TransactionType.Payment,
+                    CoachAvailabilityId = coachAvailabilityId,
+                };
+
+                InterviewBookingTransaction t2 = new()
+                {
+                    OrderCode = RandomGenerator.GenerateOrderCode(),
+                    UserId = coachId,
+                    Amount = paymentAmount,
+                    Status = TransactionStatus.Created,
+                    Type = TransactionType.Payout,
+                    CoachAvailabilityId = coachAvailabilityId,
+                };
+
+                await transactionRepo.AddAsync(t);
+                await transactionRepo.AddAsync(t2);
+
+                // No payment required: finalize booking immediately
+                string? checkoutUrl = null;
+                if (t.Amount == 0)
+                {
+                    availability.Status = CoachAvailabilityStatus.Booked;
+                    t.Status = TransactionStatus.Paid;
+                    t2.Status = TransactionStatus.Paid;
+
+                    _jobService.Enqueue<ICreateInterviewRoom>(
+                        uc => uc.ExecuteAsync(candidateId, coachId, availability.Id, availability.StartTime, t.Id, duration)
+                    );
+                } 
+                else
+                {
+                    // Create PAYOS payment order and get checkout URL
+                    checkoutUrl = await _paymentService.CreatePaymentOrderAsync(
+                        t.OrderCode,
+                        t.Amount,
+                        $"Book interview",
+                        returnUrl,
+                        4
+                    );
+                }
+
+                await _unitOfWork.SaveChangesAsync();
+                await _unitOfWork.CommitTransactionAsync();
+
+                if (checkoutUrl != null)
+                {
+                    // Auto expire reserve after 5mins (schedule only after DB commit)
+                    _jobService.Schedule<ICoachAvailabilitiesRepository>(
+                        repo => repo.ExpireReservedSlot(coachAvailabilityId, candidateId),
+                        TimeSpan.FromMinutes(5)
+                    );
+                }
+
+                return checkoutUrl;
             }
-
-            Domain.Entities.InterviewBookingTransaction t = new()
+            catch
             {
-                UserId = candidateId,
-                Amount = coach.CurrentAmount ?? 0,
-                Status = Domain.Entities.Constants.TransactionStatus.Created,
-                Type = Domain.Entities.Constants.TransactionType.Payment,
-                CoachAvailabilityId = coachAvailabilityId,
-            };
-
-            Domain.Entities.InterviewBookingTransaction t2 = new()
-            {
-                UserId = coachId,
-                Amount = coach.CurrentAmount ?? 0,
-                Status = Domain.Entities.Constants.TransactionStatus.Created,
-                Type = Domain.Entities.Constants.TransactionType.Payout,
-                CoachAvailabilityId = coachAvailabilityId,
-            };
-
-            await _transactionRepository.AddAsync(t);
-            await _transactionRepository.AddAsync(t2);
-            await _transactionRepository.SaveChangesAsync();
-
-            string checkoutUrl = await _paymentService.CreatePaymentOrderAsync(
-                null,
-                t.Amount,
-                $"Book interview",
-                returnUrl
-            );
-
-            return checkoutUrl;
+                await _unitOfWork.RollbackTransactionAsync();
+                throw;
+            }
         }
     }
 }

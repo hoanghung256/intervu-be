@@ -1,5 +1,6 @@
 ﻿using Intervu.Application.Interfaces.UseCases.InterviewBooking;
 using Intervu.Domain.Entities;
+using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 
 namespace Intervu.Application.UseCases.InterviewBooking
@@ -13,9 +14,14 @@ namespace Intervu.Application.UseCases.InterviewBooking
             _transactionRepository = transactionRepository;
         }
 
-        public async Task<InterviewBookingTransaction?> ExecuteAsync(Guid interviewBookingId)
+        public async Task<InterviewBookingTransaction?> GetById(Guid interviewBookingId)
         {
             return await _transactionRepository.GetByIdAsync(interviewBookingId);   
+        }
+
+        public async Task<InterviewBookingTransaction?> Get(int orderCode, TransactionType type)
+        {
+            return await _transactionRepository.Get(orderCode, type);
         }
     }
 }

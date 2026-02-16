@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Intervu.Application.Interfaces.UseCases.Availability;
+using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 
 namespace Intervu.Application.UseCases.Availability
@@ -17,6 +18,14 @@ namespace Intervu.Application.UseCases.Availability
         {
             if (availabilityId == Guid.Empty)
                 throw new ArgumentException("Availability ID must be a valid GUID");
+
+            var availability = await _repo.GetByIdAsync(availabilityId);
+            if (availability == null)
+                throw new InvalidOperationException("Availability not found");
+
+            if (availability.Status != CoachAvailabilityStatus.Available)
+                throw new ArgumentException("You can only delete available slots.");
+
 
             var deleted = await _repo.DeleteCoachAvailabilityAsync(availabilityId);
             if (!deleted)

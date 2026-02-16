@@ -1,4 +1,5 @@
 ﻿using Intervu.Domain.Entities;
+using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Microsoft.EntityFrameworkCore;
@@ -75,14 +76,50 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             return true;
         }
 
-        public Task<(IReadOnlyList<User> Items, int TotalCount)> GetPagedUsersAsync(int page, int pageSize)
+        public async Task<(IReadOnlyList<User> Items, int TotalCount)> GetPagedUsersAsync(int page, int pageSize)
         {
-            throw new NotImplementedException();
+            var query = _context.Users.AsQueryable();
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (items, totalCount);
+        }
+
+        public async Task<(IReadOnlyList<User> Items, int TotalCount)> GetPagedUsersByFilterAsync(int page, int pageSize, UserRole? role, string? search)
+        {
+            var query = _context.Users.AsQueryable();
+
+            if (role.HasValue)
+            {
+                query = query.Where(u => u.Role == role.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var normalized = search.Trim().ToLower();
+                query = query.Where(u =>
+                    (u.FullName != null && u.FullName.ToLower().Contains(normalized)) ||
+                    (u.Email != null && u.Email.ToLower().Contains(normalized)));
+            }
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (items, totalCount);
         }
 
         public Task<int> GetTotalUsersCountAsync()
         {
-            throw new NotImplementedException();
+            return _context.Users.CountAsync();
         }
     }
 }

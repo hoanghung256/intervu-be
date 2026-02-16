@@ -23,12 +23,12 @@ namespace Intervu.API.Controllers
             _paymentService = paymentService;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetCheckOutUrl()
-        {
-            string checkoutUrl = await _paymentService.CreatePaymentOrderAsync(null, 2000, "hello", "hellooo");
-            return Ok(new { checkoutUrl });
-        }
+        //[HttpGet]
+        //public async Task<IActionResult> GetCheckOutUrl()
+        //{
+        //    string checkoutUrl = await _paymentService.CreatePaymentOrderAsync(1, 2000, "hello", "hellooo");
+        //    return Ok(new { checkoutUrl });
+        //}
 
         [HttpPost]
         public async Task<IActionResult> CreateSpendOrder()
