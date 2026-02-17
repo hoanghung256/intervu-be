@@ -18,6 +18,12 @@ jobs:
           ${{ secrets.APP_SETTINGS_JSON }}
           EOF
 
+      - name: Create firebase.json
+        run: |
+          cat <<EOF > Intervu.API/firebase.json
+          ${{ secrets.FIREBASE_JSON }}
+          EOF
+
       - name: Build Docker image
         run: docker build -t intervu-be:latest .
 
