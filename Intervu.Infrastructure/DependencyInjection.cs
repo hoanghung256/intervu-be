@@ -3,6 +3,7 @@ using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Storage.V1;
 using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.BackgroundJobs;
 using Intervu.Application.Interfaces.ExternalServices.Email;
 using Intervu.Domain.Repositories;
 using Intervu.Infrastructure.ExternalServices;
@@ -10,6 +11,7 @@ using Intervu.Infrastructure.ExternalServices.EmailServices;
 using Intervu.Infrastructure.ExternalServices.FirebaseStorageService;
 using Intervu.Infrastructure.ExternalServices.PayOSPaymentService;
 using Intervu.Infrastructure.Persistence.PostgreSQL;
+using Intervu.Infrastructure.BackgroundJobs;
 using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Hangfire;
 using Intervu.Application.Utils;
@@ -162,7 +164,11 @@ namespace Intervu.Infrastructure
             });
 
             services.AddHostedService<InterviewRoomCacheLoader>();
-            services.AddHostedService<InterviewMonitorService>();
+            
+            // --- HANGFIRE JOBS ---
+            services.AddScoped<HangfireJobScheduler>();
+            services.AddScoped<InterviewMonitorJob>();
+            services.AddScoped<IRecurringJob>(sp => sp.GetRequiredService<InterviewMonitorJob>());
 
 
             // HANGFIRE
