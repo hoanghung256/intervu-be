@@ -4,6 +4,7 @@ using Intervu.Application.DTOs.Availability;
 using Intervu.Application.DTOs.Candidate;
 using Intervu.Application.DTOs.Coach;
 using Intervu.Application.DTOs.Company;
+using Intervu.Application.DTOs.InterviewExperience;
 using Intervu.Application.DTOs.InterviewType;
 using Intervu.Application.DTOs.Skill;
 using Intervu.Application.DTOs.User;
@@ -28,8 +29,8 @@ namespace Intervu.Application.Mappings
             // Register mappings
             CreateMap<RegisterRequest, User>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
-                .ForMember(dest => dest.Password, opt => opt.Ignore()) // Will be hashed separately
-                .ForMember(dest => dest.Role, opt => opt.Ignore()) // Will be parsed from string
+                .ForMember(dest => dest.Password, opt => opt.Ignore())
+                .ForMember(dest => dest.Role, opt => opt.Ignore())
                 .ForMember(dest => dest.ProfilePicture, opt => opt.Ignore())
                 .ForMember(dest => dest.Status, opt => opt.Ignore());
 
@@ -57,9 +58,8 @@ namespace Intervu.Application.Mappings
             CreateMap<User, DTOs.Admin.UserDto>();
             CreateMap<User, DTOs.Admin.AdminUserResponseDto>();
             CreateMap<Company, DTOs.Admin.CompanyDto>();
-            //CreateMap<Payment, PaymentDto>();
             CreateMap<Feedback, FeedbackDto>();
-            // InterviewerAdminDto is manually mapped in use case to include User data
+
             // Availability mappings
             CreateMap<CoachAvailabilityCreateDto, CoachAvailability>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore());
@@ -68,6 +68,34 @@ namespace Intervu.Application.Mappings
                 .ForMember(dest => dest.CoachId, opt => opt.Ignore());
 
             CreateMap<InterviewType, InterviewTypeDto>().ReverseMap();
+
+            // ── InterviewExperience mappings ─────────────────────────────────────
+
+            // Question → QuestionDto
+            CreateMap<Question, QuestionDto>();
+
+            // InterviewExperience → summary DTO
+            CreateMap<Domain.Entities.InterviewExperience, InterviewExperienceSummaryDto>()
+                .ForMember(dest => dest.ContributorId,
+                    opt => opt.MapFrom(src => src.CreatedBy))
+                .ForMember(dest => dest.QuestionCount,
+                    opt => opt.MapFrom(src => src.Questions != null ? src.Questions.Count : 0));
+
+            // InterviewExperience → detail DTO (includes questions)
+            CreateMap<Domain.Entities.InterviewExperience, InterviewExperienceDetailDto>()
+                .IncludeBase<Domain.Entities.InterviewExperience, InterviewExperienceSummaryDto>()
+                .ForMember(dest => dest.Questions,
+                    opt => opt.MapFrom(src => src.Questions));
+
+            // Create request → entity (shallow; questions are added manually in use case)
+            CreateMap<CreateInterviewExperienceRequest, Domain.Entities.InterviewExperience>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.User, opt => opt.Ignore())
+                .ForMember(dest => dest.Questions, opt => opt.Ignore());
         }
     }
 }

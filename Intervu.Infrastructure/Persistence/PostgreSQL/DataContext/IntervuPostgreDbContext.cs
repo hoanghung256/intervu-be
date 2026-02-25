@@ -33,6 +33,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<InterviewType> InterviewTypes { get; set; }
+        public DbSet<InterviewExperience> InterviewExperiences { get; set; }
+        public DbSet<Question> Questions { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -771,6 +773,130 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 new { CoachProfilesId = user6Id, SkillsId = Guid.Parse("e4e4e4e4-e4e4-44e4-84e4-e4e4e4e4e4e4") },
                 new { CoachProfilesId = user6Id, SkillsId = Guid.Parse("f5f5f5f5-f5f5-45f5-85f5-f5f5f5f5f5f5") },
                 new { CoachProfilesId = user6Id, SkillsId = Guid.Parse("0a0a0a0a-0a0a-4a0a-8a0a-0a0a0a0a0a0a") }
+            );
+
+            // InterviewExperience
+            modelBuilder.Entity<InterviewExperience>(b =>
+            {
+                b.ToTable("InterviewExperiences");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.CompanyName).IsRequired().HasMaxLength(300);
+                b.Property(x => x.Role).IsRequired().HasMaxLength(300);
+                b.Property(x => x.Level).HasConversion<int>();
+                b.Property(x => x.LastRoundCompleted).IsRequired().HasMaxLength(200);
+                b.Property(x => x.InterviewProcess).IsRequired().HasColumnType("text");
+                b.Property(x => x.CreatedAt).IsRequired();
+                b.Property(x => x.UpdatedAt).IsRequired();
+
+                b.HasOne(x => x.User)
+                    .WithMany()
+                    .HasForeignKey(x => x.CreatedBy)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasMany(x => x.Questions)
+                    .WithOne(x => x.InterviewExperience)
+                    .HasForeignKey(x => x.InterviewExperienceId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // Question (interview experience sub-question)
+            modelBuilder.Entity<Question>(b =>
+            {
+                b.ToTable("Questions");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.QuestionType).IsRequired().HasMaxLength(200);
+                b.Property(x => x.Content).IsRequired().HasColumnType("text");
+                b.Property(x => x.Answer).HasColumnType("text");
+                b.Property(x => x.CreatedAt).IsRequired();
+            });
+
+            // Seed InterviewExperiences
+            var exp1Id = Guid.Parse("a1b2c3d4-e5f6-4a1b-8c2d-3e4f5a6b7c8d");
+            var exp2Id = Guid.Parse("b2c3d4e5-f6a1-4b2c-9d3e-4f5a6b7c8d9e");
+            var exp3Id = Guid.Parse("c3d4e5f6-a1b2-4c3d-0e4f-5a6b7c8d9e0f");
+
+            modelBuilder.Entity<InterviewExperience>().HasData(
+                new InterviewExperience
+                {
+                    Id = exp1Id,
+                    CompanyName = "Google",
+                    Role = "Software Engineer",
+                    Level = ExperienceLevel.Senior,
+                    LastRoundCompleted = "Onsite",
+                    InterviewProcess = "Phone screen → 2 technical rounds → system design → behavioral",
+                    IsInterestedInContact = true,
+                    CreatedBy = user1Id,
+                    UpdatedBy = user1Id,
+                    CreatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc),
+                    UpdatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new InterviewExperience
+                {
+                    Id = exp2Id,
+                    CompanyName = "Meta",
+                    Role = "Frontend Developer",
+                    Level = ExperienceLevel.Middle,
+                    LastRoundCompleted = "System Design",
+                    InterviewProcess = "Online assessment → coding interview → system design",
+                    IsInterestedInContact = false,
+                    CreatedBy = user1Id,
+                    UpdatedBy = user1Id,
+                    CreatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc),
+                    UpdatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new InterviewExperience
+                {
+                    Id = exp3Id,
+                    CompanyName = "Shopee",
+                    Role = "Backend Engineer",
+                    Level = ExperienceLevel.Junior,
+                    LastRoundCompleted = "Technical",
+                    InterviewProcess = "CV screening → HR call → technical interview with coding challenge",
+                    IsInterestedInContact = true,
+                    CreatedBy = user3Id,
+                    UpdatedBy = user3Id,
+                    CreatedAt = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc),
+                    UpdatedAt = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc)
+                }
+            );
+
+            modelBuilder.Entity<Question>().HasData(
+                new Question
+                {
+                    Id = Guid.Parse("d4e5f6a1-b2c3-4d4e-1f5a-6b7c8d9e0f1a"),
+                    InterviewExperienceId = exp1Id,
+                    QuestionType = "Algorithm",
+                    Content = "Find the longest substring without repeating characters.",
+                    Answer = "Use sliding window with a HashSet. O(n) time.",
+                    CreatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new Question
+                {
+                    Id = Guid.Parse("e5f6a1b2-c3d4-4e5f-2a6b-7c8d9e0f1a2b"),
+                    InterviewExperienceId = exp1Id,
+                    QuestionType = "System Design",
+                    Content = "Design a URL shortener like bit.ly.",
+                    Answer = "Use consistent hashing, a KV store, and a redirect service.",
+                    CreatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new Question
+                {
+                    Id = Guid.Parse("f6a1b2c3-d4e5-4f6a-3b7c-8d9e0f1a2b3c"),
+                    InterviewExperienceId = exp2Id,
+                    QuestionType = "JavaScript",
+                    Content = "Explain the difference between == and ===.",
+                    Answer = "== coerces types, === does not.",
+                    CreatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new Question
+                {
+                    Id = Guid.Parse("a1b2c3d4-e5f6-4a7b-4c8d-9e0f1a2b3c4d"),
+                    InterviewExperienceId = exp3Id,
+                    QuestionType = "Algorithm",
+                    Content = "Reverse a linked list.",
+                    Answer = "Iterative approach using prev, curr, next pointers. O(n) time O(1) space.",
+                    CreatedAt = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc)
+                }
             );
 
             modelBuilder.Entity<InterviewType>().HasData(

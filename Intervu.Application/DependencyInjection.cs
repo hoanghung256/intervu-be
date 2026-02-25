@@ -41,6 +41,8 @@ using Intervu.Application.UseCases.CandidateProfile;
 using Intervu.Application.Interfaces.UseCases.RescheduleRequest;
 using Intervu.Application.UseCases.RescheduleRequest;
 using Intervu.Application.UseCases.InterviewType;
+using Intervu.Application.Interfaces.UseCases.InterviewExperience;
+using Intervu.Application.UseCases.InterviewExperience;
 
 namespace Intervu.Application
 {
@@ -141,6 +143,16 @@ namespace Intervu.Application
             services.AddScoped<IUpdateInterviewType, UpdateInterviewType>();
             services.AddScoped<ICreateInterviewType, CreateInterviewType>();
             services.AddScoped<IDeleteInterviewType, DeleteInterviewType>();
+
+            // --- Interview Experience ---
+            services.AddScoped<IGetInterviewExperiences, GetInterviewExperiences>();
+            services.AddScoped<IGetInterviewExperienceDetail, GetInterviewExperienceDetail>();
+            services.AddScoped<ICreateInterviewExperience, CreateInterviewExperience>();
+            services.AddScoped<IUpdateInterviewExperience, UpdateInterviewExperience>();
+            services.AddScoped<IDeleteInterviewExperience, DeleteInterviewExperience>();
+            services.AddScoped<IAddQuestion, AddQuestion>();
+            services.AddScoped<IUpdateQuestion, UpdateQuestion>();
+            services.AddScoped<IDeleteQuestion, DeleteQuestion>();
 
             return services;
         }
