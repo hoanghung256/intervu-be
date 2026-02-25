@@ -227,8 +227,6 @@ namespace Intervu.API
                 Console.WriteLine("in pro");
             }
 
-            app.MapHub<InterviewRoomHub>("/api/v1/hubs/interviewroom");
-
             if (!app.Environment.IsEnvironment("Testing"))
             {
                 app.UseMiddleware<ExceptionHandlingMiddleware>();
