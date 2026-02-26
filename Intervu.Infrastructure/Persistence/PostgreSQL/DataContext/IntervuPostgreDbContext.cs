@@ -35,6 +35,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
         public DbSet<InterviewType> InterviewTypes { get; set; }
         public DbSet<InterviewExperience> InterviewExperiences { get; set; }
         public DbSet<Question> Questions { get; set; }
+        public DbSet<Comment> Comments { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -808,6 +809,26 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.Content).IsRequired().HasColumnType("text");
                 b.Property(x => x.Answer).HasColumnType("text");
                 b.Property(x => x.CreatedAt).IsRequired();
+
+                b.HasMany(x => x.Comments)
+                    .WithOne(c => c.Question)
+                    .HasForeignKey(c => c.QuestionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // Comment (belongs to a Question; answers are stored as the first comment)
+            modelBuilder.Entity<Comment>(b =>
+            {
+                b.ToTable("Comments");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Content).IsRequired().HasColumnType("text");
+                b.Property(x => x.Vote).HasDefaultValue(0);
+                b.Property(x => x.IsAnswer).HasDefaultValue(false);
+                b.Property(x => x.CreatedAt).IsRequired();
+                b.Property(x => x.UpdateAt).IsRequired();
+                b.Property(x => x.CreateBy).IsRequired();
+                b.Property(x => x.UpdateBy).IsRequired();
+                b.HasIndex(x => x.QuestionId);
             });
 
             // Seed InterviewExperiences
@@ -896,6 +917,114 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                     Content = "Reverse a linked list.",
                     Answer = "Iterative approach using prev, curr, next pointers. O(n) time O(1) space.",
                     CreatedAt = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc)
+                }
+            );
+
+            // Seed Comments – answers are stored as the first comment (IsAnswer = true) plus additional community comments
+            modelBuilder.Entity<Comment>().HasData(
+                // Q1: longest substring – answer comment
+                new Comment
+                {
+                    Id = Guid.Parse("c1c1c1c1-1111-4c11-8c11-c1c1c1c1c111"),
+                    QuestionId = Guid.Parse("d4e5f6a1-b2c3-4d4e-1f5a-6b7c8d9e0f1a"),
+                    Content = "Use sliding window with a HashSet. O(n) time.",
+                    IsAnswer = true,
+                    Vote = 10,
+                    CreatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc),
+                    UpdateAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc),
+                    CreateBy = user1Id,
+                    UpdateBy = user1Id
+                },
+                // Q1: extra community comment
+                new Comment
+                {
+                    Id = Guid.Parse("c2c2c2c2-2222-4c22-8c22-c2c2c2c2c222"),
+                    QuestionId = Guid.Parse("d4e5f6a1-b2c3-4d4e-1f5a-6b7c8d9e0f1a"),
+                    Content = "You can also use a dictionary to map each character to its latest index for O(n) in a single pass.",
+                    IsAnswer = false,
+                    Vote = 5,
+                    CreatedAt = new DateTime(2026, 1, 12, 0, 0, 0, DateTimeKind.Utc),
+                    UpdateAt = new DateTime(2026, 1, 12, 0, 0, 0, DateTimeKind.Utc),
+                    CreateBy = user2Id,
+                    UpdateBy = user2Id
+                },
+                // Q2: URL shortener – answer comment
+                new Comment
+                {
+                    Id = Guid.Parse("c3c3c3c3-3333-4c33-8c33-c3c3c3c3c333"),
+                    QuestionId = Guid.Parse("e5f6a1b2-c3d4-4e5f-2a6b-7c8d9e0f1a2b"),
+                    Content = "Use consistent hashing, a KV store, and a redirect service.",
+                    IsAnswer = true,
+                    Vote = 8,
+                    CreatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc),
+                    UpdateAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc),
+                    CreateBy = user1Id,
+                    UpdateBy = user1Id
+                },
+                // Q2: extra community comment
+                new Comment
+                {
+                    Id = Guid.Parse("c4c4c4c4-4444-4c44-8c44-c4c4c4c4c444"),
+                    QuestionId = Guid.Parse("e5f6a1b2-c3d4-4e5f-2a6b-7c8d9e0f1a2b"),
+                    Content = "Don't forget rate limiting and analytics counters when discussing the redirect service design.",
+                    IsAnswer = false,
+                    Vote = 3,
+                    CreatedAt = new DateTime(2026, 1, 13, 0, 0, 0, DateTimeKind.Utc),
+                    UpdateAt = new DateTime(2026, 1, 13, 0, 0, 0, DateTimeKind.Utc),
+                    CreateBy = user2Id,
+                    UpdateBy = user2Id
+                },
+                // Q3: == vs === – answer comment
+                new Comment
+                {
+                    Id = Guid.Parse("c5c5c5c5-5555-4c55-8c55-c5c5c5c5c555"),
+                    QuestionId = Guid.Parse("f6a1b2c3-d4e5-4f6a-3b7c-8d9e0f1a2b3c"),
+                    Content = "== coerces types, === does not.",
+                    IsAnswer = true,
+                    Vote = 7,
+                    CreatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc),
+                    UpdateAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc),
+                    CreateBy = user1Id,
+                    UpdateBy = user1Id
+                },
+                // Q3: extra community comment
+                new Comment
+                {
+                    Id = Guid.Parse("c6c6c6c6-6666-4c66-8c66-c6c6c6c6c666"),
+                    QuestionId = Guid.Parse("f6a1b2c3-d4e5-4f6a-3b7c-8d9e0f1a2b3c"),
+                    Content = "Always prefer === in modern JS/TS to avoid implicit coercion bugs. null == undefined is true but null === undefined is false.",
+                    IsAnswer = false,
+                    Vote = 4,
+                    CreatedAt = new DateTime(2026, 1, 16, 0, 0, 0, DateTimeKind.Utc),
+                    UpdateAt = new DateTime(2026, 1, 16, 0, 0, 0, DateTimeKind.Utc),
+                    CreateBy = user2Id,
+                    UpdateBy = user2Id
+                },
+                // Q4: reverse linked list – answer comment
+                new Comment
+                {
+                    Id = Guid.Parse("c7c7c7c7-7777-4c77-8c77-c7c7c7c7c777"),
+                    QuestionId = Guid.Parse("a1b2c3d4-e5f6-4a7b-4c8d-9e0f1a2b3c4d"),
+                    Content = "Iterative approach using prev, curr, next pointers. O(n) time O(1) space.",
+                    IsAnswer = true,
+                    Vote = 9,
+                    CreatedAt = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc),
+                    UpdateAt = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc),
+                    CreateBy = user3Id,
+                    UpdateBy = user3Id
+                },
+                // Q4: extra community comment
+                new Comment
+                {
+                    Id = Guid.Parse("c8c8c8c8-8888-4c88-8c88-c8c8c8c8c888"),
+                    QuestionId = Guid.Parse("a1b2c3d4-e5f6-4a7b-4c8d-9e0f1a2b3c4d"),
+                    Content = "Recursive solution is cleaner to write but costs O(n) stack space. Interviewers often ask you to do both.",
+                    IsAnswer = false,
+                    Vote = 6,
+                    CreatedAt = new DateTime(2026, 2, 2, 0, 0, 0, DateTimeKind.Utc),
+                    UpdateAt = new DateTime(2026, 2, 2, 0, 0, 0, DateTimeKind.Utc),
+                    CreateBy = user1Id,
+                    UpdateBy = user1Id
                 }
             );
 

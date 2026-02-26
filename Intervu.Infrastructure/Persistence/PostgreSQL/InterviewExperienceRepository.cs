@@ -52,6 +52,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
         {
             return await _context.InterviewExperiences
                 .Include(e => e.Questions)
+                    .ThenInclude(q => q.Comments.OrderByDescending(c => c.IsAnswer).ThenByDescending(c => c.Vote).ThenBy(c => c.CreatedAt))
                 .FirstOrDefaultAsync(e => e.Id == id);
         }
     }

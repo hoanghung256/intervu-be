@@ -9,6 +9,9 @@ using Intervu.Application.DTOs.InterviewType;
 using Intervu.Application.DTOs.Skill;
 using Intervu.Application.DTOs.User;
 using Intervu.Domain.Entities;
+using Intervu.Domain.Entities.Constants;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Intervu.Application.Mappings
 {
@@ -71,8 +74,29 @@ namespace Intervu.Application.Mappings
 
             // ── InterviewExperience mappings ─────────────────────────────────────
 
-            // Question → QuestionDto
-            CreateMap<Question, QuestionDto>();
+            // Comment → CommentDto
+            CreateMap<Comment, CommentDto>()
+                .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.CreateBy));
+
+            // Question → QuestionDto (with comments ordered: answer first)
+            CreateMap<Question, QuestionDto>()
+                .ForMember(dest => dest.Comments,
+                    opt => opt.MapFrom(src => src.Comments != null
+                        ? src.Comments.OrderByDescending(c => c.IsAnswer).ThenByDescending(c => c.Vote).ThenBy(c => c.CreatedAt).ToList()
+                        : new List<Comment>()));
+
+            // Question → QuestionListItemDto (pulls parent experience info)
+            CreateMap<Question, QuestionListItemDto>()
+                .ForMember(dest => dest.CompanyName,
+                    opt => opt.MapFrom(src => src.InterviewExperience != null ? src.InterviewExperience.CompanyName : string.Empty))
+                .ForMember(dest => dest.Role,
+                    opt => opt.MapFrom(src => src.InterviewExperience != null ? src.InterviewExperience.Role : string.Empty))
+                .ForMember(dest => dest.Level,
+                    opt => opt.MapFrom(src => src.InterviewExperience != null ? src.InterviewExperience.Level : (ExperienceLevel?)null))
+                .ForMember(dest => dest.Comments,
+                    opt => opt.MapFrom(src => src.Comments != null
+                        ? src.Comments.OrderByDescending(c => c.IsAnswer).ThenByDescending(c => c.Vote).ThenBy(c => c.CreatedAt).ToList()
+                        : new List<Comment>()));
 
             // InterviewExperience → summary DTO
             CreateMap<Domain.Entities.InterviewExperience, InterviewExperienceSummaryDto>()

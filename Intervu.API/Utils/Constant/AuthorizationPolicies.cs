@@ -10,5 +10,6 @@ namespace Intervu.API.Utils.Constant
         public const string InterviewOrAdmin = "InterviewOrAdmin";
         public const string CandidateOrAdmin = "CandidateOrAdmin";
         public const string CandidateOrInterviewer = "CandidateOrInterviewer";
+        public const string AllRoles = "AllRoles";
     }
 }

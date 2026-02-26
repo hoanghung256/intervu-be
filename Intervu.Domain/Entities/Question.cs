@@ -17,5 +17,7 @@ namespace Intervu.Domain.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public InterviewExperience InterviewExperience { get; set; } = null!;
+
+        public List<Comment> Comments { get; set; } = new List<Comment>();
     }
 }

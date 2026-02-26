@@ -44,6 +44,27 @@ namespace Intervu.Application.UseCases.InterviewExperience
         }
     }
 
+    public class GetQuestionList(IQuestionRepository repository, IMapper mapper)
+        : IGetQuestionList
+    {
+        public async Task<PagedResult<QuestionListItemDto>> ExecuteAsync(QuestionFilterRequest filter)
+        {
+            if (filter.Page < 1) filter.Page = 1;
+            if (filter.PageSize < 1) filter.PageSize = 10;
+
+            var (items, total) = await repository.GetPagedAsync(
+                filter.SearchTerm,
+                filter.QuestionType,
+                filter.Role,
+                filter.Level,
+                filter.Page,
+                filter.PageSize);
+
+            var dtos = items.Select(q => mapper.Map<QuestionListItemDto>(q)).ToList();
+            return new PagedResult<QuestionListItemDto>(dtos, total, filter.PageSize, filter.Page);
+        }
+    }
+
     public class CreateInterviewExperience(IUnitOfWork unitOfWork, IMapper mapper)
         : ICreateInterviewExperience
     {
@@ -60,7 +81,7 @@ namespace Intervu.Application.UseCases.InterviewExperience
 
             foreach (var q in request.Questions)
             {
-                experience.Questions.Add(new Question
+                var question = new Question
                 {
                     Id = Guid.NewGuid(),
                     InterviewExperienceId = experience.Id,
@@ -68,7 +89,26 @@ namespace Intervu.Application.UseCases.InterviewExperience
                     Content = q.Content,
                     Answer = q.Answer,
                     CreatedAt = DateTime.UtcNow
-                });
+                };
+
+                // Auto-create first comment from the Answer if provided
+                if (!string.IsNullOrWhiteSpace(q.Answer))
+                {
+                    question.Comments.Add(new Comment
+                    {
+                        Id = Guid.NewGuid(),
+                        QuestionId = question.Id,
+                        Content = q.Answer,
+                        IsAnswer = true,
+                        Vote = 0,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdateAt = DateTime.UtcNow,
+                        CreateBy = userId,
+                        UpdateBy = userId
+                    });
+                }
+
+                experience.Questions.Add(question);
             }
 
             await repo.AddAsync(experience);
@@ -117,7 +157,7 @@ namespace Intervu.Application.UseCases.InterviewExperience
 
     public class AddQuestion(IUnitOfWork unitOfWork) : IAddQuestion
     {
-        public async Task<Guid> ExecuteAsync(Guid experienceId, CreateQuestionRequest request)
+        public async Task<Guid> ExecuteAsync(Guid experienceId, CreateQuestionRequest request, Guid userId)
         {
             var questionRepo = unitOfWork.GetRepository<IQuestionRepository>();
             var question = new Question
@@ -129,6 +169,23 @@ namespace Intervu.Application.UseCases.InterviewExperience
                 Answer = request.Answer,
                 CreatedAt = DateTime.UtcNow
             };
+
+            // Auto-create first comment from the Answer if provided
+            if (!string.IsNullOrWhiteSpace(request.Answer))
+            {
+                question.Comments.Add(new Comment
+                {
+                    Id = Guid.NewGuid(),
+                    QuestionId = question.Id,
+                    Content = request.Answer,
+                    IsAnswer = true,
+                    Vote = 0,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdateAt = DateTime.UtcNow,
+                    CreateBy = userId,
+                    UpdateBy = userId
+                });
+            }
 
             await questionRepo.AddAsync(question);
             await unitOfWork.SaveChangesAsync();

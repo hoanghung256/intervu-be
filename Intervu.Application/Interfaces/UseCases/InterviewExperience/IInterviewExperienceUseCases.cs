@@ -32,7 +32,7 @@ namespace Intervu.Application.Interfaces.UseCases.InterviewExperience
 
     public interface IAddQuestion
     {
-        Task<Guid> ExecuteAsync(Guid experienceId, CreateQuestionRequest request);
+        Task<Guid> ExecuteAsync(Guid experienceId, CreateQuestionRequest request, Guid userId);
     }
 
     public interface IUpdateQuestion
@@ -43,5 +43,10 @@ namespace Intervu.Application.Interfaces.UseCases.InterviewExperience
     public interface IDeleteQuestion
     {
         Task ExecuteAsync(Guid questionId, Guid userId);
+    }
+
+    public interface IGetQuestionList
+    {
+        Task<PagedResult<QuestionListItemDto>> ExecuteAsync(QuestionFilterRequest filter);
     }
 }

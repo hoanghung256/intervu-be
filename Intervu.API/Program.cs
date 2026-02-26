@@ -154,6 +154,14 @@ namespace Intervu.API
                         context.User.IsInRole(UserRole.Candidate.ToString()) ||
                         context.User.IsInRole(UserRole.Admin.ToString()))
                 );
+
+                options.AddPolicy(
+                    AuthorizationPolicies.AllRoles,
+                    policy => policy.RequireAssertion(context =>
+                        context.User.IsInRole(UserRole.Candidate.ToString()) ||
+                        context.User.IsInRole(UserRole.Coach.ToString()) ||
+                        context.User.IsInRole(UserRole.Admin.ToString()))
+                );
             });
 
             // --- CORS CONFIGURATION ---
