@@ -84,10 +84,11 @@ jobs:
       run: |
         [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String("${{ secrets.APPSETTINGS_JSON_BASE64_TESTING }}")) | Set-Content intervu-be/Intervu.API/appsettings.Testing.json -NoNewline
 
-    - name: Write firebase.json
-      shell: pwsh
+    - name: Create firebase.json
       run: |
-        [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String("${{ secrets.FIREBASE_JSON }}")) | Set-Content intervu-be/Intervu.API/firebase.json -NoNewline
+        cat <<EOF > intervu-be/Intervu.API/firebase.json
+        ${{ secrets.FIREBASE_JSON }}
+        EOF
     
     - name: Restore dependencies
       run: |
@@ -136,23 +137,148 @@ jobs:
         name: test-results
         path: ./intervu-be/Intervu.API.Test/bin/Release/net8.0/TestResults/ExtentReport.html
 
+    - name: Checkout gh-pages branch
+      id: gh-page
+      continue-on-error: true
+      uses: actions/checkout@v4
+      with:
+        ref: gh-pages
+        path: gh-pages
+
+    - name: Clean folder if checkout failed
+      if: steps.gh-page.outcome == 'failure'
+      run: rm -rf gh-pages
+
     - name: Prepare Pages content
       if: always()
       run: |
         REPORT_PATH="./intervu-be/Intervu.API.Test/bin/Release/net8.0/TestResults/ExtentReport.html"
+        BRANCH_NAME="${{ github.head_ref || github.ref_name }}"
 
         if [ ! -f "$REPORT_PATH" ]; then
           echo "Test report not found, skipping publish"
           exit 0
         fi
 
-        BRANCH_NAME="${{ github.head_ref || github.ref_name }}"
+        if [ -d "gh-pages" ]; then
+          cp -r gh-pages/* public/ || true
+        fi
 
-        mkdir -p public/$BRANCH_NAME
-        cp "$REPORT_PATH" "./public/$BRANCH_NAME/index.html"
-
-        # Ensure root index exists (prevents gh-pages glob error)
-        touch public/.nojekyll
+        # Add/update current branch report
+        if [ -f "$REPORT_PATH" ]; then
+          mkdir -p public/$BRANCH_NAME
+          cp "$REPORT_PATH" "public/$BRANCH_NAME/index.html"
+        
+          # Add back link inside report
+          cat <<EOF >> public/$BRANCH_NAME/index.html
+        
+        <br><br>
+        <div style="
+        position:fixed;
+        top:1%;
+        right:20%;
+        z-index:9999;
+        ">
+        <a href="../index.html" style="
+        display:inline-block;
+        background:#ffffff;
+        padding:0.6em 1em;
+        border-radius:6px;
+        text-decoration:none;
+        font-size:0.9rem;
+        box-shadow:0 2px 6px rgba(0,0,0,0.2);
+        ">
+        ⬅ Back to Reports Home
+        </a>
+        </div>
+        EOF
+        fi
+        
+        # Regenerate root index.html (lists ALL folders)
+        cat <<EOF > public/index.html
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Test Reports Dashboard</title>
+        
+          <style>
+            body {
+              margin: 0;
+              font-family: "Segoe UI", Roboto, Arial, sans-serif;
+              background: #0f172a;
+              color: #f1f5f9;
+            }
+        
+            .header {
+              padding: 20px 40px;
+              font-size: 24px;
+              font-weight: 600;
+              background: #111827;
+              border-bottom: 1px solid #1f2937;
+            }
+        
+            .container {
+              padding: 40px;
+              display: grid;
+              grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+              gap: 20px;
+            }
+        
+            .card {
+              background: #1e293b;
+              padding: 20px;
+              border-radius: 10px;
+              text-decoration: none;
+              color: #f8fafc;
+              transition: all 0.2s ease;
+              border: 1px solid #334155;
+            }
+        
+            .card:hover {
+              transform: translateY(-4px);
+              background: #2563eb;
+              border-color: #2563eb;
+            }
+        
+            .card-title {
+              font-size: 18px;
+              font-weight: 500;
+            }
+        
+            .card-sub {
+              font-size: 13px;
+              color: #94a3b8;
+              margin-top: 8px;
+            }
+          </style>
+        
+        </head>
+        <body>
+        
+          <div class="header">📊 Test Reports Dashboard</div>
+          <div class="container">
+        EOF
+        
+        for dir in public/*/; do
+          folder=$(basename "$dir")
+        
+          # Skip hidden/system folders if any
+          if [[ "$folder" != .* ]]; then
+            cat <<EOF >> public/index.html
+            <a class="card" href="$folder/index.html">
+              <div class="card-title">$folder</div>
+              <div class="card-sub">View detailed report</div>
+            </a>
+        EOF
+          fi
+        done
+        
+        cat <<EOF >> public/index.html
+          </div>
+        </body>
+        </html>
+        EOF
 
     - name: Deploy to GitHub Pages
       if: always()
@@ -164,49 +290,6 @@ jobs:
         user_name: 'github-actions[bot]'
         user_email: 'github-actions[bot]@users.noreply.github.com'
         keep_files: true
-
-    # - name: Checkout gh-pages branch (create if missing)
-    #   if: always()
-    #   uses: actions/checkout@v4
-    #   with:
-    #     ref: gh-pages
-    #     path: gh-pages
-    #     fetch-depth: 0
-
-    # - name: Ensure gh-pages branch exists
-    #   if: always()
-    #   run: |
-    #     git fetch origin
-    #     if ! git show-ref --verify --quiet refs/remotes/origin/gh-pages; then
-    #       git checkout --orphan gh-pages
-    #       git rm -rf .
-    #       echo "<h1>GitHub Pages initialized</h1>" > index.html
-    #       git add index.html
-    #       git commit -m "Initialize gh-pages"
-    #       git push origin gh-pages
-    #       git checkout -
-    #     fi
-
-    # - name: Save test report to GitHub Pages (by branch)
-    #   if: always()
-    #   run: |
-    #     BRANCH_NAME="${{ github.head_ref || github.ref_name }}"
-    #     TARGET_DIR="gh-pages/${BRANCH_NAME}"
-
-    #     mkdir -p "$TARGET_DIR"
-    #     cp ./intervu-be/Intervu.API.Test/bin/Release/net8.0/TestResults/ExtentReport.html \
-    #        "$TARGET_DIR/index.html"
-
-    # - name: Commit and push report
-    #   if: always()
-    #   run: |
-    #     cd gh-pages
-    #     git config user.name "github-actions[bot]"
-    #     git config user.email "github-actions[bot]@users.noreply.github.com"
-
-    #     git add .
-    #     git commit -m "Update report for ${{ github.ref_name }}" || echo "No changes"
-    #     git push origin gh-pages
 
     - name: Show GitHub Pages URL
       if: always()

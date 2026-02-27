@@ -1,6 +1,8 @@
 ﻿using Intervu.Application.DTOs.Feedback;
 using Intervu.Application.Interfaces.UseCases.Feedbacks;
+using Intervu.Application.Interfaces.UseCases.InterviewBooking;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
+using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Entities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -35,8 +37,10 @@ namespace Intervu.Application.Services
     {
         private readonly ILogger<RoomManagerService> _logger;
         private readonly ConcurrentDictionary<string, RoomState> _roomStates = new();
+        private readonly ConcurrentDictionary<string, Timer> _periodicSaveTimers = new();
         private readonly ConcurrentDictionary<string, Timer> _roomTimers = new();
-        private readonly TimeSpan _roomExpiryTime = TimeSpan.FromSeconds(30);
+        private readonly TimeSpan _roomExpiryTime = TimeSpan.FromMinutes(15);
+        private readonly TimeSpan _periodicSaveInterval = TimeSpan.FromSeconds(30);
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly double value;
         private readonly string unit;
@@ -66,6 +70,38 @@ namespace Intervu.Application.Services
                 timer.Dispose();
                 _logger.LogInformation("Re-activated room '{RoomId}' and cancelled expiry timer.", roomId);
             }
+
+            _periodicSaveTimers.GetOrAdd(roomId, _ =>
+            {
+                _logger.LogInformation("Starting periodic save timer for room '{RoomId}'.", roomId);
+                return new Timer(async state =>
+                {
+                try
+                {
+                    using var scope = _scopeFactory.CreateScope();
+                    var updateRoom = scope.ServiceProvider.GetRequiredService<IUpdateRoom>();
+                    if (_roomStates.TryGetValue(roomId, out var roomState))
+                    {
+                        var roomGuid = Guid.Parse(roomId);
+                        InterviewRoom room = _cache.Rooms.SingleOrDefault(r => r.Id == roomGuid);
+                        if (room != null)
+                        {
+                            room.CurrentLanguage = roomState.CurrentLanguage;
+                            room.LanguageCodes = roomState.LanguageCodes;
+                            room.ProblemDescription = roomState.ProblemDescription;
+                            room.ProblemShortName = roomState.ProblemShortName;
+                            room.TestCases = roomState.TestCases;
+                            await updateRoom.ExecuteAsync(room);
+                            _logger.LogInformation("Periodically saved data for room '{RoomId}'.", roomId);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error during periodic save for room '{RoomId}'.", roomId);
+                }
+            }, null, _periodicSaveInterval, _periodicSaveInterval);
+            });
             //using var scope = _scopeFactory.CreateScope();
 
             //var getCurrentRoom = scope.ServiceProvider.GetRequiredService<IGetCurrentRoom>();
@@ -89,55 +125,63 @@ namespace Intervu.Application.Services
         // Schedules a room for cleanup if it's empty.
         public void ScheduleRoomCleanup(string roomId)
         {
+            if (_periodicSaveTimers.TryRemove(roomId, out var periodicTimer))
+            {
+                periodicTimer.Dispose();
+                _logger.LogInformation("Stopped periodic save timer for room '{RoomId}'.", roomId);
+            }
+
             var timer = new Timer(async _ =>
             {
                 using var scope = _scopeFactory.CreateScope();
 
-                //var getCurrentRoom = scope.ServiceProvider.GetRequiredService<IGetCurrentRoom>();
                 var updateRoom = scope.ServiceProvider.GetRequiredService<IUpdateRoom>();
                 var getFeedbacks = scope.ServiceProvider.GetRequiredService<IGetFeedbacks>();
                 var createFeedback = scope.ServiceProvider.GetRequiredService<ICreateFeedback>();
-                _roomStates.TryGetValue(roomId, out var roomState);
+                
+                var roomGuid = Guid.Parse(roomId);
+                InterviewRoom room = _cache.Rooms.SingleOrDefault(r => r.Id == roomGuid);
 
-                if (roomState != null)
+                if (room != null)
                 {
-                    //Save room progress
-                    //var room = await getCurrentRoom.ExecuteAsync(int.Parse(roomId));
-                    var roomGuid = Guid.Parse(roomId);
-                    InterviewRoom room = _cache.Rooms.SingleOrDefault(r => r.Id == roomGuid);
-                    if (room != null)
+                    // Sync in-memory state to room before final persist
+                    if (_roomStates.TryGetValue(roomId, out var roomState))
                     {
                         room.CurrentLanguage = roomState.CurrentLanguage;
                         room.LanguageCodes = roomState.LanguageCodes;
                         room.ProblemDescription = roomState.ProblemDescription;
                         room.ProblemShortName = roomState.ProblemShortName;
                         room.TestCases = roomState.TestCases;
-                        await updateRoom.ExecuteAsync(room);
                     }
+                    room.Status = InterviewRoomStatus.Completed;
+                    _logger.LogInformation("Saved data for room '{RoomId}'.", roomId);                    
+                    _cache.Update(room);
+                    await updateRoom.ExecuteAsync(room);
+
                     //Create feedback
                     GetFeedbackRequest request = new GetFeedbackRequest
                     {
                         StudentId = room.CandidateId,
                     };
                     var feedbacks = await getFeedbacks.ExecuteAsync(request);
-                    var filterFeedbacks = feedbacks.Items.Where(f => f.InterviewRoomId == room.Id).ToList();
-                    if (filterFeedbacks.Count == 0)
+                    if (room.CoachId.HasValue && room.CandidateId.HasValue && !feedbacks.Items.Any(f => f.InterviewRoomId == room.Id))
                     {
                         Feedback feedback = new Feedback
                         {
                             CoachId = room.CoachId.Value,
                             CandidateId = room.CandidateId.Value,
                             InterviewRoomId = room.Id,
-                            Rating = 0,
-                            Comments = "",
-                            AIAnalysis = ""
+                            Rating = 0, // Default value
+                            Comments = "", // Default value
+                            AIAnalysis = "" // Default value
                         };
                         await createFeedback.ExecuteAsync(feedback);
                     }
                 }
+
                 if (_roomStates.TryRemove(roomId, out RoomState _))
                 {
-                    _logger.LogInformation("Room '{RoomId}' has been inactive for {ExpiryValue} {ExpiryUnit} and its state has been cleared.", roomId, value, unit);
+                    _logger.LogInformation("Room '{RoomId}' has been inactive for {ExpiryValue} {ExpiryUnit}, marked as complete, and its state has been cleared.", roomId, value, unit);
                 }
                 _roomTimers.TryRemove(roomId, out var removedTimer);
                 removedTimer?.Dispose();

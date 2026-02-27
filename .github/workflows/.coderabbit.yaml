@@ -2,3 +2,6 @@
 reviews:
   review_details: true
   auto_assign_reviewers: true
+  auto_review:
+    base_branches:
+      - dev
