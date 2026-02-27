@@ -13,18 +13,15 @@ namespace Intervu.Infrastructure.BackgroundJobs
     {
         private readonly IntervuPostgreDbContext _db;
         private readonly InterviewRoomCache _cache;
-        private readonly IPayoutForCoachAfterInterview _payout;
         private readonly ILogger<InterviewMonitorJob> _logger;
 
         public InterviewMonitorJob(
             IntervuPostgreDbContext db,
             InterviewRoomCache cache,
-            IPayoutForCoachAfterInterview payout,
             ILogger<InterviewMonitorJob> logger)
         {
             _db = db;
             _cache = cache;
-            _payout = payout;
             _logger = logger;
         }
 

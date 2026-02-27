@@ -76,6 +76,8 @@ namespace Intervu.Application.Services
                 _logger.LogInformation("Starting periodic save timer for room '{RoomId}'.", roomId);
                 return new Timer(async state =>
                 {
+                try
+                {
                     using var scope = _scopeFactory.CreateScope();
                     var updateRoom = scope.ServiceProvider.GetRequiredService<IUpdateRoom>();
                     if (_roomStates.TryGetValue(roomId, out var roomState))
@@ -93,7 +95,12 @@ namespace Intervu.Application.Services
                             _logger.LogInformation("Periodically saved data for room '{RoomId}'.", roomId);
                         }
                     }
-                }, null, _periodicSaveInterval, _periodicSaveInterval);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error during periodic save for room '{RoomId}'.", roomId);
+                }
+            }, null, _periodicSaveInterval, _periodicSaveInterval);
             });
             //using var scope = _scopeFactory.CreateScope();
 
@@ -131,23 +138,25 @@ namespace Intervu.Application.Services
                 var updateRoom = scope.ServiceProvider.GetRequiredService<IUpdateRoom>();
                 var getFeedbacks = scope.ServiceProvider.GetRequiredService<IGetFeedbacks>();
                 var createFeedback = scope.ServiceProvider.GetRequiredService<ICreateFeedback>();
-                // var payoutForCoach = scope.ServiceProvider.GetRequiredService<IPayoutForCoachAfterInterview>();
                 
                 var roomGuid = Guid.Parse(roomId);
                 InterviewRoom room = _cache.Rooms.SingleOrDefault(r => r.Id == roomGuid);
 
                 if (room != null)
                 {
-                    room.CurrentLanguage = room.CurrentLanguage;
-                    room.LanguageCodes = room.LanguageCodes;
-                    room.ProblemDescription = room.ProblemDescription;
-                    room.ProblemShortName = room.ProblemShortName;
-                    room.TestCases = room.TestCases;
+                    // Sync in-memory state to room before final persist
+                    if (_roomStates.TryGetValue(roomId, out var roomState))
+                    {
+                        room.CurrentLanguage = roomState.CurrentLanguage;
+                        room.LanguageCodes = roomState.LanguageCodes;
+                        room.ProblemDescription = roomState.ProblemDescription;
+                        room.ProblemShortName = roomState.ProblemShortName;
+                        room.TestCases = roomState.TestCases;
+                    }
                     room.Status = InterviewRoomStatus.Completed;
                     _logger.LogInformation("Saved data for room '{RoomId}'.", roomId);                    
                     _cache.Update(room);
                     await updateRoom.ExecuteAsync(room);
-                    // await payoutForCoach.ExecuteAsync(room.Id);
 
                     //Create feedback
                     GetFeedbackRequest request = new GetFeedbackRequest

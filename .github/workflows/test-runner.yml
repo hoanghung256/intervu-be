@@ -84,10 +84,11 @@ jobs:
       run: |
         [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String("${{ secrets.APPSETTINGS_JSON_BASE64_TESTING }}")) | Set-Content intervu-be/Intervu.API/appsettings.Testing.json -NoNewline
 
-    - name: Write firebase.json
-      shell: pwsh
+    - name: Create firebase.json
       run: |
-        [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String("${{ secrets.FIREBASE_JSON }}")) | Set-Content intervu-be/Intervu.API/firebase.json -NoNewline
+        cat <<EOF > intervu-be/Intervu.API/firebase.json
+        ${{ secrets.FIREBASE_JSON }}
+        EOF
     
     - name: Restore dependencies
       run: |
