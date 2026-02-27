@@ -16,6 +16,7 @@ using Intervu.API.Utils.Constant;
 using Intervu.API.Utils;
 using Intervu.API.Middlewares;
 using Hangfire;
+using Intervu.Infrastructure.ExternalServices;
 using Newtonsoft.Json;
 
 namespace Intervu.API
@@ -193,7 +194,14 @@ namespace Intervu.API
             });
 
             // --- SIGNALR ---
-            builder.Services.AddSignalR();
+            builder.Services.AddSignalR(options =>
+            {
+                // Enable this to see the specific exception message on the frontend in dev and test env
+                options.EnableDetailedErrors = builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing");
+
+                // Changing the default behavior of injected services
+                options.DisableImplicitFromServicesParameters = true;
+            });
 
             var app = builder.Build();
             app.Logger.LogInformation(
@@ -247,6 +255,13 @@ namespace Intervu.API
 
             app.MapControllers();
             app.MapHub<InterviewRoomHub>("/api/v1/hubs/interviewroom");
+
+            // --- REGISTER RECURRING JOBS ---
+            using (var scope = app.Services.CreateScope())
+            {
+                var jobScheduler = scope.ServiceProvider.GetRequiredService<HangfireJobScheduler>();
+                jobScheduler.RegisterRecurringJobs();
+            }
 
             app.Run();
         }
