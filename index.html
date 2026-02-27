@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Test Reports Dashboard</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Roboto, Arial, sans-serif;
+      background: #0f172a;
+      color: #f1f5f9;
+    }
+
+    .header {
+      padding: 20px 40px;
+      font-size: 24px;
+      font-weight: 600;
+      background: #111827;
+      border-bottom: 1px solid #1f2937;
+    }
+
+    .container {
+      padding: 40px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: #1e293b;
+      padding: 20px;
+      border-radius: 10px;
+      text-decoration: none;
+      color: #f8fafc;
+      transition: all 0.2s ease;
+      border: 1px solid #334155;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      background: #2563eb;
+      border-color: #2563eb;
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 500;
+    }
+
+    .card-sub {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-top: 8px;
+    }
+  </style>
+
+</head>
+<body>
+
+  <div class="header">📊 Test Reports Dashboard</div>
+  <div class="container">
+    <a class="card" href="refactor/index.html">
+      <div class="card-title">refactor</div>
+      <div class="card-sub">View detailed report</div>
+    </a>
+  </div>
+</body>
+</html>
