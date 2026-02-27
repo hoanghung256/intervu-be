@@ -274,7 +274,7 @@ jobs:
         done
         
         cat <<EOF >> public/index.html
-          </ul>
+          </div>
         </body>
         </html>
         EOF

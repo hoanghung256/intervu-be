@@ -56,28 +56,6 @@ namespace Intervu.Infrastructure.BackgroundJobs
                 await _db.SaveChangesAsync();
                 _logger.LogInformation("Changed rooms to Ongoing: {RoomIds}", string.Join(", ", roomsToUpdate.Select(r => r.Id)));
             }
-
-            // 2. Update Ongoing -> Completed
-            // Condition: now >= ScheduledTime + Duration + 5 mins
-            var roomsToEnd = await _db.InterviewRooms
-                .Where(room => room.Status == InterviewRoomStatus.Ongoing &&
-                               room.ScheduledTime.HasValue &&
-                               now >= room.ScheduledTime.Value.AddMinutes((room.DurationMinutes ?? 60) + 5))
-                .ToListAsync();
-
-            if (roomsToEnd.Any())
-            {
-                foreach (var room in roomsToEnd)
-                {
-                    room.Status = InterviewRoomStatus.Completed;
-                    _cache.Update(room);
-                    await _payout.ExecuteAsync(room.Id);
-                }
-
-                _db.InterviewRooms.UpdateRange(roomsToEnd);
-                await _db.SaveChangesAsync();
-                _logger.LogInformation("Changed rooms to Completed: {RoomIds}", string.Join(", ", roomsToEnd.Select(r => r.Id)));
-            }
         }
     }
 }
