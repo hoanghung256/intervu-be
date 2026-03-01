@@ -3,9 +3,11 @@ using Intervu.Application.DTOs.Admin;
 using Intervu.Application.DTOs.Availability;
 using Intervu.Application.DTOs.Candidate;
 using Intervu.Application.DTOs.Coach;
+using Intervu.Application.DTOs.Comment;
 using Intervu.Application.DTOs.Company;
 using Intervu.Application.DTOs.InterviewExperience;
 using Intervu.Application.DTOs.InterviewType;
+using Intervu.Application.DTOs.Question;
 using Intervu.Application.DTOs.Skill;
 using Intervu.Application.DTOs.User;
 using Intervu.Domain.Entities;
@@ -72,20 +74,17 @@ namespace Intervu.Application.Mappings
 
             CreateMap<InterviewType, InterviewTypeDto>().ReverseMap();
 
-            // ── InterviewExperience mappings ─────────────────────────────────────
+            //InterviewExperience mappings 
 
-            // Comment → CommentDto
             CreateMap<Comment, CommentDto>()
                 .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.CreateBy));
 
-            // Question → QuestionDto (with comments ordered: answer first)
             CreateMap<Question, QuestionDto>()
                 .ForMember(dest => dest.Comments,
                     opt => opt.MapFrom(src => src.Comments != null
                         ? src.Comments.OrderByDescending(c => c.IsAnswer).ThenByDescending(c => c.Vote).ThenBy(c => c.CreatedAt).ToList()
                         : new List<Comment>()));
 
-            // Question → QuestionListItemDto (pulls parent experience info)
             CreateMap<Question, QuestionListItemDto>()
                 .ForMember(dest => dest.CompanyName,
                     opt => opt.MapFrom(src => src.InterviewExperience != null ? src.InterviewExperience.CompanyName : string.Empty))
@@ -93,25 +92,24 @@ namespace Intervu.Application.Mappings
                     opt => opt.MapFrom(src => src.InterviewExperience != null ? src.InterviewExperience.Role : string.Empty))
                 .ForMember(dest => dest.Level,
                     opt => opt.MapFrom(src => src.InterviewExperience != null ? src.InterviewExperience.Level : (ExperienceLevel?)null))
+                .ForMember(dest => dest.CommentCount,
+                    opt => opt.MapFrom(src => src.Comments != null ? src.Comments.Count : 0))
                 .ForMember(dest => dest.Comments,
                     opt => opt.MapFrom(src => src.Comments != null
                         ? src.Comments.OrderByDescending(c => c.IsAnswer).ThenByDescending(c => c.Vote).ThenBy(c => c.CreatedAt).ToList()
                         : new List<Comment>()));
 
-            // InterviewExperience → summary DTO
             CreateMap<Domain.Entities.InterviewExperience, InterviewExperienceSummaryDto>()
                 .ForMember(dest => dest.ContributorId,
                     opt => opt.MapFrom(src => src.CreatedBy))
                 .ForMember(dest => dest.QuestionCount,
                     opt => opt.MapFrom(src => src.Questions != null ? src.Questions.Count : 0));
 
-            // InterviewExperience → detail DTO (includes questions)
             CreateMap<Domain.Entities.InterviewExperience, InterviewExperienceDetailDto>()
                 .IncludeBase<Domain.Entities.InterviewExperience, InterviewExperienceSummaryDto>()
                 .ForMember(dest => dest.Questions,
                     opt => opt.MapFrom(src => src.Questions));
 
-            // Create request → entity (shallow; questions are added manually in use case)
             CreateMap<CreateInterviewExperienceRequest, Domain.Entities.InterviewExperience>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())

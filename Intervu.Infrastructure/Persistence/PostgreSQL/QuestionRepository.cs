@@ -59,6 +59,26 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
             return (items, total);
         }
+
+        public async Task<Question?> GetDetailAsync(Guid id)
+        {
+            return await _context.Questions
+                .Include(q => q.InterviewExperience)
+                    .ThenInclude(e => e.User)
+                .Include(q => q.Comments.OrderByDescending(c => c.IsAnswer).ThenByDescending(c => c.Vote).ThenBy(c => c.CreatedAt))
+                .FirstOrDefaultAsync(q => q.Id == id);
+        }
+
+        public async Task<List<Question>> GetRelatedAsync(Guid excludeId, string questionType, string role, int limit)
+        {
+            return await _context.Questions
+                .Include(q => q.InterviewExperience)
+                .Where(q => q.Id != excludeId &&
+                            (q.QuestionType == questionType || q.InterviewExperience.Role == role))
+                .OrderByDescending(q => q.CreatedAt)
+                .Take(limit)
+                .ToListAsync();
+        }
     }
 }
 

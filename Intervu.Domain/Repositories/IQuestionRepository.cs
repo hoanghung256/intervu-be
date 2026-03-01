@@ -8,10 +8,8 @@ namespace Intervu.Domain.Repositories
 {
     public interface IQuestionRepository : IRepositoryBase<Question>
     {
-        /// <summary>Returns all questions belonging to a specific InterviewExperience.</summary>
         Task<IEnumerable<Question>> GetByExperienceIdAsync(Guid interviewExperienceId);
 
-        /// <summary>Returns paginated questions with optional filters by type, role and level.</summary>
         Task<(List<Question> Items, int TotalCount)> GetPagedAsync(
             string? searchTerm,
             string? questionType,
@@ -19,5 +17,9 @@ namespace Intervu.Domain.Repositories
             ExperienceLevel? level,
             int page,
             int pageSize);
+
+        Task<Question?> GetDetailAsync(Guid id);
+
+        Task<List<Question>> GetRelatedAsync(Guid excludeId, string questionType, string role, int limit);
     }
 }

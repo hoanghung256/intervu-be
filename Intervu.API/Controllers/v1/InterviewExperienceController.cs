@@ -1,7 +1,9 @@
 using Asp.Versioning;
 using Intervu.API.Utils.Constant;
 using Intervu.Application.DTOs.InterviewExperience;
+using Intervu.Application.DTOs.Question;
 using Intervu.Application.Interfaces.UseCases.InterviewExperience;
+using Intervu.Application.Interfaces.UseCases.Question;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -21,9 +23,6 @@ namespace Intervu.API.Controllers.v1
         private readonly IUpdateInterviewExperience _update;
         private readonly IDeleteInterviewExperience _delete;
         private readonly IAddQuestion _addQuestion;
-        private readonly IUpdateQuestion _updateQuestion;
-        private readonly IDeleteQuestion _deleteQuestion;
-        private readonly IGetQuestionList _getQuestionList;
 
         public InterviewExperienceController(
             IGetInterviewExperiences getList,
@@ -31,10 +30,7 @@ namespace Intervu.API.Controllers.v1
             ICreateInterviewExperience create,
             IUpdateInterviewExperience update,
             IDeleteInterviewExperience delete,
-            IAddQuestion addQuestion,
-            IUpdateQuestion updateQuestion,
-            IDeleteQuestion deleteQuestion,
-            IGetQuestionList getQuestionList)
+            IAddQuestion addQuestion)
         {
             _getList = getList;
             _getDetail = getDetail;
@@ -42,23 +38,12 @@ namespace Intervu.API.Controllers.v1
             _update = update;
             _delete = delete;
             _addQuestion = addQuestion;
-            _updateQuestion = updateQuestion;
-            _deleteQuestion = deleteQuestion;
-            _getQuestionList = getQuestionList;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetList([FromQuery] InterviewExperienceFilterRequest filter)
         {
             var result = await _getList.ExecuteAsync(filter);
-            return Ok(new { success = true, message = "Success", data = result });
-        }
-
-        /// <summary>Get paginated question list with filters: questionType (category), role, level.</summary>
-        [HttpGet("questions")]
-        public async Task<IActionResult> GetQuestions([FromQuery] QuestionFilterRequest filter)
-        {
-            var result = await _getQuestionList.ExecuteAsync(filter);
             return Ok(new { success = true, message = "Success", data = result });
         }
 
@@ -104,24 +89,6 @@ namespace Intervu.API.Controllers.v1
             _ = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
             var id = await _addQuestion.ExecuteAsync(experienceId, request, userId);
             return Ok(new { success = true, message = "Question added", data = id });
-        }
-
-        [Authorize(Policy = AuthorizationPolicies.AllRoles)]
-        [HttpPut("{experienceId:guid}/questions/{questionId:guid}")]
-        public async Task<IActionResult> UpdateQuestion(Guid experienceId, Guid questionId, [FromBody] UpdateQuestionRequest request)
-        {
-            _ = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
-            await _updateQuestion.ExecuteAsync(questionId, request, userId);
-            return Ok(new { success = true, message = "Question updated" });
-        }
-
-        [Authorize(Policy = AuthorizationPolicies.AllRoles)]
-        [HttpDelete("{experienceId:guid}/questions/{questionId:guid}")]
-        public async Task<IActionResult> DeleteQuestion(Guid experienceId, Guid questionId)
-        {
-            _ = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
-            await _deleteQuestion.ExecuteAsync(questionId, userId);
-            return Ok(new { success = true, message = "Question deleted" });
         }
     }
 }

@@ -43,6 +43,10 @@ using Intervu.Application.UseCases.RescheduleRequest;
 using Intervu.Application.UseCases.InterviewType;
 using Intervu.Application.Interfaces.UseCases.InterviewExperience;
 using Intervu.Application.UseCases.InterviewExperience;
+using Intervu.Application.Interfaces.UseCases.Question;
+using Intervu.Application.UseCases.Question;
+using Intervu.Application.Interfaces.UseCases.Comment;
+using Intervu.Application.UseCases.Comment;
 
 namespace Intervu.Application
 {
@@ -154,6 +158,13 @@ namespace Intervu.Application
             services.AddScoped<IUpdateQuestion, UpdateQuestion>();
             services.AddScoped<IDeleteQuestion, DeleteQuestion>();
             services.AddScoped<IGetQuestionList, GetQuestionList>();
+            services.AddScoped<IGetQuestionDetail, GetQuestionDetail>();
+
+            // --- Comments ---
+            services.AddScoped<IGetComments, GetComments>();
+            services.AddScoped<IAddComment, AddComment>();
+            services.AddScoped<IUpdateComment, UpdateComment>();
+            services.AddScoped<IDeleteComment, DeleteComment>();
 
             return services;
         }
