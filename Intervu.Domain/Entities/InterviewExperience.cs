@@ -8,7 +8,8 @@ namespace Intervu.Domain.Entities
     {
         public Guid Id { get; set; }
 
-        public string CompanyName { get; set; } = null!;
+        public Guid CompanyId { get; set; }
+        public Company Company { get; set; } = null!;
 
         public string Role { get; set; } = null!;
 

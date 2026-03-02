@@ -15,7 +15,7 @@ public class UpdateInterviewExperience(IUnitOfWork unitOfWork, IMapper mapper)
             var experience = await repo.GetByIdAsync(id)
                 ?? throw new Exception("Interview experience not found");
 
-            experience.CompanyName = request.CompanyName;
+            experience.CompanyId = request.CompanyId;
             experience.Role = request.Role;
             experience.Level = request.Level;
             experience.LastRoundCompleted = request.LastRoundCompleted;

@@ -31,6 +31,11 @@ namespace Intervu.Infrastructure.Persistence.SqlServer
             return await _context.Companies.CountAsync();
         }
 
+        public async Task<Company?> GetByIdAsync(Guid id)
+        {
+            return await _context.Companies.FindAsync(id);
+        }
+
         public async Task<IReadOnlyList<Company>> GetByIdsAsync(IEnumerable<Guid> ids)
         {
             if (ids == null) return new List<Company>();

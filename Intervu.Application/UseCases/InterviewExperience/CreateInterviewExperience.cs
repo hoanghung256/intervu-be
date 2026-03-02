@@ -1,6 +1,7 @@
 using AutoMapper;
 using Intervu.Application.DTOs.InterviewExperience;
 using Intervu.Application.DTOs.Question;
+using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.UseCases.InterviewExperience;
 using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Intervu.Domain.Entities;
@@ -16,6 +17,11 @@ namespace Intervu.Application.UseCases.InterviewExperience
         public async Task<Guid> ExecuteAsync(CreateInterviewExperienceRequest request, Guid userId)
         {
             var repo = unitOfWork.GetRepository<IInterviewExperienceRepository>();
+
+            var companyRepo = unitOfWork.GetRepository<ICompanyRepository>();
+            var company = await companyRepo.GetByIdAsync(request.CompanyId);
+            if (company is null)
+                throw new NotFoundException($"Company with id '{request.CompanyId}' was not found.");
 
             var experience = mapper.Map<Domain.Entities.InterviewExperience>(request);
             experience.Id = Guid.NewGuid();

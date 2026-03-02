@@ -28,6 +28,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             throw new NotImplementedException();
         }
 
+        public async Task<Company?> GetByIdAsync(Guid id)
+        {
+            return await _context.Companies.FindAsync(id);
+        }
+
         public async Task<IReadOnlyList<Company>> GetByIdsAsync(IEnumerable<Guid> ids)
         {
             if (ids == null) return new List<Company>();

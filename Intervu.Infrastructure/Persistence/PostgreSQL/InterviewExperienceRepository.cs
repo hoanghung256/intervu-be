@@ -17,17 +17,21 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
         }
 
         public async Task<(List<InterviewExperience> Items, int TotalCount)> GetPagedAsync(
-            string? searchTerm, string? role, ExperienceLevel? level, string? lastRoundCompleted, int page, int pageSize)
+            string? searchTerm, Guid? company, string? role, ExperienceLevel? level, string? lastRoundCompleted, int page, int pageSize)
         {
             var query = _context.InterviewExperiences
+                .Include(e => e.Company)
                 .Include(e => e.Questions)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
                 query = query.Where(e =>
-                    e.CompanyName.Contains(searchTerm) ||
+                    e.Company.Name.Contains(searchTerm) ||
                     e.Role.Contains(searchTerm) ||
                     e.InterviewProcess.Contains(searchTerm));
+
+            if (company.HasValue)
+                query = query.Where(e => e.CompanyId == company.Value);
 
             if (!string.IsNullOrWhiteSpace(role))
                 query = query.Where(e => e.Role == role);
@@ -51,6 +55,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
         public async Task<InterviewExperience?> GetDetailAsync(Guid id)
         {
             return await _context.InterviewExperiences
+                .Include(e => e.Company)
                 .Include(e => e.Questions)
                     .ThenInclude(q => q.Comments.OrderByDescending(c => c.IsAnswer).ThenByDescending(c => c.Vote).ThenBy(c => c.CreatedAt))
                 .FirstOrDefaultAsync(e => e.Id == id);

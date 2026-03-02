@@ -595,6 +595,13 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             LogoPath = "logos/stripe.png",
                             Name = "Stripe",
                             Website = "https://stripe.com"
+                        },
+                        new
+                        {
+                            Id = new Guid("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"),
+                            LogoPath = "logos/shopee.png",
+                            Name = "Shopee",
+                            Website = "https://shopee.com"
                         });
                 });
 
@@ -712,10 +719,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("CompanyName")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -751,6 +756,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CompanyId");
+
                     b.HasIndex("CreatedBy");
 
                     b.ToTable("InterviewExperiences", (string)null);
@@ -759,7 +766,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         new
                         {
                             Id = new Guid("a1b2c3d4-e5f6-4a1b-8c2d-3e4f5a6b7c8d"),
-                            CompanyName = "Google",
+                            CompanyId = new Guid("11111111-1111-4111-8111-111111111111"),
                             CreatedAt = new DateTime(2026, 1, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
                             InterviewProcess = "Phone screen → 2 technical rounds → system design → behavioral",
@@ -773,7 +780,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         new
                         {
                             Id = new Guid("b2c3d4e5-f6a1-4b2c-9d3e-4f5a6b7c8d9e"),
-                            CompanyName = "Meta",
+                            CompanyId = new Guid("22222222-2222-4222-8222-222222222222"),
                             CreatedAt = new DateTime(2026, 1, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
                             InterviewProcess = "Online assessment → coding interview → system design",
@@ -787,7 +794,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         new
                         {
                             Id = new Guid("c3d4e5f6-a1b2-4c3d-0e4f-5a6b7c8d9e0f"),
-                            CompanyName = "Shopee",
+                            CompanyId = new Guid("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"),
                             CreatedAt = new DateTime(2026, 2, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedBy = new Guid("2f8c7a6b-6d5e-4e2f-8c7a-9d6e5c4b3a33"),
                             InterviewProcess = "CV screening → HR call → technical interview with coding challenge",
@@ -1552,11 +1559,19 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 
             modelBuilder.Entity("Intervu.Domain.Entities.InterviewExperience", b =>
                 {
+                    b.HasOne("Intervu.Domain.Entities.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Intervu.Domain.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("CreatedBy")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Company");
 
                     b.Navigation("User");
                 });

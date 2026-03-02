@@ -8,6 +8,7 @@ namespace Intervu.Application.DTOs.InterviewExperience
     public class InterviewExperienceFilterRequest
     {
         public string? SearchTerm { get; set; }
+        public Guid? CompanyId { get; set; }
         public string? Role { get; set; }
         public ExperienceLevel? Level { get; set; }
         public string? LastRoundCompleted { get; set; }
@@ -16,7 +17,7 @@ namespace Intervu.Application.DTOs.InterviewExperience
 
     public class CreateInterviewExperienceRequest
     {
-        public string CompanyName { get; set; } = null!;
+        public Guid CompanyId { get; set; }
         public string Role { get; set; } = null!;
         public ExperienceLevel? Level { get; set; }
         public string LastRoundCompleted { get; set; } = null!;
@@ -27,7 +28,7 @@ namespace Intervu.Application.DTOs.InterviewExperience
 
     public class UpdateInterviewExperienceRequest
     {
-        public string CompanyName { get; set; } = null!;
+        public Guid CompanyId { get; set; }
         public string Role { get; set; } = null!;
         public ExperienceLevel? Level { get; set; }
         public string LastRoundCompleted { get; set; } = null!;

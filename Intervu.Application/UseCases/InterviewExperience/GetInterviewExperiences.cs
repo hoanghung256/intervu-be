@@ -16,7 +16,7 @@ namespace Intervu.Application.UseCases.InterviewExperience
         {
             if (filter.Page < 1) filter.Page = 1;
             var (items, total) = await repository.GetPagedAsync(
-                filter.SearchTerm, filter.Role, filter.Level, filter.LastRoundCompleted, filter.Page, PageSize);
+                filter.SearchTerm, filter.CompanyId, filter.Role, filter.Level, filter.LastRoundCompleted, filter.Page, PageSize);
             var dtos = items.Select(e =>
             {
                 var dto = mapper.Map<InterviewExperienceSummaryDto>(e);

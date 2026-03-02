@@ -87,7 +87,7 @@ namespace Intervu.Application.Mappings
 
             CreateMap<Question, QuestionListItemDto>()
                 .ForMember(dest => dest.CompanyName,
-                    opt => opt.MapFrom(src => src.InterviewExperience != null ? src.InterviewExperience.CompanyName : string.Empty))
+                    opt => opt.MapFrom(src => src.InterviewExperience != null && src.InterviewExperience.Company != null ? src.InterviewExperience.Company.Name : string.Empty))
                 .ForMember(dest => dest.Role,
                     opt => opt.MapFrom(src => src.InterviewExperience != null ? src.InterviewExperience.Role : string.Empty))
                 .ForMember(dest => dest.Level,
@@ -100,6 +100,8 @@ namespace Intervu.Application.Mappings
                         : new List<Comment>()));
 
             CreateMap<Domain.Entities.InterviewExperience, InterviewExperienceSummaryDto>()
+                .ForMember(dest => dest.CompanyName,
+                    opt => opt.MapFrom(src => src.Company != null ? src.Company.Name : string.Empty))
                 .ForMember(dest => dest.ContributorId,
                     opt => opt.MapFrom(src => src.CreatedBy))
                 .ForMember(dest => dest.QuestionCount,
@@ -112,11 +114,13 @@ namespace Intervu.Application.Mappings
 
             CreateMap<CreateInterviewExperienceRequest, Domain.Entities.InterviewExperience>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.CompanyId, opt => opt.MapFrom(src => src.CompanyId))
                 .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
                 .ForMember(dest => dest.UpdatedBy, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
                 .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
                 .ForMember(dest => dest.User, opt => opt.Ignore())
+                .ForMember(dest => dest.Company, opt => opt.Ignore())
                 .ForMember(dest => dest.Questions, opt => opt.Ignore());
         }
     }

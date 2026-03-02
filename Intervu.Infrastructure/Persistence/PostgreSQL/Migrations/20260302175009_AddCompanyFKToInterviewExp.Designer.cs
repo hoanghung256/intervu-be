@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 {
     [DbContext(typeof(IntervuPostgreDbContext))]
-    [Migration("20260225152019_AddQuestionBankERTable")]
-    partial class AddQuestionBankERTable
+    [Migration("20260302175009_AddCompanyFKToInterviewExp")]
+    partial class AddCompanyFKToInterviewExp
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -363,6 +363,146 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Intervu.Domain.Entities.Comment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("CreateBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsAnswer")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdateAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UpdateBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Vote")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuestionId");
+
+                    b.ToTable("Comments", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("c1c1c1c1-1111-4c11-8c11-c1c1c1c1c111"),
+                            Content = "Use sliding window with a HashSet. O(n) time.",
+                            CreateBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
+                            CreatedAt = new DateTime(2026, 1, 10, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsAnswer = true,
+                            QuestionId = new Guid("d4e5f6a1-b2c3-4d4e-1f5a-6b7c8d9e0f1a"),
+                            UpdateAt = new DateTime(2026, 1, 10, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UpdateBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
+                            Vote = 10
+                        },
+                        new
+                        {
+                            Id = new Guid("c2c2c2c2-2222-4c22-8c22-c2c2c2c2c222"),
+                            Content = "You can also use a dictionary to map each character to its latest index for O(n) in a single pass.",
+                            CreateBy = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            CreatedAt = new DateTime(2026, 1, 12, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsAnswer = false,
+                            QuestionId = new Guid("d4e5f6a1-b2c3-4d4e-1f5a-6b7c8d9e0f1a"),
+                            UpdateAt = new DateTime(2026, 1, 12, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UpdateBy = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            Vote = 5
+                        },
+                        new
+                        {
+                            Id = new Guid("c3c3c3c3-3333-4c33-8c33-c3c3c3c3c333"),
+                            Content = "Use consistent hashing, a KV store, and a redirect service.",
+                            CreateBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
+                            CreatedAt = new DateTime(2026, 1, 10, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsAnswer = true,
+                            QuestionId = new Guid("e5f6a1b2-c3d4-4e5f-2a6b-7c8d9e0f1a2b"),
+                            UpdateAt = new DateTime(2026, 1, 10, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UpdateBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
+                            Vote = 8
+                        },
+                        new
+                        {
+                            Id = new Guid("c4c4c4c4-4444-4c44-8c44-c4c4c4c4c444"),
+                            Content = "Don't forget rate limiting and analytics counters when discussing the redirect service design.",
+                            CreateBy = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            CreatedAt = new DateTime(2026, 1, 13, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsAnswer = false,
+                            QuestionId = new Guid("e5f6a1b2-c3d4-4e5f-2a6b-7c8d9e0f1a2b"),
+                            UpdateAt = new DateTime(2026, 1, 13, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UpdateBy = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            Vote = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("c5c5c5c5-5555-4c55-8c55-c5c5c5c5c555"),
+                            Content = "== coerces types, === does not.",
+                            CreateBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
+                            CreatedAt = new DateTime(2026, 1, 15, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsAnswer = true,
+                            QuestionId = new Guid("f6a1b2c3-d4e5-4f6a-3b7c-8d9e0f1a2b3c"),
+                            UpdateAt = new DateTime(2026, 1, 15, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UpdateBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
+                            Vote = 7
+                        },
+                        new
+                        {
+                            Id = new Guid("c6c6c6c6-6666-4c66-8c66-c6c6c6c6c666"),
+                            Content = "Always prefer === in modern JS/TS to avoid implicit coercion bugs. null == undefined is true but null === undefined is false.",
+                            CreateBy = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            CreatedAt = new DateTime(2026, 1, 16, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsAnswer = false,
+                            QuestionId = new Guid("f6a1b2c3-d4e5-4f6a-3b7c-8d9e0f1a2b3c"),
+                            UpdateAt = new DateTime(2026, 1, 16, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UpdateBy = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            Vote = 4
+                        },
+                        new
+                        {
+                            Id = new Guid("c7c7c7c7-7777-4c77-8c77-c7c7c7c7c777"),
+                            Content = "Iterative approach using prev, curr, next pointers. O(n) time O(1) space.",
+                            CreateBy = new Guid("2f8c7a6b-6d5e-4e2f-8c7a-9d6e5c4b3a33"),
+                            CreatedAt = new DateTime(2026, 2, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsAnswer = true,
+                            QuestionId = new Guid("a1b2c3d4-e5f6-4a7b-4c8d-9e0f1a2b3c4d"),
+                            UpdateAt = new DateTime(2026, 2, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UpdateBy = new Guid("2f8c7a6b-6d5e-4e2f-8c7a-9d6e5c4b3a33"),
+                            Vote = 9
+                        },
+                        new
+                        {
+                            Id = new Guid("c8c8c8c8-8888-4c88-8c88-c8c8c8c8c888"),
+                            Content = "Recursive solution is cleaner to write but costs O(n) stack space. Interviewers often ask you to do both.",
+                            CreateBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
+                            CreatedAt = new DateTime(2026, 2, 2, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsAnswer = false,
+                            QuestionId = new Guid("a1b2c3d4-e5f6-4a7b-4c8d-9e0f1a2b3c4d"),
+                            UpdateAt = new DateTime(2026, 2, 2, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UpdateBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
+                            Vote = 6
+                        });
+                });
+
             modelBuilder.Entity("Intervu.Domain.Entities.Company", b =>
                 {
                     b.Property<Guid>("Id")
@@ -458,6 +598,13 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             LogoPath = "logos/stripe.png",
                             Name = "Stripe",
                             Website = "https://stripe.com"
+                        },
+                        new
+                        {
+                            Id = new Guid("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"),
+                            LogoPath = "logos/shopee.png",
+                            Name = "Shopee",
+                            Website = "https://shopee.com"
                         });
                 });
 
@@ -575,10 +722,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("CompanyName")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -614,6 +759,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CompanyId");
+
                     b.HasIndex("CreatedBy");
 
                     b.ToTable("InterviewExperiences", (string)null);
@@ -622,7 +769,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         new
                         {
                             Id = new Guid("a1b2c3d4-e5f6-4a1b-8c2d-3e4f5a6b7c8d"),
-                            CompanyName = "Google",
+                            CompanyId = new Guid("11111111-1111-4111-8111-111111111111"),
                             CreatedAt = new DateTime(2026, 1, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
                             InterviewProcess = "Phone screen → 2 technical rounds → system design → behavioral",
@@ -636,7 +783,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         new
                         {
                             Id = new Guid("b2c3d4e5-f6a1-4b2c-9d3e-4f5a6b7c8d9e"),
-                            CompanyName = "Meta",
+                            CompanyId = new Guid("22222222-2222-4222-8222-222222222222"),
                             CreatedAt = new DateTime(2026, 1, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
                             InterviewProcess = "Online assessment → coding interview → system design",
@@ -650,7 +797,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         new
                         {
                             Id = new Guid("c3d4e5f6-a1b2-4c3d-0e4f-5a6b7c8d9e0f"),
-                            CompanyName = "Shopee",
+                            CompanyId = new Guid("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"),
                             CreatedAt = new DateTime(2026, 2, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedBy = new Guid("2f8c7a6b-6d5e-4e2f-8c7a-9d6e5c4b3a33"),
                             InterviewProcess = "CV screening → HR call → technical interview with coding challenge",
@@ -1358,6 +1505,17 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Intervu.Domain.Entities.Comment", b =>
+                {
+                    b.HasOne("Intervu.Domain.Entities.Question", "Question")
+                        .WithMany("Comments")
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Question");
+                });
+
             modelBuilder.Entity("Intervu.Domain.Entities.Feedback", b =>
                 {
                     b.HasOne("Intervu.Domain.Entities.CandidateProfile", null)
@@ -1404,11 +1562,19 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 
             modelBuilder.Entity("Intervu.Domain.Entities.InterviewExperience", b =>
                 {
+                    b.HasOne("Intervu.Domain.Entities.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Intervu.Domain.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("CreatedBy")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Company");
 
                     b.Navigation("User");
                 });
@@ -1553,6 +1719,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
             modelBuilder.Entity("Intervu.Domain.Entities.InterviewRoom", b =>
                 {
                     b.Navigation("RescheduleRequests");
+                });
+
+            modelBuilder.Entity("Intervu.Domain.Entities.Question", b =>
+                {
+                    b.Navigation("Comments");
                 });
 #pragma warning restore 612, 618
         }

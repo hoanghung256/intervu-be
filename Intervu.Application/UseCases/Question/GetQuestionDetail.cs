@@ -67,7 +67,7 @@ namespace Intervu.Application.UseCases.Question
             {
                 Id = r.Id,
                 Content = r.Content,
-                CompanyName = r.InterviewExperience?.CompanyName ?? string.Empty,
+                CompanyName = r.InterviewExperience?.Company?.Name ?? string.Empty,
                 Role = r.InterviewExperience?.Role ?? string.Empty,
                 CreatedAt = r.CreatedAt
             }).ToList();
@@ -77,7 +77,7 @@ namespace Intervu.Application.UseCases.Question
                 Id = question.Id,
                 Content = question.Content,
                 QuestionType = question.QuestionType,
-                CompanyName = experience?.CompanyName ?? string.Empty,
+                CompanyName = experience?.Company?.Name ?? string.Empty,
                 Role = experience?.Role ?? string.Empty,
                 Level = experience?.Level,
                 CreatedAt = question.CreatedAt,

@@ -708,7 +708,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 new Company { Id = Guid.Parse("77777777-7777-4777-8777-777777777777"), Name = "Apple", Website = "https://apple.com", LogoPath = "logos/apple.png" },
                 new Company { Id = Guid.Parse("88888888-8888-4888-8888-888888888888"), Name = "Uber", Website = "https://uber.com", LogoPath = "logos/uber.png" },
                 new Company { Id = Guid.Parse("99999999-9999-4999-8999-999999999999"), Name = "Spotify", Website = "https://spotify.com", LogoPath = "logos/spotify.png" },
-                new Company { Id = Guid.Parse("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"), Name = "Stripe", Website = "https://stripe.com", LogoPath = "logos/stripe.png" }
+                new Company { Id = Guid.Parse("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"), Name = "Stripe", Website = "https://stripe.com", LogoPath = "logos/stripe.png" },
+                new Company { Id = Guid.Parse("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"), Name = "Shopee", Website = "https://shopee.com", LogoPath = "logos/shopee.png" }
             );
 
             modelBuilder.Entity<Skill>().HasData(
@@ -781,7 +782,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             {
                 b.ToTable("InterviewExperiences");
                 b.HasKey(x => x.Id);
-                b.Property(x => x.CompanyName).IsRequired().HasMaxLength(300);
+                b.Property(x => x.CompanyId).IsRequired();
+                b.HasOne(x => x.Company)
+                    .WithMany()
+                    .HasForeignKey(x => x.CompanyId)
+                    .OnDelete(DeleteBehavior.Restrict);
                 b.Property(x => x.Role).IsRequired().HasMaxLength(300);
                 b.Property(x => x.Level).HasConversion<int>();
                 b.Property(x => x.LastRoundCompleted).IsRequired().HasMaxLength(200);
@@ -840,7 +845,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 new InterviewExperience
                 {
                     Id = exp1Id,
-                    CompanyName = "Google",
+                    CompanyId = Guid.Parse("11111111-1111-4111-8111-111111111111"),
                     Role = "Software Engineer",
                     Level = ExperienceLevel.Senior,
                     LastRoundCompleted = "Onsite",
@@ -854,7 +859,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 new InterviewExperience
                 {
                     Id = exp2Id,
-                    CompanyName = "Meta",
+                    CompanyId = Guid.Parse("22222222-2222-4222-8222-222222222222"),
                     Role = "Frontend Developer",
                     Level = ExperienceLevel.Middle,
                     LastRoundCompleted = "System Design",
@@ -868,7 +873,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 new InterviewExperience
                 {
                     Id = exp3Id,
-                    CompanyName = "Shopee",
+                    CompanyId = Guid.Parse("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"),
                     Role = "Backend Engineer",
                     Level = ExperienceLevel.Junior,
                     LastRoundCompleted = "Technical",

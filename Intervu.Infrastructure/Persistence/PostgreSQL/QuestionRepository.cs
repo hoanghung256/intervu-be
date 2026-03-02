@@ -35,6 +35,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
         {
             var query = _context.Questions
                 .Include(q => q.InterviewExperience)
+                    .ThenInclude(e => e.Company)
                 .Include(q => q.Comments.OrderByDescending(c => c.IsAnswer).ThenByDescending(c => c.Vote).ThenBy(c => c.CreatedAt))
                 .AsQueryable();
 
@@ -64,6 +65,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
         {
             return await _context.Questions
                 .Include(q => q.InterviewExperience)
+                    .ThenInclude(e => e.Company)
+                .Include(q => q.InterviewExperience)
                     .ThenInclude(e => e.User)
                 .Include(q => q.Comments.OrderByDescending(c => c.IsAnswer).ThenByDescending(c => c.Vote).ThenBy(c => c.CreatedAt))
                 .FirstOrDefaultAsync(q => q.Id == id);
@@ -73,6 +76,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
         {
             return await _context.Questions
                 .Include(q => q.InterviewExperience)
+                    .ThenInclude(e => e.Company)
                 .Where(q => q.Id != excludeId &&
                             (q.QuestionType == questionType || q.InterviewExperience.Role == role))
                 .OrderByDescending(q => q.CreatedAt)
