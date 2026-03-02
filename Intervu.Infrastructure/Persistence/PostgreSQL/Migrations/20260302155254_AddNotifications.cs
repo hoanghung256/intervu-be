@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 {
     /// <inheritdoc />
-    public partial class UpdateNotificationEntity : Migration
+    public partial class AddNotifications : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -53,13 +53,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 type: "uuid",
                 nullable: true);
 
-            migrationBuilder.AddColumn<string>(
+            migrationBuilder.AddColumn<int>(
                 name: "Type",
                 table: "Notifications",
-                type: "character varying(50)",
-                maxLength: 50,
+                type: "integer",
                 nullable: false,
-                defaultValue: "");
+                defaultValue: 0);
 
             migrationBuilder.AddColumn<Guid>(
                 name: "UserId",
@@ -73,7 +72,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 keyColumn: "Id",
                 keyValue: new Guid("0a1b2c3d-4e5f-4a6b-8c9d-0e1f2a3b4c20"),
                 columns: new[] { "ActionUrl", "ReferenceId", "Type", "UserId" },
-                values: new object[] { null, null, "SYSTEM_ANNOUNCEMENT", new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11") });
+                values: new object[] { null, null, 10, new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11") });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Notifications_UserId_CreatedAt",

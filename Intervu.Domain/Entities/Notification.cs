@@ -1,4 +1,5 @@
 using Intervu.Domain.Abstractions.Entity;
+using Intervu.Domain.Entities.Constants;
 using System;
 
 namespace Intervu.Domain.Entities
@@ -7,8 +8,7 @@ namespace Intervu.Domain.Entities
     {
         public Guid UserId { get; set; }
 
-        // String-based type for extensibility (see NotificationType constants)
-        public string Type { get; set; }
+        public NotificationType Type { get; set; }
 
         public string Title { get; set; }
 

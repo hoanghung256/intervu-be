@@ -357,7 +357,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.ToTable("Notifications");
                 b.HasKey(x => x.Id);
                 b.Property(x => x.UserId).IsRequired();
-                b.Property(x => x.Type).HasMaxLength(50).IsRequired();
+                b.Property(x => x.Type).HasConversion<int>().IsRequired();
                 b.Property(x => x.Title).HasMaxLength(200).IsRequired();
                 b.Property(x => x.Message).HasColumnType("text").IsRequired();
                 b.Property(x => x.ActionUrl).HasMaxLength(500);
@@ -687,7 +687,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             {
                 Id = Guid.Parse("0a1b2c3d-4e5f-4a6b-8c9d-0e1f2a3b4c20"),
                 UserId = user1Id,
-                Type = Intervu.Domain.Entities.Constants.NotificationType.SYSTEM_ANNOUNCEMENT,
+                Type = Intervu.Domain.Entities.Constants.NotificationType.SystemAnnouncement,
                 Title = "Welcome",
                 Message = "Welcome to Intervu platform",
                 ActionUrl = null,

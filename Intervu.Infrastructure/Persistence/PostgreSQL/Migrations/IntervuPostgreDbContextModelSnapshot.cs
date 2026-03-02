@@ -815,10 +815,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
@@ -840,7 +838,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             IsRead = false,
                             Message = "Welcome to Intervu platform",
                             Title = "Welcome",
-                            Type = "SYSTEM_ANNOUNCEMENT",
+                            Type = 10,
                             UserId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11")
                         });
                 });
