@@ -40,12 +40,15 @@ namespace Intervu.Application.UseCases.InterviewBooking
 
                 InterviewBookingTransaction transaction = await transactionRepo.Get(orderCode, TransactionType.Payment) ?? throw new NotFoundException("Booking transaction not found");
 
-                CoachAvailability availability = await availabilityRepo.GetByIdAsync(transaction.CoachAvailabilityId) ?? throw new NotFoundException("Coach availability not found");
+                if (transaction.CoachAvailabilityId == null)
+                    throw new NotFoundException("Transaction has no associated coach availability");
 
-                if (!availability.IsUserAbleToBook(transaction.UserId))
-                    throw new CoachAvailabilityNotAvailableException("Availability not able to book");
+                CoachAvailability availability = await availabilityRepo.GetByIdAsync(transaction.CoachAvailabilityId.Value) ?? throw new NotFoundException("Coach availability not found");
 
-                availability.Status = CoachAvailabilityStatus.Booked;
+                if (availability.Status != CoachAvailabilityStatus.Unavailable)
+                    throw new CoachAvailabilityNotAvailableException("Availability is not in booking state");
+
+                availability.Status = CoachAvailabilityStatus.Unavailable;
                 transaction.Status = TransactionStatus.Paid;
 
                 int durationMinutes = (int)(availability.EndTime - availability.StartTime).TotalMinutes;

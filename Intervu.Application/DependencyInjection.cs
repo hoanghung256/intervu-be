@@ -43,6 +43,10 @@ using Intervu.Application.UseCases.RescheduleRequest;
 using Intervu.Application.UseCases.InterviewType;
 using Intervu.Domain.Abstractions.Policies.Interfaces;
 using Intervu.Domain.Abstractions.Policies;
+using BookingRequestInterfaces = Intervu.Application.Interfaces.UseCases.BookingRequest;
+using BookingRequestUseCases = Intervu.Application.UseCases.BookingRequest;
+using CoachServiceInterfaces = Intervu.Application.Interfaces.UseCases.CoachInterviewService;
+using CoachServiceUseCases = Intervu.Application.UseCases.CoachInterviewService;
 
 namespace Intervu.Application
 {
@@ -145,6 +149,20 @@ namespace Intervu.Application
             services.AddScoped<IUpdateInterviewType, UpdateInterviewType>();
             services.AddScoped<ICreateInterviewType, CreateInterviewType>();
             services.AddScoped<IDeleteInterviewType, DeleteInterviewType>();
+
+            // ----- CoachInterviewService ----
+            services.AddScoped<CoachServiceInterfaces.ICreateCoachInterviewService, CoachServiceUseCases.CreateCoachInterviewService>();
+            services.AddScoped<CoachServiceInterfaces.IUpdateCoachInterviewService, CoachServiceUseCases.UpdateCoachInterviewService>();
+            services.AddScoped<CoachServiceInterfaces.IDeleteCoachInterviewService, CoachServiceUseCases.DeleteCoachInterviewService>();
+            services.AddScoped<CoachServiceInterfaces.IGetCoachInterviewServices, CoachServiceUseCases.GetCoachInterviewServices>();
+
+            // ----- BookingRequest ----
+            services.AddScoped<BookingRequestInterfaces.ICreateExternalBookingRequest, BookingRequestUseCases.CreateExternalBookingRequest>();
+            services.AddScoped<BookingRequestInterfaces.ICreateJDBookingRequest, BookingRequestUseCases.CreateJDBookingRequest>();
+            services.AddScoped<BookingRequestInterfaces.IRespondToBookingRequest, BookingRequestUseCases.RespondToBookingRequest>();
+            services.AddScoped<BookingRequestInterfaces.IGetBookingRequests, BookingRequestUseCases.GetBookingRequests>();
+            services.AddScoped<BookingRequestInterfaces.IGetBookingRequestDetail, BookingRequestUseCases.GetBookingRequestDetail>();
+            services.AddScoped<BookingRequestInterfaces.IExpireBookingRequests, BookingRequestUseCases.ExpireBookingRequests>();
 
             return services;
         }
