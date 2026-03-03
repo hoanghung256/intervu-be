@@ -13,11 +13,7 @@ namespace Intervu.Domain.Repositories
         Task<Guid> CreateCoachAvailabilityAsync(CoachAvailability availability);
         Task<Guid> CreateMultipleCoachAvailabilitiesAsync(List<CoachAvailability> availabilities);
         Task<bool> DeleteCoachAvailabilityAsync(Guid availabilityId);
-        Task<bool> UpdateCoachAvailabilityAsync(Guid availabilityId, InterviewFocus focus,DateTimeOffset startTime, DateTimeOffset endTime, Guid? typeId);
+        Task<bool> UpdateCoachAvailabilityAsync(Guid availabilityId, DateTimeOffset startTime, DateTimeOffset endTime);
         Task<CoachAvailability?> GetAsync(Guid coachId, DateTime startTime);
-
-        Task ExpireReservedSlot(Guid availabilityId, Guid reseverForUserId);
-
-        Task ReserveForSlot(Guid availabilityId, Guid reseverForUserId);
     }
 }

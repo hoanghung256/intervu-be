@@ -76,6 +76,9 @@ namespace Intervu.Infrastructure
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             services.AddScoped<IRescheduleRequestRepository, RescheduleRequestRepository>();
             services.AddScoped<IInterviewTypeRepository, InterviewTypeRepository>();
+            services.AddScoped<ICoachInterviewServiceRepository, CoachInterviewServiceRepository>();
+            services.AddScoped<IBookingRequestRepository, BookingRequestRepository>();
+            services.AddScoped<IInterviewRoundRepository, InterviewRoundRepository>();
 
             return services;
         }
