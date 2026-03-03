@@ -33,16 +33,19 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
         public async Task MarkAsReadAsync(Guid notificationId)
         {
-            await _context.Notifications
-                .Where(n => n.Id == notificationId)
-                .ExecuteUpdateAsync(s => s.SetProperty(n => n.IsRead, true));
+            var notification = await _context.Notifications.FindAsync(notificationId);
+            if (notification == null) return;
+            notification.IsRead = true;
+            await _context.SaveChangesAsync();
         }
 
         public async Task MarkAllAsReadAsync(Guid userId)
         {
-            await _context.Notifications
+            var unread = await _context.Notifications
                 .Where(n => n.UserId == userId && !n.IsRead)
-                .ExecuteUpdateAsync(s => s.SetProperty(n => n.IsRead, true));
+                .ToListAsync();
+            foreach (var n in unread) n.IsRead = true;
+            await _context.SaveChangesAsync();
         }
 
         public async Task<bool> ExistsAsync(Guid userId, NotificationType type, Guid referenceId)
