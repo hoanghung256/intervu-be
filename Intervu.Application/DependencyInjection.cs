@@ -109,7 +109,7 @@ namespace Intervu.Application
             services.AddScoped<IUpdateCoachAvailability, UpdateCoachAvailability>();
             // ----- Email ----
             services.AddScoped<ISendBookingConfirmationEmail, SendBookingConfirmationEmail>();
-          
+
             // ----- UserProfile ----
             services.AddScoped<IGetUserProfile, GetUserProfile>();
             services.AddScoped<IUpdateUserProfile, UpdateUserProfile>();
@@ -145,6 +145,9 @@ namespace Intervu.Application
             services.AddScoped<IUpdateInterviewType, UpdateInterviewType>();
             services.AddScoped<ICreateInterviewType, CreateInterviewType>();
             services.AddScoped<IDeleteInterviewType, DeleteInterviewType>();
+
+            // ----- Notification ----
+            services.AddScoped<Interfaces.UseCases.Notification.INotificationUseCase, UseCases.Notification.NotificationUseCase>();
 
             return services;
         }
