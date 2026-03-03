@@ -1,10 +1,5 @@
 ﻿using Intervu.Domain.Abstractions.Entity;
 using Intervu.Domain.Entities.Constants;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Intervu.Domain.Entities
 {
@@ -15,7 +10,15 @@ namespace Intervu.Domain.Entities
 
         public Guid UserId { get; set; }
 
-        public Guid CoachAvailabilityId { get; set; }
+        /// <summary>
+        /// Flow A (normal booking): links payment to the availability slot
+        /// </summary>
+        public Guid? CoachAvailabilityId { get; set; }
+
+        /// <summary>
+        /// Flow B & C: links payment to the booking request
+        /// </summary>
+        public Guid? BookingRequestId { get; set; }
 
         public int Amount { get; set; }
 
@@ -23,8 +26,9 @@ namespace Intervu.Domain.Entities
 
         public TransactionStatus Status { get; set; }
 
+        // Navigation
         public CoachAvailability? CoachAvailability { get; set; }
-
+        public BookingRequest? BookingRequest { get; set; }
         public User? User { get; set; }
     }
 }
