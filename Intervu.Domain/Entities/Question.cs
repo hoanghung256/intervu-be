@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Intervu.Domain.Entities.Constants.QuestionConstants;
+using System;
+using System.Collections.Generic;
 
 namespace Intervu.Domain.Entities
 {
@@ -6,18 +8,44 @@ namespace Intervu.Domain.Entities
     {
         public Guid Id { get; set; }
 
-        public Guid InterviewExperienceId { get; set; }
-
-        public string QuestionType { get; set; } = null!;
+        public string Title { get; set; } = null!;
 
         public string Content { get; set; } = null!;
 
-        public string? Answer { get; set; }
+        public Guid? InterviewExperienceId { get; set; }
+
+        public ExperienceLevel Level { get; set; }
+
+        public InterviewRound Round { get; set; }
+
+        public QuestionStatus Status { get; set; } = QuestionStatus.Approved;
+
+        public int ViewCount { get; set; } = 0;
+
+        public int SaveCount { get; set; } = 0;
+
+        public bool IsHot { get; set; } = false;
+
+        public Guid? CreatedBy { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        public InterviewExperience InterviewExperience { get; set; } = null!;
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-        public List<Comment> Comments { get; set; } = new List<Comment>();
+        public InterviewExperience? InterviewExperience { get; set; }
+
+        public User? Author { get; set; }
+
+        public ICollection<QuestionCompany> QuestionCompanies { get; set; } = new List<QuestionCompany>();
+
+        public ICollection<QuestionRole> QuestionRoles { get; set; } = new List<QuestionRole>();
+
+        public ICollection<QuestionTag> QuestionTags { get; set; } = new List<QuestionTag>();
+
+        public QuestionCategory Category { get; set; }
+
+        public ICollection<Answer> Answers { get; set; } = new List<Answer>();
+
+        public ICollection<Comment> Comments { get; set; } = new List<Comment>();
     }
 }

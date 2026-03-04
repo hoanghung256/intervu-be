@@ -87,8 +87,11 @@ namespace Intervu.API.Controllers.v1
         public async Task<IActionResult> AddQuestion(Guid experienceId, [FromBody] CreateQuestionRequest request)
         {
             _ = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
-            var id = await _addQuestion.ExecuteAsync(experienceId, request, userId);
-            return Ok(new { success = true, message = "Question added", data = id });
+            var result = await _addQuestion.ExecuteAsync(experienceId, request, userId);
+            var message = result.IsLinked
+                ? "Answer posted as comment on existing question"
+                : "Question added";
+            return Ok(new { success = true, message, data = result });
         }
     }
 }

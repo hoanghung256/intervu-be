@@ -35,26 +35,36 @@ namespace Intervu.Application.UseCases.InterviewExperience
                 var question = new Domain.Entities.Question
                 {
                     Id = Guid.NewGuid(),
-                    InterviewExperienceId = experience.Id,
-                    QuestionType = q.QuestionType,
+                    Title = q.Title,
                     Content = q.Content,
-                    Answer = q.Answer,
-                    CreatedAt = DateTime.UtcNow
+                    InterviewExperienceId = experience.Id,
+                    Level = q.Level,
+                    Round = q.Round,
+                    Category = q.Category,
+                    CreatedBy = userId,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
                 };
+
+                foreach (var cid in q.CompanyIds)
+                    question.QuestionCompanies.Add(new Domain.Entities.QuestionCompany { QuestionId = question.Id, CompanyId = cid });
+                foreach (var r in q.Roles)
+                    question.QuestionRoles.Add(new Domain.Entities.QuestionRole { QuestionId = question.Id, Role = r });
+                foreach (var tid in q.TagIds)
+                    question.QuestionTags.Add(new Domain.Entities.QuestionTag { QuestionId = question.Id, TagId = tid });
 
                 if (!string.IsNullOrWhiteSpace(q.Answer))
                 {
-                    question.Comments.Add(new Domain.Entities.Comment
+                    question.Answers.Add(new Domain.Entities.Answer
                     {
                         Id = Guid.NewGuid(),
                         QuestionId = question.Id,
+                        AuthorId = userId,
                         Content = q.Answer,
-                        IsAnswer = true,
-                        Vote = 0,
+                        Upvotes = 0,
+                        IsVerified = false,
                         CreatedAt = DateTime.UtcNow,
-                        UpdateAt = DateTime.UtcNow,
-                        CreateBy = userId,
-                        UpdateBy = userId
+                        UpdatedAt = DateTime.UtcNow
                     });
                 }
 

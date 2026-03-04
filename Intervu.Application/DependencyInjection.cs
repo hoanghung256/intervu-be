@@ -159,6 +159,7 @@ namespace Intervu.Application
             services.AddScoped<IDeleteQuestion, DeleteQuestion>();
             services.AddScoped<IGetQuestionList, GetQuestionList>();
             services.AddScoped<IGetQuestionDetail, GetQuestionDetail>();
+            services.AddScoped<ISearchQuestions, SearchQuestions>();
 
             // --- Comments ---
             services.AddScoped<IGetComments, GetComments>();

@@ -12,6 +12,7 @@ using Intervu.Application.DTOs.Skill;
 using Intervu.Application.DTOs.User;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
+using Intervu.Domain.Entities.Constants.QuestionConstants;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -85,19 +86,14 @@ namespace Intervu.Application.Mappings
                         ? src.Comments.OrderByDescending(c => c.IsAnswer).ThenByDescending(c => c.Vote).ThenBy(c => c.CreatedAt).ToList()
                         : new List<Comment>()));
 
-            CreateMap<Question, QuestionListItemDto>()
-                .ForMember(dest => dest.CompanyName,
-                    opt => opt.MapFrom(src => src.InterviewExperience != null && src.InterviewExperience.Company != null ? src.InterviewExperience.Company.Name : string.Empty))
-                .ForMember(dest => dest.Role,
-                    opt => opt.MapFrom(src => src.InterviewExperience != null ? src.InterviewExperience.Role : string.Empty))
-                .ForMember(dest => dest.Level,
-                    opt => opt.MapFrom(src => src.InterviewExperience != null ? src.InterviewExperience.Level : (ExperienceLevel?)null))
-                .ForMember(dest => dest.CommentCount,
-                    opt => opt.MapFrom(src => src.Comments != null ? src.Comments.Count : 0))
-                .ForMember(dest => dest.Comments,
-                    opt => opt.MapFrom(src => src.Comments != null
-                        ? src.Comments.OrderByDescending(c => c.IsAnswer).ThenByDescending(c => c.Vote).ThenBy(c => c.CreatedAt).ToList()
-                        : new List<Comment>()));
+            CreateMap<Tag, TagDto>();
+            CreateMap<Answer, AnswerPreviewDto>()
+                .ForMember(dest => dest.AuthorName, opt => opt.MapFrom(src => src.Author != null ? src.Author.FullName : "Anonymous"))
+                .ForMember(dest => dest.AuthorProfilePicture, opt => opt.MapFrom(src => src.Author != null ? src.Author.ProfilePicture : null));
+            CreateMap<Answer, AnswerDetailDto>()
+                .ForMember(dest => dest.AuthorName, opt => opt.MapFrom(src => src.Author != null ? src.Author.FullName : "Anonymous"))
+                .ForMember(dest => dest.AuthorProfilePicture, opt => opt.MapFrom(src => src.Author != null ? src.Author.ProfilePicture : null))
+                .ForMember(dest => dest.AuthorSlug, opt => opt.MapFrom(src => src.Author != null ? src.Author.SlugProfileUrl : string.Empty));
 
             CreateMap<Domain.Entities.InterviewExperience, InterviewExperienceSummaryDto>()
                 .ForMember(dest => dest.CompanyName,

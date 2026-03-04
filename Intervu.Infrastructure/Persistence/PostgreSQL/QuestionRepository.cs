@@ -1,5 +1,6 @@
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
+using Intervu.Domain.Entities.Constants.QuestionConstants;
 using Intervu.Domain.Repositories;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Microsoft.EntityFrameworkCore;
@@ -27,33 +28,59 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
         public async Task<(List<Question> Items, int TotalCount)> GetPagedAsync(
             string? searchTerm,
-            string? questionType,
-            string? role,
+            Guid? companyId,
+            Guid? tagId,
+            QuestionCategory? category,
+            Role? role,
             ExperienceLevel? level,
+            InterviewRound? round,
+            SortOption? sortBy,
             int page,
             int pageSize)
         {
             var query = _context.Questions
-                .Include(q => q.InterviewExperience)
-                    .ThenInclude(e => e.Company)
-                .Include(q => q.Comments.OrderByDescending(c => c.IsAnswer).ThenByDescending(c => c.Vote).ThenBy(c => c.CreatedAt))
+                .Include(q => q.QuestionCompanies).ThenInclude(qc => qc.Company)
+                .Include(q => q.QuestionRoles)
+                .Include(q => q.QuestionTags).ThenInclude(qt => qt.Tag)
+                .Include(q => q.Answers)
+                .Include(q => q.Comments)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
-                query = query.Where(q => q.Content.Contains(searchTerm));
+                query = query.Where(q =>
+                    q.Title.Contains(searchTerm) ||
+                    q.Content.Contains(searchTerm) ||
+                    q.QuestionCompanies.Any(qc => qc.Company.Name.Contains(searchTerm)));
 
-            if (!string.IsNullOrWhiteSpace(questionType))
-                query = query.Where(q => q.QuestionType == questionType);
+            if (companyId.HasValue)
+                query = query.Where(q => q.QuestionCompanies.Any(qc => qc.CompanyId == companyId.Value));
 
-            if (!string.IsNullOrWhiteSpace(role))
-                query = query.Where(q => q.InterviewExperience.Role == role);
+            if (tagId.HasValue)
+                query = query.Where(q => q.QuestionTags.Any(qt => qt.TagId == tagId.Value));
+
+            if (category.HasValue)
+                query = query.Where(q => q.Category == category.Value);
+
+            if (role.HasValue)
+                query = query.Where(q => q.QuestionRoles.Any(qr => qr.Role == role.Value));
 
             if (level.HasValue)
-                query = query.Where(q => q.InterviewExperience.Level == level);
+                query = query.Where(q => q.Level == level.Value);
+
+            if (round.HasValue)
+                query = query.Where(q => q.Round == round.Value);
 
             var total = await query.CountAsync();
-            var items = await query
-                .OrderByDescending(q => q.CreatedAt)
+
+            IQueryable<Question> sorted = sortBy switch
+            {
+                SortOption.Hot => query.OrderByDescending(q => q.IsHot).ThenByDescending(q => q.ViewCount),
+                SortOption.Top => query.OrderByDescending(q => q.Answers.Count)
+                                       .ThenByDescending(q => q.ViewCount),
+                _ => query.OrderByDescending(q => q.CreatedAt)
+            };
+
+            var items = await sorted
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -61,27 +88,62 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             return (items, total);
         }
 
+        public async Task<List<Question>> SearchAsync(string keyword, int limit = 10)
+        {
+            return await _context.Questions
+                .Include(q => q.QuestionCompanies).ThenInclude(qc => qc.Company)
+                .Include(q => q.QuestionRoles)
+                .Include(q => q.QuestionTags).ThenInclude(qt => qt.Tag)
+                .Include(q => q.Answers)
+                .Where(q => q.Title.ToLower().Contains(keyword.ToLower()) ||
+                             q.Content.ToLower().Contains(keyword.ToLower()))
+                .OrderByDescending(q => q.Answers.Count)
+                .Take(limit)
+                .ToListAsync();
+        }
+
         public async Task<Question?> GetDetailAsync(Guid id)
         {
             return await _context.Questions
-                .Include(q => q.InterviewExperience)
-                    .ThenInclude(e => e.Company)
-                .Include(q => q.InterviewExperience)
-                    .ThenInclude(e => e.User)
-                .Include(q => q.Comments.OrderByDescending(c => c.IsAnswer).ThenByDescending(c => c.Vote).ThenBy(c => c.CreatedAt))
+                .Include(q => q.Author)
+                .Include(q => q.QuestionCompanies).ThenInclude(qc => qc.Company)
+                .Include(q => q.QuestionRoles)
+                .Include(q => q.QuestionTags).ThenInclude(qt => qt.Tag)
+                .Include(q => q.Answers).ThenInclude(a => a.Author)
+                .Include(q => q.Comments)
                 .FirstOrDefaultAsync(q => q.Id == id);
         }
 
-        public async Task<List<Question>> GetRelatedAsync(Guid excludeId, string questionType, string role, int limit)
+        public async Task<List<Question>> GetRelatedAsync(Guid excludeId, Guid questionId, int limit)
         {
+            // Find tags and roles of the source question
+            var tagIds = await _context.QuestionTags
+                .Where(qt => qt.QuestionId == questionId)
+                .Select(qt => qt.TagId)
+                .ToListAsync();
+
+            var roles = await _context.QuestionRoles
+                .Where(qr => qr.QuestionId == questionId)
+                .Select(qr => qr.Role)
+                .ToListAsync();
+
             return await _context.Questions
-                .Include(q => q.InterviewExperience)
-                    .ThenInclude(e => e.Company)
+                .Include(q => q.QuestionCompanies).ThenInclude(qc => qc.Company)
+                .Include(q => q.QuestionRoles)
+                .Include(q => q.Answers)
                 .Where(q => q.Id != excludeId &&
-                            (q.QuestionType == questionType || q.InterviewExperience.Role == role))
+                    (q.QuestionTags.Any(qt => tagIds.Contains(qt.TagId)) ||
+                     q.QuestionRoles.Any(qr => roles.Contains(qr.Role))))
                 .OrderByDescending(q => q.CreatedAt)
                 .Take(limit)
                 .ToListAsync();
+        }
+
+        public async Task IncrementViewCountAsync(Guid questionId)
+        {
+            await _context.Questions
+                .Where(q => q.Id == questionId)
+                .ExecuteUpdateAsync(s => s.SetProperty(q => q.ViewCount, q => q.ViewCount + 1));
         }
     }
 }

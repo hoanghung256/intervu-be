@@ -1,5 +1,6 @@
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
+using Intervu.Domain.Entities.Constants.QuestionConstants;
 using Intervu.Domain.Repositories;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Microsoft.EntityFrameworkCore;
@@ -17,7 +18,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
         }
 
         public async Task<(List<InterviewExperience> Items, int TotalCount)> GetPagedAsync(
-            string? searchTerm, Guid? company, string? role, ExperienceLevel? level, string? lastRoundCompleted, int page, int pageSize)
+            string? searchTerm, Guid? company, Role? role, ExperienceLevel? level,
+            InterviewRound? lastRoundCompleted, SortOption? sortBy, int page, int pageSize)
         {
             var query = _context.InterviewExperiences
                 .Include(e => e.Company)
@@ -33,18 +35,32 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             if (company.HasValue)
                 query = query.Where(e => e.CompanyId == company.Value);
 
-            if (!string.IsNullOrWhiteSpace(role))
-                query = query.Where(e => e.Role == role);
+            if (role.HasValue)
+            {
+                var roleStr = role.Value.ToString();
+                query = query.Where(e => e.Role == roleStr);
+            }
 
             if (level.HasValue)
                 query = query.Where(e => e.Level == level);
 
-            if (!string.IsNullOrWhiteSpace(lastRoundCompleted))
-                query = query.Where(e => e.LastRoundCompleted == lastRoundCompleted);
+            if (lastRoundCompleted.HasValue)
+            {
+                var roundStr = lastRoundCompleted.Value.ToString();
+                query = query.Where(e => e.LastRoundCompleted == roundStr);
+            }
 
             var total = await query.CountAsync();
-            var items = await query
-                .OrderByDescending(e => e.CreatedAt)
+
+            IQueryable<InterviewExperience> sorted = sortBy switch
+            {
+                SortOption.Hot => query.OrderByDescending(e => e.Questions.Count),
+                SortOption.Top => query.OrderByDescending(e => e.Questions.Count)
+                                       .ThenByDescending(e => e.CreatedAt),
+                _ => query.OrderByDescending(e => e.CreatedAt)
+            };
+
+            var items = await sorted
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();

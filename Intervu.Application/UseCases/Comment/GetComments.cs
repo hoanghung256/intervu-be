@@ -1,6 +1,7 @@
 using Intervu.Application.DTOs.Comment;
 using Intervu.Application.DTOs.Common;
 using Intervu.Application.Interfaces.UseCases.Comment;
+using Intervu.Domain.Entities.Constants.QuestionConstants;
 using Intervu.Domain.Repositories;
 using System;
 using System.Collections.Generic;
@@ -12,12 +13,12 @@ namespace Intervu.Application.UseCases.Comment
     public class GetComments(ICommentRepository commentRepository, IUserRepository userRepository)
         : IGetComments
     {
-        public async Task<PagedResult<CommentDetailDto>> ExecuteAsync(Guid questionId, int page, int pageSize)
+        public async Task<PagedResult<CommentDetailDto>> ExecuteAsync(Guid questionId, int page, int pageSize, SortOption? sortBy = null)
         {
             if (page < 1) page = 1;
             if (pageSize < 1) pageSize = 10;
 
-            var (items, total) = await commentRepository.GetPagedByQuestionIdAsync(questionId, page, pageSize);
+            var (items, total) = await commentRepository.GetPagedByQuestionIdAsync(questionId, page, pageSize, sortBy);
 
             var authorIds = items.Select(c => c.CreateBy).Distinct().ToList();
             var authorMap = new Dictionary<Guid, Domain.Entities.User>();

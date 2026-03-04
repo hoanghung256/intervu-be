@@ -2,6 +2,7 @@ using Asp.Versioning;
 using Intervu.API.Utils.Constant;
 using Intervu.Application.DTOs.Comment;
 using Intervu.Application.Interfaces.UseCases.Comment;
+using Intervu.Domain.Entities.Constants.QuestionConstants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -32,14 +33,14 @@ namespace Intervu.API.Controllers.v1
             _deleteComment = deleteComment;
         }
 
-        /// <summary>Returns paginated comments for a question. Default page size = 10.</summary>
         [HttpGet]
         public async Task<IActionResult> GetComments(
             Guid questionId,
             [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10)
+            [FromQuery] int pageSize = 10,
+            [FromQuery] SortOption? sortBy = null)
         {
-            var result = await _getComments.ExecuteAsync(questionId, page, pageSize);
+            var result = await _getComments.ExecuteAsync(questionId, page, pageSize, sortBy);
             return Ok(new { success = true, message = "Success", data = result });
         }
 

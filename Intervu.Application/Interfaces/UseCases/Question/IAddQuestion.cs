@@ -6,6 +6,6 @@ namespace Intervu.Application.Interfaces.UseCases.Question
 {
     public interface IAddQuestion
     {
-        Task<Guid> ExecuteAsync(Guid experienceId, CreateQuestionRequest request, Guid userId);
+        Task<AddQuestionResult> ExecuteAsync(Guid experienceId, CreateQuestionRequest request, Guid userId);
     }
 }

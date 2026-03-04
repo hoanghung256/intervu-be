@@ -19,23 +19,33 @@ namespace Intervu.API.Controllers.v1
         private readonly IGetQuestionDetail _getDetail;
         private readonly IUpdateQuestion _update;
         private readonly IDeleteQuestion _delete;
+        private readonly ISearchQuestions _search;
 
         public QuestionController(
             IGetQuestionList getList,
             IGetQuestionDetail getDetail,
             IUpdateQuestion update,
-            IDeleteQuestion delete)
+            IDeleteQuestion delete,
+            ISearchQuestions search)
         {
             _getList = getList;
             _getDetail = getDetail;
             _update = update;
             _delete = delete;
+            _search = search;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetList([FromQuery] QuestionFilterRequest filter)
         {
             var result = await _getList.ExecuteAsync(filter);
+            return Ok(new { success = true, message = "Success", data = result });
+        }
+
+        [HttpGet("search")]
+        public async Task<IActionResult> Search([FromQuery] string keyword, [FromQuery] int limit = 10)
+        {
+            var result = await _search.ExecuteAsync(keyword, limit);
             return Ok(new { success = true, message = "Success", data = result });
         }
 

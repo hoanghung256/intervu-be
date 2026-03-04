@@ -20,8 +20,9 @@ namespace Intervu.Application.UseCases.Question
             var question = await questionRepository.GetDetailAsync(questionId);
             if (question == null) return null;
 
-            var experience = question.InterviewExperience;
-            var author = experience?.User;
+            await questionRepository.IncrementViewCountAsync(questionId);
+
+            var author = question.Author;
 
             // Load comment authors
             var commentAuthorIds = question.Comments
@@ -56,38 +57,60 @@ namespace Intervu.Application.UseCases.Question
                     };
                 }).ToList();
 
-            // Load related questions (same type or role)
+            var answers = question.Answers
+                .OrderByDescending(a => a.IsVerified)
+                .ThenByDescending(a => a.Upvotes)
+                .Select(a => new AnswerDetailDto
+                {
+                    Id = a.Id,
+                    Content = a.Content,
+                    Upvotes = a.Upvotes,
+                    IsVerified = a.IsVerified,
+                    AuthorId = a.AuthorId,
+                    AuthorName = a.Author?.FullName ?? "Anonymous",
+                    AuthorProfilePicture = a.Author?.ProfilePicture,
+                    AuthorSlug = a.Author?.SlugProfileUrl ?? string.Empty,
+                    CreatedAt = a.CreatedAt
+                }).ToList();
+
+            // Related questions (same tags or roles)
             var related = await questionRepository.GetRelatedAsync(
                 questionId,
-                question.QuestionType,
-                experience?.Role ?? string.Empty,
+                question.Id,
                 RelatedLimit);
 
             var relatedDtos = related.Select(r => new RelatedQuestionDto
             {
                 Id = r.Id,
-                Content = r.Content,
-                CompanyName = r.InterviewExperience?.Company?.Name ?? string.Empty,
-                Role = r.InterviewExperience?.Role ?? string.Empty,
+                Title = r.Title,
+                CompanyNames = r.QuestionCompanies?.Select(qc => qc.Company?.Name ?? string.Empty).ToList() ?? new(),
+                Roles = r.QuestionRoles?.Select(qr => qr.Role.ToString()).ToList() ?? new(),
+                AnswerCount = r.Answers?.Count ?? 0,
                 CreatedAt = r.CreatedAt
             }).ToList();
 
             return new QuestionDetailDto
             {
                 Id = question.Id,
+                Title = question.Title,
                 Content = question.Content,
-                QuestionType = question.QuestionType,
-                CompanyName = experience?.Company?.Name ?? string.Empty,
-                Role = experience?.Role ?? string.Empty,
-                Level = experience?.Level,
+                Level = question.Level,
+                Round = question.Round,
+                Status = question.Status,
+                ViewCount = question.ViewCount + 1, // reflect just-incremented
+                SaveCount = question.SaveCount,
+                AnswerCount = question.Answers?.Count ?? 0,
+                IsHot = question.IsHot,
                 CreatedAt = question.CreatedAt,
-                AuthorId = author?.Id ?? Guid.Empty,
+                AuthorId = author?.Id,
                 AuthorName = author?.FullName ?? "Anonymous",
                 AuthorProfilePicture = author?.ProfilePicture,
                 AuthorSlug = author?.SlugProfileUrl ?? string.Empty,
-                SaveCount = 0,
-                IWasAskedThisCount = 0,
-                CommentCount = question.Comments.Count,
+                CompanyNames = question.QuestionCompanies?.Select(qc => qc.Company?.Name ?? string.Empty).ToList() ?? new(),
+                Roles = question.QuestionRoles?.Select(qr => qr.Role.ToString()).ToList() ?? new(),
+                Tags = question.QuestionTags?.Select(qt => new TagDto { Id = qt.TagId, Name = qt.Tag?.Name ?? string.Empty }).ToList() ?? new(),
+                Category = question.Category.ToString(),
+                Answers = answers,
                 Comments = comments,
                 RelatedQuestions = relatedDtos
             };

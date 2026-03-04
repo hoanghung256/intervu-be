@@ -1,5 +1,6 @@
 using Intervu.Application.DTOs.Question;
 using Intervu.Domain.Entities.Constants;
+using Intervu.Domain.Entities.Constants.QuestionConstants;
 using System;
 using System.Collections.Generic;
 
@@ -9,10 +10,12 @@ namespace Intervu.Application.DTOs.InterviewExperience
     {
         public string? SearchTerm { get; set; }
         public Guid? CompanyId { get; set; }
-        public string? Role { get; set; }
+        public Role? Role { get; set; }
         public ExperienceLevel? Level { get; set; }
-        public string? LastRoundCompleted { get; set; }
+        public InterviewRound? LastRoundCompleted { get; set; }
+        public SortOption? SortBy { get; set; }
         public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
     }
 
     public class CreateInterviewExperienceRequest

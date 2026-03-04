@@ -1,5 +1,6 @@
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
+using Intervu.Domain.Entities.Constants.QuestionConstants;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -12,14 +13,22 @@ namespace Intervu.Domain.Repositories
 
         Task<(List<Question> Items, int TotalCount)> GetPagedAsync(
             string? searchTerm,
-            string? questionType,
-            string? role,
+            Guid? companyId,
+            Guid? tagId,
+            QuestionCategory? category,
+            Role? role,
             ExperienceLevel? level,
+            InterviewRound? round,
+            SortOption? sortBy,
             int page,
             int pageSize);
 
+        Task<List<Question>> SearchAsync(string keyword, int limit = 10);
+
         Task<Question?> GetDetailAsync(Guid id);
 
-        Task<List<Question>> GetRelatedAsync(Guid excludeId, string questionType, string role, int limit);
+        Task<List<Question>> GetRelatedAsync(Guid excludeId, Guid questionId, int limit);
+
+        Task IncrementViewCountAsync(Guid questionId);
     }
 }
