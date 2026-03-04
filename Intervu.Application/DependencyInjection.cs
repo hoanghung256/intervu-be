@@ -163,6 +163,8 @@ namespace Intervu.Application
             services.AddScoped<BookingRequestInterfaces.IGetBookingRequests, BookingRequestUseCases.GetBookingRequests>();
             services.AddScoped<BookingRequestInterfaces.IGetBookingRequestDetail, BookingRequestUseCases.GetBookingRequestDetail>();
             services.AddScoped<BookingRequestInterfaces.IExpireBookingRequests, BookingRequestUseCases.ExpireBookingRequests>();
+            services.AddScoped<BookingRequestInterfaces.IPayBookingRequest, BookingRequestUseCases.PayBookingRequest>();
+            services.AddScoped<BookingRequestInterfaces.ICancelBookingRequest, BookingRequestUseCases.CancelBookingRequest>();
 
             return services;
         }

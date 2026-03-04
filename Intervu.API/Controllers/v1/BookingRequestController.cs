@@ -19,19 +19,25 @@ namespace Intervu.API.Controllers.v1
         private readonly IRespondToBookingRequest _respond;
         private readonly IGetBookingRequests _getList;
         private readonly IGetBookingRequestDetail _getDetail;
+        private readonly IPayBookingRequest _pay;
+        private readonly ICancelBookingRequest _cancel;
 
         public BookingRequestController(
             ICreateExternalBookingRequest createExternal,
             ICreateJDBookingRequest createJD,
             IRespondToBookingRequest respond,
             IGetBookingRequests getList,
-            IGetBookingRequestDetail getDetail)
+            IGetBookingRequestDetail getDetail,
+            IPayBookingRequest pay,
+            ICancelBookingRequest cancel)
         {
             _createExternal = createExternal;
             _createJD = createJD;
             _respond = respond;
             _getList = getList;
             _getDetail = getDetail;
+            _pay = pay;
+            _cancel = cancel;
         }
 
         /// <summary>
@@ -126,6 +132,43 @@ namespace Intervu.API.Controllers.v1
             {
                 success = true,
                 message = "Booking request retrieved successfully",
+                data = result
+            });
+        }
+
+        /// <summary>
+        /// Candidate pays for an Accepted booking request via PayOS
+        /// </summary>
+        [Authorize(Policy = AuthorizationPolicies.Candidate)]
+        [HttpPost("{id:guid}/pay")]
+        public async Task<IActionResult> PayBookingRequest(Guid id, [FromBody] PayBookingRequestDto dto)
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var checkoutUrl = await _pay.ExecuteAsync(userId, id, dto.ReturnUrl);
+            return Ok(new
+            {
+                success = true,
+                data = new
+                {
+                    isPaid = checkoutUrl == null,
+                    checkOutUrl = checkoutUrl
+                }
+            });
+        }
+
+        /// <summary>
+        /// Candidate cancels a Pending or Accepted booking request
+        /// </summary>
+        [Authorize(Policy = AuthorizationPolicies.Candidate)]
+        [HttpPost("{id:guid}/cancel")]
+        public async Task<IActionResult> CancelBookingRequest(Guid id)
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var result = await _cancel.ExecuteAsync(userId, id);
+            return Ok(new
+            {
+                success = true,
+                message = "Booking request cancelled successfully",
                 data = result
             });
         }

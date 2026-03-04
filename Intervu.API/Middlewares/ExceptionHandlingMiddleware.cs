@@ -26,6 +26,7 @@ namespace Intervu.API.Middlewares
                 context.Response.StatusCode = ex.StatusCode;
                 await context.Response.WriteAsJsonAsync(new
                 {
+                    success = false,
                     message = ex.Message
                 });
             }
