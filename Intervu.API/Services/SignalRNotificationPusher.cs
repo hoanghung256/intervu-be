@@ -19,5 +19,17 @@ namespace Intervu.API.Services
             await _hubContext.Clients.Group(userId.ToString())
                 .SendAsync("ReceiveNotification", notification);
         }
+
+        public async Task PushToAllAsync(NotificationDto notification)
+        {
+            await _hubContext.Clients.All
+                .SendAsync("ReceiveNotification", notification);
+        }
+
+        public async Task PushToRoleGroupAsync(string role, NotificationDto notification)
+        {
+            await _hubContext.Clients.Group($"role-{role}")
+                .SendAsync("ReceiveNotification", notification);
+        }
     }
 }

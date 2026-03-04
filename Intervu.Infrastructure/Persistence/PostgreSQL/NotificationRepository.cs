@@ -53,5 +53,10 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             return await _context.Notifications
                 .AnyAsync(n => n.UserId == userId && n.Type == type && n.ReferenceId == referenceId);
         }
+
+        public async Task AddRangeAsync(IEnumerable<Notification> notifications)
+        {
+            await _context.Notifications.AddRangeAsync(notifications);
+        }
     }
 }

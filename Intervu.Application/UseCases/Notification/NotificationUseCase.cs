@@ -14,6 +14,8 @@ namespace Intervu.Application.UseCases.Notification
         private readonly IUserRepository _userRepo;
         private readonly INotificationPusher _pusher;
 
+        private const int BroadcastBatchSize = 500;
+
         public NotificationUseCase(
             INotificationRepository notificationRepo,
             IInterviewRoomRepository roomRepo,
@@ -66,18 +68,125 @@ namespace Intervu.Application.UseCases.Notification
         public async Task CreateForMultipleUsersAsync(List<Guid> userIds, NotificationType type,
             string title, string message, string? actionUrl = null, Guid? referenceId = null)
         {
+            var createdAt = DateTime.UtcNow;
+            var notifications = new List<Domain.Entities.Notification>();
+
             foreach (var userId in userIds)
             {
-                await CreateAsync(userId, type, title, message, actionUrl, referenceId);
+                // Dedup check per user
+                if (referenceId.HasValue &&
+                    await _notificationRepo.ExistsAsync(userId, type, referenceId.Value))
+                    continue;
+
+                notifications.Add(new Domain.Entities.Notification
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = userId,
+                    Type = type,
+                    Title = title,
+                    Message = message,
+                    ActionUrl = actionUrl,
+                    ReferenceId = referenceId,
+                    IsRead = false,
+                    CreatedAt = createdAt
+                });
+            }
+
+            if (notifications.Count == 0) return;
+
+            // Batch insert
+            await _notificationRepo.AddRangeAsync(notifications);
+            await _notificationRepo.SaveChangesAsync();
+
+            // Push real-time to each user
+            foreach (var noti in notifications)
+            {
+                await _pusher.PushToUserAsync(noti.UserId, new NotificationDto
+                {
+                    Id = noti.Id,
+                    Type = type.ToString(),
+                    Title = title,
+                    Message = message,
+                    ActionUrl = actionUrl,
+                    IsRead = false,
+                    CreatedAt = createdAt
+                });
             }
         }
 
-        public async Task<NotificationListResponse> GetByUserIdAsync(Guid userId, int page = 1, int pageSize = 20)
+        public async Task BroadcastToAllAsync(NotificationType type,
+            string title, string message, string? actionUrl = null)
+        {
+            await BroadcastAsync(role: null, type, title, message, actionUrl);
+        }
+
+        public async Task BroadcastToRoleAsync(string role, NotificationType type,
+            string title, string message, string? actionUrl = null)
+        {
+            await BroadcastAsync(role, type, title, message, actionUrl);
+        }
+
+        /// <summary>
+        /// Fetches all matching user IDs in batches and inserts notifications in bulk.
+        /// A single SignalR push is performed after DB inserts (Clients.All or Clients.Group).
+        /// </summary>
+        private async Task BroadcastAsync(string? role, NotificationType type,
+            string title, string message, string? actionUrl)
+        {
+            var userRole = role != null && Enum.TryParse<UserRole>(role, out var parsed) ? parsed : (UserRole?)null;
+            var createdAt = DateTime.UtcNow;
+
+            int page = 1;
+            bool hasMore = true;
+
+            while (hasMore)
+            {
+                var (users, _) = await _userRepo.GetPagedUsersByFilterAsync(page, BroadcastBatchSize, userRole, null);
+                if (!users.Any()) break;
+
+                var notifications = users.Select(u => new Domain.Entities.Notification
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = u.Id,
+                    Type = type,
+                    Title = title,
+                    Message = message,
+                    ActionUrl = actionUrl,
+                    IsRead = false,
+                    CreatedAt = createdAt
+                }).ToList();
+
+                await _notificationRepo.AddRangeAsync(notifications);
+                await _notificationRepo.SaveChangesAsync();
+
+                hasMore = users.Count == BroadcastBatchSize;
+                page++;
+            }
+
+            // Single SignalR push after all DB inserts
+            var dto = new NotificationDto
+            {
+                Id = Guid.NewGuid(), // transient ID for FE display
+                Type = type.ToString(),
+                Title = title,
+                Message = message,
+                ActionUrl = actionUrl,
+                IsRead = false,
+                CreatedAt = createdAt
+            };
+
+            if (role == null)
+                await _pusher.PushToAllAsync(dto);
+            else
+                await _pusher.PushToRoleGroupAsync(role, dto);
+        }
+
+        public async Task<NotificationListResponseDto> GetByUserIdAsync(Guid userId, int page = 1, int pageSize = 20)
         {
             var (items, totalCount) = await _notificationRepo.GetByUserIdAsync(userId, page, pageSize);
             var unreadCount = await _notificationRepo.GetUnreadCountAsync(userId);
 
-            return new NotificationListResponse
+            return new NotificationListResponseDto
             {
                 Items = items.Select(n => new NotificationDto
                 {
@@ -101,8 +210,12 @@ namespace Intervu.Application.UseCases.Notification
             return await _notificationRepo.GetUnreadCountAsync(userId);
         }
 
-        public async Task MarkAsReadAsync(Guid notificationId)
+        public async Task MarkAsReadAsync(Guid notificationId, Guid currentUserId)
         {
+            var notification = await _notificationRepo.GetByIdAsync(notificationId);
+            if (notification == null || notification.UserId != currentUserId)
+                return; // Silently ignore if not found or not owned by current user
+
             await _notificationRepo.MarkAsReadAsync(notificationId);
         }
 

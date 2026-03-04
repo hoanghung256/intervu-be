@@ -10,5 +10,7 @@ namespace Intervu.Domain.Repositories
         Task MarkAsReadAsync(Guid notificationId);
         Task MarkAllAsReadAsync(Guid userId);
         Task<bool> ExistsAsync(Guid userId, NotificationType type, Guid referenceId);
+        Task AddRangeAsync(IEnumerable<Notification> notifications);
     }
 }
+

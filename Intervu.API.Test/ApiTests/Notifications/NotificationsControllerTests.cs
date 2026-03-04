@@ -18,8 +18,8 @@ namespace Intervu.API.Test.ApiTests.Notifications
         }
 
         // Seeded users from IntervuPostgreDbContext
-        private readonly string _aliceEmail = "alice@example.com"; // Candidate — has 1 seeded notification
-        private readonly string _bobEmail = "bob@example.com";   // Coach — has 0 notifications
+        private readonly string _aliceEmail = "alice@example.com"; // Candidate â€” has 1 seeded notification
+        private readonly string _bobEmail = "bob@example.com";   // Coach â€” has 0 notifications
 
         // Seeded notification from IntervuPostgreDbContext (belongs to Alice, IsRead=false)
         private readonly Guid _seededNotificationId = Guid.Parse("0a1b2c3d-4e5f-4a6b-8c9d-0e1f2a3b4c20");
@@ -34,7 +34,7 @@ namespace Intervu.API.Test.ApiTests.Notifications
             return data.Data!.Token;
         }
 
-        // ─── GET /api/v1/notifications ───────────────────────────────────────
+        // â”€â”€â”€ GET /api/v1/notifications â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         [Fact]
         [Trait("Category", "API")]
@@ -47,7 +47,7 @@ namespace Intervu.API.Test.ApiTests.Notifications
             var response = await _api.GetAsync("/api/v1/notifications", jwtToken: token, logBody: true);
 
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status is 200 OK");
-            var body = await _api.LogDeserializeJson<NotificationListResponse>(response);
+            var body = await _api.LogDeserializeJson<NotificationListResponseDto>(response);
             await AssertHelper.AssertTrue(body.Success, "Response success is true");
             await AssertHelper.AssertNotNull(body.Data, "Data is not null");
         }
@@ -95,7 +95,7 @@ namespace Intervu.API.Test.ApiTests.Notifications
 
             LogInfo("Alice should have at least 1 seeded notification.");
             var response = await _api.GetAsync("/api/v1/notifications", jwtToken: token, logBody: true);
-            var body = await _api.LogDeserializeJson<NotificationListResponse>(response);
+            var body = await _api.LogDeserializeJson<NotificationListResponseDto>(response);
 
             await AssertHelper.AssertTrue(body.Data!.TotalCount >= 1, "Alice has at least 1 notification");
         }
@@ -107,11 +107,11 @@ namespace Intervu.API.Test.ApiTests.Notifications
         {
             var token = await LoginAsync(_bobEmail);
 
-            LogInfo("Bob (coach) has no seeded notifications — list should be empty.");
+            LogInfo("Bob (coach) has no seeded notifications â€” list should be empty.");
             var response = await _api.GetAsync("/api/v1/notifications", jwtToken: token, logBody: true);
 
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status is 200 OK");
-            var body = await _api.LogDeserializeJson<NotificationListResponse>(response);
+            var body = await _api.LogDeserializeJson<NotificationListResponseDto>(response);
             await AssertHelper.AssertTrue(body.Success, "Response success is true");
             await AssertHelper.AssertTrue(body.Data!.TotalCount == 0, "TotalCount is 0 for user with no notifications");
         }
@@ -127,7 +127,7 @@ namespace Intervu.API.Test.ApiTests.Notifications
             var response = await _api.GetAsync("/api/v1/notifications?page=1&pageSize=5", jwtToken: token, logBody: true);
 
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status is 200 OK");
-            var body = await _api.LogDeserializeJson<NotificationListResponse>(response);
+            var body = await _api.LogDeserializeJson<NotificationListResponseDto>(response);
             await AssertHelper.AssertTrue(body.Success, "Response success is true");
         }
 
@@ -138,7 +138,7 @@ namespace Intervu.API.Test.ApiTests.Notifications
         {
             var token = await LoginAsync(_aliceEmail);
 
-            LogInfo("Requesting page 999 — should return empty items but still 200 OK.");
+            LogInfo("Requesting page 999 â€” should return empty items but still 200 OK.");
             var response = await _api.GetAsync("/api/v1/notifications?page=999&pageSize=20", jwtToken: token, logBody: true);
 
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status is 200 OK");
@@ -149,7 +149,7 @@ namespace Intervu.API.Test.ApiTests.Notifications
             await AssertHelper.AssertTrue(items.GetArrayLength() == 0, "Items is empty for out-of-range page");
         }
 
-        // ─── GET /api/v1/notifications/unread-count ──────────────────────────
+        // â”€â”€â”€ GET /api/v1/notifications/unread-count â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         [Fact]
         [Trait("Category", "API")]
@@ -185,17 +185,20 @@ namespace Intervu.API.Test.ApiTests.Notifications
         {
             var token = await LoginAsync(_bobEmail);
 
-            LogInfo("Bob has no notifications so unread count must be 0.");
+            // First mark all as read to reset state (other tests may have created notifications for Bob)
+            await _api.PatchAsync("/api/v1/notifications/read-all", jwtToken: token);
+
+            LogInfo("After marking all as read, Bob's unread count must be 0.");
             var response = await _api.GetAsync("/api/v1/notifications/unread-count", jwtToken: token, logBody: true);
 
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status is 200 OK");
 
             var content = await response.Content.ReadAsStringAsync();
             var count = JsonDocument.Parse(content).RootElement.GetProperty("data").GetProperty("count").GetInt32();
-            await AssertHelper.AssertTrue(count == 0, "Unread count is 0 for Bob who has no notifications");
+            await AssertHelper.AssertTrue(count == 0, "Unread count is 0 after marking all as read");
         }
 
-        // ─── PATCH /api/v1/notifications/{id}/read ───────────────────────────
+        // â”€â”€â”€ PATCH /api/v1/notifications/{id}/read â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         [Fact]
         [Trait("Category", "API")]
@@ -254,7 +257,7 @@ namespace Intervu.API.Test.ApiTests.Notifications
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status is 400 Bad Request for invalid GUID");
         }
 
-        // ─── PATCH /api/v1/notifications/read-all ────────────────────────────
+        // â”€â”€â”€ PATCH /api/v1/notifications/read-all â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         [Fact]
         [Trait("Category", "API")]
@@ -315,23 +318,244 @@ namespace Intervu.API.Test.ApiTests.Notifications
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status is 200 OK even with no notifications to mark");
         }
 
-        // ─── Cross-user isolation ─────────────────────────────────────────────
+        // â”€â”€â”€ Cross-user isolation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Notifications")]
         public async Task GetList_DoesNotReturnOtherUsersNotifications()
         {
-            // Bob (coach) should never see Alice's notifications
+            // Bob (coach) should never see Alice's seeded notification
             var bobToken = await LoginAsync(_bobEmail);
 
-            LogInfo("Verifying Bob cannot see Alice's notifications.");
+            LogInfo("Verifying Bob cannot see Alice's seeded notification.");
             var response = await _api.GetAsync("/api/v1/notifications", jwtToken: bobToken, logBody: true);
 
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status is 200 OK");
-            var body = await _api.LogDeserializeJson<NotificationListResponse>(response);
 
-            await AssertHelper.AssertTrue(body.Data!.TotalCount == 0, "Bob sees 0 notifications (not Alice's)");
+            var content = await response.Content.ReadAsStringAsync();
+            var json = JsonDocument.Parse(content).RootElement;
+            var items = json.GetProperty("data").GetProperty("items");
+
+            // Ensure Alice's seeded notification does not appear in Bob's list
+            var containsAliceNotification = false;
+            foreach (var item in items.EnumerateArray())
+            {
+                if (item.GetProperty("id").GetString() == _seededNotificationId.ToString())
+                {
+                    containsAliceNotification = true;
+                    break;
+                }
+            }
+            await AssertHelper.AssertTrue(!containsAliceNotification, "Bob does not see Alice's seeded notification");
+        }
+
+        // --- POST /api/v1/notifications/admin (Admin: send to specific user) ---
+
+        private readonly string _adminEmail = "admin@example.com";
+        private readonly Guid _aliceUserId = Guid.Parse("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11");
+        private readonly Guid _bobUserId = Guid.Parse("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22");
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Notifications")]
+        public async Task AdminCreate_ReturnsForbidden_WhenNotAdmin()
+        {
+            var token = await LoginAsync(_aliceEmail); // Candidate, not Admin
+
+            LogInfo("POST /admin as non-admin user should be 403.");
+            var response = await _api.PostAsync("/api/v1/notifications/admin",
+                new CreateNotificationRequestDto
+                {
+                    UserId = _bobUserId,
+                    Type = Intervu.Domain.Entities.Constants.NotificationType.SystemAnnouncement,
+                    Title = "Test",
+                    Message = "Should fail"
+                }, jwtToken: token);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Non-admin gets 403 Forbidden");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Notifications")]
+        public async Task AdminCreate_ReturnsUnauthorized_WhenNoToken()
+        {
+            LogInfo("POST /admin without token should be 401.");
+            var response = await _api.PostAsync("/api/v1/notifications/admin",
+                new CreateNotificationRequestDto
+                {
+                    UserId = _bobUserId,
+                    Type = Intervu.Domain.Entities.Constants.NotificationType.SystemAnnouncement,
+                    Title = "Test",
+                    Message = "Should fail"
+                });
+
+            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "No token gets 401");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Notifications")]
+        public async Task AdminCreate_ReturnsOk_WhenAdmin()
+        {
+            var token = await LoginAsync(_adminEmail);
+
+            LogInfo("POST /admin as admin to send notification to Bob.");
+            var response = await _api.PostAsync("/api/v1/notifications/admin",
+                new CreateNotificationRequestDto
+                {
+                    UserId = _bobUserId,
+                    Type = Intervu.Domain.Entities.Constants.NotificationType.SystemAnnouncement,
+                    Title = "Admin Test",
+                    Message = "This is a test notification from admin"
+                }, jwtToken: token);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Admin gets 200 OK");
+            var body = await _api.LogDeserializeJson<object>(response);
+            await AssertHelper.AssertTrue(body.Success, "Response success is true");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Notifications")]
+        public async Task AdminCreate_ThenUserSeesNotification()
+        {
+            var adminToken = await LoginAsync(_adminEmail);
+            var bobToken = await LoginAsync(_bobEmail);
+
+            // Get Bob's initial count
+            var beforeResponse = await _api.GetAsync("/api/v1/notifications/unread-count", jwtToken: bobToken);
+            var beforeContent = await beforeResponse.Content.ReadAsStringAsync();
+            var beforeCount = JsonDocument.Parse(beforeContent).RootElement.GetProperty("data").GetProperty("count").GetInt32();
+
+            LogInfo("Admin sends notification to Bob.");
+            await _api.PostAsync("/api/v1/notifications/admin",
+                new CreateNotificationRequestDto
+                {
+                    UserId = _bobUserId,
+                    Type = Intervu.Domain.Entities.Constants.NotificationType.SystemAnnouncement,
+                    Title = "End-to-end test",
+                    Message = "Bob should see this"
+                }, jwtToken: adminToken);
+
+            LogInfo("Verifying Bob's unread count increased.");
+            var afterResponse = await _api.GetAsync("/api/v1/notifications/unread-count", jwtToken: bobToken);
+            var afterContent = await afterResponse.Content.ReadAsStringAsync();
+            var afterCount = JsonDocument.Parse(afterContent).RootElement.GetProperty("data").GetProperty("count").GetInt32();
+
+            await AssertHelper.AssertTrue(afterCount > beforeCount, $"Bob's unread count increased from {beforeCount} to {afterCount}");
+        }
+
+        // --- POST /api/v1/notifications/admin/broadcast ---
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Notifications")]
+        public async Task AdminBroadcast_ReturnsOk_WhenAdmin()
+        {
+            var token = await LoginAsync(_adminEmail);
+
+            LogInfo("POST /admin/broadcast to Alice and Bob.");
+            var response = await _api.PostAsync("/api/v1/notifications/admin/broadcast",
+                new BroadcastNotificationRequestDto
+                {
+                    UserIds = new List<Guid> { _aliceUserId, _bobUserId },
+                    Type = Intervu.Domain.Entities.Constants.NotificationType.SystemAnnouncement,
+                    Title = "Broadcast Test",
+                    Message = "Sent to multiple users"
+                }, jwtToken: token);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Admin broadcast returns 200 OK");
+            var body = await _api.LogDeserializeJson<object>(response);
+            await AssertHelper.AssertTrue(body.Success, "Response success is true");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Notifications")]
+        public async Task AdminBroadcast_ReturnsBadRequest_WhenUserIdsEmpty()
+        {
+            var token = await LoginAsync(_adminEmail);
+
+            LogInfo("POST /admin/broadcast with empty UserIds.");
+            var response = await _api.PostAsync("/api/v1/notifications/admin/broadcast",
+                new BroadcastNotificationRequestDto
+                {
+                    UserIds = new List<Guid>(),
+                    Type = Intervu.Domain.Entities.Constants.NotificationType.SystemAnnouncement,
+                    Title = "Empty",
+                    Message = "Should fail"
+                }, jwtToken: token);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Empty UserIds returns 400");
+        }
+
+        // --- POST /api/v1/notifications/admin/broadcast-all ---
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Notifications")]
+        public async Task AdminBroadcastAll_ReturnsOk_WhenAdmin()
+        {
+            var token = await LoginAsync(_adminEmail);
+
+            LogInfo("POST /admin/broadcast-all to all users.");
+            var response = await _api.PostAsync("/api/v1/notifications/admin/broadcast-all",
+                new BroadcastAllRequestDto
+                {
+                    Type = Intervu.Domain.Entities.Constants.NotificationType.SystemAnnouncement,
+                    Title = "System Maintenance",
+                    Message = "System will be down for maintenance tonight"
+                }, jwtToken: token);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Broadcast-all returns 200 OK");
+            var body = await _api.LogDeserializeJson<object>(response);
+            await AssertHelper.AssertTrue(body.Success, "Response success is true");
+        }
+
+        // --- POST /api/v1/notifications/admin/broadcast-role ---
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Notifications")]
+        public async Task AdminBroadcastRole_ReturnsOk_WhenAdmin()
+        {
+            var token = await LoginAsync(_adminEmail);
+
+            LogInfo("POST /admin/broadcast-role to Coach role.");
+            var response = await _api.PostAsync("/api/v1/notifications/admin/broadcast-role",
+                new BroadcastRoleRequestDto
+                {
+                    Role = "Coach",
+                    Type = Intervu.Domain.Entities.Constants.NotificationType.SystemAnnouncement,
+                    Title = "Coach Policy Update",
+                    Message = "Commission rate changed"
+                }, jwtToken: token);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Broadcast-role returns 200 OK");
+            var body = await _api.LogDeserializeJson<object>(response);
+            await AssertHelper.AssertTrue(body.Success, "Response success is true");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Notifications")]
+        public async Task AdminBroadcastRole_ReturnsBadRequest_WhenRoleEmpty()
+        {
+            var token = await LoginAsync(_adminEmail);
+
+            LogInfo("POST /admin/broadcast-role with empty Role.");
+            var response = await _api.PostAsync("/api/v1/notifications/admin/broadcast-role",
+                new BroadcastRoleRequestDto
+                {
+                    Role = "",
+                    Type = Intervu.Domain.Entities.Constants.NotificationType.SystemAnnouncement,
+                    Title = "Empty",
+                    Message = "Should fail"
+                }, jwtToken: token);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Empty Role returns 400");
         }
     }
 }
