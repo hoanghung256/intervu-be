@@ -13,6 +13,7 @@ namespace Intervu.Application.UseCases.BookingRequest
         private readonly IBookingRequestRepository _bookingRepo;
         private readonly ICoachInterviewServiceRepository _serviceRepo;
         private readonly ICoachProfileRepository _coachRepo;
+        private readonly ICoachAvailabilitiesRepository _availabilityRepo;
         private readonly IMapper _mapper;
 
         private static readonly TimeSpan DefaultExpiration = TimeSpan.FromHours(48);
@@ -22,11 +23,13 @@ namespace Intervu.Application.UseCases.BookingRequest
             IBookingRequestRepository bookingRepo,
             ICoachInterviewServiceRepository serviceRepo,
             ICoachProfileRepository coachRepo,
+            ICoachAvailabilitiesRepository availabilityRepo,
             IMapper mapper)
         {
             _bookingRepo = bookingRepo;
             _serviceRepo = serviceRepo;
             _coachRepo = coachRepo;
+            _availabilityRepo = availabilityRepo;
             _mapper = mapper;
         }
 
@@ -70,6 +73,22 @@ namespace Intervu.Application.UseCases.BookingRequest
                     throw new BadRequestException(
                         $"Round {i + 1} must start at least 15 minutes after round {i} ends. " +
                         $"Round {i} ends at {prevEndTime:g}, round {i + 1} starts at {orderedRounds[i].StartTime:g}");
+            }
+
+            // Validate that each round fits within an available coach availability range
+            for (int i = 0; i < orderedRounds.Count; i++)
+            {
+                var roundDto = orderedRounds[i];
+                var svc = serviceMap[roundDto.CoachInterviewServiceId];
+                var roundEnd = roundDto.StartTime.AddMinutes(svc.DurationMinutes);
+
+                var containingAvailability = await _availabilityRepo.FindContainingAvailabilityAsync(
+                    dto.CoachId, roundDto.StartTime, roundEnd);
+
+                if (containingAvailability == null)
+                    throw new BadRequestException(
+                        $"Round {i + 1} time range ({roundDto.StartTime:g} - {roundEnd:g}) " +
+                        "does not fall within any of the coach's available time slots");
             }
 
             // Calculate total price from all rounds

@@ -2,6 +2,7 @@
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
+using Intervu.Application.Services;
 using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
@@ -77,34 +78,41 @@ namespace Intervu.Application.UseCases.InterviewBooking
         }
 
         /// <summary>
-        /// Flow A: Normal booking via coach availability slot
+        /// Flow A: Normal booking via coach availability slot.
+        /// The availability was already split at checkout creation time.
+        /// Here we just create the interview room using stored metadata.
         /// </summary>
-        private async Task HandleAvailabilityPayment(InterviewBookingTransaction transaction)
+        private Task HandleAvailabilityPayment(InterviewBookingTransaction transaction)
         {
-            var availabilityRepo = _unitOfWork.GetRepository<ICoachAvailabilitiesRepository>();
-
-            CoachAvailability availability = await availabilityRepo.GetByIdAsync(transaction.CoachAvailabilityId!.Value)
-                ?? throw new NotFoundException("Coach availability not found");
-
-            if (availability.Status != CoachAvailabilityStatus.Unavailable)
-                throw new CoachAvailabilityNotAvailableException("Availability is not in booking state");
-
-            availability.Status = CoachAvailabilityStatus.Unavailable;
-
-            int durationMinutes = (int)(availability.EndTime - availability.StartTime).TotalMinutes;
+            var candidateId = transaction.UserId;
+            var coachId = transaction.CoachId
+                ?? throw new NotFoundException("Transaction is missing CoachId metadata");
+            var startTime = transaction.BookedStartTime
+                ?? throw new NotFoundException("Transaction is missing BookedStartTime metadata");
+            var duration = transaction.BookedDurationMinutes
+                ?? throw new NotFoundException("Transaction is missing BookedDurationMinutes metadata");
 
             _backgroundService.Enqueue<ICreateInterviewRoom>(
-                uc => uc.ExecuteAsync(transaction.UserId, availability.CoachId, availability.Id, availability.StartTime, transaction.Id, durationMinutes)
+                uc => uc.ExecuteAsync(
+                    candidateId,
+                    coachId,
+                    transaction.CoachAvailabilityId!.Value,
+                    startTime,
+                    transaction.Id,
+                    duration)
             );
+
+            return Task.CompletedTask;
         }
 
         /// <summary>
-        /// Flow B/C: BookingRequest payment — mark as Paid and create interview rooms
+        /// Flow B/C: BookingRequest payment — mark as Paid, split availability, and create interview rooms
         /// </summary>
         private async Task HandleBookingRequestPayment(InterviewBookingTransaction transaction)
         {
             var bookingRepo = _unitOfWork.GetRepository<IBookingRequestRepository>();
             var roomRepo = _unitOfWork.GetRepository<IInterviewRoomRepository>();
+            var availabilityRepo = _unitOfWork.GetRepository<ICoachAvailabilitiesRepository>();
 
             var bookingRequest = await bookingRepo.GetByIdWithDetailsAsync(transaction.BookingRequestId!.Value)
                 ?? throw new NotFoundException("Booking request not found");
@@ -124,13 +132,20 @@ namespace Intervu.Application.UseCases.InterviewBooking
 
             if (bookingRequest.Type == BookingRequestType.External)
             {
-                // Flow B: Create a single interview room
+                // Flow B: Split availability for the single booking
+                var durationMinutes = bookingRequest.CoachInterviewService?.DurationMinutes ?? 60;
+                var startTime = bookingRequest.RequestedStartTime!.Value;
+                var endTime = startTime.AddMinutes(durationMinutes);
+
+                await SplitAvailabilityForBooking(availabilityRepo, bookingRequest.CoachId, startTime, endTime);
+
+                // Create a single interview room
                 var room = new Domain.Entities.InterviewRoom
                 {
                     CandidateId = bookingRequest.CandidateId,
                     CoachId = bookingRequest.CoachId,
                     ScheduledTime = bookingRequest.RequestedStartTime,
-                    DurationMinutes = bookingRequest.CoachInterviewService?.DurationMinutes ?? 60,
+                    DurationMinutes = durationMinutes,
                     Status = InterviewRoomStatus.Scheduled,
                     TransactionId = transaction.Id,
                     BookingRequestId = bookingRequest.Id,
@@ -145,15 +160,20 @@ namespace Intervu.Application.UseCases.InterviewBooking
             }
             else if (bookingRequest.Type == BookingRequestType.JDInterview)
             {
-                // Flow C: Create one room per interview round
+                // Flow C: Split availability for each round and create rooms
                 foreach (var round in bookingRequest.Rounds.OrderBy(r => r.RoundNumber))
                 {
+                    var roundDuration = round.CoachInterviewService?.DurationMinutes ?? 60;
+                    var roundEnd = round.StartTime.AddMinutes(roundDuration);
+
+                    await SplitAvailabilityForBooking(availabilityRepo, bookingRequest.CoachId, round.StartTime, roundEnd);
+
                     var room = new Domain.Entities.InterviewRoom
                     {
                         CandidateId = bookingRequest.CandidateId,
                         CoachId = bookingRequest.CoachId,
                         ScheduledTime = round.StartTime,
-                        DurationMinutes = round.CoachInterviewService?.DurationMinutes ?? 60,
+                        DurationMinutes = roundDuration,
                         Status = InterviewRoomStatus.Scheduled,
                         TransactionId = transaction.Id,
                         BookingRequestId = bookingRequest.Id,
@@ -168,6 +188,46 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     "Created {RoundCount} interview rooms for JD BookingRequest {BookingRequestId}",
                     bookingRequest.Rounds.Count, bookingRequest.Id);
             }
+        }
+
+        /// <summary>
+        /// Finds the containing availability range and splits it around the booked time,
+        /// applying a 15-minute buffer after the booking.
+        /// </summary>
+        private async Task SplitAvailabilityForBooking(
+            ICoachAvailabilitiesRepository availabilityRepo,
+            Guid coachId,
+            DateTime bookingStart,
+            DateTime bookingEnd)
+        {
+            var containingAvailability = await availabilityRepo.FindContainingAvailabilityAsync(
+                coachId, bookingStart, bookingEnd);
+
+            if (containingAvailability == null)
+            {
+                _logger.LogWarning(
+                    "No containing availability found for coach {CoachId} time range {Start} - {End}. " +
+                    "Skipping availability split (booking may be outside coach hours).",
+                    coachId, bookingStart, bookingEnd);
+                return;
+            }
+
+            var (before, after) = AvailabilitySplitService.Split(containingAvailability, bookingStart, bookingEnd);
+
+            // Remove the original availability
+            availabilityRepo.DeleteAsync(containingAvailability);
+
+            // Insert the split ranges
+            if (before != null)
+                await availabilityRepo.AddAsync(before);
+            if (after != null)
+                await availabilityRepo.AddAsync(after);
+
+            _logger.LogInformation(
+                "Split availability {AvailabilityId} for booking {Start} - {End}. " +
+                "Created {RangeCount} new range(s).",
+                containingAvailability.Id, bookingStart, bookingEnd,
+                (before != null ? 1 : 0) + (after != null ? 1 : 0));
         }
     }
 }

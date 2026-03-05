@@ -1,4 +1,5 @@
 ﻿using Intervu.Domain.Entities;
+using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +14,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             int year = 0)
         {
             var query = _context.CoachAvailabilities.AsQueryable();
-            var filtered = query.Where(x => x.CoachId == coachId);
+            var filtered = query.Where(x => x.CoachId == coachId && x.Status == CoachAvailabilityStatus.Available);
 
             if (month > 0 && year > 0)
             {
@@ -86,6 +87,16 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
         {
             return _context.CoachAvailabilities
                 .FirstOrDefaultAsync(a => a.CoachId == coachId && a.StartTime == startTime);
+        }
+
+        public Task<CoachAvailability?> FindContainingAvailabilityAsync(Guid coachId, DateTime startTime, DateTime endTime)
+        {
+            return _context.CoachAvailabilities
+                .FirstOrDefaultAsync(a =>
+                    a.CoachId == coachId
+                    && a.Status == CoachAvailabilityStatus.Available
+                    && a.StartTime <= startTime
+                    && a.EndTime >= endTime);
         }
     }
 }

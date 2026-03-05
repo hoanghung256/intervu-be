@@ -15,5 +15,9 @@ namespace Intervu.Domain.Repositories
         Task<bool> DeleteCoachAvailabilityAsync(Guid availabilityId);
         Task<bool> UpdateCoachAvailabilityAsync(Guid availabilityId, DateTimeOffset startTime, DateTimeOffset endTime);
         Task<CoachAvailability?> GetAsync(Guid coachId, DateTime startTime);
+        /// <summary>
+        /// Finds a single Available CoachAvailability whose range fully contains [startTime, endTime].
+        /// </summary>
+        Task<CoachAvailability?> FindContainingAvailabilityAsync(Guid coachId, DateTime startTime, DateTime endTime);
     }
 }

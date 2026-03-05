@@ -602,10 +602,19 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<int>("Amount")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("BookedDurationMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("BookedStartTime")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid?>("BookingRequestId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("CoachAvailabilityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CoachId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("OrderCode")
