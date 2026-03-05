@@ -1,6 +1,5 @@
 using AutoMapper;
 using Intervu.Application.DTOs.InterviewExperience;
-using Intervu.Application.DTOs.Question;
 using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.UseCases.InterviewExperience;
 using Intervu.Domain.Abstractions.Entity.Interfaces;
@@ -17,58 +16,94 @@ namespace Intervu.Application.UseCases.InterviewExperience
         public async Task<Guid> ExecuteAsync(CreateInterviewExperienceRequest request, Guid userId)
         {
             var repo = unitOfWork.GetRepository<IInterviewExperienceRepository>();
-
             var companyRepo = unitOfWork.GetRepository<ICompanyRepository>();
+            var questionRepo = unitOfWork.GetRepository<IQuestionRepository>();
+            var commentRepo = unitOfWork.GetRepository<ICommentRepository>();
+
             var company = await companyRepo.GetByIdAsync(request.CompanyId);
             if (company is null)
                 throw new NotFoundException($"Company with id '{request.CompanyId}' was not found.");
+
+            var now = DateTime.UtcNow;
 
             var experience = mapper.Map<Domain.Entities.InterviewExperience>(request);
             experience.Id = Guid.NewGuid();
             experience.CreatedBy = userId;
             experience.UpdatedBy = userId;
-            experience.CreatedAt = DateTime.UtcNow;
-            experience.UpdatedAt = DateTime.UtcNow;
+            experience.CreatedAt = now;
+            experience.UpdatedAt = now;
 
             foreach (var q in request.Questions)
             {
-                var question = new Domain.Entities.Question
+                if (q.LinkedQuestionId.HasValue)
                 {
-                    Id = Guid.NewGuid(),
-                    Title = q.Title,
-                    Content = q.Content,
-                    InterviewExperienceId = experience.Id,
-                    Level = q.Level,
-                    Round = q.Round,
-                    Category = q.Category,
-                    CreatedBy = userId,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
+                    _ = await questionRepo.GetByIdAsync(q.LinkedQuestionId.Value)
+                        ?? throw new NotFoundException($"Question '{q.LinkedQuestionId}' was not found.");
 
-                foreach (var cid in q.CompanyIds)
-                    question.QuestionCompanies.Add(new Domain.Entities.QuestionCompany { QuestionId = question.Id, CompanyId = cid });
-                foreach (var r in q.Roles)
-                    question.QuestionRoles.Add(new Domain.Entities.QuestionRole { QuestionId = question.Id, Role = r });
-                foreach (var tid in q.TagIds)
-                    question.QuestionTags.Add(new Domain.Entities.QuestionTag { QuestionId = question.Id, TagId = tid });
-
-                if (!string.IsNullOrWhiteSpace(q.Answer))
+                    if (!string.IsNullOrWhiteSpace(q.Answer))
+                    {
+                        await commentRepo.AddAsync(new Domain.Entities.Comment
+                        {
+                            Id = Guid.NewGuid(),
+                            QuestionId = q.LinkedQuestionId.Value,
+                            Content = q.Answer,
+                            IsAnswer = true,
+                            Vote = 0,
+                            CreatedAt = now,
+                            UpdateAt = now,
+                            CreateBy = userId,
+                            UpdateBy = userId
+                        });
+                    }
+                }
+                else
                 {
-                    question.Answers.Add(new Domain.Entities.Answer
+                    if (string.IsNullOrWhiteSpace(q.Title))
+                        throw new ArgumentException("Title is required when creating a new question.");
+                    if (string.IsNullOrWhiteSpace(q.Content))
+                        throw new ArgumentException("Content is required when creating a new question.");
+
+                    var question = new Domain.Entities.Question
                     {
                         Id = Guid.NewGuid(),
-                        QuestionId = question.Id,
-                        AuthorId = userId,
-                        Content = q.Answer,
-                        Upvotes = 0,
-                        IsVerified = false,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
-                    });
-                }
+                        Title = q.Title,
+                        Content = q.Content,
+                        InterviewExperienceId = experience.Id,
+                        Level = q.Level,
+                        Round = q.Round,
+                        Category = q.Category,
+                        CreatedBy = userId,
+                        CreatedAt = now,
+                        UpdatedAt = now
+                    };
 
-                experience.Questions.Add(question);
+                    foreach (var cid in q.CompanyIds)
+                        question.QuestionCompanies.Add(new QuestionCompany { CompanyId = cid });
+
+                    foreach (var r in q.Roles)
+                        question.QuestionRoles.Add(new QuestionRole { Role = r });
+
+                    foreach (var tid in q.TagIds)
+                        question.QuestionTags.Add(new QuestionTag { TagId = tid });
+
+                    if (!string.IsNullOrWhiteSpace(q.Answer))
+                    {
+                        question.Comments.Add(new Domain.Entities.Comment
+                        {
+                            Id = Guid.NewGuid(),
+                            QuestionId = question.Id,
+                            Content = q.Answer,
+                            IsAnswer = true,
+                            Vote = 0,
+                            CreatedAt = now,
+                            UpdateAt = now,
+                            CreateBy = userId,
+                            UpdateBy = userId
+                        });
+                    }
+
+                    experience.Questions.Add(question);
+                }
             }
 
             await repo.AddAsync(experience);
