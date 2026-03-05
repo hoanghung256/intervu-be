@@ -107,6 +107,7 @@ namespace Intervu.Application
 
             // ----- Coach Availability ----
             services.AddScoped<IGetCoachAvailabilities, GetCoachAvailabilities>();
+            services.AddScoped<IGetCoachFreeSlots, GetCoachFreeSlots>();
             services.AddScoped<ICreateCoachAvailability, CreateCoachAvailability>();
             services.AddScoped<IDeleteCoachAvailability, DeleteCoachAvailability>();
             services.AddScoped<IUpdateAvailabilityStatus, UpdateAvailabilityStatus>();
