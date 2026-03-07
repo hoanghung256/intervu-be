@@ -1,7 +1,10 @@
 using AutoMapper;
+using Intervu.Application.DTOs.Availability;
 using Intervu.Application.DTOs.BookingRequest;
 using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.UseCases.BookingRequest;
+using Intervu.Application.Services;
+using Intervu.Application.Validators;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
@@ -14,22 +17,24 @@ namespace Intervu.Application.UseCases.BookingRequest
         private readonly ICoachInterviewServiceRepository _serviceRepo;
         private readonly ICoachProfileRepository _coachRepo;
         private readonly ICoachAvailabilitiesRepository _availabilityRepo;
+        private readonly ITransactionRepository _transactionRepo;
         private readonly IMapper _mapper;
 
         private static readonly TimeSpan DefaultExpiration = TimeSpan.FromHours(48);
-        private static readonly TimeSpan MinGapBetweenRounds = TimeSpan.FromMinutes(15);
 
         public CreateJDBookingRequest(
             IBookingRequestRepository bookingRepo,
             ICoachInterviewServiceRepository serviceRepo,
             ICoachProfileRepository coachRepo,
             ICoachAvailabilitiesRepository availabilityRepo,
+            ITransactionRepository transactionRepo,
             IMapper mapper)
         {
             _bookingRepo = bookingRepo;
             _serviceRepo = serviceRepo;
             _coachRepo = coachRepo;
             _availabilityRepo = availabilityRepo;
+            _transactionRepo = transactionRepo;
             _mapper = mapper;
         }
 
@@ -38,10 +43,6 @@ namespace Intervu.Application.UseCases.BookingRequest
             // Validate coach exists
             var coach = await _coachRepo.GetProfileByIdAsync(dto.CoachId)
                 ?? throw new NotFoundException("Coach profile not found");
-
-            // Validate at least 2 rounds
-            if (dto.Rounds == null || dto.Rounds.Count < 2)
-                throw new BadRequestException("At least 2 rounds are required for JD multi-round interviews");
 
             // Validate all CoachInterviewServices exist and belong to the coach
             var serviceIds = dto.Rounds.Select(r => r.CoachInterviewServiceId).Distinct().ToList();
@@ -55,41 +56,45 @@ namespace Intervu.Application.UseCases.BookingRequest
                 throw new BadRequestException("One or more selected services do not belong to the specified coach");
 
             var serviceMap = services.ToDictionary(s => s.Id);
+            var serviceDurations = services.ToDictionary(s => s.Id, s => s.DurationMinutes);
 
-            // Order rounds by start time and validate gaps
+            // ── Subtraction pattern: compute free slots ──────────────
+            // Fetch ALL raw availability windows (month=0, year=0) for this coach
+            var rawAvailabilities = (await _availabilityRepo
+                .GetCoachAvailabilitiesByMonthAsync(dto.CoachId, 0, 0))
+                .ToList();
+
+            if (rawAvailabilities.Count == 0)
+                throw new BadRequestException("This coach has no available time slots");
+
+            // Determine range covered by rounds to fetch only relevant bookings
             var orderedRounds = dto.Rounds.OrderBy(r => r.StartTime).ToList();
+            var rangeStart = rawAvailabilities.Min(a => a.StartTime);
+            var rangeEnd = rawAvailabilities.Max(a => a.EndTime);
 
-            // Validate all round start times are in the future
-            if (orderedRounds.Any(r => r.StartTime <= DateTime.UtcNow))
-                throw new BadRequestException("All round start times must be in the future");
+            var activeBookings = await _transactionRepo
+                .GetActiveBookingsByCoachAsync(dto.CoachId, rangeStart, rangeEnd);
 
-            // Validate gap between consecutive rounds
-            for (int i = 1; i < orderedRounds.Count; i++)
+            var freeTimeSlots = AvailabilityCalculatorService
+                .CalculateFreeSlots(rawAvailabilities, activeBookings);
+
+            // Map to FreeSlotDto for the validator
+            var freeSlotDtos = freeTimeSlots.Select(slot =>
             {
-                var prevService = serviceMap[orderedRounds[i - 1].CoachInterviewServiceId];
-                var prevEndTime = orderedRounds[i - 1].StartTime.AddMinutes(prevService.DurationMinutes);
+                var parent = rawAvailabilities.FirstOrDefault(a =>
+                    a.StartTime <= slot.Start && a.EndTime >= slot.End);
+                return new FreeSlotDto
+                {
+                    Id = parent?.Id ?? Guid.Empty,
+                    CoachId = dto.CoachId,
+                    StartTime = slot.Start,
+                    EndTime = slot.End,
+                    Status = 0
+                };
+            }).ToList();
 
-                if (orderedRounds[i].StartTime < prevEndTime.Add(MinGapBetweenRounds))
-                    throw new BadRequestException(
-                        $"Round {i + 1} must start at least 15 minutes after round {i} ends. " +
-                        $"Round {i} ends at {prevEndTime:g}, round {i + 1} starts at {orderedRounds[i].StartTime:g}");
-            }
-
-            // Validate that each round fits within an available coach availability range
-            for (int i = 0; i < orderedRounds.Count; i++)
-            {
-                var roundDto = orderedRounds[i];
-                var svc = serviceMap[roundDto.CoachInterviewServiceId];
-                var roundEnd = roundDto.StartTime.AddMinutes(svc.DurationMinutes);
-
-                var containingAvailability = await _availabilityRepo.FindContainingAvailabilityAsync(
-                    dto.CoachId, roundDto.StartTime, roundEnd);
-
-                if (containingAvailability == null)
-                    throw new BadRequestException(
-                        $"Round {i + 1} time range ({roundDto.StartTime:g} - {roundEnd:g}) " +
-                        "does not fall within any of the coach's available time slots");
-            }
+            // ── Validate all business rules via static validator ─────
+            MultiRoundBookingValidator.ValidateMultiRoundBooking(dto, freeSlotDtos, serviceDurations);
 
             // Calculate total price from all rounds
             var totalAmount = 0;
