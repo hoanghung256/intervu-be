@@ -7,8 +7,8 @@ namespace Intervu.Application.UseCases.Availability
 {
     /// <summary>
     /// Subtraction-pattern query: fetches coach availabilities for a month,
-    /// fetches active bookings in the same range, then uses
-    /// <see cref="AvailabilityCalculatorService"/> to compute the actual free slots.
+    /// fetches active bookings (transactions + booking-request rounds) in the same range,
+    /// then uses <see cref="AvailabilityCalculatorService"/> to compute the actual free slots.
     /// Returns <see cref="FreeSlotDto"/> objects shaped like CoachAvailability
     /// so the frontend can consume them without changes.
     /// </summary>
@@ -16,13 +16,16 @@ namespace Intervu.Application.UseCases.Availability
     {
         private readonly ICoachAvailabilitiesRepository _availabilityRepo;
         private readonly ITransactionRepository _transactionRepo;
+        private readonly IBookingRequestRepository _bookingRequestRepo;
 
         public GetCoachFreeSlots(
             ICoachAvailabilitiesRepository availabilityRepo,
-            ITransactionRepository transactionRepo)
+            ITransactionRepository transactionRepo,
+            IBookingRequestRepository bookingRequestRepo)
         {
             _availabilityRepo = availabilityRepo;
             _transactionRepo = transactionRepo;
+            _bookingRequestRepo = bookingRequestRepo;
         }
 
         public async Task<List<FreeSlotDto>> ExecuteAsync(Guid coachId, int month = 0, int year = 0)
@@ -39,13 +42,27 @@ namespace Intervu.Application.UseCases.Availability
             var rangeStart = availabilities.Min(a => a.StartTime);
             var rangeEnd = availabilities.Max(a => a.EndTime);
 
-            // 3. Fetch all active bookings that overlap this range
-            var activeBookings = await _transactionRepo
+            // 3. Fetch active bookings from BOTH sources:
+            //    a) Flow A transactions (direct bookings with payment)
+            var activeTransactions = await _transactionRepo
                 .GetActiveBookingsByCoachAsync(coachId, rangeStart, rangeEnd);
+            //    b) Flow C booking-request rounds (Pending/Accepted/Paid)
+            var activeRounds = await _bookingRequestRepo
+                .GetActiveRoundsByCoachAsync(coachId, rangeStart, rangeEnd);
+
+            // Merge both sources into unified (Start, End) intervals
+            var allBookedIntervals = activeTransactions
+                .Where(t => t.BookedStartTime.HasValue && t.BookedDurationMinutes.HasValue)
+                .Select(t => (
+                    Start: t.BookedStartTime!.Value,
+                    End: t.BookedStartTime!.Value.AddMinutes(t.BookedDurationMinutes!.Value)
+                ))
+                .Concat(activeRounds)
+                .ToList();
 
             // 4. Compute free slots using the subtraction algorithm
             var freeSlots = AvailabilityCalculatorService
-                .CalculateFreeSlots(availabilities, activeBookings);
+                .CalculateFreeSlots(availabilities, allBookedIntervals);
 
             // 5. Map each free TimeSlot back to the original CoachAvailability it belongs to,
             //    so the frontend gets a valid coachAvailabilityId to send when booking.

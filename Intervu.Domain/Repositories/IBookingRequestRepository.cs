@@ -11,5 +11,13 @@ namespace Intervu.Domain.Repositories
         Task<(IReadOnlyList<BookingRequest> Items, int TotalCount)> GetPagedByCoachIdAsync(
             Guid coachId, BookingRequestType? type, List<BookingRequestStatus>? statuses, int page, int pageSize);
         Task<IEnumerable<BookingRequest>> GetExpiredPendingRequestsAsync();
+
+        /// <summary>
+        /// Returns (StartTime, EndTime) intervals for all rounds belonging to
+        /// active (Pending/Accepted/Paid) booking requests for the given coach
+        /// that overlap with [rangeStart, rangeEnd).
+        /// </summary>
+        Task<List<(DateTime Start, DateTime End)>> GetActiveRoundsByCoachAsync(
+            Guid coachId, DateTime rangeStart, DateTime rangeEnd);
     }
 }

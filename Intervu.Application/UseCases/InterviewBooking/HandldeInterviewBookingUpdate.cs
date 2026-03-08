@@ -70,9 +70,10 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
             }
-            catch
+            catch (Exception ex)
             {
                 await _unitOfWork.RollbackTransactionAsync();
+                //_logger.LogError(ex, "Error while handle update booing transaction");
                 throw;
             }
         }

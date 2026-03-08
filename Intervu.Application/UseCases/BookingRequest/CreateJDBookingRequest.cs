@@ -72,11 +72,26 @@ namespace Intervu.Application.UseCases.BookingRequest
             var rangeStart = rawAvailabilities.Min(a => a.StartTime);
             var rangeEnd = rawAvailabilities.Max(a => a.EndTime);
 
-            var activeBookings = await _transactionRepo
+            // Fetch both booking sources:
+            //   a) Flow A transactions (direct bookings with payment)
+            var activeTransactions = await _transactionRepo
                 .GetActiveBookingsByCoachAsync(dto.CoachId, rangeStart, rangeEnd);
+            //   b) Flow C booking-request rounds (Pending/Accepted/Paid)
+            var activeRounds = await _bookingRepo
+                .GetActiveRoundsByCoachAsync(dto.CoachId, rangeStart, rangeEnd);
+
+            // Merge both sources into unified (Start, End) intervals
+            var allBookedIntervals = activeTransactions
+                .Where(t => t.BookedStartTime.HasValue && t.BookedDurationMinutes.HasValue)
+                .Select(t => (
+                    Start: t.BookedStartTime!.Value,
+                    End: t.BookedStartTime!.Value.AddMinutes(t.BookedDurationMinutes!.Value)
+                ))
+                .Concat(activeRounds)
+                .ToList();
 
             var freeTimeSlots = AvailabilityCalculatorService
-                .CalculateFreeSlots(rawAvailabilities, activeBookings);
+                .CalculateFreeSlots(rawAvailabilities, allBookedIntervals);
 
             // Map to FreeSlotDto for the validator
             var freeSlotDtos = freeTimeSlots.Select(slot =>

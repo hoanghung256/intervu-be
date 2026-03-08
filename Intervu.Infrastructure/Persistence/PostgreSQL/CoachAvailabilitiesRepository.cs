@@ -18,7 +18,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
             if (month > 0 && year > 0)
             {
-                filtered = filtered.Where(x => x.StartTime.Month == month && x.StartTime.Year == year);
+                // Use date-range comparison instead of .Month/.Year to avoid
+                // UTC timezone edge cases (e.g. 01:00 AM March 1 UTC+7 = Feb 28 UTC)
+                var startDate = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Utc);
+                var endDate = startDate.AddMonths(1);
+                filtered = filtered.Where(x => x.StartTime >= startDate && x.StartTime < endDate);
             }
             else if (month > 0)
             {

@@ -87,5 +87,25 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                     && br.ExpiresAt < DateTime.UtcNow)
                 .ToListAsync();
         }
+
+        public async Task<List<(DateTime Start, DateTime End)>> GetActiveRoundsByCoachAsync(
+            Guid coachId, DateTime rangeStart, DateTime rangeEnd)
+        {
+            var activeStatuses = new[]
+            {
+                BookingRequestStatus.Pending,
+                BookingRequestStatus.Accepted,
+                BookingRequestStatus.Paid
+            };
+
+            return await _context.BookingRequests
+                .Where(br => br.CoachId == coachId && activeStatuses.Contains(br.Status))
+                .SelectMany(br => br.Rounds)
+                .Where(r => r.StartTime < rangeEnd && r.EndTime > rangeStart)
+                .Select(r => new { r.StartTime, r.EndTime })
+                .AsNoTracking()
+                .ToListAsync()
+                .ContinueWith(t => t.Result.Select(r => (r.StartTime, r.EndTime)).ToList());
+        }
     }
 }

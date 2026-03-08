@@ -34,16 +34,14 @@ namespace Intervu.Application.Services
         ///   • Overlapping or adjacent bookings are merged before gap detection.
         ///   • Zero-duration or negative-duration gaps are discarded.
         /// </remarks>
+        /// <summary>
+        /// Legacy overload that accepts raw transaction entities and extracts time intervals.
+        /// </summary>
         public static List<TimeSlot> CalculateFreeSlots(
             List<CoachAvailability> availabilities,
             List<InterviewBookingTransaction> confirmedBookings)
         {
-            if (availabilities is null || availabilities.Count == 0)
-                return [];
-
-            // ── Step 1: Pre-filter bookings ────────────────────────────
-            // Keep only Payment-type, non-canceled bookings that have valid time data.
-            var activeBookings = (confirmedBookings ?? [])
+            var intervals = (confirmedBookings ?? [])
                 .Where(b => b.Type == TransactionType.Payment)
                 .Where(b => b.Status is TransactionStatus.Created or TransactionStatus.Paid)
                 .Where(b => b.BookedStartTime.HasValue && b.BookedDurationMinutes.HasValue)
@@ -51,6 +49,22 @@ namespace Intervu.Application.Services
                     Start: b.BookedStartTime!.Value,
                     End: b.BookedStartTime!.Value.AddMinutes(b.BookedDurationMinutes!.Value)
                 ))
+                .ToList();
+
+            return CalculateFreeSlots(availabilities, intervals);
+        }
+
+        /// <summary>
+        /// Core overload: subtracts a list of booked (Start, End) intervals from availability windows.
+        /// </summary>
+        public static List<TimeSlot> CalculateFreeSlots(
+            List<CoachAvailability> availabilities,
+            List<(DateTime Start, DateTime End)> bookedIntervals)
+        {
+            if (availabilities is null || availabilities.Count == 0)
+                return [];
+
+            var activeBookings = (bookedIntervals ?? [])
                 .OrderBy(b => b.Start)
                 .ToList();
 
