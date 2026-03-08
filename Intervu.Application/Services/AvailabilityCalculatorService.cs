@@ -17,6 +17,8 @@ namespace Intervu.Application.Services
     /// </summary>
     public static class AvailabilityCalculatorService
     {
+        private static readonly TimeSpan BufferTime = TimeSpan.FromMinutes(15);
+
         /// <summary>
         /// Given a coach's availability windows and all booking transactions,
         /// returns a flattened, chronologically sorted list of <see cref="TimeSlot"/>
@@ -65,6 +67,10 @@ namespace Intervu.Application.Services
                 return [];
 
             var activeBookings = (bookedIntervals ?? [])
+                .Select(b => (
+                    Start: b.Start, 
+                    End: b.End.Add(BufferTime)
+                ))
                 .OrderBy(b => b.Start)
                 .ToList();
 
@@ -117,10 +123,20 @@ namespace Intervu.Application.Services
                 }
             }
 
-            // ── Step 5: Sort and return ────────────────────────────────
-            return freeSlots
-                .Where(s => s.Duration > TimeSpan.Zero) // safety: drop zero/negative
+            // ── Step 5: Merge overlapping free slots and return ──────────
+            // When availability windows overlap, the per-window pass can
+            // produce duplicate / overlapping free slots.  Merge them so
+            // the frontend never renders stacked semi-transparent events.
+            var sorted = freeSlots
+                .Where(s => s.Duration > TimeSpan.Zero)
                 .OrderBy(s => s.Start)
+                .ToList();
+
+            var mergedFree = MergeIntervals(
+                sorted.Select(s => (s.Start, s.End)).ToList());
+
+            return mergedFree
+                .Select(m => new TimeSlot(m.Start, m.End))
                 .ToList();
         }
 
