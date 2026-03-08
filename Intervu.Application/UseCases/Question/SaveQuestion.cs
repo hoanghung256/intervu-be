@@ -24,6 +24,7 @@ namespace Intervu.Application.UseCases.Question
             var question = await questionRepository.GetByIdAsync(questionId)
                 ?? throw new Exception("Question not found");
 
+            List<QuestionSnapshot> savedQuestions;
 
             if (user.Role == UserRole.Candidate)
             {
@@ -31,29 +32,14 @@ namespace Intervu.Application.UseCases.Question
                     ?? throw new Exception("Candidate profile not found");
 
                 profile.SavedQuestions ??= new List<QuestionSnapshot>();
+                savedQuestions = profile.SavedQuestions;
 
-                bool exists = profile.SavedQuestions.Any(s => s.Id == questionId);
+                await HandleSaveLogic(savedQuestions, questionId, question, isSaveQuestion);
 
-                if (isSaveQuestion)
-                {
-                    if (!exists)
-                    {
-                        var snapshot = await BuildSnapshotAsync(questionId);
-                        profile.SavedQuestions.Add(snapshot);
-                        question.SaveCount++;
-                    }
-                }
-                else
-                {
-                    if (exists)
-                    {
-                        profile.SavedQuestions.RemoveAll(s => s.Id == questionId);
-                        question.SaveCount--;
-                    }
-                }
+                // Force EF change tracking
+                profile.SavedQuestions = savedQuestions.ToList();
 
                 await candidateProfileRepository.UpdateCandidateProfileAsync(profile);
-                return isSaveQuestion;
             }
             else
             {
@@ -61,29 +47,42 @@ namespace Intervu.Application.UseCases.Question
                     ?? throw new Exception("Coach profile not found");
 
                 profile.SavedQuestions ??= new List<QuestionSnapshot>();
+                savedQuestions = profile.SavedQuestions;
 
-                bool exists = profile.SavedQuestions.Any(s => s.Id == questionId);
+                await HandleSaveLogic(savedQuestions, questionId, question, isSaveQuestion);
 
-                if (isSaveQuestion)
-                {
-                    if (!exists)
-                    {
-                        var snapshot = await BuildSnapshotAsync(questionId);
-                        profile.SavedQuestions.Add(snapshot);
-                        question.SaveCount++;
-                    }
-                }
-                else
-                {
-                    if (exists)
-                    {
-                        profile.SavedQuestions.RemoveAll(s => s.Id == questionId);
-                        question.SaveCount--;
-                    }
-                }
+                profile.SavedQuestions = savedQuestions.ToList();
 
                 await coachProfileRepository.UpdateCoachProfileAsync(profile);
-                return isSaveQuestion;
+            }
+
+             questionRepository.UpdateAsync(question);
+
+            return isSaveQuestion;
+        }
+
+        private async Task HandleSaveLogic(List<QuestionSnapshot> savedQuestions, Guid questionId, Domain.Entities.Question question, bool isSaveQuestion)
+        {
+            var existing = savedQuestions.FirstOrDefault(s => s.Id == questionId);
+
+            if (isSaveQuestion)
+            {
+                if (existing == null)
+                {
+                    var snapshot = await BuildSnapshotAsync(questionId);
+                    savedQuestions.Add(snapshot);
+
+                    question.SaveCount++;
+                }
+            }
+            else
+            {
+                if (existing != null)
+                {
+                    savedQuestions.Remove(existing);
+
+                    question.SaveCount = Math.Max(0, question.SaveCount - 1);
+                }
             }
         }
 

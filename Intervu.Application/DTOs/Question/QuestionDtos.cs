@@ -60,6 +60,7 @@ namespace Intervu.Application.DTOs.Question
         public ExperienceLevel Level { get; set; }
         public InterviewRound Round { get; set; }
         public List<Guid> CompanyIds { get; set; } = new();
+        public List<string> CompanyNames { get; set; } = new();
         public List<Role> Roles { get; set; } = new();
         public List<Guid> TagIds { get; set; } = new();
         public QuestionCategory Category { get; set; }

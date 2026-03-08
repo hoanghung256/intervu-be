@@ -96,10 +96,10 @@ namespace Intervu.API.Controllers.v1
 
         [Authorize(Policy = AuthorizationPolicies.AllRoles)]
         [HttpPost("{questionId:guid}/save")]
-        public async Task<IActionResult> SaveQuestion(Guid questionId, [FromBody] bool isSaveQuestion)
+        public async Task<IActionResult> SaveQuestion(Guid questionId, [FromBody] bool isSaved)
         {
             _ = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
-            var isSaved = await _saveQuestion.ExecuteAsync(questionId, isSaveQuestion, userId);
+            var isSavedQuestion = await _saveQuestion.ExecuteAsync(questionId, isSaved, userId);
             return Ok(new { success = true, message = isSaved ? "Saved" : "Unsaved", data = new { isSaved } });
         }
 
