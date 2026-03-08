@@ -22,5 +22,19 @@ namespace Intervu.Application.UseCases.Comment
             commentRepo.UpdateAsync(comment);
             await unitOfWork.SaveChangesAsync();
         }
+
+        public async Task VoteAsync(Guid questionId, bool isUpvote, Guid userId)
+        {
+            var commentRepo = unitOfWork.GetRepository<ICommentRepository>();
+            var comment = await commentRepo.GetByIdAsync(questionId)
+                ?? throw new Exception("Question not found");
+            if (isUpvote)
+            {
+                comment.Vote++;
+            }
+            else comment.Vote--;
+            commentRepo.UpdateAsync(comment);
+            await unitOfWork.SaveChangesAsync();
+        }
     }
 }

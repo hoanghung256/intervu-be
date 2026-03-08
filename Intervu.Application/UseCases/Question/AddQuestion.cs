@@ -13,22 +13,23 @@ namespace Intervu.Application.UseCases.Question
     {
         public async Task<AddQuestionResult> ExecuteAsync(Guid experienceId, CreateQuestionRequest request, Guid userId)
         {
-            // --- Link to existing question: post an answer ---
+            // Link to existing question: post the answer as a Comment
             if (request.LinkedQuestionId.HasValue)
             {
-                var answerRepo = unitOfWork.GetRepository<IAnswerRepository>();
-                var answer = new Answer
+                var commentRepo = unitOfWork.GetRepository<ICommentRepository>();
+                var now = DateTime.UtcNow;
+                await commentRepo.AddAsync(new Domain.Entities.Comment
                 {
                     Id = Guid.NewGuid(),
                     QuestionId = request.LinkedQuestionId.Value,
-                    AuthorId = userId,
-                    Content = request.Answer ?? request.Content,
-                    Upvotes = 0,
-                    IsVerified = false,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
-                await answerRepo.AddAsync(answer);
+                    Content = request.Answer ?? request.Content ?? string.Empty,
+                    IsAnswer = true,
+                    Vote = 0,
+                    CreatedAt = now,
+                    UpdateAt = now,
+                    CreateBy = userId,
+                    UpdateBy = userId
+                });
                 await unitOfWork.SaveChangesAsync();
 
                 return new AddQuestionResult
@@ -38,7 +39,7 @@ namespace Intervu.Application.UseCases.Question
                 };
             }
 
-            // --- Normal path: create a new question ---
+            // Normal path: create a new question
             var questionRepo = unitOfWork.GetRepository<IQuestionRepository>();
             var question = new Domain.Entities.Question
             {
@@ -54,31 +55,30 @@ namespace Intervu.Application.UseCases.Question
                 UpdatedAt = DateTime.UtcNow
             };
 
-            // M:M – companies
             foreach (var cid in request.CompanyIds)
                 question.QuestionCompanies.Add(new QuestionCompany { QuestionId = question.Id, CompanyId = cid });
 
-            // M:M – roles
             foreach (var r in request.Roles)
                 question.QuestionRoles.Add(new QuestionRole { QuestionId = question.Id, Role = r });
 
-            // M:M – tags
             foreach (var tid in request.TagIds)
                 question.QuestionTags.Add(new QuestionTag { QuestionId = question.Id, TagId = tid });
 
-            // Optional initial answer
+            // Optional initial answer stored as a comment
             if (!string.IsNullOrWhiteSpace(request.Answer))
             {
-                question.Answers.Add(new Answer
+                var now = DateTime.UtcNow;
+                question.Comments.Add(new Domain.Entities.Comment
                 {
                     Id = Guid.NewGuid(),
                     QuestionId = question.Id,
-                    AuthorId = userId,
                     Content = request.Answer,
-                    Upvotes = 0,
-                    IsVerified = false,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
+                    IsAnswer = true,
+                    Vote = 0,
+                    CreatedAt = now,
+                    UpdateAt = now,
+                    CreateBy = userId,
+                    UpdateBy = userId
                 });
             }
 
@@ -93,3 +93,4 @@ namespace Intervu.Application.UseCases.Question
         }
     }
 }
+

@@ -1,11 +1,12 @@
 using Intervu.Application.DTOs.Question;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Intervu.Application.Interfaces.UseCases.Question
 {
-    public interface IGetQuestionDetail
+    public interface IGetSavedQuestions
     {
-        Task<QuestionDetailDto?> ExecuteAsync(Guid questionId, Guid? userId = null);
+        Task<List<QuestionListItemDto>> ExecuteAsync(Guid userId);
     }
 }

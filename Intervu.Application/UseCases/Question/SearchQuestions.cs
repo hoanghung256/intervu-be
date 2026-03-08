@@ -24,7 +24,7 @@ namespace Intervu.Application.UseCases.Question
                 CompanyNames = q.QuestionCompanies?.Select(qc => qc.Company?.Name ?? string.Empty).ToList() ?? new(),
                 Roles = q.QuestionRoles?.Select(qr => qr.Role.ToString()).ToList() ?? new(),
                 Tags = q.QuestionTags?.Select(qt => qt.Tag?.Name ?? string.Empty).ToList() ?? new(),
-                AnswerCount = q.Answers?.Count ?? 0
+                CommentCount = q.Comments?.Count ?? 0
             }).ToList();
         }
     }

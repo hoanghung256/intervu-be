@@ -8,6 +8,6 @@ namespace Intervu.Application.Interfaces.UseCases.Comment
 {
     public interface IGetComments
     {
-        Task<PagedResult<CommentDetailDto>> ExecuteAsync(Guid questionId, int page, int pageSize, SortOption? sortBy = null);
+        Task<PagedResult<CommentDetailDto>> ExecuteAsync(Guid questionId, int page, int pageSize, SortOption? sortBy = null, Guid? userId = null);
     }
 }

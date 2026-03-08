@@ -198,172 +198,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Intervu.Domain.Entities.Answer", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("AuthorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsVerified")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
-
-                    b.Property<Guid>("QuestionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Upvotes")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AuthorId");
-
-                    b.HasIndex("QuestionId");
-
-                    b.HasIndex("Upvotes");
-
-                    b.ToTable("Answers", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("dd000001-0000-4000-8000-000000000001"),
-                            AuthorId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
-                            Content = "Use sliding window with a HashSet. O(n) time, O(min(m,n)) space where m is the charset size.",
-                            CreatedAt = new DateTime(2026, 1, 10, 1, 0, 0, 0, DateTimeKind.Utc),
-                            IsVerified = true,
-                            QuestionId = new Guid("d4e5f6a1-b2c3-4d4e-1f5a-6b7c8d9e0f1a"),
-                            UpdatedAt = new DateTime(2026, 1, 10, 1, 0, 0, 0, DateTimeKind.Utc),
-                            Upvotes = 42
-                        },
-                        new
-                        {
-                            Id = new Guid("dd000002-0000-4000-8000-000000000002"),
-                            AuthorId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
-                            Content = "Use consistent hashing, a KV store (Redis/DynamoDB), and a redirect service behind a CDN. Base62 encode the auto-increment ID.",
-                            CreatedAt = new DateTime(2026, 1, 10, 2, 0, 0, 0, DateTimeKind.Utc),
-                            IsVerified = true,
-                            QuestionId = new Guid("e5f6a1b2-c3d4-4e5f-2a6b-7c8d9e0f1a2b"),
-                            UpdatedAt = new DateTime(2026, 1, 10, 2, 0, 0, 0, DateTimeKind.Utc),
-                            Upvotes = 38
-                        },
-                        new
-                        {
-                            Id = new Guid("dd000003-0000-4000-8000-000000000003"),
-                            AuthorId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
-                            Content = "== coerces types before comparison, === checks both type and value. Example: 0 == '' is true but 0 === '' is false.",
-                            CreatedAt = new DateTime(2026, 1, 15, 1, 0, 0, 0, DateTimeKind.Utc),
-                            IsVerified = true,
-                            QuestionId = new Guid("f6a1b2c3-d4e5-4f6a-3b7c-8d9e0f1a2b3c"),
-                            UpdatedAt = new DateTime(2026, 1, 15, 1, 0, 0, 0, DateTimeKind.Utc),
-                            Upvotes = 19
-                        },
-                        new
-                        {
-                            Id = new Guid("dd000004-0000-4000-8000-000000000004"),
-                            AuthorId = new Guid("2f8c7a6b-6d5e-4e2f-8c7a-9d6e5c4b3a33"),
-                            Content = "Iterative: use prev, curr, next pointers. O(n) time, O(1) space. Recursive: return reversed rest, set head.next.next = head, head.next = null.",
-                            CreatedAt = new DateTime(2026, 2, 1, 1, 0, 0, 0, DateTimeKind.Utc),
-                            IsVerified = true,
-                            QuestionId = new Guid("a1b2c3d4-e5f6-4a7b-4c8d-9e0f1a2b3c4d"),
-                            UpdatedAt = new DateTime(2026, 2, 1, 1, 0, 0, 0, DateTimeKind.Utc),
-                            Upvotes = 31
-                        },
-                        new
-                        {
-                            Id = new Guid("dd000005-0000-4000-8000-000000000005"),
-                            AuthorId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
-                            Content = "Transformers use multi-head self-attention to capture long-range dependencies in parallel. Key components: Q/K/V matrices, positional encoding, layer norm, feed-forward layers.",
-                            CreatedAt = new DateTime(2026, 1, 21, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsVerified = true,
-                            QuestionId = new Guid("bb000001-0000-4000-8000-000000000001"),
-                            UpdatedAt = new DateTime(2026, 1, 21, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Upvotes = 56
-                        },
-                        new
-                        {
-                            Id = new Guid("dd000006-0000-4000-8000-000000000006"),
-                            AuthorId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
-                            Content = "RAG: when you need up-to-date knowledge without retraining, lower cost. Fine-tuning: when you need domain-specific behavior/style, smaller model. Hybrid approaches work best.",
-                            CreatedAt = new DateTime(2026, 1, 23, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsVerified = true,
-                            QuestionId = new Guid("bb000002-0000-4000-8000-000000000002"),
-                            UpdatedAt = new DateTime(2026, 1, 23, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Upvotes = 43
-                        },
-                        new
-                        {
-                            Id = new Guid("dd000007-0000-4000-8000-000000000007"),
-                            AuthorId = new Guid("2f8c7a6b-6d5e-4e2f-8c7a-9d6e5c4b3a33"),
-                            Content = "SELECT MAX(salary) FROM Employee WHERE salary < (SELECT MAX(salary) FROM Employee); Or: SELECT DISTINCT salary FROM Employee ORDER BY salary DESC LIMIT 1 OFFSET 1;",
-                            CreatedAt = new DateTime(2026, 1, 12, 1, 0, 0, 0, DateTimeKind.Utc),
-                            IsVerified = true,
-                            QuestionId = new Guid("bb000004-0000-4000-8000-000000000004"),
-                            UpdatedAt = new DateTime(2026, 1, 12, 1, 0, 0, 0, DateTimeKind.Utc),
-                            Upvotes = 67
-                        },
-                        new
-                        {
-                            Id = new Guid("dd000008-0000-4000-8000-000000000008"),
-                            AuthorId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
-                            Content = "Use RICE framework: Reach × Impact × Confidence / Effort. Combine with customer interviews, data analysis, and strategic alignment. Present trade-offs to stakeholders.",
-                            CreatedAt = new DateTime(2026, 1, 15, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsVerified = true,
-                            QuestionId = new Guid("bb000007-0000-4000-8000-000000000007"),
-                            UpdatedAt = new DateTime(2026, 1, 15, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Upvotes = 34
-                        },
-                        new
-                        {
-                            Id = new Guid("dd000009-0000-4000-8000-000000000009"),
-                            AuthorId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
-                            Content = "Token bucket for bursty traffic, sliding window log for precise limits. Use Redis with Lua scripts for distributed implementation. Consider API key vs IP-based limiting.",
-                            CreatedAt = new DateTime(2026, 2, 9, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsVerified = true,
-                            QuestionId = new Guid("bb000009-0000-4000-8000-000000000009"),
-                            UpdatedAt = new DateTime(2026, 2, 9, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Upvotes = 45
-                        },
-                        new
-                        {
-                            Id = new Guid("dd00000a-0000-4000-8000-00000000000a"),
-                            AuthorId = new Guid("2f8c7a6b-6d5e-4e2f-8c7a-9d6e5c4b3a33"),
-                            Content = "Think of attention as a soft dictionary lookup. Query attends to all Keys to get weights, then combines Values. Multi-head allows different representation subspaces.",
-                            CreatedAt = new DateTime(2026, 1, 22, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsVerified = false,
-                            QuestionId = new Guid("bb000001-0000-4000-8000-000000000001"),
-                            UpdatedAt = new DateTime(2026, 1, 22, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Upvotes = 23
-                        },
-                        new
-                        {
-                            Id = new Guid("dd00000b-0000-4000-8000-00000000000b"),
-                            AuthorId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
-                            Content = "Using DENSE_RANK: WITH ranked AS (SELECT salary, DENSE_RANK() OVER (ORDER BY salary DESC) AS rnk FROM Employee) SELECT salary FROM ranked WHERE rnk = 2;",
-                            CreatedAt = new DateTime(2026, 1, 13, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsVerified = false,
-                            QuestionId = new Guid("bb000004-0000-4000-8000-000000000004"),
-                            UpdatedAt = new DateTime(2026, 1, 13, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Upvotes = 29
-                        });
-                });
-
             modelBuilder.Entity("Intervu.Domain.Entities.CandidateProfile", b =>
                 {
                     b.Property<Guid>("Id")
@@ -382,6 +216,10 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<string>("PortfolioUrl")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("SavedQuestions")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("SavedQuestions");
 
                     b.HasKey("Id");
 
@@ -482,6 +320,10 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<string>("PortfolioUrl")
                         .HasMaxLength(4000)
                         .HasColumnType("character varying(4000)");
+
+                    b.Property<string>("SavedQuestions")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("SavedQuestions");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
@@ -1336,6 +1178,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
 
+                    b.Property<int>("Vote")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
                     b.HasKey("Id");
 
                     b.HasIndex("Category");
@@ -1372,7 +1219,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             Status = 2,
                             Title = "Longest Substring Without Repeating Characters",
                             UpdatedAt = new DateTime(2026, 1, 10, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 342
+                            ViewCount = 342,
+                            Vote = 0
                         },
                         new
                         {
@@ -1388,7 +1236,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             Status = 2,
                             Title = "Explain the Transformer Architecture",
                             UpdatedAt = new DateTime(2026, 1, 20, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 891
+                            ViewCount = 891,
+                            Vote = 0
                         },
                         new
                         {
@@ -1404,7 +1253,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             Status = 2,
                             Title = "RAG vs Fine-Tuning: When to Use Which?",
                             UpdatedAt = new DateTime(2026, 1, 22, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 654
+                            ViewCount = 654,
+                            Vote = 0
                         },
                         new
                         {
@@ -1420,7 +1270,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             Status = 2,
                             Title = "Design an LLM-Powered Customer Support Bot",
                             UpdatedAt = new DateTime(2026, 1, 25, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 432
+                            ViewCount = 432,
+                            Vote = 0
                         },
                         new
                         {
@@ -1436,7 +1287,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             Status = 2,
                             Title = "Find the Second Highest Salary",
                             UpdatedAt = new DateTime(2026, 1, 12, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 1243
+                            ViewCount = 1243,
+                            Vote = 0
                         },
                         new
                         {
@@ -1452,7 +1304,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             Status = 2,
                             Title = "Optimize a Slow Query with Millions of Rows",
                             UpdatedAt = new DateTime(2026, 1, 18, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 567
+                            ViewCount = 567,
+                            Vote = 0
                         },
                         new
                         {
@@ -1468,7 +1321,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             Status = 2,
                             Title = "Window Functions: Running Total & Ranking",
                             UpdatedAt = new DateTime(2026, 1, 28, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 389
+                            ViewCount = 389,
+                            Vote = 0
                         },
                         new
                         {
@@ -1484,7 +1338,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             Status = 2,
                             Title = "How Would You Prioritize Features for a New Product?",
                             UpdatedAt = new DateTime(2026, 1, 14, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 723
+                            ViewCount = 723,
+                            Vote = 0
                         },
                         new
                         {
@@ -1500,7 +1355,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             Status = 2,
                             Title = "Define Success Metrics for a Social Media Feed",
                             UpdatedAt = new DateTime(2026, 2, 5, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 456
+                            ViewCount = 456,
+                            Vote = 0
                         },
                         new
                         {
@@ -1517,7 +1373,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             Status = 2,
                             Title = "Design a URL Shortener like bit.ly",
                             UpdatedAt = new DateTime(2026, 1, 10, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 876
+                            ViewCount = 876,
+                            Vote = 0
                         },
                         new
                         {
@@ -1534,7 +1391,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             Status = 2,
                             Title = "Explain == vs === in JavaScript",
                             UpdatedAt = new DateTime(2026, 1, 15, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 234
+                            ViewCount = 234,
+                            Vote = 0
                         },
                         new
                         {
@@ -1551,7 +1409,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             Status = 2,
                             Title = "Reverse a Linked List",
                             UpdatedAt = new DateTime(2026, 2, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 567
+                            ViewCount = 567,
+                            Vote = 0
                         },
                         new
                         {
@@ -1567,7 +1426,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             Status = 2,
                             Title = "Design a Rate Limiter",
                             UpdatedAt = new DateTime(2026, 2, 8, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 678
+                            ViewCount = 678,
+                            Vote = 0
                         },
                         new
                         {
@@ -1583,7 +1443,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             Status = 2,
                             Title = "Explain CQRS and Event Sourcing",
                             UpdatedAt = new DateTime(2026, 2, 10, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 345
+                            ViewCount = 345,
+                            Vote = 0
                         },
                         new
                         {
@@ -1599,7 +1460,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             Status = 2,
                             Title = "Microservices vs Monolith: Trade-offs",
                             UpdatedAt = new DateTime(2026, 2, 12, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 512
+                            ViewCount = 512,
+                            Vote = 0
                         },
                         new
                         {
@@ -1615,7 +1477,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             Status = 2,
                             Title = "Implement a Thread-Safe Singleton in C#",
                             UpdatedAt = new DateTime(2026, 2, 15, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 289
+                            ViewCount = 289,
+                            Vote = 0
                         });
                 });
 
@@ -2401,6 +2264,46 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Intervu.Domain.Entities.UserCommentLike", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CommentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("UserId", "CommentId");
+
+                    b.HasIndex("CommentId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserCommentLikes", (string)null);
+                });
+
+            modelBuilder.Entity("Intervu.Domain.Entities.UserQuestionLike", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("UserId", "QuestionId");
+
+                    b.HasIndex("QuestionId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserQuestionLikes", (string)null);
+                });
+
             modelBuilder.Entity("CandidateSkills", b =>
                 {
                     b.HasOne("Intervu.Domain.Entities.CandidateProfile", null)
@@ -2444,25 +2347,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .HasForeignKey("SkillsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("Intervu.Domain.Entities.Answer", b =>
-                {
-                    b.HasOne("Intervu.Domain.Entities.User", "Author")
-                        .WithMany()
-                        .HasForeignKey("AuthorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Intervu.Domain.Entities.Question", "Question")
-                        .WithMany("Answers")
-                        .HasForeignKey("QuestionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Author");
-
-                    b.Navigation("Question");
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.CandidateProfile", b =>
@@ -2769,6 +2653,48 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Intervu.Domain.Entities.UserCommentLike", b =>
+                {
+                    b.HasOne("Intervu.Domain.Entities.Comment", "Comment")
+                        .WithMany()
+                        .HasForeignKey("CommentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_UserCommentLikes_Comments_CommentId");
+
+                    b.HasOne("Intervu.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_UserCommentLikes_Users_UserId");
+
+                    b.Navigation("Comment");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Intervu.Domain.Entities.UserQuestionLike", b =>
+                {
+                    b.HasOne("Intervu.Domain.Entities.Question", "Question")
+                        .WithMany()
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_UserQuestionLikes_Questions_QuestionId");
+
+                    b.HasOne("Intervu.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_UserQuestionLikes_Users_UserId");
+
+                    b.Navigation("Question");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Intervu.Domain.Entities.CoachAvailability", b =>
                 {
                     b.Navigation("InterviewBookingTransactions");
@@ -2791,8 +2717,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 
             modelBuilder.Entity("Intervu.Domain.Entities.Question", b =>
                 {
-                    b.Navigation("Answers");
-
                     b.Navigation("Comments");
 
                     b.Navigation("QuestionCompanies");

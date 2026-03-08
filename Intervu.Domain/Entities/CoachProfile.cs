@@ -31,5 +31,10 @@ namespace Intervu.Domain.Entities
         public ICollection<Company> Companies { get; set; } = new List<Company>();
         
         public ICollection<Skill> Skills { get; set; } = new List<Skill>();
+
+        /// <summary>
+        /// JSON list of saved question snapshots. Nullable.
+        /// </summary>
+        public List<QuestionSnapshot>? SavedQuestions { get; set; }
     }
 }

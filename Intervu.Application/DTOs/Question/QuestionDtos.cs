@@ -15,6 +15,7 @@ namespace Intervu.Application.DTOs.Question
         public Guid? TagId { get; set; }
         public QuestionCategory? Category { get; set; }
         public Role? Role { get; set; }
+        public int Vote { get; set; }
         public ExperienceLevel? Level { get; set; }
         public InterviewRound? Round { get; set; }
         public SortOption? SortBy { get; set; }
@@ -30,8 +31,8 @@ namespace Intervu.Application.DTOs.Question
         public List<Role> Roles { get; set; } = new();
         public List<Guid>? TagIds { get; set; } = new();
         public QuestionCategory Category { get; set; }
-        public string? Answer { get; set; }
         public Guid? LinkedQuestionId { get; set; }
+        public string? Answer { get; set; }
     }
 
     public class AddQuestionResult
@@ -48,7 +49,8 @@ namespace Intervu.Application.DTOs.Question
         public List<string> CompanyNames { get; set; } = new();
         public List<string> Roles { get; set; } = new();
         public List<string> Tags { get; set; } = new();
-        public int AnswerCount { get; set; }
+        public int Vote { get; set; }
+        public int CommentCount { get; set; }
     }
 
     public class UpdateQuestionRequest
@@ -68,6 +70,7 @@ namespace Intervu.Application.DTOs.Question
         public Guid Id { get; set; }
         public string Title { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
+        public int Vote { get; set; }
         public ExperienceLevel Level { get; set; }
         public InterviewRound Round { get; set; }
         public QuestionStatus Status { get; set; }
@@ -81,35 +84,6 @@ namespace Intervu.Application.DTOs.Question
         public string Name { get; set; } = string.Empty;
     }
 
-    public class AnswerPreviewDto
-    {
-        public Guid Id { get; set; }
-        public string Content { get; set; } = string.Empty;
-        public int Upvotes { get; set; }
-        public bool IsVerified { get; set; }
-        public string AuthorName { get; set; } = string.Empty;
-        public string? AuthorProfilePicture { get; set; }
-        public DateTime CreatedAt { get; set; }
-    }
-
-    public class AnswerDetailDto
-    {
-        public Guid Id { get; set; }
-        public string Content { get; set; } = string.Empty;
-        public int Upvotes { get; set; }
-        public bool IsVerified { get; set; }
-        public Guid AuthorId { get; set; }
-        public string AuthorName { get; set; } = string.Empty;
-        public string? AuthorProfilePicture { get; set; }
-        public string AuthorSlug { get; set; } = string.Empty;
-        public DateTime CreatedAt { get; set; }
-    }
-
-    public class CreateAnswerRequest
-    {
-        public string Content { get; set; } = null!;
-    }
-
     public class QuestionListItemDto
     {
         public Guid Id { get; set; }
@@ -120,14 +94,16 @@ namespace Intervu.Application.DTOs.Question
         public QuestionStatus Status { get; set; }
         public int ViewCount { get; set; }
         public int SaveCount { get; set; }
-        public int AnswerCount { get; set; }
+        public int CommentCount { get; set; }
+        public int Vote { get; set; }
         public bool IsHot { get; set; }
         public DateTime CreatedAt { get; set; }
         public List<string> CompanyNames { get; set; } = new();
         public List<string> Roles { get; set; } = new();
         public List<TagDto> Tags { get; set; } = new();
         public string Category { get; set; } = string.Empty;
-        public AnswerPreviewDto? TopAnswer { get; set; }
+        public bool IsLikedByUser { get; set; }
+        public bool IsSavedByUser { get; set; }
     }
 
     public class RelatedQuestionDto
@@ -136,7 +112,7 @@ namespace Intervu.Application.DTOs.Question
         public string Title { get; set; } = string.Empty;
         public List<string> CompanyNames { get; set; } = new();
         public List<string> Roles { get; set; } = new();
-        public int AnswerCount { get; set; }
+        public int CommentCount { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 
@@ -150,8 +126,9 @@ namespace Intervu.Application.DTOs.Question
         public QuestionStatus Status { get; set; }
         public int ViewCount { get; set; }
         public int SaveCount { get; set; }
-        public int AnswerCount { get; set; }
+        public int CommentCount { get; set; }
         public bool IsHot { get; set; }
+        public int Vote { get; set; }
         public DateTime CreatedAt { get; set; }
         public Guid? AuthorId { get; set; }
         public string AuthorName { get; set; } = string.Empty;
@@ -161,8 +138,9 @@ namespace Intervu.Application.DTOs.Question
         public List<string> Roles { get; set; } = new();
         public List<TagDto> Tags { get; set; } = new();
         public string Category { get; set; } = string.Empty;
-        public List<AnswerDetailDto> Answers { get; set; } = new();
         public List<CommentDetailDto> Comments { get; set; } = new();
         public List<RelatedQuestionDto> RelatedQuestions { get; set; } = new();
+        public bool IsLikedByUser { get; set; }
+        public bool IsSavedByUser { get; set; }
     }
 }

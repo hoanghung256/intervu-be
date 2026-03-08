@@ -21,6 +21,7 @@ namespace Intervu.Domain.Entities
         public QuestionStatus Status { get; set; } = QuestionStatus.Approved;
 
         public int ViewCount { get; set; } = 0;
+        public int Vote { get; set; } = 0;
 
         public int SaveCount { get; set; } = 0;
 
@@ -43,8 +44,6 @@ namespace Intervu.Domain.Entities
         public ICollection<QuestionTag> QuestionTags { get; set; } = new List<QuestionTag>();
 
         public QuestionCategory Category { get; set; }
-
-        public ICollection<Answer> Answers { get; set; } = new List<Answer>();
 
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
     }

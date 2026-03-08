@@ -39,5 +39,19 @@ namespace Intervu.Application.UseCases.Question
             questionRepo.UpdateAsync(question);
             await unitOfWork.SaveChangesAsync();
         }
+
+        public async Task VoteAsync(Guid questionId, bool isUpvote, Guid userId)
+        {
+            var questionRepo = unitOfWork.GetRepository<IQuestionRepository>();
+            var question = await questionRepo.GetByIdAsync(questionId)
+                ?? throw new Exception("Question not found");
+            if (isUpvote)
+            {
+                question.Vote++;
+            }
+            else question.Vote--;
+            questionRepo.UpdateAsync(question);
+            await unitOfWork.SaveChangesAsync();
+        }
     }
 }

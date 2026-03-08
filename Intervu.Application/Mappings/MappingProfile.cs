@@ -87,13 +87,6 @@ namespace Intervu.Application.Mappings
                         : new List<Comment>()));
 
             CreateMap<Tag, TagDto>();
-            CreateMap<Answer, AnswerPreviewDto>()
-                .ForMember(dest => dest.AuthorName, opt => opt.MapFrom(src => src.Author != null ? src.Author.FullName : "Anonymous"))
-                .ForMember(dest => dest.AuthorProfilePicture, opt => opt.MapFrom(src => src.Author != null ? src.Author.ProfilePicture : null));
-            CreateMap<Answer, AnswerDetailDto>()
-                .ForMember(dest => dest.AuthorName, opt => opt.MapFrom(src => src.Author != null ? src.Author.FullName : "Anonymous"))
-                .ForMember(dest => dest.AuthorProfilePicture, opt => opt.MapFrom(src => src.Author != null ? src.Author.ProfilePicture : null))
-                .ForMember(dest => dest.AuthorSlug, opt => opt.MapFrom(src => src.Author != null ? src.Author.SlugProfileUrl : string.Empty));
 
             CreateMap<Domain.Entities.InterviewExperience, InterviewExperienceSummaryDto>()
                 .ForMember(dest => dest.CompanyName,

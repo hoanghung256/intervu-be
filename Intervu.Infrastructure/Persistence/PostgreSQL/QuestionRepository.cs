@@ -42,7 +42,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Include(q => q.QuestionCompanies).ThenInclude(qc => qc.Company)
                 .Include(q => q.QuestionRoles)
                 .Include(q => q.QuestionTags).ThenInclude(qt => qt.Tag)
-                .Include(q => q.Answers)
                 .Include(q => q.Comments)
                 .AsQueryable();
 
@@ -75,7 +74,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             IQueryable<Question> sorted = sortBy switch
             {
                 SortOption.Hot => query.OrderByDescending(q => q.IsHot).ThenByDescending(q => q.ViewCount),
-                SortOption.Top => query.OrderByDescending(q => q.Answers.Count)
+                SortOption.Top => query.OrderByDescending(q => q.Comments.Count)
                                        .ThenByDescending(q => q.ViewCount),
                 _ => query.OrderByDescending(q => q.CreatedAt)
             };
@@ -94,10 +93,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Include(q => q.QuestionCompanies).ThenInclude(qc => qc.Company)
                 .Include(q => q.QuestionRoles)
                 .Include(q => q.QuestionTags).ThenInclude(qt => qt.Tag)
-                .Include(q => q.Answers)
                 .Where(q => q.Title.ToLower().Contains(keyword.ToLower()) ||
                              q.Content.ToLower().Contains(keyword.ToLower()))
-                .OrderByDescending(q => q.Answers.Count)
+                .OrderByDescending(q => q.Comments.Count)
                 .Take(limit)
                 .ToListAsync();
         }
@@ -109,7 +107,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Include(q => q.QuestionCompanies).ThenInclude(qc => qc.Company)
                 .Include(q => q.QuestionRoles)
                 .Include(q => q.QuestionTags).ThenInclude(qt => qt.Tag)
-                .Include(q => q.Answers).ThenInclude(a => a.Author)
                 .Include(q => q.Comments)
                 .FirstOrDefaultAsync(q => q.Id == id);
         }
@@ -130,7 +127,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             return await _context.Questions
                 .Include(q => q.QuestionCompanies).ThenInclude(qc => qc.Company)
                 .Include(q => q.QuestionRoles)
-                .Include(q => q.Answers)
                 .Where(q => q.Id != excludeId &&
                     (q.QuestionTags.Any(qt => tagIds.Contains(qt.TagId)) ||
                      q.QuestionRoles.Any(qr => roles.Contains(qr.Role))))
@@ -144,6 +140,18 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             await _context.Questions
                 .Where(q => q.Id == questionId)
                 .ExecuteUpdateAsync(s => s.SetProperty(q => q.ViewCount, q => q.ViewCount + 1));
+        }
+
+        public async Task<List<Question>> GetByIdsAsync(IEnumerable<Guid> ids)
+        {
+            var idList = ids.ToList();
+            return await _context.Questions
+                .Where(q => idList.Contains(q.Id))
+                .Include(q => q.Author)
+                .Include(q => q.QuestionCompanies).ThenInclude(qc => qc.Company)
+                .Include(q => q.QuestionRoles)
+                .Include(q => q.QuestionTags).ThenInclude(qt => qt.Tag)
+                .ToListAsync();
         }
     }
 }

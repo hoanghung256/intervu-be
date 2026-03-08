@@ -20,17 +20,20 @@ namespace Intervu.API.Controllers.v1
         private readonly IAddComment _addComment;
         private readonly IUpdateComment _updateComment;
         private readonly IDeleteComment _deleteComment;
+        private readonly ILikeComment _likeComment;
 
         public CommentController(
             IGetComments getComments,
             IAddComment addComment,
             IUpdateComment updateComment,
-            IDeleteComment deleteComment)
+            IDeleteComment deleteComment,
+            ILikeComment likeComment)
         {
             _getComments = getComments;
             _addComment = addComment;
             _updateComment = updateComment;
             _deleteComment = deleteComment;
+            _likeComment = likeComment;
         }
 
         [HttpGet]
@@ -40,8 +43,21 @@ namespace Intervu.API.Controllers.v1
             [FromQuery] int pageSize = 10,
             [FromQuery] SortOption? sortBy = null)
         {
-            var result = await _getComments.ExecuteAsync(questionId, page, pageSize, sortBy);
+            var raw = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            Guid? userId = Guid.TryParse(raw, out var uid) ? uid : null;
+            var result = await _getComments.ExecuteAsync(questionId, page, pageSize, sortBy, userId);
             return Ok(new { success = true, message = "Success", data = result });
+        }
+
+        [Authorize(Policy = AuthorizationPolicies.AllRoles)]
+        [HttpPost("{commentId:guid}/like")]
+        public async Task<IActionResult> LikeComment(Guid commentId)
+        {
+            _ = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
+            var isLiked = await _likeComment.ExecuteAsync(commentId, userId);
+            var isUpvote = isLiked;
+            await _updateComment.VoteAsync(commentId, isUpvote, userId);
+            return Ok(new { success = true, message = isLiked ? "Liked" : "Unliked", data = new { isLiked } });
         }
 
         [Authorize(Policy = AuthorizationPolicies.AllRoles)]
@@ -70,5 +86,14 @@ namespace Intervu.API.Controllers.v1
             await _deleteComment.ExecuteAsync(commentId, userId);
             return Ok(new { success = true, message = "Comment deleted" });
         }
+
+        //[Authorize(Policy = AuthorizationPolicies.AllRoles)]
+        //[HttpPost("{commentId:guid}/vote")]
+        //public async Task<IActionResult> Vote(Guid commentId, [FromQuery] bool isUpvote)
+        //{
+        //    _ = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
+        //    await _updateComment.VoteAsync(commentId, isUpvote, userId);
+        //    return Ok(new { success = true, message = "Vote recorded" });
+        //}
     }
 }

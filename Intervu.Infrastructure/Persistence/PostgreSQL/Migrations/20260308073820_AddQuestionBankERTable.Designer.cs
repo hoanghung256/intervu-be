@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 {
     [DbContext(typeof(IntervuPostgreDbContext))]
-    [Migration("20260302175009_AddCompanyFKToInterviewExp")]
-    partial class AddCompanyFKToInterviewExp
+    [Migration("20260308073820_AddQuestionBankERTable")]
+    partial class AddQuestionBankERTable
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -220,6 +220,10 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
+                    b.Property<string>("SavedQuestions")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("SavedQuestions");
+
                     b.HasKey("Id");
 
                     b.ToTable("CandidateProfiles", (string)null);
@@ -319,6 +323,10 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<string>("PortfolioUrl")
                         .HasMaxLength(4000)
                         .HasColumnType("character varying(4000)");
+
+                    b.Property<string>("SavedQuestions")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("SavedQuestions");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
@@ -1123,8 +1131,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Answer")
-                        .HasColumnType("text");
+                    b.Property<int>("Category")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Content")
                         .IsRequired()
@@ -1133,17 +1141,68 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("InterviewExperienceId")
+                    b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("QuestionType")
+                    b.Property<Guid?>("InterviewExperienceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsHot")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Round")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SaveCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("Status")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(2);
+
+                    b.Property<string>("Title")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ViewCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("Vote")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Category");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("CreatedBy");
+
                     b.HasIndex("InterviewExperienceId");
+
+                    b.HasIndex("IsHot");
+
+                    b.HasIndex("Level");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("ViewCount");
 
                     b.ToTable("Questions", (string)null);
 
@@ -1151,38 +1210,749 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         new
                         {
                             Id = new Guid("d4e5f6a1-b2c3-4d4e-1f5a-6b7c8d9e0f1a"),
-                            Answer = "Use sliding window with a HashSet. O(n) time.",
-                            Content = "Find the longest substring without repeating characters.",
+                            Category = 9,
+                            Content = "Find the longest substring without repeating characters. Explain your approach and time complexity.",
                             CreatedAt = new DateTime(2026, 1, 10, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
                             InterviewExperienceId = new Guid("a1b2c3d4-e5f6-4a1b-8c2d-3e4f5a6b7c8d"),
-                            QuestionType = "Algorithm"
+                            IsHot = true,
+                            Level = 3,
+                            Round = 2,
+                            SaveCount = 87,
+                            Status = 2,
+                            Title = "Longest Substring Without Repeating Characters",
+                            UpdatedAt = new DateTime(2026, 1, 10, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ViewCount = 342,
+                            Vote = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("bb000001-0000-4000-8000-000000000001"),
+                            Category = 2,
+                            Content = "Walk me through the Transformer architecture. How do self-attention mechanisms work and why are they superior to RNNs for sequence modeling?",
+                            CreatedAt = new DateTime(2026, 1, 20, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
+                            IsHot = true,
+                            Level = 3,
+                            Round = 2,
+                            SaveCount = 214,
+                            Status = 2,
+                            Title = "Explain the Transformer Architecture",
+                            UpdatedAt = new DateTime(2026, 1, 20, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ViewCount = 891,
+                            Vote = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("bb000002-0000-4000-8000-000000000002"),
+                            Category = 2,
+                            Content = "Compare Retrieval-Augmented Generation (RAG) with fine-tuning. In what scenarios would you choose one over the other for a production GenAI application?",
+                            CreatedAt = new DateTime(2026, 1, 22, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            IsHot = true,
+                            Level = 3,
+                            Round = 9,
+                            SaveCount = 178,
+                            Status = 2,
+                            Title = "RAG vs Fine-Tuning: When to Use Which?",
+                            UpdatedAt = new DateTime(2026, 1, 22, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ViewCount = 654,
+                            Vote = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("bb000003-0000-4000-8000-000000000003"),
+                            Category = 3,
+                            Content = "Design a customer support chatbot powered by a large language model. Address latency, hallucination mitigation, guardrails, and cost optimization.",
+                            CreatedAt = new DateTime(2026, 1, 25, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
+                            IsHot = false,
+                            Level = 4,
+                            Round = 9,
+                            SaveCount = 102,
+                            Status = 2,
+                            Title = "Design an LLM-Powered Customer Support Bot",
+                            UpdatedAt = new DateTime(2026, 1, 25, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ViewCount = 432,
+                            Vote = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("bb000004-0000-4000-8000-000000000004"),
+                            Category = 9,
+                            Content = "Write a SQL query to find the second highest salary from an Employee table. Handle the case where there might be duplicate salaries.",
+                            CreatedAt = new DateTime(2026, 1, 12, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = new Guid("2f8c7a6b-6d5e-4e2f-8c7a-9d6e5c4b3a33"),
+                            IsHot = true,
+                            Level = 1,
+                            Round = 2,
+                            SaveCount = 456,
+                            Status = 2,
+                            Title = "Find the Second Highest Salary",
+                            UpdatedAt = new DateTime(2026, 1, 12, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ViewCount = 1243,
+                            Vote = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("bb000005-0000-4000-8000-000000000005"),
+                            Category = 2,
+                            Content = "You have a query that scans 50M rows and takes 30 seconds. Walk me through your approach to diagnose and optimize it.",
+                            CreatedAt = new DateTime(2026, 1, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
+                            IsHot = false,
+                            Level = 3,
+                            Round = 2,
+                            SaveCount = 134,
+                            Status = 2,
+                            Title = "Optimize a Slow Query with Millions of Rows",
+                            UpdatedAt = new DateTime(2026, 1, 18, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ViewCount = 567,
+                            Vote = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("bb000006-0000-4000-8000-000000000006"),
+                            Category = 9,
+                            Content = "Explain SQL window functions. Write a query using ROW_NUMBER, RANK, and a running SUM to analyze monthly revenue data.",
+                            CreatedAt = new DateTime(2026, 1, 28, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            IsHot = false,
+                            Level = 2,
+                            Round = 7,
+                            SaveCount = 98,
+                            Status = 2,
+                            Title = "Window Functions: Running Total & Ranking",
+                            UpdatedAt = new DateTime(2026, 1, 28, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ViewCount = 389,
+                            Vote = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("bb000007-0000-4000-8000-000000000007"),
+                            Category = 7,
+                            Content = "You're the PM for a new B2B SaaS product. You have 20 feature requests and resources for 5. Walk me through your prioritization framework.",
+                            CreatedAt = new DateTime(2026, 1, 14, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
+                            IsHot = true,
+                            Level = 3,
+                            Round = 10,
+                            SaveCount = 189,
+                            Status = 2,
+                            Title = "How Would You Prioritize Features for a New Product?",
+                            UpdatedAt = new DateTime(2026, 1, 14, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ViewCount = 723,
+                            Vote = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("bb000008-0000-4000-8000-000000000008"),
+                            Category = 7,
+                            Content = "You've just launched a new algorithmic feed for a social platform. What metrics would you track? How would you define success at 30/60/90 days?",
+                            CreatedAt = new DateTime(2026, 2, 5, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            IsHot = false,
+                            Level = 2,
+                            Round = 10,
+                            SaveCount = 121,
+                            Status = 2,
+                            Title = "Define Success Metrics for a Social Media Feed",
+                            UpdatedAt = new DateTime(2026, 2, 5, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ViewCount = 456,
+                            Vote = 0
                         },
                         new
                         {
                             Id = new Guid("e5f6a1b2-c3d4-4e5f-2a6b-7c8d9e0f1a2b"),
-                            Answer = "Use consistent hashing, a KV store, and a redirect service.",
-                            Content = "Design a URL shortener like bit.ly.",
+                            Category = 3,
+                            Content = "Design a URL shortener service like bit.ly. Discuss hashing strategy, data storage, redirect flow, analytics, and scaling.",
                             CreatedAt = new DateTime(2026, 1, 10, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
                             InterviewExperienceId = new Guid("a1b2c3d4-e5f6-4a1b-8c2d-3e4f5a6b7c8d"),
-                            QuestionType = "System Design"
+                            IsHot = true,
+                            Level = 3,
+                            Round = 9,
+                            SaveCount = 234,
+                            Status = 2,
+                            Title = "Design a URL Shortener like bit.ly",
+                            UpdatedAt = new DateTime(2026, 1, 10, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ViewCount = 876,
+                            Vote = 0
                         },
                         new
                         {
                             Id = new Guid("f6a1b2c3-d4e5-4f6a-3b7c-8d9e0f1a2b3c"),
-                            Answer = "== coerces types, === does not.",
-                            Content = "Explain the difference between == and ===.",
+                            Category = 2,
+                            Content = "Explain the difference between == and === in JavaScript. Give examples where they produce different results.",
                             CreatedAt = new DateTime(2026, 1, 15, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
                             InterviewExperienceId = new Guid("b2c3d4e5-f6a1-4b2c-9d3e-4f5a6b7c8d9e"),
-                            QuestionType = "JavaScript"
+                            IsHot = false,
+                            Level = 2,
+                            Round = 2,
+                            SaveCount = 56,
+                            Status = 2,
+                            Title = "Explain == vs === in JavaScript",
+                            UpdatedAt = new DateTime(2026, 1, 15, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ViewCount = 234,
+                            Vote = 0
                         },
                         new
                         {
                             Id = new Guid("a1b2c3d4-e5f6-4a7b-4c8d-9e0f1a2b3c4d"),
-                            Answer = "Iterative approach using prev, curr, next pointers. O(n) time O(1) space.",
-                            Content = "Reverse a linked list.",
+                            Category = 9,
+                            Content = "Reverse a singly linked list. Provide both iterative and recursive solutions with time/space complexity analysis.",
                             CreatedAt = new DateTime(2026, 2, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = new Guid("2f8c7a6b-6d5e-4e2f-8c7a-9d6e5c4b3a33"),
                             InterviewExperienceId = new Guid("c3d4e5f6-a1b2-4c3d-0e4f-5a6b7c8d9e0f"),
-                            QuestionType = "Algorithm"
+                            IsHot = false,
+                            Level = 1,
+                            Round = 7,
+                            SaveCount = 145,
+                            Status = 2,
+                            Title = "Reverse a Linked List",
+                            UpdatedAt = new DateTime(2026, 2, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ViewCount = 567,
+                            Vote = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("bb000009-0000-4000-8000-000000000009"),
+                            Category = 3,
+                            Content = "Design a distributed rate limiter for an API gateway. Discuss token bucket, sliding window, and their trade-offs at scale.",
+                            CreatedAt = new DateTime(2026, 2, 8, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
+                            IsHot = true,
+                            Level = 3,
+                            Round = 9,
+                            SaveCount = 167,
+                            Status = 2,
+                            Title = "Design a Rate Limiter",
+                            UpdatedAt = new DateTime(2026, 2, 8, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ViewCount = 678,
+                            Vote = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("bb00000a-0000-4000-8000-00000000000a"),
+                            Category = 8,
+                            Content = "What are CQRS and Event Sourcing patterns? When would you adopt them and what are the operational challenges?",
+                            CreatedAt = new DateTime(2026, 2, 10, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            IsHot = false,
+                            Level = 4,
+                            Round = 2,
+                            SaveCount = 89,
+                            Status = 2,
+                            Title = "Explain CQRS and Event Sourcing",
+                            UpdatedAt = new DateTime(2026, 2, 10, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ViewCount = 345,
+                            Vote = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("bb00000b-0000-4000-8000-00000000000b"),
+                            Category = 8,
+                            Content = "Compare microservices architecture with a monolith. What factors drive the decision and how do you handle the migration?",
+                            CreatedAt = new DateTime(2026, 2, 12, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = new Guid("2f8c7a6b-6d5e-4e2f-8c7a-9d6e5c4b3a33"),
+                            IsHot = false,
+                            Level = 3,
+                            Round = 10,
+                            SaveCount = 143,
+                            Status = 2,
+                            Title = "Microservices vs Monolith: Trade-offs",
+                            UpdatedAt = new DateTime(2026, 2, 12, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ViewCount = 512,
+                            Vote = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("bb00000c-0000-4000-8000-00000000000c"),
+                            Category = 9,
+                            Content = "Implement a thread-safe Singleton pattern in C#. Discuss Lazy<T>, double-checked locking, and when Singleton is an anti-pattern.",
+                            CreatedAt = new DateTime(2026, 2, 15, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
+                            IsHot = false,
+                            Level = 2,
+                            Round = 8,
+                            SaveCount = 67,
+                            Status = 2,
+                            Title = "Implement a Thread-Safe Singleton in C#",
+                            UpdatedAt = new DateTime(2026, 2, 15, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ViewCount = 289,
+                            Vote = 0
+                        });
+                });
+
+            modelBuilder.Entity("Intervu.Domain.Entities.QuestionCompany", b =>
+                {
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("QuestionId", "CompanyId");
+
+                    b.HasIndex("CompanyId");
+
+                    b.ToTable("QuestionCompanies", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            QuestionId = new Guid("d4e5f6a1-b2c3-4d4e-1f5a-6b7c8d9e0f1a"),
+                            CompanyId = new Guid("11111111-1111-4111-8111-111111111111")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("e5f6a1b2-c3d4-4e5f-2a6b-7c8d9e0f1a2b"),
+                            CompanyId = new Guid("11111111-1111-4111-8111-111111111111")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("e5f6a1b2-c3d4-4e5f-2a6b-7c8d9e0f1a2b"),
+                            CompanyId = new Guid("22222222-2222-4222-8222-222222222222")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("f6a1b2c3-d4e5-4f6a-3b7c-8d9e0f1a2b3c"),
+                            CompanyId = new Guid("22222222-2222-4222-8222-222222222222")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("a1b2c3d4-e5f6-4a7b-4c8d-9e0f1a2b3c4d"),
+                            CompanyId = new Guid("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000001-0000-4000-8000-000000000001"),
+                            CompanyId = new Guid("11111111-1111-4111-8111-111111111111")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000001-0000-4000-8000-000000000001"),
+                            CompanyId = new Guid("22222222-2222-4222-8222-222222222222")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000001-0000-4000-8000-000000000001"),
+                            CompanyId = new Guid("33333333-3333-4333-8333-333333333333")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000002-0000-4000-8000-000000000002"),
+                            CompanyId = new Guid("44444444-4444-4444-8444-444444444444")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000002-0000-4000-8000-000000000002"),
+                            CompanyId = new Guid("11111111-1111-4111-8111-111111111111")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000003-0000-4000-8000-000000000003"),
+                            CompanyId = new Guid("99999999-9999-4999-8999-999999999999")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000003-0000-4000-8000-000000000003"),
+                            CompanyId = new Guid("33333333-3333-4333-8333-333333333333")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000004-0000-4000-8000-000000000004"),
+                            CompanyId = new Guid("33333333-3333-4333-8333-333333333333")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000004-0000-4000-8000-000000000004"),
+                            CompanyId = new Guid("22222222-2222-4222-8222-222222222222")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000004-0000-4000-8000-000000000004"),
+                            CompanyId = new Guid("44444444-4444-4444-8444-444444444444")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000005-0000-4000-8000-000000000005"),
+                            CompanyId = new Guid("66666666-6666-4666-8666-666666666666")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000005-0000-4000-8000-000000000005"),
+                            CompanyId = new Guid("99999999-9999-4999-8999-999999999999")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000006-0000-4000-8000-000000000006"),
+                            CompanyId = new Guid("33333333-3333-4333-8333-333333333333")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000007-0000-4000-8000-000000000007"),
+                            CompanyId = new Guid("11111111-1111-4111-8111-111111111111")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000007-0000-4000-8000-000000000007"),
+                            CompanyId = new Guid("55555555-5555-4555-8555-555555555555")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000008-0000-4000-8000-000000000008"),
+                            CompanyId = new Guid("22222222-2222-4222-8222-222222222222")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000009-0000-4000-8000-000000000009"),
+                            CompanyId = new Guid("99999999-9999-4999-8999-999999999999")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000009-0000-4000-8000-000000000009"),
+                            CompanyId = new Guid("11111111-1111-4111-8111-111111111111")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb00000a-0000-4000-8000-00000000000a"),
+                            CompanyId = new Guid("44444444-4444-4444-8444-444444444444")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb00000b-0000-4000-8000-00000000000b"),
+                            CompanyId = new Guid("66666666-6666-4666-8666-666666666666")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb00000b-0000-4000-8000-00000000000b"),
+                            CompanyId = new Guid("33333333-3333-4333-8333-333333333333")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb00000c-0000-4000-8000-00000000000c"),
+                            CompanyId = new Guid("44444444-4444-4444-8444-444444444444")
+                        });
+                });
+
+            modelBuilder.Entity("Intervu.Domain.Entities.QuestionRole", b =>
+                {
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("integer");
+
+                    b.HasKey("QuestionId", "Role");
+
+                    b.HasIndex("Role");
+
+                    b.ToTable("QuestionRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            QuestionId = new Guid("d4e5f6a1-b2c3-4d4e-1f5a-6b7c8d9e0f1a"),
+                            Role = 2
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("d4e5f6a1-b2c3-4d4e-1f5a-6b7c8d9e0f1a"),
+                            Role = 6
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("e5f6a1b2-c3d4-4e5f-2a6b-7c8d9e0f1a2b"),
+                            Role = 6
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("e5f6a1b2-c3d4-4e5f-2a6b-7c8d9e0f1a2b"),
+                            Role = 2
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("f6a1b2c3-d4e5-4f6a-3b7c-8d9e0f1a2b3c"),
+                            Role = 7
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("f6a1b2c3-d4e5-4f6a-3b7c-8d9e0f1a2b3c"),
+                            Role = 8
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("a1b2c3d4-e5f6-4a7b-4c8d-9e0f1a2b3c4d"),
+                            Role = 2
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("a1b2c3d4-e5f6-4a7b-4c8d-9e0f1a2b3c4d"),
+                            Role = 6
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000001-0000-4000-8000-000000000001"),
+                            Role = 12
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000001-0000-4000-8000-000000000001"),
+                            Role = 4
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000002-0000-4000-8000-000000000002"),
+                            Role = 12
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000002-0000-4000-8000-000000000002"),
+                            Role = 2
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000003-0000-4000-8000-000000000003"),
+                            Role = 12
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000003-0000-4000-8000-000000000003"),
+                            Role = 17
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000004-0000-4000-8000-000000000004"),
+                            Role = 3
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000004-0000-4000-8000-000000000004"),
+                            Role = 2
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000005-0000-4000-8000-000000000005"),
+                            Role = 3
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000005-0000-4000-8000-000000000005"),
+                            Role = 6
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000006-0000-4000-8000-000000000006"),
+                            Role = 3
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000006-0000-4000-8000-000000000006"),
+                            Role = 4
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000007-0000-4000-8000-000000000007"),
+                            Role = 1
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000008-0000-4000-8000-000000000008"),
+                            Role = 1
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000009-0000-4000-8000-000000000009"),
+                            Role = 6
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000009-0000-4000-8000-000000000009"),
+                            Role = 2
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb00000a-0000-4000-8000-00000000000a"),
+                            Role = 6
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb00000a-0000-4000-8000-00000000000a"),
+                            Role = 17
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb00000b-0000-4000-8000-00000000000b"),
+                            Role = 2
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb00000b-0000-4000-8000-00000000000b"),
+                            Role = 17
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb00000c-0000-4000-8000-00000000000c"),
+                            Role = 6
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb00000c-0000-4000-8000-00000000000c"),
+                            Role = 2
+                        });
+                });
+
+            modelBuilder.Entity("Intervu.Domain.Entities.QuestionTag", b =>
+                {
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TagId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("QuestionId", "TagId");
+
+                    b.HasIndex("TagId");
+
+                    b.ToTable("QuestionTags", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            QuestionId = new Guid("d4e5f6a1-b2c3-4d4e-1f5a-6b7c8d9e0f1a"),
+                            TagId = new Guid("aa000007-0000-4000-8000-000000000007")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("e5f6a1b2-c3d4-4e5f-2a6b-7c8d9e0f1a2b"),
+                            TagId = new Guid("aa000003-0000-4000-8000-000000000003")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("e5f6a1b2-c3d4-4e5f-2a6b-7c8d9e0f1a2b"),
+                            TagId = new Guid("aa000005-0000-4000-8000-000000000005")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("f6a1b2c3-d4e5-4f6a-3b7c-8d9e0f1a2b3c"),
+                            TagId = new Guid("aa000008-0000-4000-8000-000000000008")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("a1b2c3d4-e5f6-4a7b-4c8d-9e0f1a2b3c4d"),
+                            TagId = new Guid("aa000007-0000-4000-8000-000000000007")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000001-0000-4000-8000-000000000001"),
+                            TagId = new Guid("aa000001-0000-4000-8000-000000000001")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000001-0000-4000-8000-000000000001"),
+                            TagId = new Guid("aa000006-0000-4000-8000-000000000006")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000002-0000-4000-8000-000000000002"),
+                            TagId = new Guid("aa000001-0000-4000-8000-000000000001")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000002-0000-4000-8000-000000000002"),
+                            TagId = new Guid("aa000006-0000-4000-8000-000000000006")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000003-0000-4000-8000-000000000003"),
+                            TagId = new Guid("aa000006-0000-4000-8000-000000000006")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000003-0000-4000-8000-000000000003"),
+                            TagId = new Guid("aa000003-0000-4000-8000-000000000003")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000004-0000-4000-8000-000000000004"),
+                            TagId = new Guid("aa000002-0000-4000-8000-000000000002")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000004-0000-4000-8000-000000000004"),
+                            TagId = new Guid("aa00000a-0000-4000-8000-00000000000a")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000005-0000-4000-8000-000000000005"),
+                            TagId = new Guid("aa000002-0000-4000-8000-000000000002")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000005-0000-4000-8000-000000000005"),
+                            TagId = new Guid("aa000005-0000-4000-8000-000000000005")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000006-0000-4000-8000-000000000006"),
+                            TagId = new Guid("aa000002-0000-4000-8000-000000000002")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000006-0000-4000-8000-000000000006"),
+                            TagId = new Guid("aa00000a-0000-4000-8000-00000000000a")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000007-0000-4000-8000-000000000007"),
+                            TagId = new Guid("aa000004-0000-4000-8000-000000000004")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000007-0000-4000-8000-000000000007"),
+                            TagId = new Guid("aa000009-0000-4000-8000-000000000009")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000008-0000-4000-8000-000000000008"),
+                            TagId = new Guid("aa000004-0000-4000-8000-000000000004")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000009-0000-4000-8000-000000000009"),
+                            TagId = new Guid("aa000003-0000-4000-8000-000000000003")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb000009-0000-4000-8000-000000000009"),
+                            TagId = new Guid("aa000005-0000-4000-8000-000000000005")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb00000a-0000-4000-8000-00000000000a"),
+                            TagId = new Guid("aa000005-0000-4000-8000-000000000005")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb00000a-0000-4000-8000-00000000000a"),
+                            TagId = new Guid("aa000003-0000-4000-8000-000000000003")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb00000b-0000-4000-8000-00000000000b"),
+                            TagId = new Guid("aa000003-0000-4000-8000-000000000003")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb00000b-0000-4000-8000-00000000000b"),
+                            TagId = new Guid("aa000005-0000-4000-8000-000000000005")
+                        },
+                        new
+                        {
+                            QuestionId = new Guid("bb00000c-0000-4000-8000-00000000000c"),
+                            TagId = new Guid("aa000005-0000-4000-8000-000000000005")
                         });
                 });
 
@@ -1313,6 +2083,91 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Intervu.Domain.Entities.Tag", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Tags", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("aa000001-0000-4000-8000-000000000001"),
+                            Description = "Artificial Intelligence & Machine Learning",
+                            Name = "AI"
+                        },
+                        new
+                        {
+                            Id = new Guid("aa000002-0000-4000-8000-000000000002"),
+                            Description = "SQL & Database querying",
+                            Name = "SQL"
+                        },
+                        new
+                        {
+                            Id = new Guid("aa000003-0000-4000-8000-000000000003"),
+                            Description = "Distributed systems & architecture design",
+                            Name = "System Design"
+                        },
+                        new
+                        {
+                            Id = new Guid("aa000004-0000-4000-8000-000000000004"),
+                            Description = "Product management & strategy",
+                            Name = "Product Strategy"
+                        },
+                        new
+                        {
+                            Id = new Guid("aa000005-0000-4000-8000-000000000005"),
+                            Description = "Backend engineering & APIs",
+                            Name = "Backend"
+                        },
+                        new
+                        {
+                            Id = new Guid("aa000006-0000-4000-8000-000000000006"),
+                            Description = "Generative AI, LLMs, prompt engineering",
+                            Name = "GenAI"
+                        },
+                        new
+                        {
+                            Id = new Guid("aa000007-0000-4000-8000-000000000007"),
+                            Description = "Data structures & algorithms",
+                            Name = "Algorithms"
+                        },
+                        new
+                        {
+                            Id = new Guid("aa000008-0000-4000-8000-000000000008"),
+                            Description = "Frontend & UI engineering",
+                            Name = "Frontend"
+                        },
+                        new
+                        {
+                            Id = new Guid("aa000009-0000-4000-8000-000000000009"),
+                            Description = "Behavioral & leadership questions",
+                            Name = "Behavioral"
+                        },
+                        new
+                        {
+                            Id = new Guid("aa00000a-0000-4000-8000-00000000000a"),
+                            Description = "Data pipelines, ETL, big data",
+                            Name = "Data Engineering"
+                        });
+                });
+
             modelBuilder.Entity("Intervu.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1410,6 +2265,46 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             SlugProfileUrl = "admin_1719000000003",
                             Status = 0
                         });
+                });
+
+            modelBuilder.Entity("Intervu.Domain.Entities.UserCommentLike", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CommentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("UserId", "CommentId");
+
+                    b.HasIndex("CommentId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserCommentLikes", (string)null);
+                });
+
+            modelBuilder.Entity("Intervu.Domain.Entities.UserQuestionLike", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("UserId", "QuestionId");
+
+                    b.HasIndex("QuestionId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserQuestionLikes", (string)null);
                 });
 
             modelBuilder.Entity("CandidateSkills", b =>
@@ -1686,13 +2581,68 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 
             modelBuilder.Entity("Intervu.Domain.Entities.Question", b =>
                 {
+                    b.HasOne("Intervu.Domain.Entities.User", "Author")
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("Intervu.Domain.Entities.InterviewExperience", "InterviewExperience")
                         .WithMany("Questions")
                         .HasForeignKey("InterviewExperienceId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Author");
+
+                    b.Navigation("InterviewExperience");
+                });
+
+            modelBuilder.Entity("Intervu.Domain.Entities.QuestionCompany", b =>
+                {
+                    b.HasOne("Intervu.Domain.Entities.Company", "Company")
+                        .WithMany("QuestionCompanies")
+                        .HasForeignKey("CompanyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("InterviewExperience");
+                    b.HasOne("Intervu.Domain.Entities.Question", "Question")
+                        .WithMany("QuestionCompanies")
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+
+                    b.Navigation("Question");
+                });
+
+            modelBuilder.Entity("Intervu.Domain.Entities.QuestionRole", b =>
+                {
+                    b.HasOne("Intervu.Domain.Entities.Question", "Question")
+                        .WithMany("QuestionRoles")
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Question");
+                });
+
+            modelBuilder.Entity("Intervu.Domain.Entities.QuestionTag", b =>
+                {
+                    b.HasOne("Intervu.Domain.Entities.Question", "Question")
+                        .WithMany("QuestionTags")
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Intervu.Domain.Entities.Tag", "Tag")
+                        .WithMany("QuestionTags")
+                        .HasForeignKey("TagId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Question");
+
+                    b.Navigation("Tag");
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.RefreshToken", b =>
@@ -1706,9 +2656,56 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Intervu.Domain.Entities.UserCommentLike", b =>
+                {
+                    b.HasOne("Intervu.Domain.Entities.Comment", "Comment")
+                        .WithMany()
+                        .HasForeignKey("CommentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_UserCommentLikes_Comments_CommentId");
+
+                    b.HasOne("Intervu.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_UserCommentLikes_Users_UserId");
+
+                    b.Navigation("Comment");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Intervu.Domain.Entities.UserQuestionLike", b =>
+                {
+                    b.HasOne("Intervu.Domain.Entities.Question", "Question")
+                        .WithMany()
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_UserQuestionLikes_Questions_QuestionId");
+
+                    b.HasOne("Intervu.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_UserQuestionLikes_Users_UserId");
+
+                    b.Navigation("Question");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Intervu.Domain.Entities.CoachAvailability", b =>
                 {
                     b.Navigation("InterviewBookingTransactions");
+                });
+
+            modelBuilder.Entity("Intervu.Domain.Entities.Company", b =>
+                {
+                    b.Navigation("QuestionCompanies");
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.InterviewExperience", b =>
@@ -1724,6 +2721,17 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
             modelBuilder.Entity("Intervu.Domain.Entities.Question", b =>
                 {
                     b.Navigation("Comments");
+
+                    b.Navigation("QuestionCompanies");
+
+                    b.Navigation("QuestionRoles");
+
+                    b.Navigation("QuestionTags");
+                });
+
+            modelBuilder.Entity("Intervu.Domain.Entities.Tag", b =>
+                {
+                    b.Navigation("QuestionTags");
                 });
 #pragma warning restore 612, 618
         }

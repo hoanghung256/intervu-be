@@ -41,7 +41,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
         public DbSet<QuestionTag> QuestionTags { get; set; }
         public DbSet<QuestionCompany> QuestionCompanies { get; set; }
         public DbSet<QuestionRole> QuestionRoles { get; set; }
-        public DbSet<Answer> Answers { get; set; }
+        public DbSet<UserQuestionLike> UserQuestionLikes { get; set; }
+        public DbSet<UserCommentLike> UserCommentLikes { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -99,6 +100,15 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.PortfolioUrl).HasMaxLength(1000);
                 b.Property(x => x.Bio).HasColumnType("text");
 
+                // Saved questions stored as JSONB (nullable)
+                b.Property(x => x.SavedQuestions)
+                 .HasColumnName("SavedQuestions")
+                 .HasColumnType("jsonb")
+                 .HasConversion(
+                     v => v == null ? null : System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
+                     v => v == null ? null : System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<Intervu.Domain.Entities.QuestionSnapshot>>(v, (System.Text.Json.JsonSerializerOptions?)null))
+                 .IsRequired(false);
+
                 // Explicitly map navigation to User (like CoachProfile)
                 b.HasOne(x => x.User)
                  .WithOne()
@@ -137,6 +147,15 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                  .WithOne()
                  .HasForeignKey<CoachProfile>(p => p.Id)
                  .OnDelete(DeleteBehavior.Cascade);
+
+                // Saved questions stored as JSONB (nullable)
+                b.Property(x => x.SavedQuestions)
+                 .HasColumnName("SavedQuestions")
+                 .HasColumnType("jsonb")
+                 .HasConversion(
+                     v => v == null ? null : System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
+                     v => v == null ? null : System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<Intervu.Domain.Entities.QuestionSnapshot>>(v, (System.Text.Json.JsonSerializerOptions?)null))
+                 .IsRequired(false);
 
                 b.HasMany(x => x.Companies)
                  .WithMany(c => c.CoachProfiles)
@@ -823,6 +842,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.Status).HasConversion<int>().HasDefaultValue(QuestionStatus.Approved);
                 b.Property(x => x.ViewCount).HasDefaultValue(0);
                 b.Property(x => x.SaveCount).HasDefaultValue(0);
+                b.Property(x => x.Vote).HasDefaultValue(0);
                 b.Property(x => x.IsHot).HasDefaultValue(false);
                 b.Property(x => x.Category).HasConversion<int>();
                 b.Property(x => x.CreatedAt).IsRequired();
@@ -836,11 +856,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.HasMany(x => x.Comments)
                     .WithOne(c => c.Question)
                     .HasForeignKey(c => c.QuestionId)
-                    .OnDelete(DeleteBehavior.Cascade);
-
-                b.HasMany(x => x.Answers)
-                    .WithOne(a => a.Question)
-                    .HasForeignKey(a => a.QuestionId)
                     .OnDelete(DeleteBehavior.Cascade);
 
                 // Indexes for optimized filtering
@@ -890,26 +905,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.HasIndex(x => x.Role);
             });
 
-            // Answer
-            modelBuilder.Entity<Answer>(b =>
-            {
-                b.ToTable("Answers");
-                b.HasKey(x => x.Id);
-                b.Property(x => x.Content).IsRequired().HasColumnType("text");
-                b.Property(x => x.Upvotes).HasDefaultValue(0);
-                b.Property(x => x.IsVerified).HasDefaultValue(false);
-                b.Property(x => x.CreatedAt).IsRequired();
-                b.Property(x => x.UpdatedAt).IsRequired();
-
-                b.HasOne(x => x.Author)
-                    .WithMany()
-                    .HasForeignKey(x => x.AuthorId)
-                    .OnDelete(DeleteBehavior.Cascade);
-
-                b.HasIndex(x => x.QuestionId);
-                b.HasIndex(x => x.Upvotes);
-            });
-
             // Comment (belongs to a Question; legacy discussion comments)
             modelBuilder.Entity<Comment>(b =>
             {
@@ -923,6 +918,52 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.CreateBy).IsRequired();
                 b.Property(x => x.UpdateBy).IsRequired();
                 b.HasIndex(x => x.QuestionId);
+            });
+
+            // UserQuestionLike (tracks which user liked which question)
+            modelBuilder.Entity<UserQuestionLike>(b =>
+            {
+                b.ToTable("UserQuestionLikes");
+                b.HasKey(x => new { x.UserId, x.QuestionId });
+                b.Property(x => x.CreatedAt).IsRequired();
+
+                b.HasOne(x => x.User)
+                 .WithMany()
+                 .HasForeignKey(x => x.UserId)
+                 .HasConstraintName("FK_UserQuestionLikes_Users_UserId")
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasOne(x => x.Question)
+                 .WithMany()
+                 .HasForeignKey(x => x.QuestionId)
+                 .HasConstraintName("FK_UserQuestionLikes_Questions_QuestionId")
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasIndex(x => x.UserId);
+                b.HasIndex(x => x.QuestionId);
+            });
+
+            // UserCommentLike (tracks which user liked which comment)
+            modelBuilder.Entity<UserCommentLike>(b =>
+            {
+                b.ToTable("UserCommentLikes");
+                b.HasKey(x => new { x.UserId, x.CommentId });
+                b.Property(x => x.CreatedAt).IsRequired();
+
+                b.HasOne(x => x.User)
+                 .WithMany()
+                 .HasForeignKey(x => x.UserId)
+                 .HasConstraintName("FK_UserCommentLikes_Users_UserId")
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasOne(x => x.Comment)
+                 .WithMany()
+                 .HasForeignKey(x => x.CommentId)
+                 .HasConstraintName("FK_UserCommentLikes_Comments_CommentId")
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasIndex(x => x.UserId);
+                b.HasIndex(x => x.CommentId);
             });
 
             // ===================== SEED DATA – Tags =====================
@@ -1029,75 +1070,24 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
 
             modelBuilder.Entity<Question>().HasData(
                 // ── AI / GenAI questions ──
-                new { Id = q1,  Title = "Longest Substring Without Repeating Characters", Content = "Find the longest substring without repeating characters. Explain your approach and time complexity.", InterviewExperienceId = (Guid?)exp1Id, Level = ExperienceLevel.Senior, Round = InterviewRound.TechnicalScreen, Status = QuestionStatus.Approved, Category = QuestionCategory.Coding, ViewCount = 342, SaveCount = 87, IsHot = true,  CreatedBy = (Guid?)user1Id, CreatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc) },
-                new { Id = q5,  Title = "Explain the Transformer Architecture", Content = "Walk me through the Transformer architecture. How do self-attention mechanisms work and why are they superior to RNNs for sequence modeling?", InterviewExperienceId = (Guid?)null, Level = ExperienceLevel.Senior, Round = InterviewRound.TechnicalScreen, Status = QuestionStatus.Approved, Category = QuestionCategory.Technical, ViewCount = 891, SaveCount = 214, IsHot = true, CreatedBy = (Guid?)user1Id, CreatedAt = new DateTime(2026, 1, 20, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 1, 20, 0, 0, 0, DateTimeKind.Utc) },
-                new { Id = q6,  Title = "RAG vs Fine-Tuning: When to Use Which?", Content = "Compare Retrieval-Augmented Generation (RAG) with fine-tuning. In what scenarios would you choose one over the other for a production GenAI application?", InterviewExperienceId = (Guid?)null, Level = ExperienceLevel.Senior, Round = InterviewRound.SystemDesignRound, Status = QuestionStatus.Approved, Category = QuestionCategory.Technical, ViewCount = 654, SaveCount = 178, IsHot = true, CreatedBy = (Guid?)user2Id, CreatedAt = new DateTime(2026, 1, 22, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 1, 22, 0, 0, 0, DateTimeKind.Utc) },
-                new { Id = q7,  Title = "Design an LLM-Powered Customer Support Bot", Content = "Design a customer support chatbot powered by a large language model. Address latency, hallucination mitigation, guardrails, and cost optimization.", InterviewExperienceId = (Guid?)null, Level = ExperienceLevel.Lead, Round = InterviewRound.SystemDesignRound, Status = QuestionStatus.Approved, Category = QuestionCategory.SystemDesign, ViewCount = 432, SaveCount = 102, IsHot = false, CreatedBy = (Guid?)user1Id, CreatedAt = new DateTime(2026, 1, 25, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 1, 25, 0, 0, 0, DateTimeKind.Utc) },
-
-                // ── SQL / Data questions ──
-                new { Id = q8,  Title = "Find the Second Highest Salary", Content = "Write a SQL query to find the second highest salary from an Employee table. Handle the case where there might be duplicate salaries.", InterviewExperienceId = (Guid?)null, Level = ExperienceLevel.Junior, Round = InterviewRound.TechnicalScreen, Status = QuestionStatus.Approved, Category = QuestionCategory.Coding, ViewCount = 1243, SaveCount = 456, IsHot = true, CreatedBy = (Guid?)user3Id, CreatedAt = new DateTime(2026, 1, 12, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 1, 12, 0, 0, 0, DateTimeKind.Utc) },
-                new { Id = q9,  Title = "Optimize a Slow Query with Millions of Rows", Content = "You have a query that scans 50M rows and takes 30 seconds. Walk me through your approach to diagnose and optimize it.", InterviewExperienceId = (Guid?)null, Level = ExperienceLevel.Senior, Round = InterviewRound.TechnicalScreen, Status = QuestionStatus.Approved, Category = QuestionCategory.Technical, ViewCount = 567, SaveCount = 134, IsHot = false, CreatedBy = (Guid?)user1Id, CreatedAt = new DateTime(2026, 1, 18, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 1, 18, 0, 0, 0, DateTimeKind.Utc) },
-                new { Id = q10, Title = "Window Functions: Running Total & Ranking", Content = "Explain SQL window functions. Write a query using ROW_NUMBER, RANK, and a running SUM to analyze monthly revenue data.", InterviewExperienceId = (Guid?)null, Level = ExperienceLevel.Middle, Round = InterviewRound.CodingChallenge, Status = QuestionStatus.Approved, Category = QuestionCategory.Coding, ViewCount = 389, SaveCount = 98, IsHot = false, CreatedBy = (Guid?)user2Id, CreatedAt = new DateTime(2026, 1, 28, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 1, 28, 0, 0, 0, DateTimeKind.Utc) },
-
-                // ── Product Manager questions ──
-                new { Id = q11, Title = "How Would You Prioritize Features for a New Product?", Content = "You're the PM for a new B2B SaaS product. You have 20 feature requests and resources for 5. Walk me through your prioritization framework.", InterviewExperienceId = (Guid?)null, Level = ExperienceLevel.Senior, Round = InterviewRound.BehavioralRound, Status = QuestionStatus.Approved, Category = QuestionCategory.ProductThinking, ViewCount = 723, SaveCount = 189, IsHot = true, CreatedBy = (Guid?)user1Id, CreatedAt = new DateTime(2026, 1, 14, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 1, 14, 0, 0, 0, DateTimeKind.Utc) },
-                new { Id = q12, Title = "Define Success Metrics for a Social Media Feed", Content = "You've just launched a new algorithmic feed for a social platform. What metrics would you track? How would you define success at 30/60/90 days?", InterviewExperienceId = (Guid?)null, Level = ExperienceLevel.Middle, Round = InterviewRound.BehavioralRound, Status = QuestionStatus.Approved, Category = QuestionCategory.ProductThinking, ViewCount = 456, SaveCount = 121, IsHot = false, CreatedBy = (Guid?)user2Id, CreatedAt = new DateTime(2026, 2, 5, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 2, 5, 0, 0, 0, DateTimeKind.Utc) },
+                new { Id = q1,  Title = "Longest Substring Without Repeating Characters", Content = "Find the longest substring without repeating characters. Explain your approach and time complexity.", InterviewExperienceId = (Guid?)exp1Id, Level = ExperienceLevel.Senior, Round = InterviewRound.TechnicalScreen, Status = QuestionStatus.Approved, Category = QuestionCategory.Coding, ViewCount = 0, SaveCount = 0, Vote = 0, IsHot = true,  CreatedBy = (Guid?)user1Id, CreatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc) },
 
                 // ── Backend Engineering questions ──
-                new { Id = q2,  Title = "Design a URL Shortener like bit.ly", Content = "Design a URL shortener service like bit.ly. Discuss hashing strategy, data storage, redirect flow, analytics, and scaling.", InterviewExperienceId = (Guid?)exp1Id, Level = ExperienceLevel.Senior, Round = InterviewRound.SystemDesignRound, Status = QuestionStatus.Approved, Category = QuestionCategory.SystemDesign, ViewCount = 876, SaveCount = 234, IsHot = true, CreatedBy = (Guid?)user1Id, CreatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc) },
-                new { Id = q3,  Title = "Explain == vs === in JavaScript", Content = "Explain the difference between == and === in JavaScript. Give examples where they produce different results.", InterviewExperienceId = (Guid?)exp2Id, Level = ExperienceLevel.Middle, Round = InterviewRound.TechnicalScreen, Status = QuestionStatus.Approved, Category = QuestionCategory.Technical, ViewCount = 234, SaveCount = 56, IsHot = false, CreatedBy = (Guid?)user1Id, CreatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc) },
-                new { Id = q4,  Title = "Reverse a Linked List", Content = "Reverse a singly linked list. Provide both iterative and recursive solutions with time/space complexity analysis.", InterviewExperienceId = (Guid?)exp3Id, Level = ExperienceLevel.Junior, Round = InterviewRound.CodingChallenge, Status = QuestionStatus.Approved, Category = QuestionCategory.Coding, ViewCount = 567, SaveCount = 145, IsHot = false, CreatedBy = (Guid?)user3Id, CreatedAt = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc) },
-                new { Id = q13, Title = "Design a Rate Limiter", Content = "Design a distributed rate limiter for an API gateway. Discuss token bucket, sliding window, and their trade-offs at scale.", InterviewExperienceId = (Guid?)null, Level = ExperienceLevel.Senior, Round = InterviewRound.SystemDesignRound, Status = QuestionStatus.Approved, Category = QuestionCategory.SystemDesign, ViewCount = 678, SaveCount = 167, IsHot = true, CreatedBy = (Guid?)user1Id, CreatedAt = new DateTime(2026, 2, 8, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 2, 8, 0, 0, 0, DateTimeKind.Utc) },
-                new { Id = q14, Title = "Explain CQRS and Event Sourcing", Content = "What are CQRS and Event Sourcing patterns? When would you adopt them and what are the operational challenges?", InterviewExperienceId = (Guid?)null, Level = ExperienceLevel.Lead, Round = InterviewRound.TechnicalScreen, Status = QuestionStatus.Approved, Category = QuestionCategory.Architecture, ViewCount = 345, SaveCount = 89, IsHot = false, CreatedBy = (Guid?)user2Id, CreatedAt = new DateTime(2026, 2, 10, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 2, 10, 0, 0, 0, DateTimeKind.Utc) },
-                new { Id = q15, Title = "Microservices vs Monolith: Trade-offs", Content = "Compare microservices architecture with a monolith. What factors drive the decision and how do you handle the migration?", InterviewExperienceId = (Guid?)null, Level = ExperienceLevel.Senior, Round = InterviewRound.BehavioralRound, Status = QuestionStatus.Approved, Category = QuestionCategory.Architecture, ViewCount = 512, SaveCount = 143, IsHot = false, CreatedBy = (Guid?)user3Id, CreatedAt = new DateTime(2026, 2, 12, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 2, 12, 0, 0, 0, DateTimeKind.Utc) },
-                new { Id = q16, Title = "Implement a Thread-Safe Singleton in C#", Content = "Implement a thread-safe Singleton pattern in C#. Discuss Lazy<T>, double-checked locking, and when Singleton is an anti-pattern.", InterviewExperienceId = (Guid?)null, Level = ExperienceLevel.Middle, Round = InterviewRound.LiveCoding, Status = QuestionStatus.Approved, Category = QuestionCategory.Coding, ViewCount = 289, SaveCount = 67, IsHot = false, CreatedBy = (Guid?)user1Id, CreatedAt = new DateTime(2026, 2, 15, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 2, 15, 0, 0, 0, DateTimeKind.Utc) }
+                new { Id = q2,  Title = "Design a URL Shortener like bit.ly", Content = "Design a URL shortener service like bit.ly. Discuss hashing strategy, data storage, redirect flow, analytics, and scaling.", InterviewExperienceId = (Guid?)exp1Id, Level = ExperienceLevel.Senior, Round = InterviewRound.SystemDesignRound, Status = QuestionStatus.Approved, Category = QuestionCategory.SystemDesign, ViewCount = 0, SaveCount = 0, Vote = 0, IsHot = true, CreatedBy = (Guid?)user1Id, CreatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc) },
+                new { Id = q3,  Title = "Explain == vs === in JavaScript", Content = "Explain the difference between == and === in JavaScript. Give examples where they produce different results.", InterviewExperienceId = (Guid?)exp2Id, Level = ExperienceLevel.Middle, Round = InterviewRound.TechnicalScreen, Status = QuestionStatus.Approved, Category = QuestionCategory.Technical, ViewCount = 0, SaveCount = 0, Vote = 0, IsHot = false, CreatedBy = (Guid?)user1Id, CreatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc) },
+                new { Id = q4,  Title = "Reverse a Linked List", Content = "Reverse a singly linked list. Provide both iterative and recursive solutions with time/space complexity analysis.", InterviewExperienceId = (Guid?)exp3Id, Level = ExperienceLevel.Junior, Round = InterviewRound.CodingChallenge, Status = QuestionStatus.Approved, Category = QuestionCategory.Coding, ViewCount = 0, SaveCount = 0, Vote = 0, IsHot = false, CreatedBy = (Guid?)user3Id, CreatedAt = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc) }
             );
 
             // ===================== SEED DATA – QuestionCompany (asked at) =====================
             modelBuilder.Entity<QuestionCompany>().HasData(
                 // Q1: asked at Google
                 new { QuestionId = q1,  CompanyId = googleId },
-                // Q2: asked at Google, Meta
-                new { QuestionId = q2,  CompanyId = googleId },
-                new { QuestionId = q2,  CompanyId = metaId },
+                // Q2: asked at Netflix
+                new { QuestionId = q2,  CompanyId = netflixId },
                 // Q3: asked at Meta
                 new { QuestionId = q3,  CompanyId = metaId },
-                // Q4: asked at Shopee (bbbb)
-                new { QuestionId = q4,  CompanyId = Guid.Parse("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb") },
-                // Q5: Transformer – asked at Google, Meta, Amazon
-                new { QuestionId = q5,  CompanyId = googleId },
-                new { QuestionId = q5,  CompanyId = metaId },
-                new { QuestionId = q5,  CompanyId = amazonId },
-                // Q6: RAG – asked at Microsoft, Google
-                new { QuestionId = q6,  CompanyId = microsoftId },
-                new { QuestionId = q6,  CompanyId = googleId },
-                // Q7: LLM Bot – asked at Stripe, Amazon
-                new { QuestionId = q7,  CompanyId = stripeId },
-                new { QuestionId = q7,  CompanyId = amazonId },
-                // Q8: SQL – asked at Amazon, Meta, Microsoft
-                new { QuestionId = q8,  CompanyId = amazonId },
-                new { QuestionId = q8,  CompanyId = metaId },
-                new { QuestionId = q8,  CompanyId = microsoftId },
-                // Q9: Slow query – asked at Netflix, Stripe
-                new { QuestionId = q9,  CompanyId = netflixId },
-                new { QuestionId = q9,  CompanyId = stripeId },
-                // Q10: Window funcs – asked at Amazon
-                new { QuestionId = q10, CompanyId = amazonId },
-                // Q11: PM prioritize – asked at Google, Apple
-                new { QuestionId = q11, CompanyId = googleId },
-                new { QuestionId = q11, CompanyId = appleId },
-                // Q12: Metrics – asked at Meta
-                new { QuestionId = q12, CompanyId = metaId },
-                // Q13: Rate limiter – asked at Stripe, Google
-                new { QuestionId = q13, CompanyId = stripeId },
-                new { QuestionId = q13, CompanyId = googleId },
-                // Q14: CQRS – asked at Microsoft
-                new { QuestionId = q14, CompanyId = microsoftId },
-                // Q15: Microservices – asked at Netflix, Amazon
-                new { QuestionId = q15, CompanyId = netflixId },
-                new { QuestionId = q15, CompanyId = amazonId },
-                // Q16: Singleton – asked at Microsoft
-                new { QuestionId = q16, CompanyId = microsoftId }
+                // Q4: asked at Microsoft
+                new { QuestionId = q4,  CompanyId = microsoftId }
             );
 
             // ===================== SEED DATA – QuestionRole =====================
@@ -1165,32 +1155,16 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 new { QuestionId = q16, TagId = tagBackend }
             );
 
-            // ===================== SEED DATA – Answers =====================
-            modelBuilder.Entity<Answer>().HasData(
-                new Answer { Id = Guid.Parse("dd000001-0000-4000-8000-000000000001"), QuestionId = q1,  AuthorId = user1Id, Content = "Use sliding window with a HashSet. O(n) time, O(min(m,n)) space where m is the charset size.", Upvotes = 42, IsVerified = true, CreatedAt = new DateTime(2026, 1, 10, 1, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 1, 10, 1, 0, 0, DateTimeKind.Utc) },
-                new Answer { Id = Guid.Parse("dd000002-0000-4000-8000-000000000002"), QuestionId = q2,  AuthorId = user1Id, Content = "Use consistent hashing, a KV store (Redis/DynamoDB), and a redirect service behind a CDN. Base62 encode the auto-increment ID.", Upvotes = 38, IsVerified = true, CreatedAt = new DateTime(2026, 1, 10, 2, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 1, 10, 2, 0, 0, DateTimeKind.Utc) },
-                new Answer { Id = Guid.Parse("dd000003-0000-4000-8000-000000000003"), QuestionId = q3,  AuthorId = user1Id, Content = "== coerces types before comparison, === checks both type and value. Example: 0 == '' is true but 0 === '' is false.", Upvotes = 19, IsVerified = true, CreatedAt = new DateTime(2026, 1, 15, 1, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 1, 15, 1, 0, 0, DateTimeKind.Utc) },
-                new Answer { Id = Guid.Parse("dd000004-0000-4000-8000-000000000004"), QuestionId = q4,  AuthorId = user3Id, Content = "Iterative: use prev, curr, next pointers. O(n) time, O(1) space. Recursive: return reversed rest, set head.next.next = head, head.next = null.", Upvotes = 31, IsVerified = true, CreatedAt = new DateTime(2026, 2, 1, 1, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 2, 1, 1, 0, 0, DateTimeKind.Utc) },
-                new Answer { Id = Guid.Parse("dd000005-0000-4000-8000-000000000005"), QuestionId = q5,  AuthorId = user2Id, Content = "Transformers use multi-head self-attention to capture long-range dependencies in parallel. Key components: Q/K/V matrices, positional encoding, layer norm, feed-forward layers.", Upvotes = 56, IsVerified = true, CreatedAt = new DateTime(2026, 1, 21, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 1, 21, 0, 0, 0, DateTimeKind.Utc) },
-                new Answer { Id = Guid.Parse("dd000006-0000-4000-8000-000000000006"), QuestionId = q6,  AuthorId = user1Id, Content = "RAG: when you need up-to-date knowledge without retraining, lower cost. Fine-tuning: when you need domain-specific behavior/style, smaller model. Hybrid approaches work best.", Upvotes = 43, IsVerified = true, CreatedAt = new DateTime(2026, 1, 23, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 1, 23, 0, 0, 0, DateTimeKind.Utc) },
-                new Answer { Id = Guid.Parse("dd000007-0000-4000-8000-000000000007"), QuestionId = q8,  AuthorId = user3Id, Content = "SELECT MAX(salary) FROM Employee WHERE salary < (SELECT MAX(salary) FROM Employee); Or: SELECT DISTINCT salary FROM Employee ORDER BY salary DESC LIMIT 1 OFFSET 1;", Upvotes = 67, IsVerified = true, CreatedAt = new DateTime(2026, 1, 12, 1, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 1, 12, 1, 0, 0, DateTimeKind.Utc) },
-                new Answer { Id = Guid.Parse("dd000008-0000-4000-8000-000000000008"), QuestionId = q11, AuthorId = user2Id, Content = "Use RICE framework: Reach × Impact × Confidence / Effort. Combine with customer interviews, data analysis, and strategic alignment. Present trade-offs to stakeholders.", Upvotes = 34, IsVerified = true, CreatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc) },
-                new Answer { Id = Guid.Parse("dd000009-0000-4000-8000-000000000009"), QuestionId = q13, AuthorId = user1Id, Content = "Token bucket for bursty traffic, sliding window log for precise limits. Use Redis with Lua scripts for distributed implementation. Consider API key vs IP-based limiting.", Upvotes = 45, IsVerified = true, CreatedAt = new DateTime(2026, 2, 9, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 2, 9, 0, 0, 0, DateTimeKind.Utc) },
-                // Second (non-verified) answers for popular questions
-                new Answer { Id = Guid.Parse("dd00000a-0000-4000-8000-00000000000a"), QuestionId = q5,  AuthorId = user3Id, Content = "Think of attention as a soft dictionary lookup. Query attends to all Keys to get weights, then combines Values. Multi-head allows different representation subspaces.", Upvotes = 23, IsVerified = false, CreatedAt = new DateTime(2026, 1, 22, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 1, 22, 0, 0, 0, DateTimeKind.Utc) },
-                new Answer { Id = Guid.Parse("dd00000b-0000-4000-8000-00000000000b"), QuestionId = q8,  AuthorId = user1Id, Content = "Using DENSE_RANK: WITH ranked AS (SELECT salary, DENSE_RANK() OVER (ORDER BY salary DESC) AS rnk FROM Employee) SELECT salary FROM ranked WHERE rnk = 2;", Upvotes = 29, IsVerified = false, CreatedAt = new DateTime(2026, 1, 13, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 1, 13, 0, 0, 0, DateTimeKind.Utc) }
-            );
-
             // ===================== SEED DATA – Comments (legacy, kept for backward compat) =====================
             modelBuilder.Entity<Comment>().HasData(
-                new Comment { Id = Guid.Parse("c1c1c1c1-1111-4c11-8c11-c1c1c1c1c111"), QuestionId = q1, Content = "Use sliding window with a HashSet. O(n) time.", IsAnswer = true, Vote = 10, CreatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc), UpdateAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc), CreateBy = user1Id, UpdateBy = user1Id },
-                new Comment { Id = Guid.Parse("c2c2c2c2-2222-4c22-8c22-c2c2c2c2c222"), QuestionId = q1, Content = "You can also use a dictionary to map each character to its latest index for O(n) in a single pass.", IsAnswer = false, Vote = 5, CreatedAt = new DateTime(2026, 1, 12, 0, 0, 0, DateTimeKind.Utc), UpdateAt = new DateTime(2026, 1, 12, 0, 0, 0, DateTimeKind.Utc), CreateBy = user2Id, UpdateBy = user2Id },
-                new Comment { Id = Guid.Parse("c3c3c3c3-3333-4c33-8c33-c3c3c3c3c333"), QuestionId = q2, Content = "Use consistent hashing, a KV store, and a redirect service.", IsAnswer = true, Vote = 8, CreatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc), UpdateAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc), CreateBy = user1Id, UpdateBy = user1Id },
-                new Comment { Id = Guid.Parse("c4c4c4c4-4444-4c44-8c44-c4c4c4c4c444"), QuestionId = q2, Content = "Don't forget rate limiting and analytics counters when discussing the redirect service design.", IsAnswer = false, Vote = 3, CreatedAt = new DateTime(2026, 1, 13, 0, 0, 0, DateTimeKind.Utc), UpdateAt = new DateTime(2026, 1, 13, 0, 0, 0, DateTimeKind.Utc), CreateBy = user2Id, UpdateBy = user2Id },
-                new Comment { Id = Guid.Parse("c5c5c5c5-5555-4c55-8c55-c5c5c5c5c555"), QuestionId = q3, Content = "== coerces types, === does not.", IsAnswer = true, Vote = 7, CreatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc), UpdateAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc), CreateBy = user1Id, UpdateBy = user1Id },
-                new Comment { Id = Guid.Parse("c6c6c6c6-6666-4c66-8c66-c6c6c6c6c666"), QuestionId = q3, Content = "Always prefer === in modern JS/TS to avoid implicit coercion bugs. null == undefined is true but null === undefined is false.", IsAnswer = false, Vote = 4, CreatedAt = new DateTime(2026, 1, 16, 0, 0, 0, DateTimeKind.Utc), UpdateAt = new DateTime(2026, 1, 16, 0, 0, 0, DateTimeKind.Utc), CreateBy = user2Id, UpdateBy = user2Id },
-                new Comment { Id = Guid.Parse("c7c7c7c7-7777-4c77-8c77-c7c7c7c7c777"), QuestionId = q4, Content = "Iterative approach using prev, curr, next pointers. O(n) time O(1) space.", IsAnswer = true, Vote = 9, CreatedAt = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc), UpdateAt = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc), CreateBy = user3Id, UpdateBy = user3Id },
-                new Comment { Id = Guid.Parse("c8c8c8c8-8888-4c88-8c88-c8c8c8c8c888"), QuestionId = q4, Content = "Recursive solution is cleaner to write but costs O(n) stack space. Interviewers often ask you to do both.", IsAnswer = false, Vote = 6, CreatedAt = new DateTime(2026, 2, 2, 0, 0, 0, DateTimeKind.Utc), UpdateAt = new DateTime(2026, 2, 2, 0, 0, 0, DateTimeKind.Utc), CreateBy = user1Id, UpdateBy = user1Id }
+                new Comment { Id = Guid.Parse("c1c1c1c1-1111-4c11-8c11-c1c1c1c1c111"), QuestionId = q1, Content = "Use sliding window with a HashSet. O(n) time.", IsAnswer = true, Vote = 0, CreatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc), UpdateAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc), CreateBy = user1Id, UpdateBy = user1Id },
+                new Comment { Id = Guid.Parse("c2c2c2c2-2222-4c22-8c22-c2c2c2c2c222"), QuestionId = q1, Content = "You can also use a dictionary to map each character to its latest index for O(n) in a single pass.", IsAnswer = false, Vote = 0, CreatedAt = new DateTime(2026, 1, 12, 0, 0, 0, DateTimeKind.Utc), UpdateAt = new DateTime(2026, 1, 12, 0, 0, 0, DateTimeKind.Utc), CreateBy = user2Id, UpdateBy = user2Id },
+                new Comment { Id = Guid.Parse("c3c3c3c3-3333-4c33-8c33-c3c3c3c3c333"), QuestionId = q2, Content = "Use consistent hashing, a KV store, and a redirect service.", IsAnswer = true, Vote = 0, CreatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc), UpdateAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc), CreateBy = user1Id, UpdateBy = user1Id },
+                new Comment { Id = Guid.Parse("c4c4c4c4-4444-4c44-8c44-c4c4c4c4c444"), QuestionId = q2, Content = "Don't forget rate limiting and analytics counters when discussing the redirect service design.", IsAnswer = false, Vote = 0, CreatedAt = new DateTime(2026, 1, 13, 0, 0, 0, DateTimeKind.Utc), UpdateAt = new DateTime(2026, 1, 13, 0, 0, 0, DateTimeKind.Utc), CreateBy = user2Id, UpdateBy = user2Id },
+                new Comment { Id = Guid.Parse("c5c5c5c5-5555-4c55-8c55-c5c5c5c5c555"), QuestionId = q3, Content = "== coerces types, === does not.", IsAnswer = true, Vote = 0, CreatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc), UpdateAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc), CreateBy = user1Id, UpdateBy = user1Id },
+                new Comment { Id = Guid.Parse("c6c6c6c6-6666-4c66-8c66-c6c6c6c6c666"), QuestionId = q3, Content = "Always prefer === in modern JS/TS to avoid implicit coercion bugs. null == undefined is true but null === undefined is false.", IsAnswer = false, Vote = 0, CreatedAt = new DateTime(2026, 1, 16, 0, 0, 0, DateTimeKind.Utc), UpdateAt = new DateTime(2026, 1, 16, 0, 0, 0, DateTimeKind.Utc), CreateBy = user2Id, UpdateBy = user2Id },
+                new Comment { Id = Guid.Parse("c7c7c7c7-7777-4c77-8c77-c7c7c7c7c777"), QuestionId = q4, Content = "Iterative approach using prev, curr, next pointers. O(n) time O(1) space.", IsAnswer = true, Vote = 0, CreatedAt = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc), UpdateAt = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc), CreateBy = user3Id, UpdateBy = user3Id },
+                new Comment { Id = Guid.Parse("c8c8c8c8-8888-4c88-8c88-c8c8c8c8c888"), QuestionId = q4, Content = "Recursive solution is cleaner to write but costs O(n) stack space. Interviewers often ask you to do both.", IsAnswer = false, Vote = 0, CreatedAt = new DateTime(2026, 2, 2, 0, 0, 0, DateTimeKind.Utc), UpdateAt = new DateTime(2026, 2, 2, 0, 0, 0, DateTimeKind.Utc), CreateBy = user1Id, UpdateBy = user1Id }
             );
 
             modelBuilder.Entity<InterviewType>().HasData(

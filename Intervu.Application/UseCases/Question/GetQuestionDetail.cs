@@ -2,6 +2,7 @@ using Intervu.Application.DTOs.Comment;
 using Intervu.Application.DTOs.Question;
 using Intervu.Application.Interfaces.UseCases.Question;
 using Intervu.Domain.Entities;
+using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 using System;
 using System.Collections.Generic;
@@ -10,12 +11,18 @@ using System.Threading.Tasks;
 
 namespace Intervu.Application.UseCases.Question
 {
-    public class GetQuestionDetail(IQuestionRepository questionRepository, IUserRepository userRepository)
+    public class GetQuestionDetail(
+        IQuestionRepository questionRepository,
+        IUserRepository userRepository,
+        IUserQuestionLikeRepository questionLikeRepository,
+        IUserCommentLikeRepository commentLikeRepository,
+        ICandidateProfileRepository candidateProfileRepository,
+        ICoachProfileRepository coachProfileRepository)
         : IGetQuestionDetail
     {
         private const int RelatedLimit = 5;
 
-        public async Task<QuestionDetailDto?> ExecuteAsync(Guid questionId)
+        public async Task<QuestionDetailDto?> ExecuteAsync(Guid questionId, Guid? userId = null)
         {
             var question = await questionRepository.GetDetailAsync(questionId);
             if (question == null) return null;
@@ -37,6 +44,12 @@ namespace Intervu.Application.UseCases.Question
                 if (u != null) authorMap[uid] = u;
             }
 
+            // Resolve liked comment IDs for current user
+            var commentIds = question.Comments.Select(c => c.Id).ToList();
+            var likedCommentIds = userId.HasValue
+                ? await commentLikeRepository.GetLikedCommentIdsAsync(userId.Value, commentIds)
+                : new HashSet<Guid>();
+
             var comments = question.Comments
                 .OrderByDescending(c => c.IsAnswer)
                 .ThenByDescending(c => c.Vote)
@@ -53,25 +66,34 @@ namespace Intervu.Application.UseCases.Question
                         CreatedAt = c.CreatedAt,
                         CreatedBy = c.CreateBy,
                         AuthorName = commentAuthor?.FullName ?? "Anonymous",
-                        AuthorProfilePicture = commentAuthor?.ProfilePicture
+                        AuthorProfilePicture = commentAuthor?.ProfilePicture,
+                        IsLikedByUser = likedCommentIds.Contains(c.Id)
                     };
                 }).ToList();
 
-            var answers = question.Answers
-                .OrderByDescending(a => a.IsVerified)
-                .ThenByDescending(a => a.Upvotes)
-                .Select(a => new AnswerDetailDto
+            // Resolve is-liked-by-user for Question
+            bool isLikedByUser = false;
+            bool isSavedByUser = false;
+
+            if (userId.HasValue)
+            {
+                isLikedByUser = await questionLikeRepository.HasLikedAsync(userId.Value, questionId);
+
+                var user = await userRepository.GetByIdAsync(userId.Value);
+                if (user != null)
                 {
-                    Id = a.Id,
-                    Content = a.Content,
-                    Upvotes = a.Upvotes,
-                    IsVerified = a.IsVerified,
-                    AuthorId = a.AuthorId,
-                    AuthorName = a.Author?.FullName ?? "Anonymous",
-                    AuthorProfilePicture = a.Author?.ProfilePicture,
-                    AuthorSlug = a.Author?.SlugProfileUrl ?? string.Empty,
-                    CreatedAt = a.CreatedAt
-                }).ToList();
+                    if (user.Role == UserRole.Candidate)
+                    {
+                        var profile = await candidateProfileRepository.GetProfileByIdAsync(userId.Value);
+                        isSavedByUser = profile?.SavedQuestions?.Any(s => s.Id == questionId) ?? false;
+                    }
+                    else
+                    {
+                        var profile = await coachProfileRepository.GetProfileByIdAsync(userId.Value);
+                        isSavedByUser = profile?.SavedQuestions?.Any(s => s.Id == questionId) ?? false;
+                    }
+                }
+            }
 
             // Related questions (same tags or roles)
             var related = await questionRepository.GetRelatedAsync(
@@ -85,7 +107,7 @@ namespace Intervu.Application.UseCases.Question
                 Title = r.Title,
                 CompanyNames = r.QuestionCompanies?.Select(qc => qc.Company?.Name ?? string.Empty).ToList() ?? new(),
                 Roles = r.QuestionRoles?.Select(qr => qr.Role.ToString()).ToList() ?? new(),
-                AnswerCount = r.Answers?.Count ?? 0,
+                CommentCount = r.Comments?.Count ?? 0,
                 CreatedAt = r.CreatedAt
             }).ToList();
 
@@ -97,9 +119,10 @@ namespace Intervu.Application.UseCases.Question
                 Level = question.Level,
                 Round = question.Round,
                 Status = question.Status,
-                ViewCount = question.ViewCount + 1, // reflect just-incremented
+                ViewCount = question.ViewCount + 1,
                 SaveCount = question.SaveCount,
-                AnswerCount = question.Answers?.Count ?? 0,
+                Vote = question.Vote,
+                CommentCount = question.Comments?.Count ?? 0,
                 IsHot = question.IsHot,
                 CreatedAt = question.CreatedAt,
                 AuthorId = author?.Id,
@@ -110,10 +133,13 @@ namespace Intervu.Application.UseCases.Question
                 Roles = question.QuestionRoles?.Select(qr => qr.Role.ToString()).ToList() ?? new(),
                 Tags = question.QuestionTags?.Select(qt => new TagDto { Id = qt.TagId, Name = qt.Tag?.Name ?? string.Empty }).ToList() ?? new(),
                 Category = question.Category.ToString(),
-                Answers = answers,
                 Comments = comments,
-                RelatedQuestions = relatedDtos
+                RelatedQuestions = relatedDtos,
+                IsLikedByUser = isLikedByUser,
+                IsSavedByUser = isSavedByUser
             };
         }
     }
 }
+
+

@@ -32,5 +32,6 @@ namespace Intervu.Application.DTOs.Comment
         public Guid CreatedBy { get; set; }
         public string AuthorName { get; set; } = string.Empty;
         public string? AuthorProfilePicture { get; set; }
+        public bool IsLikedByUser { get; set; }
     }
 }

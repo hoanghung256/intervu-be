@@ -167,6 +167,12 @@ namespace Intervu.Application
             services.AddScoped<IUpdateComment, UpdateComment>();
             services.AddScoped<IDeleteComment, DeleteComment>();
 
+            // --- Likes & Saves ---
+            services.AddScoped<ILikeQuestion, LikeQuestion>();
+            services.AddScoped<ISaveQuestion, SaveQuestion>();
+            services.AddScoped<IGetSavedQuestions, GetSavedQuestions>();
+            services.AddScoped<ILikeComment, LikeComment>();
+
             return services;
         }
     }

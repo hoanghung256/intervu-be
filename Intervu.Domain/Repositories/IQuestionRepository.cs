@@ -30,5 +30,7 @@ namespace Intervu.Domain.Repositories
         Task<List<Question>> GetRelatedAsync(Guid excludeId, Guid questionId, int limit);
 
         Task IncrementViewCountAsync(Guid questionId);
+
+        Task<List<Question>> GetByIdsAsync(IEnumerable<Guid> ids);
     }
 }

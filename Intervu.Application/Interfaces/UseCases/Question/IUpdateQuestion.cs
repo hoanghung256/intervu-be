@@ -7,5 +7,6 @@ namespace Intervu.Application.Interfaces.UseCases.Question
     public interface IUpdateQuestion
     {
         Task ExecuteAsync(Guid questionId, UpdateQuestionRequest request, Guid userId);
+        Task VoteAsync(Guid questionId, bool isUpvote, Guid userId);
     }
 }
