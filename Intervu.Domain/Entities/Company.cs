@@ -13,5 +13,6 @@ namespace Intervu.Domain.Entities
         public required string Website { get; set; }
         public required string LogoPath { get; set; }
         public ICollection<CoachProfile> CoachProfiles { get; set; } = new List<CoachProfile>();
+        public ICollection<QuestionCompany> QuestionCompanies { get; set; } = new List<QuestionCompany>();
     }
 }

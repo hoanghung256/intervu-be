@@ -41,6 +41,12 @@ using Intervu.Application.UseCases.CandidateProfile;
 using Intervu.Application.Interfaces.UseCases.RescheduleRequest;
 using Intervu.Application.UseCases.RescheduleRequest;
 using Intervu.Application.UseCases.InterviewType;
+using Intervu.Application.Interfaces.UseCases.InterviewExperience;
+using Intervu.Application.UseCases.InterviewExperience;
+using Intervu.Application.Interfaces.UseCases.Question;
+using Intervu.Application.UseCases.Question;
+using Intervu.Application.Interfaces.UseCases.Comment;
+using Intervu.Application.UseCases.Comment;
 using Intervu.Domain.Abstractions.Policies.Interfaces;
 using Intervu.Domain.Abstractions.Policies;
 using BookingRequestInterfaces = Intervu.Application.Interfaces.UseCases.BookingRequest;
@@ -150,6 +156,31 @@ namespace Intervu.Application
             services.AddScoped<IUpdateInterviewType, UpdateInterviewType>();
             services.AddScoped<ICreateInterviewType, CreateInterviewType>();
             services.AddScoped<IDeleteInterviewType, DeleteInterviewType>();
+
+            // --- Interview Experience ---
+            services.AddScoped<IGetInterviewExperiences, GetInterviewExperiences>();
+            services.AddScoped<IGetInterviewExperienceDetail, GetInterviewExperienceDetail>();
+            services.AddScoped<ICreateInterviewExperience, CreateInterviewExperience>();
+            services.AddScoped<IUpdateInterviewExperience, UpdateInterviewExperience>();
+            services.AddScoped<IDeleteInterviewExperience, DeleteInterviewExperience>();
+            services.AddScoped<IAddQuestion, AddQuestion>();
+            services.AddScoped<IUpdateQuestion, UpdateQuestion>();
+            services.AddScoped<IDeleteQuestion, DeleteQuestion>();
+            services.AddScoped<IGetQuestionList, GetQuestionList>();
+            services.AddScoped<IGetQuestionDetail, GetQuestionDetail>();
+            services.AddScoped<ISearchQuestions, SearchQuestions>();
+
+            // --- Comments ---
+            services.AddScoped<IGetComments, GetComments>();
+            services.AddScoped<IAddComment, AddComment>();
+            services.AddScoped<IUpdateComment, UpdateComment>();
+            services.AddScoped<IDeleteComment, DeleteComment>();
+
+            // --- Likes & Saves ---
+            services.AddScoped<ILikeQuestion, LikeQuestion>();
+            services.AddScoped<ISaveQuestion, SaveQuestion>();
+            services.AddScoped<IGetSavedQuestions, GetSavedQuestions>();
+            services.AddScoped<ILikeComment, LikeComment>();
 
             // ----- CoachInterviewService ----
             services.AddScoped<CoachServiceInterfaces.ICreateCoachInterviewService, CoachServiceUseCases.CreateCoachInterviewService>();

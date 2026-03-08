@@ -32,6 +32,11 @@ namespace Intervu.Domain.Entities
         
         public ICollection<Skill> Skills { get; set; } = new List<Skill>();
 
+        /// <summary>
+        /// JSON list of saved question snapshots. Nullable.
+        /// </summary>
+        public List<QuestionSnapshot>? SavedQuestions { get; set; }
+        
         public ICollection<CoachInterviewService> InterviewServices { get; set; } = [];
     }
 }
