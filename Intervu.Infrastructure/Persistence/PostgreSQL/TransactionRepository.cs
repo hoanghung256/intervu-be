@@ -23,5 +23,38 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             return await _context.InterviewBookingTransaction
                 .FirstOrDefaultAsync(t => t.CoachAvailabilityId == id && t.Type == type);
         }
+
+        public async Task<(IReadOnlyList<InterviewBookingTransaction> Items, int TotalItems)> GetListByUserAsync(
+            Guid userId,
+            int page,
+            int pageSize,
+            TransactionType? type = null,
+            TransactionStatus? status = null)
+        {
+            var query = _context.InterviewBookingTransaction
+                .AsNoTracking()
+                .Include(t => t.CoachAvailability)
+                .Where(t => t.UserId == userId);
+
+            if (type.HasValue)
+            {
+                query = query.Where(t => t.Type == type);
+            }
+
+            if (status.HasValue)
+            {
+                query = query.Where(t => t.Status == status);
+            }
+
+            var total = await query.CountAsync();
+
+            var items = await query
+                .OrderByDescending(t => t.OrderCode)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (items, total);
+        }
     }
 }

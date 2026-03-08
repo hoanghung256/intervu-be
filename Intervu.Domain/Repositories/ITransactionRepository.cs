@@ -10,5 +10,12 @@ namespace Intervu.Domain.Repositories
         Task<InterviewBookingTransaction?> GetByAvailabilityId(Guid id, TransactionType type);
 
         Task<InterviewBookingTransaction?> Get(int orderCode, TransactionType type);
+
+        Task<(IReadOnlyList<InterviewBookingTransaction> Items, int TotalItems)> GetListByUserAsync(
+            Guid userId,
+            int page,
+            int pageSize,
+            TransactionType? type = null,
+            TransactionStatus? status = null);
     }
 }
