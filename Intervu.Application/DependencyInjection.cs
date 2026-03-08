@@ -158,7 +158,6 @@ namespace Intervu.Application
             services.AddScoped<CoachServiceInterfaces.IGetCoachInterviewServices, CoachServiceUseCases.GetCoachInterviewServices>();
 
             // ----- BookingRequest ----
-            services.AddScoped<BookingRequestInterfaces.ICreateExternalBookingRequest, BookingRequestUseCases.CreateExternalBookingRequest>();
             services.AddScoped<BookingRequestInterfaces.ICreateJDBookingRequest, BookingRequestUseCases.CreateJDBookingRequest>();
             services.AddScoped<BookingRequestInterfaces.IRespondToBookingRequest, BookingRequestUseCases.RespondToBookingRequest>();
             services.AddScoped<BookingRequestInterfaces.IGetBookingRequests, BookingRequestUseCases.GetBookingRequests>();

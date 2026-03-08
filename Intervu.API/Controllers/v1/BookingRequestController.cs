@@ -14,7 +14,6 @@ namespace Intervu.API.Controllers.v1
     [Route("api/v{version:apiVersion}/booking-requests")]
     public class BookingRequestController : ControllerBase
     {
-        private readonly ICreateExternalBookingRequest _createExternal;
         private readonly ICreateJDBookingRequest _createJD;
         private readonly IRespondToBookingRequest _respond;
         private readonly IGetBookingRequests _getList;
@@ -23,7 +22,6 @@ namespace Intervu.API.Controllers.v1
         private readonly ICancelBookingRequest _cancel;
 
         public BookingRequestController(
-            ICreateExternalBookingRequest createExternal,
             ICreateJDBookingRequest createJD,
             IRespondToBookingRequest respond,
             IGetBookingRequests getList,
@@ -31,30 +29,12 @@ namespace Intervu.API.Controllers.v1
             IPayBookingRequest pay,
             ICancelBookingRequest cancel)
         {
-            _createExternal = createExternal;
             _createJD = createJD;
             _respond = respond;
             _getList = getList;
             _getDetail = getDetail;
             _pay = pay;
             _cancel = cancel;
-        }
-
-        /// <summary>
-        /// Flow B: Candidate requests a session outside the coach's available time ranges
-        /// </summary>
-        [Authorize(Policy = AuthorizationPolicies.Candidate)]
-        [HttpPost("external")]
-        public async Task<IActionResult> CreateExternalBookingRequest([FromBody] CreateExternalBookingRequestDto dto)
-        {
-            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            var result = await _createExternal.ExecuteAsync(userId, dto);
-            return Ok(new
-            {
-                success = true,
-                message = "External booking request created successfully",
-                data = result
-            });
         }
 
         /// <summary>

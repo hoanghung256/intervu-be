@@ -125,7 +125,7 @@ namespace Intervu.Application.UseCases.BookingRequest
                 CandidateId = candidateId,
                 CoachId = dto.CoachId,
                 Type = BookingRequestType.JDInterview,
-                Status = BookingRequestStatus.Pending,
+                Status = BookingRequestStatus.Accepted,
                 JobDescriptionUrl = dto.JobDescriptionUrl,
                 CVUrl = dto.CVUrl,
                 AimLevel = dto.AimLevel,
