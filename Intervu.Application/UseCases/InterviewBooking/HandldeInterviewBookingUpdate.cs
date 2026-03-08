@@ -78,23 +78,25 @@ namespace Intervu.Application.UseCases.InterviewBooking
                         "/interview?tab=upcoming",
                         null));
 
-                // Notify coach — new booking
-                _backgroundService.Enqueue<INotificationUseCase>(
-                    uc => uc.CreateAsync(
-                        availability.CoachId,
-                        NotificationType.BookingNew,
-                        "New interview booking",
-                        "A candidate has booked an interview with you.",
-                        "/interview?tab=upcoming",
-                        null));
+                if (transaction.CoachId != null)
+                {
+                    // Notify coach — new booking
+                    _backgroundService.Enqueue<INotificationUseCase>(
+                        uc => uc.CreateAsync(
+                            (Guid)transaction.CoachId,
+                            NotificationType.BookingNew,
+                            "New interview booking",
+                            "A candidate has booked an interview with you.",
+                            "/interview?tab=upcoming",
+                            null));
+                }
 
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
             }
-            catch (Exception ex)
+            catch
             {
                 await _unitOfWork.RollbackTransactionAsync();
-                //_logger.LogError(ex, "Error while handle update booing transaction");
                 throw;
             }
         }
