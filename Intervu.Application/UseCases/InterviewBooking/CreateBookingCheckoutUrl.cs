@@ -11,6 +11,10 @@ using Microsoft.Extensions.Logging;
 
 namespace Intervu.Application.UseCases.InterviewBooking
 {
+    /// <summary>
+    /// Subtraction Pattern: CoachAvailability records are never split or deleted.
+    /// Free time = Availability windows − Active bookings (computed at query time).
+    /// </summary>
     internal class CreateBookingCheckoutUrl : ICreateBookingCheckoutUrl
     {
         private readonly ILogger<CreateBookingCheckoutUrl> _logger;
@@ -30,7 +34,13 @@ namespace Intervu.Application.UseCases.InterviewBooking
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<string?> ExecuteAsync(Guid candidateId, Guid coachId, Guid coachAvailabilityId, string returnUrl)
+        public async Task<string?> ExecuteAsync(
+            Guid candidateId,
+            Guid coachId,
+            Guid coachAvailabilityId,
+            Guid coachInterviewServiceId,
+            DateTime startTime,
+            string returnUrl)
         {
             await _unitOfWork.BeginTransactionAsync();
             try
@@ -38,36 +48,45 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 var availabilityRepo = _unitOfWork.GetRepository<ICoachAvailabilitiesRepository>();
                 var transactionRepo = _unitOfWork.GetRepository<ITransactionRepository>();
                 var coachRepo = _unitOfWork.GetRepository<ICoachProfileRepository>();
-                var interviewTypeRepo = _unitOfWork.GetRepository<IInterviewTypeRepository>();
+                var serviceRepo = _unitOfWork.GetRepository<ICoachInterviewServiceRepository>();
 
-                var availability = await availabilityRepo.GetByIdAsync(coachAvailabilityId) ?? throw new NotFoundException("Coach availability not found");
+                // 1. Validate coach exists
+                var coach = await coachRepo.GetProfileByIdAsync(coachId)
+                    ?? throw new NotFoundException("Interviewer not found");
 
-                if (availability.CoachId != coachId) throw new Exception("Coach availability does not belong to the specified coach");
+                // 2. Validate CoachInterviewService exists and belongs to this coach
+                var service = await serviceRepo.GetByIdWithDetailsAsync(coachInterviewServiceId)
+                    ?? throw new NotFoundException("Coach interview service not found");
 
-                if (!availability.IsUserAbleToBook(candidateId))
-                    throw new CoachAvailabilityNotAvailableException("Availability not able to book");
+                if (service.CoachId != coachId)
+                    throw new BadRequestException("The selected service does not belong to the specified coach");
 
-                // Reserve the slot for booking user
-                availability.Status = CoachAvailabilityStatus.Reserved;
-                availability.ReservingForUserId = candidateId;
+                int paymentAmount = service.Price;
+                int duration = service.DurationMinutes;
+                var endTime = startTime.AddMinutes(duration);
 
-                var coach = await coachRepo.GetProfileByIdAsync(coachId) ?? throw new NotFoundException("Interviewer not found");
+                // 3. Validate the availability slot exists, belongs to coach, and is Available
+                var availability = await availabilityRepo.GetByIdAsync(coachAvailabilityId)
+                    ?? throw new NotFoundException("Coach availability not found");
 
-                int paymentAmount = 0;
-                int duration = 0;
+                if (availability.CoachId != coachId)
+                    throw new BadRequestException("Coach availability does not belong to the specified coach");
 
-                if (availability.WillInterviewWithGeneralSkill())
-                {
-                    Domain.Entities.InterviewType interviewType = await interviewTypeRepo.GetByIdAsync((Guid) availability.TypeId) ?? throw new NotFoundException("Interview type not found");
-                    paymentAmount = interviewType.BasePrice;
-                    duration = interviewType.DurationMinutes;
-                } else
-                {
-                    paymentAmount = 2000;
-                    duration = (int)(availability.EndTime - availability.StartTime).TotalMinutes;
-                }
+                if (availability.Status != CoachAvailabilityStatus.Available)
+                    throw new CoachAvailabilityNotAvailableException("Availability is not available for booking");
 
-                // Create payment and payout transactions with status 'Created'
+                // 4. Bounds check: [startTime, endTime] must fit within the availability window
+                if (startTime < availability.StartTime || endTime > availability.EndTime)
+                    throw new BadRequestException(
+                        $"The requested time range ({startTime:g} - {endTime:g}) " +
+                        $"does not fit within the availability slot ({availability.StartTime:g} - {availability.EndTime:g})");
+
+                // 5. Overlap check: no existing active booking may collide with the requested range
+                var hasOverlap = await transactionRepo.HasOverlappingBookingAsync(coachId, startTime, endTime);
+                if (hasOverlap)
+                    throw new BadRequestException("This time slot has already been booked.");
+
+                // 6. Create Payment + Payout transactions referencing the original availability
                 InterviewBookingTransaction t = new()
                 {
                     OrderCode = RandomGenerator.GenerateOrderCode(),
@@ -76,6 +95,9 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     Status = TransactionStatus.Created,
                     Type = TransactionType.Payment,
                     CoachAvailabilityId = coachAvailabilityId,
+                    CoachId = coachId,
+                    BookedStartTime = startTime,
+                    BookedDurationMinutes = duration,
                 };
 
                 InterviewBookingTransaction t2 = new()
@@ -86,46 +108,39 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     Status = TransactionStatus.Created,
                     Type = TransactionType.Payout,
                     CoachAvailabilityId = coachAvailabilityId,
+                    CoachId = coachId,
+                    BookedStartTime = startTime,
+                    BookedDurationMinutes = duration,
                 };
 
                 await transactionRepo.AddAsync(t);
                 await transactionRepo.AddAsync(t2);
 
-                // No payment required: finalize booking immediately
+                // 7. Payment gateway or immediate finalization
                 string? checkoutUrl = null;
                 if (t.Amount == 0)
                 {
-                    availability.Status = CoachAvailabilityStatus.Booked;
                     t.Status = TransactionStatus.Paid;
                     t2.Status = TransactionStatus.Paid;
 
                     _jobService.Enqueue<ICreateInterviewRoom>(
-                        uc => uc.ExecuteAsync(candidateId, coachId, availability.Id, availability.StartTime, t.Id, duration)
+                        uc => uc.ExecuteAsync(candidateId, coachId, coachAvailabilityId, startTime, t.Id, duration)
                     );
-                } 
+                }
                 else
                 {
-                    // Create PAYOS payment order and get checkout URL
                     checkoutUrl = await _paymentService.CreatePaymentOrderAsync(
                         t.OrderCode,
                         t.Amount,
-                        $"Book interview",
+                        "Book interview",
                         returnUrl,
                         4
                     );
                 }
 
+                // 8. Single save — no split/delete, no EF fixup issues
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
-
-                if (checkoutUrl != null)
-                {
-                    // Auto expire reserve after 5mins (schedule only after DB commit)
-                    _jobService.Schedule<ICoachAvailabilitiesRepository>(
-                        repo => repo.ExpireReservedSlot(coachAvailabilityId, candidateId),
-                        TimeSpan.FromMinutes(5)
-                    );
-                }
 
                 return checkoutUrl;
             }

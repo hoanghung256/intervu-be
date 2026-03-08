@@ -2,6 +2,12 @@
 {
     public interface ICreateBookingCheckoutUrl
     {
-        Task<string?> ExecuteAsync(Guid candidateId, Guid coachId, Guid coachAvailabilityId, string returnUrl);
+        Task<string?> ExecuteAsync(
+            Guid candidateId,
+            Guid coachId,
+            Guid coachAvailabilityId,
+            Guid coachInterviewServiceId,
+            DateTime startTime,
+            string returnUrl);
     }
 }

@@ -31,5 +31,7 @@ namespace Intervu.Domain.Entities
         public ICollection<Company> Companies { get; set; } = new List<Company>();
         
         public ICollection<Skill> Skills { get; set; } = new List<Skill>();
+
+        public ICollection<CoachInterviewService> InterviewServices { get; set; } = [];
     }
 }

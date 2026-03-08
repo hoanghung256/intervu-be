@@ -28,21 +28,25 @@ namespace Intervu.API.Controllers.v1
         public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var result = await _getInterviewType.ExecuteAsync(pageSize, page);
-            return Ok(result);
+            return Ok(new {
+                success = true,
+                message = "Interview types retrieved successfully",
+                data = result
+            });
         }
 
         [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetById(Guid id)
         {
             var result = await _getInterviewType.ExecuteAsync(id);
-            return result is not null ? Ok(result) : NotFound();
+            return result is not null ? Ok(new { success = true, data = result }) : NotFound(new { success = false, message = "Interview type not found" });
         }
 
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] InterviewTypeDto request)
         {
             await _createInterviewType.ExecuteAsync(request);
-            return Ok(request);
+            return Ok(new { success = true, message = "Interview type created successfully", data = request });
         }
 
         [HttpPut("{id:guid}")]
@@ -51,7 +55,7 @@ namespace Intervu.API.Controllers.v1
             try
             {
                 await _updateInterviewType.ExecuteAsync(id, request);
-                return Ok(new { success = true, message = "Updated" });
+                return Ok(new { success = true, message = "Interview type updated successfully" });
             }
             catch (Exception ex)
             {
@@ -60,12 +64,12 @@ namespace Intervu.API.Controllers.v1
         }
 
         [HttpDelete("{id:guid}")]
-        public async Task<IActionResult> DeleteCoachAvailability(Guid id)
+        public async Task<IActionResult> DeleteInterviewType(Guid id)
         {
             try
             {
                 await _deleteInterviewType.ExecuteAsync(id);
-                return Ok(new { success = true, message = "Deleted" });
+                return Ok(new { success = true, message = "Interview type deleted successfully" });
             }
             catch (Exception ex)
             {

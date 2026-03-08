@@ -113,9 +113,9 @@ namespace Intervu.Application.UseCases.RescheduleRequest
                     _logger.LogInformation("Updated transaction {TransactionId} to new availability {AvailabilityId}",
                         room.TransactionId, request.ProposedAvailabilityId);
                 }
-
-                // Mark proposed availability as booked
-                proposedAvailability.Status = CoachAvailabilityStatus.Booked;
+                
+                // Mark proposed availability as unavailable (booked)
+                proposedAvailability.Status = CoachAvailabilityStatus.Unavailable;
                 await _coachAvailabilitiesRepository.SaveChangesAsync();
 
                 // Release current availability (mark as available again)
