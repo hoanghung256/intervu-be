@@ -1,6 +1,7 @@
 ﻿using Hangfire;
 using Intervu.Application.Interfaces.BackgroundJobs;
-using Intervu.Application.Interfaces.UseCases.InterviewBooking;
+using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.UseCases.Notification;
 using Intervu.Application.Services;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
@@ -14,15 +15,18 @@ namespace Intervu.Infrastructure.BackgroundJobs
         private readonly IntervuPostgreDbContext _db;
         private readonly InterviewRoomCache _cache;
         private readonly ILogger<InterviewMonitorJob> _logger;
+        private readonly IBackgroundService _backgroundService;
 
         public InterviewMonitorJob(
             IntervuPostgreDbContext db,
             InterviewRoomCache cache,
-            ILogger<InterviewMonitorJob> logger)
+            ILogger<InterviewMonitorJob> logger,
+            IBackgroundService backgroundService)
         {
             _db = db;
             _cache = cache;
             _logger = logger;
+            _backgroundService = backgroundService;
         }
 
         public string JobId => "InterviewMonitor";
@@ -48,10 +52,17 @@ namespace Intervu.Infrastructure.BackgroundJobs
                     room.Status = InterviewRoomStatus.Ongoing;
                     _cache.Update(room);
                 }
-                
+
                 _db.InterviewRooms.UpdateRange(roomsToUpdate);
                 await _db.SaveChangesAsync();
                 _logger.LogInformation("Changed rooms to Ongoing: {RoomIds}", string.Join(", ", roomsToUpdate.Select(r => r.Id)));
+
+                // Send interview reminders to both parties
+                foreach (var room in roomsToUpdate)
+                {
+                    _backgroundService.Enqueue<INotificationUseCase>(
+                        uc => uc.SendInterviewReminderAsync(room.Id));
+                }
             }
         }
     }

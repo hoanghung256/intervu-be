@@ -114,7 +114,7 @@ namespace Intervu.Application
             services.AddScoped<IUpdateCoachAvailability, UpdateCoachAvailability>();
             // ----- Email ----
             services.AddScoped<ISendBookingConfirmationEmail, SendBookingConfirmationEmail>();
-          
+
             // ----- UserProfile ----
             services.AddScoped<IGetUserProfile, GetUserProfile>();
             services.AddScoped<IUpdateUserProfile, UpdateUserProfile>();
@@ -165,6 +165,9 @@ namespace Intervu.Application
             services.AddScoped<BookingRequestInterfaces.IExpireBookingRequests, BookingRequestUseCases.ExpireBookingRequests>();
             services.AddScoped<BookingRequestInterfaces.IPayBookingRequest, BookingRequestUseCases.PayBookingRequest>();
             services.AddScoped<BookingRequestInterfaces.ICancelBookingRequest, BookingRequestUseCases.CancelBookingRequest>();
+            
+            // ----- Notification ----
+            services.AddScoped<Interfaces.UseCases.Notification.INotificationUseCase, UseCases.Notification.NotificationUseCase>();
 
             return services;
         }

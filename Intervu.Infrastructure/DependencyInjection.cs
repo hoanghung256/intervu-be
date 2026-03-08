@@ -25,7 +25,7 @@ using PayOS;
 using System;
 
 namespace Intervu.Infrastructure
-{   
+{
     public static class DependencyInjection
     {
         private static readonly object _firebaseLock = new object();
@@ -79,6 +79,7 @@ namespace Intervu.Infrastructure
             services.AddScoped<ICoachInterviewServiceRepository, CoachInterviewServiceRepository>();
             services.AddScoped<IBookingRequestRepository, BookingRequestRepository>();
             services.AddScoped<IInterviewRoundRepository, InterviewRoundRepository>();
+            services.AddScoped<INotificationRepository, NotificationRepository>();
 
             return services;
         }
@@ -167,7 +168,7 @@ namespace Intervu.Infrastructure
             });
 
             services.AddHostedService<InterviewRoomCacheLoader>();
-            
+
             // --- HANGFIRE JOBS ---
             services.AddScoped<HangfireJobScheduler>();
             services.AddScoped<InterviewMonitorJob>();

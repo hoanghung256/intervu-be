@@ -3,6 +3,7 @@ using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Intervu.Application.Services;
+using Intervu.Application.Interfaces.UseCases.Notification;
 using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
@@ -66,6 +67,26 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 {
                     throw new NotFoundException("Transaction has no associated booking context");
                 }
+                
+                // Notify candidate — booking confirmed
+                _backgroundService.Enqueue<INotificationUseCase>(
+                    uc => uc.CreateAsync(
+                        transaction.UserId,
+                        NotificationType.PaymentSuccess,
+                        "Booking confirmed",
+                        "Your interview has been booked successfully.",
+                        "/interview?tab=upcoming",
+                        null));
+
+                // Notify coach — new booking
+                _backgroundService.Enqueue<INotificationUseCase>(
+                    uc => uc.CreateAsync(
+                        availability.CoachId,
+                        NotificationType.BookingNew,
+                        "New interview booking",
+                        "A candidate has booked an interview with you.",
+                        "/interview?tab=upcoming",
+                        null));
 
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
