@@ -28,7 +28,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
         public DbSet<InterviewBookingTransaction> InterviewBookingTransaction { get; set; }
         public DbSet<InterviewRescheduleRequest> InterviewRescheduleRequests { get; set; }
         public DbSet<Notification> Notifications { get; set; }
-        public DbSet<NotificationReceive> NotificationReceives { get; set; }
         public DbSet<Company> Companies { get; set; }
         public DbSet<Skill> Skills { get; set; }
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
@@ -332,7 +331,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             {
                 b.ToTable("InterviewRescheduleRequests");
                 b.HasKey(x => x.Id);
-                
+
                 b.Property(x => x.InterviewRoomId).IsRequired();
                 b.Property(x => x.CurrentAvailabilityId).IsRequired();
                 b.Property(x => x.ProposedAvailabilityId).IsRequired();
@@ -385,26 +384,25 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             {
                 b.ToTable("Notifications");
                 b.HasKey(x => x.Id);
-                b.Property(x => x.Title).HasMaxLength(255);
-                b.Property(x => x.Message).HasColumnType("text");
-                b.Property(x => x.CreatedAt).IsRequired();
-            });
+                b.Property(x => x.UserId).IsRequired();
+                b.Property(x => x.Type).HasConversion<int>().IsRequired();
+                b.Property(x => x.Title).HasMaxLength(200).IsRequired();
+                b.Property(x => x.Message).HasColumnType("text").IsRequired();
+                b.Property(x => x.ActionUrl).HasMaxLength(500);
+                b.Property(x => x.IsRead).IsRequired().HasDefaultValue(false);
+                b.Property(x => x.CreatedAt).IsRequired().HasDefaultValueSql("NOW()");
 
-            // NotificationReceive (join)
-            modelBuilder.Entity<NotificationReceive>(b =>
-            {
-                b.ToTable("NotificationReceives");
-                b.HasKey(x => new { x.NotificationId, x.ReceiverId });
-
-                b.HasOne<Notification>()
+                b.HasOne(x => x.User)
                  .WithMany()
-                 .HasForeignKey(x => x.NotificationId)
+                 .HasForeignKey(x => x.UserId)
+                 .HasConstraintName("FK_Notifications_Users_UserId")
                  .OnDelete(DeleteBehavior.Cascade);
 
-                b.HasOne<User>()
-                 .WithMany()
-                 .HasForeignKey(x => x.ReceiverId)
-                 .OnDelete(DeleteBehavior.Cascade);
+                b.HasIndex(x => new { x.UserId, x.CreatedAt })
+                 .IsDescending(false, true);
+
+                // Partial-index equivalent: fast unread count
+                b.HasIndex(x => new { x.UserId, x.IsRead });
             });
 
             modelBuilder.Entity<Company>(b =>
@@ -523,7 +521,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
 
             var room1Id = Guid.Parse("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a66");
             var CoachAvail1Id = Guid.Parse("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77");
-            
+
             // Additional test data for reschedule functionality
             var CoachAvail2Id = Guid.Parse("aaaaaaaa-1111-4a1a-8a1a-111111111111"); // For reschedule testing
 
@@ -716,12 +714,15 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             modelBuilder.Entity<Notification>().HasData(new Notification
             {
                 Id = Guid.Parse("0a1b2c3d-4e5f-4a6b-8c9d-0e1f2a3b4c20"),
+                UserId = user1Id,
+                Type = Intervu.Domain.Entities.Constants.NotificationType.SystemAnnouncement,
                 Title = "Welcome",
                 Message = "Welcome to Intervu platform",
+                ActionUrl = null,
+                ReferenceId = null,
+                IsRead = false,
                 CreatedAt = DateTime.SpecifyKind(new DateTime(2025, 10, 1), DateTimeKind.Utc)
             });
-
-            modelBuilder.Entity<NotificationReceive>().HasData(new { NotificationId = Guid.Parse("0a1b2c3d-4e5f-4a6b-8c9d-0e1f2a3b4c20"), ReceiverId = user1Id });
 
             modelBuilder.Entity<Company>().HasData(
                 new Company { Id = Guid.Parse("11111111-1111-4111-8111-111111111111"), Name = "Google", Website = "https://google.com", LogoPath = "logos/google.png" },

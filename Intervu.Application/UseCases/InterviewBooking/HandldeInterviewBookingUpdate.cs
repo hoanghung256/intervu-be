@@ -2,6 +2,7 @@
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
+using Intervu.Application.Interfaces.UseCases.Notification;
 using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
@@ -17,7 +18,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
         private readonly IBackgroundService _backgroundService;
         private readonly IUnitOfWork _unitOfWork;
 
-        public HandldeInterviewBookingUpdate(ITransactionRepository transactionRepository, IPaymentService paymentService, ICoachAvailabilitiesRepository coachAvailabilitiesRepository, IBackgroundService backgroundService, IUnitOfWork unitOfWork) 
+        public HandldeInterviewBookingUpdate(ITransactionRepository transactionRepository, IPaymentService paymentService, ICoachAvailabilitiesRepository coachAvailabilitiesRepository, IBackgroundService backgroundService, IUnitOfWork unitOfWork)
         {
             _transactionRepository = transactionRepository;
             _paymentService = paymentService;
@@ -38,7 +39,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 var transactionRepo = _unitOfWork.GetRepository<ITransactionRepository>();
                 var availabilityRepo = _unitOfWork.GetRepository<ICoachAvailabilitiesRepository>();
 
-                InterviewBookingTransaction transaction = await transactionRepo.GetByOrderCode(orderCode) ?? throw new NotFoundException("Booking transaction not found");
+                InterviewBookingTransaction transaction = await transactionRepo.Get(orderCode, TransactionType.Payment) ?? throw new NotFoundException("Booking transaction not found");
 
                 CoachAvailability availability = await availabilityRepo.GetByIdAsync(transaction.CoachAvailabilityId) ?? throw new NotFoundException("Coach availability not found");
 
@@ -48,12 +49,32 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 availability.Status = CoachAvailabilityStatus.Booked;
                 transaction.Status = TransactionStatus.Paid;
 
+                int durationMinutes = (int)(availability.EndTime - availability.StartTime).TotalMinutes;
+
                 // TODO: Create Interview Room include avai Id (for reschedule purpose)
                 _backgroundService.Enqueue<ICreateInterviewRoom>(
-                    uc => uc.ExecuteAsync(transaction.UserId, availability.CoachId, availability)
+                    uc => uc.ExecuteAsync(transaction.UserId, availability.CoachId, availability.Id, availability.StartTime, transaction.Id, durationMinutes)
                 );
 
-                // TODO: Notify candidate and coach
+                // Notify candidate — booking confirmed
+                _backgroundService.Enqueue<INotificationUseCase>(
+                    uc => uc.CreateAsync(
+                        transaction.UserId,
+                        NotificationType.PaymentSuccess,
+                        "Booking confirmed",
+                        "Your interview has been booked successfully.",
+                        "/interview?tab=upcoming",
+                        null));
+
+                // Notify coach — new booking
+                _backgroundService.Enqueue<INotificationUseCase>(
+                    uc => uc.CreateAsync(
+                        availability.CoachId,
+                        NotificationType.BookingNew,
+                        "New interview booking",
+                        "A candidate has booked an interview with you.",
+                        "/interview?tab=upcoming",
+                        null));
 
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();

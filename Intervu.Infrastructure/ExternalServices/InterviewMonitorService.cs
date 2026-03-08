@@ -1,16 +1,8 @@
-﻿using Intervu.Application.Interfaces.UseCases.InterviewBooking;
-using Intervu.Application.Services;
-using Intervu.Application.UseCases.InterviewBooking;
+﻿using Intervu.Application.Services;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
-using Intervu.Infrastructure.Persistence.SqlServer.DataContext;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Intervu.Infrastructure.ExternalServices
 {

@@ -47,6 +47,8 @@ using Intervu.Application.Interfaces.UseCases.Question;
 using Intervu.Application.UseCases.Question;
 using Intervu.Application.Interfaces.UseCases.Comment;
 using Intervu.Application.UseCases.Comment;
+using Intervu.Domain.Abstractions.Policies.Interfaces;
+using Intervu.Domain.Abstractions.Policies;
 
 namespace Intervu.Application
 {
@@ -113,7 +115,7 @@ namespace Intervu.Application
             services.AddScoped<IUpdateCoachAvailability, UpdateCoachAvailability>();
             // ----- Email ----
             services.AddScoped<ISendBookingConfirmationEmail, SendBookingConfirmationEmail>();
-          
+
             // ----- UserProfile ----
             services.AddScoped<IGetUserProfile, GetUserProfile>();
             services.AddScoped<IUpdateUserProfile, UpdateUserProfile>();
@@ -126,6 +128,7 @@ namespace Intervu.Application
             services.AddScoped<ICreateBookingCheckoutUrl, CreateBookingCheckoutUrl>();
             services.AddScoped<IHandldeInterviewBookingUpdate, HandldeInterviewBookingUpdate>();
             services.AddScoped<IGetInterviewBooking, GetInterviewBooking>();
+            services.AddScoped<ICancelInterview, CancelInterview>();
             services.AddScoped<IPayoutForCoachAfterInterview, PayoutForCoachAfterInterview>();
 
             // ----- Coach & Candidate Details ---
@@ -142,6 +145,7 @@ namespace Intervu.Application
             services.AddScoped<ICreateRescheduleRequestUseCase, CreateRescheduleRequestUseCase>();
             services.AddScoped<IRespondToRescheduleRequestUseCase, RespondToRescheduleRequestUseCase>();
             services.AddScoped<IExpireRescheduleRequestsUseCase, ExpireRescheduleRequestsUseCase>();
+
             // ----- InterviewType ----
             services.AddScoped<IGetInterviewType, GetInterviewType>();
             services.AddScoped<IUpdateInterviewType, UpdateInterviewType>();
@@ -172,6 +176,16 @@ namespace Intervu.Application
             services.AddScoped<ISaveQuestion, SaveQuestion>();
             services.AddScoped<IGetSavedQuestions, GetSavedQuestions>();
             services.AddScoped<ILikeComment, LikeComment>();
+
+            // ----- Notification ----
+            services.AddScoped<Interfaces.UseCases.Notification.INotificationUseCase, UseCases.Notification.NotificationUseCase>();
+
+            return services;
+        }
+
+        public static IServiceCollection AddDomainBusinessRules(this IServiceCollection services)
+        {
+            services.AddScoped<IRefundPolicy, RefundPolicy>();
 
             return services;
         }

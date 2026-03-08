@@ -1,4 +1,5 @@
 ﻿using Intervu.Domain.Entities;
+using Intervu.Domain.Entities.Constants;
 
 namespace Intervu.Domain.Repositories
 {
@@ -6,6 +7,8 @@ namespace Intervu.Domain.Repositories
     {
         Task<InterviewBookingTransaction?> GetByAvailabilityId(Guid id);
 
-        Task<InterviewBookingTransaction?> GetByOrderCode(int orderCode);
+        Task<InterviewBookingTransaction?> GetByAvailabilityId(Guid id, TransactionType type);
+
+        Task<InterviewBookingTransaction?> Get(int orderCode, TransactionType type);
     }
 }

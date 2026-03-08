@@ -1038,19 +1038,44 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("ActionUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<bool>("IsRead")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("Message")
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("ReferenceId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId", "CreatedAt")
+                        .IsDescending(false, true);
+
+                    b.HasIndex("UserId", "IsRead");
 
                     b.ToTable("Notifications", (string)null);
 
@@ -1059,30 +1084,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         {
                             Id = new Guid("0a1b2c3d-4e5f-4a6b-8c9d-0e1f2a3b4c20"),
                             CreatedAt = new DateTime(2025, 10, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsRead = false,
                             Message = "Welcome to Intervu platform",
-                            Title = "Welcome"
-                        });
-                });
-
-            modelBuilder.Entity("Intervu.Domain.Entities.NotificationReceive", b =>
-                {
-                    b.Property<Guid>("NotificationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ReceiverId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("NotificationId", "ReceiverId");
-
-                    b.HasIndex("ReceiverId");
-
-                    b.ToTable("NotificationReceives", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            NotificationId = new Guid("0a1b2c3d-4e5f-4a6b-8c9d-0e1f2a3b4c20"),
-                            ReceiverId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11")
+                            Title = "Welcome",
+                            Type = 10,
+                            UserId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11")
                         });
                 });
 
@@ -2550,19 +2556,16 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Navigation("Transaction");
                 });
 
-            modelBuilder.Entity("Intervu.Domain.Entities.NotificationReceive", b =>
+            modelBuilder.Entity("Intervu.Domain.Entities.Notification", b =>
                 {
-                    b.HasOne("Intervu.Domain.Entities.Notification", null)
+                    b.HasOne("Intervu.Domain.Entities.User", "User")
                         .WithMany()
-                        .HasForeignKey("NotificationId")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("FK_Notifications_Users_UserId");
 
-                    b.HasOne("Intervu.Domain.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("ReceiverId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.PasswordResetToken", b =>

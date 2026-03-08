@@ -1,4 +1,6 @@
 using Intervu.Application.Exceptions;
+using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.UseCases.Notification;
 using Intervu.Application.Interfaces.UseCases.RescheduleRequest;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
@@ -13,34 +15,37 @@ namespace Intervu.Application.UseCases.RescheduleRequest
         private readonly IRescheduleRequestRepository _rescheduleRequestRepository;
         private readonly IInterviewRoomRepository _interviewRoomRepository;
         private readonly ICoachAvailabilitiesRepository _coachAvailabilitiesRepository;
+        private readonly IBackgroundService _backgroundService;
         public RespondToRescheduleRequestUseCase(
             ILogger<RespondToRescheduleRequestUseCase> logger,
             IRescheduleRequestRepository rescheduleRequestRepository,
             IInterviewRoomRepository interviewRoomRepository,
-            ICoachAvailabilitiesRepository coachAvailabilitiesRepository)
+            ICoachAvailabilitiesRepository coachAvailabilitiesRepository,
+            IBackgroundService backgroundService)
         {
             _logger = logger;
             _rescheduleRequestRepository = rescheduleRequestRepository;
             _interviewRoomRepository = interviewRoomRepository;
             _coachAvailabilitiesRepository = coachAvailabilitiesRepository;
+            _backgroundService = backgroundService;
         }
 
         public async Task ExecuteAsync(Guid requestId, Guid respondedBy, bool isApproved, string? rejectionReason)
         {
             var request = await _rescheduleRequestRepository.GetByIdAsync(requestId);
-            if(request == null)
+            if (request == null)
             {
                 _logger.LogWarning("Reschedule request with ID {RequestId} not found.", requestId);
                 throw new NotFoundException("Reschedule request not found");
             }
 
-            if(request.Status != RescheduleRequestStatus.Pending)
+            if (request.Status != RescheduleRequestStatus.Pending)
             {
                 _logger.LogWarning("Reschedule request with ID {RequestId} is not pending.", requestId);
                 throw new ConflictException("Reschedule request is not pending");
             }
 
-            if(request.ExpiresAt < DateTime.UtcNow)
+            if (request.ExpiresAt < DateTime.UtcNow)
             {
                 _logger.LogWarning("Reschedule request with ID {RequestId} has expired.", requestId);
                 throw new ConflictException("Reschedule request has expired");
@@ -72,14 +77,14 @@ namespace Intervu.Application.UseCases.RescheduleRequest
             if (isApproved)
             {
                 request.Status = RescheduleRequestStatus.Approved;
-                
+
                 // Room already loaded above
                 if (room == null)
                 {
                     _logger.LogWarning("Interview room with ID {RoomId} not found.", request.InterviewRoomId);
                     throw new NotFoundException("Interview room not found");
                 }
-                
+
                 // Update room scheduled time based on proposed availability
                 var proposedAvailability = await _coachAvailabilitiesRepository.GetByIdAsync(request.ProposedAvailabilityId);
                 if (proposedAvailability == null)
@@ -87,28 +92,28 @@ namespace Intervu.Application.UseCases.RescheduleRequest
                     _logger.LogWarning("Proposed availability with ID {ProposedAvailabilityId} not found.", request.ProposedAvailabilityId);
                     throw new NotFoundException("Proposed availability not found");
                 }
-                
+
                 // Update CurrentAvailabilityId
                 room.CurrentAvailabilityId = request.ProposedAvailabilityId;
-                
+
                 // Keep ScheduledTime in sync for backward compatibility (will be removed in future)
                 room.ScheduledTime = proposedAvailability.StartTime;
-                
+
                 // Increment reschedule attempt count
                 room.RescheduleAttemptCount++;
-                
+
                 _interviewRoomRepository.UpdateAsync(room);
                 await _interviewRoomRepository.SaveChangesAsync();
-                
+
                 // Update transaction to point to new availability
                 if (room.Transaction != null)
                 {
                     room.Transaction.CoachAvailabilityId = request.ProposedAvailabilityId;
                     await _interviewRoomRepository.SaveChangesAsync();
-                    _logger.LogInformation("Updated transaction {TransactionId} to new availability {AvailabilityId}", 
+                    _logger.LogInformation("Updated transaction {TransactionId} to new availability {AvailabilityId}",
                         room.TransactionId, request.ProposedAvailabilityId);
                 }
-                
+
                 // Mark proposed availability as booked
                 proposedAvailability.Status = CoachAvailabilityStatus.Booked;
                 await _coachAvailabilitiesRepository.SaveChangesAsync();
@@ -126,6 +131,16 @@ namespace Intervu.Application.UseCases.RescheduleRequest
                 request.RespondedAt = DateTime.UtcNow;
                 request.RespondedBy = respondedBy;
                 await _rescheduleRequestRepository.SaveChangesAsync();
+
+                // Notify requester — reschedule approved
+                _backgroundService.Enqueue<INotificationUseCase>(
+                    uc => uc.CreateAsync(
+                        request.RequestedBy,
+                        NotificationType.RescheduleAccepted,
+                        "Reschedule approved",
+                        "Your reschedule request has been approved.",
+                        "/interview?tab=upcoming",
+                        requestId));
             }
 
             if (!isApproved)
@@ -135,6 +150,16 @@ namespace Intervu.Application.UseCases.RescheduleRequest
                 request.RespondedAt = DateTime.UtcNow;
                 request.RespondedBy = respondedBy;
                 await _rescheduleRequestRepository.SaveChangesAsync();
+
+                // Notify requester — reschedule rejected
+                _backgroundService.Enqueue<INotificationUseCase>(
+                    uc => uc.CreateAsync(
+                        request.RequestedBy,
+                        NotificationType.RescheduleRejected,
+                        "Reschedule rejected",
+                        rejectionReason ?? "Your reschedule request has been rejected.",
+                        "/interview?tab=upcoming",
+                        requestId));
             }
         }
     }

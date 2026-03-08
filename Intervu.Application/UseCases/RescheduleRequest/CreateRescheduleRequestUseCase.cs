@@ -1,4 +1,6 @@
 using Intervu.Application.Exceptions;
+using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.UseCases.Notification;
 using Intervu.Application.Interfaces.UseCases.RescheduleRequest;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
@@ -16,6 +18,7 @@ namespace Intervu.Application.UseCases.RescheduleRequest
         private readonly ITransactionRepository _transactionRepository;
         private readonly ICoachAvailabilitiesRepository _coachAvailabilitiesRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IBackgroundService _backgroundService;
 
         public CreateRescheduleRequestUseCase(
             ILogger<CreateRescheduleRequestUseCase> logger,
@@ -23,7 +26,8 @@ namespace Intervu.Application.UseCases.RescheduleRequest
             IInterviewRoomRepository interviewRoomRepository,
             ITransactionRepository transactionRepository,
             ICoachAvailabilitiesRepository coachAvailabilitiesRepository,
-            IUserRepository userRepository)
+            IUserRepository userRepository,
+            IBackgroundService backgroundService)
         {
             _logger = logger;
             _rescheduleRequestRepository = rescheduleRequestRepository;
@@ -31,6 +35,7 @@ namespace Intervu.Application.UseCases.RescheduleRequest
             _transactionRepository = transactionRepository;
             _coachAvailabilitiesRepository = coachAvailabilitiesRepository;
             _userRepository = userRepository;
+            _backgroundService = backgroundService;
         }
 
         public async Task<Guid> ExecuteAsync(Guid roomId, Guid proposedAvailabilityId, Guid requestedBy, string reason)
@@ -70,21 +75,21 @@ namespace Intervu.Application.UseCases.RescheduleRequest
             if (!room.IsAvailableForReschedule())
             {
                 var timeUntilInterview = room.ScheduledTime.Value - DateTime.UtcNow;
-                
+
                 if (timeUntilInterview < TimeSpan.FromHours(12))
                 {
-                    _logger.LogWarning("Cannot reschedule room {RoomId} within 12 hours of scheduled time. Time remaining: {TimeRemaining}", 
+                    _logger.LogWarning("Cannot reschedule room {RoomId} within 12 hours of scheduled time. Time remaining: {TimeRemaining}",
                         roomId, timeUntilInterview);
                     throw new ConflictException("Cannot reschedule within 12 hours of the scheduled interview time. Please cancel if you cannot attend.");
                 }
-                
+
                 if (room.RescheduleAttemptCount >= 1)
                 {
-                    _logger.LogWarning("Room {RoomId} has already been rescheduled {Count} time(s). Maximum attempts reached.", 
+                    _logger.LogWarning("Room {RoomId} has already been rescheduled {Count} time(s). Maximum attempts reached.",
                         roomId, room.RescheduleAttemptCount);
                     throw new ConflictException("This interview has already been rescheduled once. Only cancellation is allowed.");
                 }
-                
+
                 throw new ConflictException("This interview is not available for rescheduling.");
             }
 
@@ -112,7 +117,7 @@ namespace Intervu.Application.UseCases.RescheduleRequest
             // Validation: Proposed time must be in the future
             if (proposedAvailability.StartTime <= DateTime.UtcNow)
             {
-                _logger.LogWarning("Proposed availability {ProposedAvailabilityId} has start time in the past: {StartTime}", 
+                _logger.LogWarning("Proposed availability {ProposedAvailabilityId} has start time in the past: {StartTime}",
                     proposedAvailabilityId, proposedAvailability.StartTime);
                 throw new ConflictException("Proposed time must be in the future");
             }
@@ -120,20 +125,20 @@ namespace Intervu.Application.UseCases.RescheduleRequest
             // Proposed availability must be different from current (CurrentAvailabilityId is required)
             if (room.CurrentAvailabilityId == proposedAvailabilityId)
             {
-                _logger.LogWarning("Proposed availability {ProposedAvailabilityId} is the same as current availability {CurrentAvailabilityId}.", 
+                _logger.LogWarning("Proposed availability {ProposedAvailabilityId} is the same as current availability {CurrentAvailabilityId}.",
                     proposedAvailabilityId, room.CurrentAvailabilityId);
                 throw new ConflictException("Proposed availability must be different from the current scheduled time");
             }
 
             // Validation: Check if sender has conflicting interview sessions at proposed time
             var conflictingRooms = await _interviewRoomRepository.GetConflictingRoomsAsync(
-                requestedBy, 
-                proposedAvailability.StartTime, 
+                requestedBy,
+                proposedAvailability.StartTime,
                 proposedAvailability.EndTime);
-            
+
             if (conflictingRooms.Any())
             {
-                _logger.LogWarning("User {UserId} has conflicting interview sessions at proposed time {StartTime}-{EndTime}", 
+                _logger.LogWarning("User {UserId} has conflicting interview sessions at proposed time {StartTime}-{EndTime}",
                     requestedBy, proposedAvailability.StartTime, proposedAvailability.EndTime);
                 throw new ConflictException("The proposed time conflicts with your existing interview sessions");
             }
@@ -165,7 +170,7 @@ namespace Intervu.Application.UseCases.RescheduleRequest
             {
                 Id = Guid.NewGuid(),
                 InterviewRoomId = room.Id,
-                CurrentAvailabilityId = room.CurrentAvailabilityId,
+                CurrentAvailabilityId = room.CurrentAvailabilityId, // Safe because validated earlier
                 ProposedAvailabilityId = proposedAvailability.Id,
                 RequestedBy = requester.Id,
                 Reason = reason,
@@ -175,6 +180,17 @@ namespace Intervu.Application.UseCases.RescheduleRequest
 
             await _rescheduleRequestRepository.AddAsync(rescheduleRequest);
             await _rescheduleRequestRepository.SaveChangesAsync();
+
+            // Notify the other party about the reschedule request
+            var otherPartyId = isCandidate ? room.CoachId!.Value : room.CandidateId!.Value;
+            _backgroundService.Enqueue<INotificationUseCase>(
+                uc => uc.CreateAsync(
+                    otherPartyId,
+                    NotificationType.RescheduleRequested,
+                    "Reschedule request received",
+                    $"{requester.FullName} has requested to reschedule the interview.",
+                    "/interview?tab=upcoming",
+                    rescheduleRequest.Id));
 
             _logger.LogInformation("Created reschedule request {RequestId} for room {RoomId}", rescheduleRequest.Id, roomId);
             return rescheduleRequest.Id;
