@@ -42,6 +42,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
         public DbSet<QuestionRole> QuestionRoles { get; set; }
         public DbSet<UserQuestionLike> UserQuestionLikes { get; set; }
         public DbSet<UserCommentLike> UserCommentLikes { get; set; }
+        public DbSet<CoachInterviewService> CoachInterviewServices { get; set; }
+        public DbSet<BookingRequest> BookingRequests { get; set; }
+        public DbSet<InterviewRound> InterviewRounds { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -182,35 +185,21 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             });
 
 
-            // CoachAvailability (many availabilities per coach)
+            // CoachAvailability (available time ranges per coach)
             modelBuilder.Entity<CoachAvailability>(b =>
             {
                 b.ToTable("CoachAvailabilities");
                 b.HasKey(x => x.Id);
-                b.Property(x => x.Focus)
-                .HasConversion<int>()
-                .IsRequired();
 
                 b.Property(x => x.StartTime).IsRequired();
                 b.Property(x => x.EndTime).IsRequired();
+                b.Property(x => x.Status).IsRequired();
 
                 b.HasOne(x => x.CoachProfile)
                 .WithMany()
                 .HasForeignKey(x => x.CoachId)
                 .HasConstraintName("FK_CoachAvailabilities_CoachProfiles_CoachId")
                 .OnDelete(DeleteBehavior.Restrict);
-
-                b.HasOne(x => x.ReservingForUser)
-                .WithMany()
-                .HasForeignKey(x => x.ReservingForUserId)
-                .HasConstraintName("FK_CoachAvailabilities_Users_ReservingForUserId")
-                .OnDelete(DeleteBehavior.Restrict);
-
-                b.HasOne<InterviewType>()
-                 .WithMany()
-                  .HasForeignKey(x => x.TypeId).IsRequired(false)
-                  .HasConstraintName("FK_CoachAvailabilities_InterviewTypes_TypeId")
-                 .OnDelete(DeleteBehavior.SetNull);
             });
 
             // InterviewRoom
@@ -269,8 +258,30 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.HasOne(x => x.CurrentAvailability)
                  .WithMany()
                  .HasForeignKey(x => x.CurrentAvailabilityId)
+                 .IsRequired(false)
                  .HasConstraintName("FK_InterviewRooms_CoachAvailabilities_CurrentAvailabilityId")
                  .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasOne(x => x.BookingRequest)
+                 .WithMany()
+                 .HasForeignKey(x => x.BookingRequestId)
+                 .IsRequired(false)
+                 .HasConstraintName("FK_InterviewRooms_BookingRequests_BookingRequestId")
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasOne(x => x.CoachInterviewService)
+                 .WithMany()
+                 .HasForeignKey(x => x.CoachInterviewServiceId)
+                 .IsRequired(false)
+                 .HasConstraintName("FK_InterviewRooms_CoachInterviewServices_CoachInterviewServiceId")
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                b.Property(x => x.AimLevel)
+                 .HasConversion<int?>()
+                 .IsRequired(false);
+
+                b.Property(x => x.RoundNumber)
+                 .IsRequired(false);
             });
 
             // Feedback
@@ -309,14 +320,21 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.HasKey(x => x.Id);
                 b.Property(x => x.OrderCode).UseIdentityByDefaultColumn();
                 b.Property(x => x.Amount).IsRequired();
-                b.Property(x => x.CoachAvailabilityId).IsRequired();
                 b.Property(x => x.Type).IsRequired();
                 b.Property(x => x.Status).IsRequired();
 
                 b.HasOne(x => x.CoachAvailability)
                 .WithMany(x => x.InterviewBookingTransactions)
                 .HasForeignKey(x => x.CoachAvailabilityId)
+                .IsRequired(false)
                 .HasConstraintName("FK_InterviewBookingTransaction_CoachAvailabilities_CoachAvailabilityId")
+                .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasOne(x => x.BookingRequest)
+                .WithMany(x => x.Transactions)
+                .HasForeignKey(x => x.BookingRequestId)
+                .IsRequired(false)
+                .HasConstraintName("FK_InterviewBookingTransaction_BookingRequests_BookingRequestId")
                 .OnDelete(DeleteBehavior.Restrict);
 
                 b.HasOne(x => x.User)
@@ -477,11 +495,117 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                       .IsRequired()
                       .HasMaxLength(150);
 
-                entity.Property(e => e.BasePrice)
+                entity.Property(e => e.MinPrice)
                       .HasDefaultValue(0);
+
+                entity.Property(e => e.MaxPrice)
+                      .HasDefaultValue(0);
+
+                entity.Property(e => e.SuggestedDurationMinutes)
+                      .HasDefaultValue(60);
 
                 entity.Property(e => e.Status)
                       .HasConversion<int>();
+            });
+
+            // CoachInterviewService (many-to-many with payload: Coach × InterviewType)
+            modelBuilder.Entity<CoachInterviewService>(b =>
+            {
+                b.ToTable("CoachInterviewServices");
+                b.HasKey(x => x.Id);
+
+                b.Property(x => x.Price).IsRequired();
+                b.Property(x => x.DurationMinutes).IsRequired();
+
+                b.HasOne(x => x.CoachProfile)
+                 .WithMany(c => c.InterviewServices)
+                 .HasForeignKey(x => x.CoachId)
+                 .HasConstraintName("FK_CoachInterviewServices_CoachProfiles_CoachId")
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasOne(x => x.InterviewType)
+                 .WithMany()
+                 .HasForeignKey(x => x.InterviewTypeId)
+                 .HasConstraintName("FK_CoachInterviewServices_InterviewTypes_InterviewTypeId")
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasIndex(x => new { x.CoachId, x.InterviewTypeId })
+                 .IsUnique()
+                 .HasDatabaseName("IX_CoachInterviewServices_CoachId_InterviewTypeId");
+            });
+
+            // BookingRequest (Flow B: External, Flow C: JD Multi-Round)
+            modelBuilder.Entity<BookingRequest>(b =>
+            {
+                b.ToTable("BookingRequests");
+                b.HasKey(x => x.Id);
+
+                b.Property(x => x.Type).HasConversion<int>().IsRequired();
+                b.Property(x => x.Status).HasConversion<int>().IsRequired();
+                b.Property(x => x.AimLevel).HasConversion<int?>().IsRequired(false);
+                b.Property(x => x.TotalAmount).IsRequired();
+                b.Property(x => x.JobDescriptionUrl).HasMaxLength(1000);
+                b.Property(x => x.CVUrl).HasMaxLength(1000);
+                b.Property(x => x.RejectionReason).HasColumnType("text");
+
+                b.HasOne(x => x.Candidate)
+                 .WithMany()
+                 .HasForeignKey(x => x.CandidateId)
+                 .HasConstraintName("FK_BookingRequests_CandidateProfiles_CandidateId")
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasOne(x => x.Coach)
+                 .WithMany()
+                 .HasForeignKey(x => x.CoachId)
+                 .HasConstraintName("FK_BookingRequests_CoachProfiles_CoachId")
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasOne(x => x.CoachInterviewService)
+                 .WithMany()
+                 .HasForeignKey(x => x.CoachInterviewServiceId)
+                 .IsRequired(false)
+                 .HasConstraintName("FK_BookingRequests_CoachInterviewServices_CoachInterviewServiceId")
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasIndex(x => x.Status);
+                b.HasIndex(x => x.CandidateId);
+                b.HasIndex(x => x.CoachId);
+                b.HasIndex(x => x.ExpiresAt);
+            });
+
+            // InterviewRound (multi-round for Flow C JD interviews)
+            modelBuilder.Entity<InterviewRound>(b =>
+            {
+                b.ToTable("InterviewRounds");
+                b.HasKey(x => x.Id);
+
+                b.Property(x => x.RoundNumber).IsRequired();
+                b.Property(x => x.StartTime).IsRequired();
+                b.Property(x => x.EndTime).IsRequired();
+                b.Property(x => x.Price).IsRequired();
+
+                b.HasOne(x => x.BookingRequest)
+                 .WithMany(br => br.Rounds)
+                 .HasForeignKey(x => x.BookingRequestId)
+                 .HasConstraintName("FK_InterviewRounds_BookingRequests_BookingRequestId")
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasOne(x => x.CoachInterviewService)
+                 .WithMany()
+                 .HasForeignKey(x => x.CoachInterviewServiceId)
+                 .HasConstraintName("FK_InterviewRounds_CoachInterviewServices_CoachInterviewServiceId")
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasOne(x => x.InterviewRoom)
+                 .WithMany()
+                 .HasForeignKey(x => x.InterviewRoomId)
+                 .IsRequired(false)
+                 .HasConstraintName("FK_InterviewRounds_InterviewRooms_InterviewRoomId")
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasIndex(x => new { x.BookingRequestId, x.RoundNumber })
+                 .IsUnique()
+                 .HasDatabaseName("IX_InterviewRounds_BookingRequestId_RoundNumber");
             });
 
             /// <summary>
@@ -646,17 +770,17 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 {
                     Id = CoachAvail1Id,
                     CoachId = user2Id,
-                    StartTime = DateTime.SpecifyKind(new DateTime(2026, 2, 10, 9, 0, 0), DateTimeKind.Utc), // Match room1's ScheduledTime
-                    EndTime = DateTime.SpecifyKind(new DateTime(2026, 2, 10, 10, 0, 0), DateTimeKind.Utc),
-                    Status = CoachAvailabilityStatus.Booked // Already booked
+                    StartTime = DateTime.SpecifyKind(new DateTime(2026, 2, 10, 9, 0, 0), DateTimeKind.Utc),
+                    EndTime = DateTime.SpecifyKind(new DateTime(2026, 2, 10, 12, 0, 0), DateTimeKind.Utc),
+                    Status = CoachAvailabilityStatus.Available
                 },
-                // Proposed availability for reschedule (available future slot)
+                // Another availability range
                 new CoachAvailability
                 {
                     Id = CoachAvail2Id,
                     CoachId = user2Id,
-                    StartTime = DateTime.SpecifyKind(new DateTime(2026, 3, 15, 14, 0, 0), DateTimeKind.Utc), // Future date for reschedule
-                    EndTime = DateTime.SpecifyKind(new DateTime(2026, 3, 15, 15, 0, 0), DateTimeKind.Utc),
+                    StartTime = DateTime.SpecifyKind(new DateTime(2026, 3, 15, 14, 0, 0), DateTimeKind.Utc),
+                    EndTime = DateTime.SpecifyKind(new DateTime(2026, 3, 15, 17, 0, 0), DateTimeKind.Utc),
                     Status = CoachAvailabilityStatus.Available
                 }
             );
@@ -1175,8 +1299,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                     Name = "CV Interview",
                     Description = "Resume review and HR-style interview focusing on background and experience.",
                     IsCoding = false,
-                    DurationMinutes = 30,
-                    BasePrice = 20,
+                    SuggestedDurationMinutes = 30,
+                    MinPrice = 10,
+                    MaxPrice = 50,
                     Status = InterviewTypeStatus.Active
                 },
                 new InterviewType
@@ -1185,8 +1310,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                     Name = "Technical Interview",
                     Description = "Technical interview with coding problems and system design questions.",
                     IsCoding = true,
-                    DurationMinutes = 60,
-                    BasePrice = 50,
+                    SuggestedDurationMinutes = 60,
+                    MinPrice = 30,
+                    MaxPrice = 100,
                     Status = InterviewTypeStatus.Active
                 },
                 new InterviewType
@@ -1195,8 +1321,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                     Name = "Soft Skills Interview",
                     Description = "Behavioral interview focused on communication and interpersonal skills.",
                     IsCoding = false,
-                    DurationMinutes = 45,
-                    BasePrice = 30,
+                    SuggestedDurationMinutes = 45,
+                    MinPrice = 15,
+                    MaxPrice = 60,
                     Status = InterviewTypeStatus.Active
                 },
                 new InterviewType
@@ -1205,8 +1332,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                     Name = "Mock Interview",
                     Description = "Full mock interview simulating a real job interview experience.",
                     IsCoding = true,
-                    DurationMinutes = 75,
-                    BasePrice = 70,
+                    SuggestedDurationMinutes = 75,
+                    MinPrice = 40,
+                    MaxPrice = 120,
                     Status = InterviewTypeStatus.Draft
                 }
             );

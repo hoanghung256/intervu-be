@@ -1,9 +1,11 @@
 ﻿using AutoMapper;
 using Intervu.Application.DTOs.Admin;
 using Intervu.Application.DTOs.Availability;
+using Intervu.Application.DTOs.BookingRequest;
 using Intervu.Application.DTOs.Candidate;
 using Intervu.Application.DTOs.Coach;
 using Intervu.Application.DTOs.Comment;
+using Intervu.Application.DTOs.CoachInterviewService;
 using Intervu.Application.DTOs.Company;
 using Intervu.Application.DTOs.InterviewExperience;
 using Intervu.Application.DTOs.InterviewType;
@@ -111,6 +113,31 @@ namespace Intervu.Application.Mappings
                 .ForMember(dest => dest.User, opt => opt.Ignore())
                 .ForMember(dest => dest.Company, opt => opt.Ignore())
                 .ForMember(dest => dest.Questions, opt => opt.Ignore());
+            // CoachInterviewService mappings
+            CreateMap<CoachInterviewService, CoachInterviewServiceDto>()
+                .ForMember(dest => dest.InterviewTypeName, opt => opt.MapFrom(src => src.InterviewType.Name))
+                .ForMember(dest => dest.IsCoding, opt => opt.MapFrom(src => src.InterviewType.IsCoding));
+            CreateMap<CreateCoachInterviewServiceDto, CoachInterviewService>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.CoachId, opt => opt.Ignore());
+
+            // BookingRequest mappings
+            CreateMap<Domain.Entities.BookingRequest, BookingRequestDto>()
+                .ForMember(dest => dest.CandidateName, opt => opt.Ignore())
+                .ForMember(dest => dest.CoachName, opt => opt.Ignore())
+                .ForMember(dest => dest.InterviewTypeName, opt => opt.MapFrom(src =>
+                    src.CoachInterviewService != null ? src.CoachInterviewService.InterviewType.Name : null))
+                .ForMember(dest => dest.ServicePrice, opt => opt.MapFrom(src =>
+                    src.CoachInterviewService != null ? src.CoachInterviewService.Price : (int?)null))
+                .ForMember(dest => dest.ServiceDurationMinutes, opt => opt.MapFrom(src =>
+                    src.CoachInterviewService != null ? src.CoachInterviewService.DurationMinutes : (int?)null));
+
+            // InterviewRound mappings
+            CreateMap<Domain.Entities.InterviewRound, InterviewRoundDto>()
+                .ForMember(dest => dest.InterviewTypeName, opt => opt.MapFrom(src =>
+                    src.CoachInterviewService.InterviewType.Name))
+                .ForMember(dest => dest.IsCoding, opt => opt.MapFrom(src =>
+                    src.CoachInterviewService.InterviewType.IsCoding));
         }
     }
 }

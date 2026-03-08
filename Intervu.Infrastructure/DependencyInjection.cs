@@ -82,6 +82,9 @@ namespace Intervu.Infrastructure
             services.AddScoped<ITagRepository, TagRepository>();
             services.AddScoped<IUserQuestionLikeRepository, UserQuestionLikeRepository>();
             services.AddScoped<IUserCommentLikeRepository, UserCommentLikeRepository>();
+            services.AddScoped<ICoachInterviewServiceRepository, CoachInterviewServiceRepository>();
+            services.AddScoped<IBookingRequestRepository, BookingRequestRepository>();
+            services.AddScoped<IInterviewRoundRepository, InterviewRoundRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
 
             return services;

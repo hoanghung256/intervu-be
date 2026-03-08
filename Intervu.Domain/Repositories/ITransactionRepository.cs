@@ -10,5 +10,19 @@ namespace Intervu.Domain.Repositories
         Task<InterviewBookingTransaction?> GetByAvailabilityId(Guid id, TransactionType type);
 
         Task<InterviewBookingTransaction?> Get(int orderCode, TransactionType type);
+
+        /// <summary>
+        /// Checks whether any active (Created or Paid) Payment-type booking for the given coach
+        /// overlaps the requested [startTime, endTime) range.
+        /// </summary>
+        Task<bool> HasOverlappingBookingAsync(Guid coachId, DateTime startTime, DateTime endTime);
+
+        /// <summary>
+        /// Returns all active (Created or Paid) Payment-type bookings for a coach
+        /// whose booked time range overlaps [rangeStart, rangeEnd).
+        /// Used by AvailabilityCalculatorService to compute free slots.
+        /// </summary>
+        Task<List<InterviewBookingTransaction>> GetActiveBookingsByCoachAsync(
+            Guid coachId, DateTime rangeStart, DateTime rangeEnd);
     }
 }

@@ -31,25 +31,29 @@ namespace Intervu.Application.UseCases.InterviewBooking
 
                 Domain.Entities.InterviewRoom room = await interviewRoomRepo.GetByIdAsync(interviewRoomId)
                     ?? throw new NotFoundException("Interview room not found");
-                CoachAvailability availability = await availabilityRepo.GetByIdAsync(room.CurrentAvailabilityId)
+
+                if (room.CurrentAvailabilityId == null)
+                    throw new NotFoundException("No coach availability linked to this interview room");
+
+                CoachAvailability availability = await availabilityRepo.GetByIdAsync(room.CurrentAvailabilityId.Value)
                     ?? throw new NotFoundException("Coach availability not found for interview room");
 
                 if (room.CandidateId == null)
                     throw new NotFoundException("Candidate not found for interview room");
 
                 // Cancel the payout transaction (coach-side)
-                InterviewBookingTransaction? payout = await transactionRepo.GetByAvailabilityId(room.CurrentAvailabilityId, TransactionType.Payout) ?? throw new NotFoundException("Payout transaction not found");
+                InterviewBookingTransaction? payout = await transactionRepo.GetByAvailabilityId(room.CurrentAvailabilityId.Value, TransactionType.Payout) ?? throw new NotFoundException("Payout transaction not found");
                 payout.Status = TransactionStatus.Cancel;
 
                 // Create a refund transaction (candidate-side) using the original payment amount
-                InterviewBookingTransaction? payment = await transactionRepo.GetByAvailabilityId(room.CurrentAvailabilityId, TransactionType.Payment) ?? throw new NotFoundException("Payment transaction not found");
+                InterviewBookingTransaction? payment = await transactionRepo.GetByAvailabilityId(room.CurrentAvailabilityId.Value, TransactionType.Payment) ?? throw new NotFoundException("Payment transaction not found");
                 int refundAmount = _refundPolicy.CalculateRefundAmount(payment.Amount, availability.StartTime, DateTime.UtcNow);
 
                 await transactionRepo.AddAsync(new InterviewBookingTransaction
                 {
                     OrderCode = RandomGenerator.GenerateOrderCode(),
                     UserId = room.CandidateId.Value,
-                    CoachAvailabilityId = room.CurrentAvailabilityId,
+                    CoachAvailabilityId = room.CurrentAvailabilityId.Value,
                     Amount = refundAmount,
                     Type = TransactionType.Refund,
                     Status = TransactionStatus.Created

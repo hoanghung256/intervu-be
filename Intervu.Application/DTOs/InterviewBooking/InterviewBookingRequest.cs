@@ -10,6 +10,8 @@ namespace Intervu.Application.DTOs.InterviewBooking
     {
         public Guid CoachId { get; set; }
         public Guid CoachAvailabilityId { get; set; }
+        public Guid CoachInterviewServiceId { get; set; }
+        public DateTime StartTime { get; set; }
         public string ReturnUrl { get; set; } = string.Empty;
     }
 }
