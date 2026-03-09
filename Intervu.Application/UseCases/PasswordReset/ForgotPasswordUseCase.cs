@@ -67,7 +67,7 @@ namespace Intervu.Application.UseCases.PasswordReset
                     isHtml: true
                 );
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // Log the exception (not implemented here for brevity)
                 return new PasswordResetResponse

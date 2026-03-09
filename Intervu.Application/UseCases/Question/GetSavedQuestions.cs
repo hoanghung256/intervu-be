@@ -47,7 +47,7 @@ namespace Intervu.Application.UseCases.Question
                 Title = s.Title,
                 Content = s.Content,
                 Level = Enum.Parse<ExperienceLevel>(s.Level),
-                Round = Enum.Parse<InterviewRound>(s.Round),
+                Round = Enum.Parse<Intervu.Domain.Entities.Constants.QuestionConstants.InterviewRound>(s.Round),
                 Status = Enum.Parse<QuestionStatus>(s.Status),
                 ViewCount = s.ViewCount,
                 SaveCount = s.SaveCount,
