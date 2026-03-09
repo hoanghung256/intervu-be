@@ -505,7 +505,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             QuestionId = new Guid("d4e5f6a1-b2c3-4d4e-1f5a-6b7c8d9e0f1a"),
                             UpdateAt = new DateTime(2026, 1, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             UpdateBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
-                            Vote = 10
+                            Vote = 0
                         },
                         new
                         {
@@ -517,7 +517,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             QuestionId = new Guid("d4e5f6a1-b2c3-4d4e-1f5a-6b7c8d9e0f1a"),
                             UpdateAt = new DateTime(2026, 1, 12, 0, 0, 0, 0, DateTimeKind.Utc),
                             UpdateBy = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
-                            Vote = 5
+                            Vote = 0
                         },
                         new
                         {
@@ -529,7 +529,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             QuestionId = new Guid("e5f6a1b2-c3d4-4e5f-2a6b-7c8d9e0f1a2b"),
                             UpdateAt = new DateTime(2026, 1, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             UpdateBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
-                            Vote = 8
+                            Vote = 0
                         },
                         new
                         {
@@ -541,7 +541,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             QuestionId = new Guid("e5f6a1b2-c3d4-4e5f-2a6b-7c8d9e0f1a2b"),
                             UpdateAt = new DateTime(2026, 1, 13, 0, 0, 0, 0, DateTimeKind.Utc),
                             UpdateBy = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
-                            Vote = 3
+                            Vote = 0
                         },
                         new
                         {
@@ -553,7 +553,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             QuestionId = new Guid("f6a1b2c3-d4e5-4f6a-3b7c-8d9e0f1a2b3c"),
                             UpdateAt = new DateTime(2026, 1, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             UpdateBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
-                            Vote = 7
+                            Vote = 0
                         },
                         new
                         {
@@ -565,7 +565,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             QuestionId = new Guid("f6a1b2c3-d4e5-4f6a-3b7c-8d9e0f1a2b3c"),
                             UpdateAt = new DateTime(2026, 1, 16, 0, 0, 0, 0, DateTimeKind.Utc),
                             UpdateBy = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
-                            Vote = 4
+                            Vote = 0
                         },
                         new
                         {
@@ -577,7 +577,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             QuestionId = new Guid("a1b2c3d4-e5f6-4a7b-4c8d-9e0f1a2b3c4d"),
                             UpdateAt = new DateTime(2026, 2, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             UpdateBy = new Guid("2f8c7a6b-6d5e-4e2f-8c7a-9d6e5c4b3a33"),
-                            Vote = 9
+                            Vote = 0
                         },
                         new
                         {
@@ -589,7 +589,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             QuestionId = new Guid("a1b2c3d4-e5f6-4a7b-4c8d-9e0f1a2b3c4d"),
                             UpdateAt = new DateTime(2026, 2, 2, 0, 0, 0, 0, DateTimeKind.Utc),
                             UpdateBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
-                            Vote = 6
+                            Vote = 0
                         });
                 });
 
@@ -1083,11 +1083,17 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<Guid>("CoachInterviewServiceId")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime>("EndTime")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid?>("InterviewRoomId")
                         .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<int>("Price")
                         .HasColumnType("integer");
@@ -1096,6 +1102,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("StartTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
@@ -1387,147 +1396,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             IsHot = true,
                             Level = 3,
                             Round = 2,
-                            SaveCount = 87,
+                            SaveCount = 0,
                             Status = 2,
                             Title = "Longest Substring Without Repeating Characters",
                             UpdatedAt = new DateTime(2026, 1, 10, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 342,
-                            Vote = 0
-                        },
-                        new
-                        {
-                            Id = new Guid("bb000001-0000-4000-8000-000000000001"),
-                            Category = 2,
-                            Content = "Walk me through the Transformer architecture. How do self-attention mechanisms work and why are they superior to RNNs for sequence modeling?",
-                            CreatedAt = new DateTime(2026, 1, 20, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
-                            IsHot = true,
-                            Level = 3,
-                            Round = 2,
-                            SaveCount = 214,
-                            Status = 2,
-                            Title = "Explain the Transformer Architecture",
-                            UpdatedAt = new DateTime(2026, 1, 20, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 891,
-                            Vote = 0
-                        },
-                        new
-                        {
-                            Id = new Guid("bb000002-0000-4000-8000-000000000002"),
-                            Category = 2,
-                            Content = "Compare Retrieval-Augmented Generation (RAG) with fine-tuning. In what scenarios would you choose one over the other for a production GenAI application?",
-                            CreatedAt = new DateTime(2026, 1, 22, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedBy = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
-                            IsHot = true,
-                            Level = 3,
-                            Round = 9,
-                            SaveCount = 178,
-                            Status = 2,
-                            Title = "RAG vs Fine-Tuning: When to Use Which?",
-                            UpdatedAt = new DateTime(2026, 1, 22, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 654,
-                            Vote = 0
-                        },
-                        new
-                        {
-                            Id = new Guid("bb000003-0000-4000-8000-000000000003"),
-                            Category = 3,
-                            Content = "Design a customer support chatbot powered by a large language model. Address latency, hallucination mitigation, guardrails, and cost optimization.",
-                            CreatedAt = new DateTime(2026, 1, 25, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
-                            IsHot = false,
-                            Level = 4,
-                            Round = 9,
-                            SaveCount = 102,
-                            Status = 2,
-                            Title = "Design an LLM-Powered Customer Support Bot",
-                            UpdatedAt = new DateTime(2026, 1, 25, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 432,
-                            Vote = 0
-                        },
-                        new
-                        {
-                            Id = new Guid("bb000004-0000-4000-8000-000000000004"),
-                            Category = 9,
-                            Content = "Write a SQL query to find the second highest salary from an Employee table. Handle the case where there might be duplicate salaries.",
-                            CreatedAt = new DateTime(2026, 1, 12, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedBy = new Guid("2f8c7a6b-6d5e-4e2f-8c7a-9d6e5c4b3a33"),
-                            IsHot = true,
-                            Level = 1,
-                            Round = 2,
-                            SaveCount = 456,
-                            Status = 2,
-                            Title = "Find the Second Highest Salary",
-                            UpdatedAt = new DateTime(2026, 1, 12, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 1243,
-                            Vote = 0
-                        },
-                        new
-                        {
-                            Id = new Guid("bb000005-0000-4000-8000-000000000005"),
-                            Category = 2,
-                            Content = "You have a query that scans 50M rows and takes 30 seconds. Walk me through your approach to diagnose and optimize it.",
-                            CreatedAt = new DateTime(2026, 1, 18, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
-                            IsHot = false,
-                            Level = 3,
-                            Round = 2,
-                            SaveCount = 134,
-                            Status = 2,
-                            Title = "Optimize a Slow Query with Millions of Rows",
-                            UpdatedAt = new DateTime(2026, 1, 18, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 567,
-                            Vote = 0
-                        },
-                        new
-                        {
-                            Id = new Guid("bb000006-0000-4000-8000-000000000006"),
-                            Category = 9,
-                            Content = "Explain SQL window functions. Write a query using ROW_NUMBER, RANK, and a running SUM to analyze monthly revenue data.",
-                            CreatedAt = new DateTime(2026, 1, 28, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedBy = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
-                            IsHot = false,
-                            Level = 2,
-                            Round = 7,
-                            SaveCount = 98,
-                            Status = 2,
-                            Title = "Window Functions: Running Total & Ranking",
-                            UpdatedAt = new DateTime(2026, 1, 28, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 389,
-                            Vote = 0
-                        },
-                        new
-                        {
-                            Id = new Guid("bb000007-0000-4000-8000-000000000007"),
-                            Category = 7,
-                            Content = "You're the PM for a new B2B SaaS product. You have 20 feature requests and resources for 5. Walk me through your prioritization framework.",
-                            CreatedAt = new DateTime(2026, 1, 14, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
-                            IsHot = true,
-                            Level = 3,
-                            Round = 10,
-                            SaveCount = 189,
-                            Status = 2,
-                            Title = "How Would You Prioritize Features for a New Product?",
-                            UpdatedAt = new DateTime(2026, 1, 14, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 723,
-                            Vote = 0
-                        },
-                        new
-                        {
-                            Id = new Guid("bb000008-0000-4000-8000-000000000008"),
-                            Category = 7,
-                            Content = "You've just launched a new algorithmic feed for a social platform. What metrics would you track? How would you define success at 30/60/90 days?",
-                            CreatedAt = new DateTime(2026, 2, 5, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedBy = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
-                            IsHot = false,
-                            Level = 2,
-                            Round = 10,
-                            SaveCount = 121,
-                            Status = 2,
-                            Title = "Define Success Metrics for a Social Media Feed",
-                            UpdatedAt = new DateTime(2026, 2, 5, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 456,
+                            ViewCount = 0,
                             Vote = 0
                         },
                         new
@@ -1541,11 +1414,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             IsHot = true,
                             Level = 3,
                             Round = 9,
-                            SaveCount = 234,
+                            SaveCount = 0,
                             Status = 2,
                             Title = "Design a URL Shortener like bit.ly",
                             UpdatedAt = new DateTime(2026, 1, 10, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 876,
+                            ViewCount = 0,
                             Vote = 0
                         },
                         new
@@ -1559,11 +1432,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             IsHot = false,
                             Level = 2,
                             Round = 2,
-                            SaveCount = 56,
+                            SaveCount = 0,
                             Status = 2,
                             Title = "Explain == vs === in JavaScript",
                             UpdatedAt = new DateTime(2026, 1, 15, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 234,
+                            ViewCount = 0,
                             Vote = 0
                         },
                         new
@@ -1577,79 +1450,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             IsHot = false,
                             Level = 1,
                             Round = 7,
-                            SaveCount = 145,
+                            SaveCount = 0,
                             Status = 2,
                             Title = "Reverse a Linked List",
                             UpdatedAt = new DateTime(2026, 2, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 567,
-                            Vote = 0
-                        },
-                        new
-                        {
-                            Id = new Guid("bb000009-0000-4000-8000-000000000009"),
-                            Category = 3,
-                            Content = "Design a distributed rate limiter for an API gateway. Discuss token bucket, sliding window, and their trade-offs at scale.",
-                            CreatedAt = new DateTime(2026, 2, 8, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
-                            IsHot = true,
-                            Level = 3,
-                            Round = 9,
-                            SaveCount = 167,
-                            Status = 2,
-                            Title = "Design a Rate Limiter",
-                            UpdatedAt = new DateTime(2026, 2, 8, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 678,
-                            Vote = 0
-                        },
-                        new
-                        {
-                            Id = new Guid("bb00000a-0000-4000-8000-00000000000a"),
-                            Category = 8,
-                            Content = "What are CQRS and Event Sourcing patterns? When would you adopt them and what are the operational challenges?",
-                            CreatedAt = new DateTime(2026, 2, 10, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedBy = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
-                            IsHot = false,
-                            Level = 4,
-                            Round = 2,
-                            SaveCount = 89,
-                            Status = 2,
-                            Title = "Explain CQRS and Event Sourcing",
-                            UpdatedAt = new DateTime(2026, 2, 10, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 345,
-                            Vote = 0
-                        },
-                        new
-                        {
-                            Id = new Guid("bb00000b-0000-4000-8000-00000000000b"),
-                            Category = 8,
-                            Content = "Compare microservices architecture with a monolith. What factors drive the decision and how do you handle the migration?",
-                            CreatedAt = new DateTime(2026, 2, 12, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedBy = new Guid("2f8c7a6b-6d5e-4e2f-8c7a-9d6e5c4b3a33"),
-                            IsHot = false,
-                            Level = 3,
-                            Round = 10,
-                            SaveCount = 143,
-                            Status = 2,
-                            Title = "Microservices vs Monolith: Trade-offs",
-                            UpdatedAt = new DateTime(2026, 2, 12, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 512,
-                            Vote = 0
-                        },
-                        new
-                        {
-                            Id = new Guid("bb00000c-0000-4000-8000-00000000000c"),
-                            Category = 9,
-                            Content = "Implement a thread-safe Singleton pattern in C#. Discuss Lazy<T>, double-checked locking, and when Singleton is an anti-pattern.",
-                            CreatedAt = new DateTime(2026, 2, 15, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
-                            IsHot = false,
-                            Level = 2,
-                            Round = 8,
-                            SaveCount = 67,
-                            Status = 2,
-                            Title = "Implement a Thread-Safe Singleton in C#",
-                            UpdatedAt = new DateTime(2026, 2, 15, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ViewCount = 289,
+                            ViewCount = 0,
                             Vote = 0
                         });
                 });
@@ -1677,12 +1482,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         new
                         {
                             QuestionId = new Guid("e5f6a1b2-c3d4-4e5f-2a6b-7c8d9e0f1a2b"),
-                            CompanyId = new Guid("11111111-1111-4111-8111-111111111111")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("e5f6a1b2-c3d4-4e5f-2a6b-7c8d9e0f1a2b"),
-                            CompanyId = new Guid("22222222-2222-4222-8222-222222222222")
+                            CompanyId = new Guid("66666666-6666-4666-8666-666666666666")
                         },
                         new
                         {
@@ -1692,116 +1492,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         new
                         {
                             QuestionId = new Guid("a1b2c3d4-e5f6-4a7b-4c8d-9e0f1a2b3c4d"),
-                            CompanyId = new Guid("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000001-0000-4000-8000-000000000001"),
-                            CompanyId = new Guid("11111111-1111-4111-8111-111111111111")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000001-0000-4000-8000-000000000001"),
-                            CompanyId = new Guid("22222222-2222-4222-8222-222222222222")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000001-0000-4000-8000-000000000001"),
-                            CompanyId = new Guid("33333333-3333-4333-8333-333333333333")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000002-0000-4000-8000-000000000002"),
-                            CompanyId = new Guid("44444444-4444-4444-8444-444444444444")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000002-0000-4000-8000-000000000002"),
-                            CompanyId = new Guid("11111111-1111-4111-8111-111111111111")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000003-0000-4000-8000-000000000003"),
-                            CompanyId = new Guid("99999999-9999-4999-8999-999999999999")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000003-0000-4000-8000-000000000003"),
-                            CompanyId = new Guid("33333333-3333-4333-8333-333333333333")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000004-0000-4000-8000-000000000004"),
-                            CompanyId = new Guid("33333333-3333-4333-8333-333333333333")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000004-0000-4000-8000-000000000004"),
-                            CompanyId = new Guid("22222222-2222-4222-8222-222222222222")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000004-0000-4000-8000-000000000004"),
-                            CompanyId = new Guid("44444444-4444-4444-8444-444444444444")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000005-0000-4000-8000-000000000005"),
-                            CompanyId = new Guid("66666666-6666-4666-8666-666666666666")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000005-0000-4000-8000-000000000005"),
-                            CompanyId = new Guid("99999999-9999-4999-8999-999999999999")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000006-0000-4000-8000-000000000006"),
-                            CompanyId = new Guid("33333333-3333-4333-8333-333333333333")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000007-0000-4000-8000-000000000007"),
-                            CompanyId = new Guid("11111111-1111-4111-8111-111111111111")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000007-0000-4000-8000-000000000007"),
-                            CompanyId = new Guid("55555555-5555-4555-8555-555555555555")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000008-0000-4000-8000-000000000008"),
-                            CompanyId = new Guid("22222222-2222-4222-8222-222222222222")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000009-0000-4000-8000-000000000009"),
-                            CompanyId = new Guid("99999999-9999-4999-8999-999999999999")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000009-0000-4000-8000-000000000009"),
-                            CompanyId = new Guid("11111111-1111-4111-8111-111111111111")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb00000a-0000-4000-8000-00000000000a"),
-                            CompanyId = new Guid("44444444-4444-4444-8444-444444444444")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb00000b-0000-4000-8000-00000000000b"),
-                            CompanyId = new Guid("66666666-6666-4666-8666-666666666666")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb00000b-0000-4000-8000-00000000000b"),
-                            CompanyId = new Guid("33333333-3333-4333-8333-333333333333")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb00000c-0000-4000-8000-00000000000c"),
                             CompanyId = new Guid("44444444-4444-4444-8444-444444444444")
                         });
                 });
@@ -1860,116 +1550,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         {
                             QuestionId = new Guid("a1b2c3d4-e5f6-4a7b-4c8d-9e0f1a2b3c4d"),
                             Role = 6
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000001-0000-4000-8000-000000000001"),
-                            Role = 12
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000001-0000-4000-8000-000000000001"),
-                            Role = 4
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000002-0000-4000-8000-000000000002"),
-                            Role = 12
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000002-0000-4000-8000-000000000002"),
-                            Role = 2
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000003-0000-4000-8000-000000000003"),
-                            Role = 12
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000003-0000-4000-8000-000000000003"),
-                            Role = 17
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000004-0000-4000-8000-000000000004"),
-                            Role = 3
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000004-0000-4000-8000-000000000004"),
-                            Role = 2
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000005-0000-4000-8000-000000000005"),
-                            Role = 3
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000005-0000-4000-8000-000000000005"),
-                            Role = 6
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000006-0000-4000-8000-000000000006"),
-                            Role = 3
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000006-0000-4000-8000-000000000006"),
-                            Role = 4
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000007-0000-4000-8000-000000000007"),
-                            Role = 1
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000008-0000-4000-8000-000000000008"),
-                            Role = 1
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000009-0000-4000-8000-000000000009"),
-                            Role = 6
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000009-0000-4000-8000-000000000009"),
-                            Role = 2
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb00000a-0000-4000-8000-00000000000a"),
-                            Role = 6
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb00000a-0000-4000-8000-00000000000a"),
-                            Role = 17
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb00000b-0000-4000-8000-00000000000b"),
-                            Role = 2
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb00000b-0000-4000-8000-00000000000b"),
-                            Role = 17
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb00000c-0000-4000-8000-00000000000c"),
-                            Role = 6
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb00000c-0000-4000-8000-00000000000c"),
-                            Role = 2
                         });
                 });
 
@@ -2012,116 +1592,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         {
                             QuestionId = new Guid("a1b2c3d4-e5f6-4a7b-4c8d-9e0f1a2b3c4d"),
                             TagId = new Guid("aa000007-0000-4000-8000-000000000007")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000001-0000-4000-8000-000000000001"),
-                            TagId = new Guid("aa000001-0000-4000-8000-000000000001")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000001-0000-4000-8000-000000000001"),
-                            TagId = new Guid("aa000006-0000-4000-8000-000000000006")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000002-0000-4000-8000-000000000002"),
-                            TagId = new Guid("aa000001-0000-4000-8000-000000000001")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000002-0000-4000-8000-000000000002"),
-                            TagId = new Guid("aa000006-0000-4000-8000-000000000006")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000003-0000-4000-8000-000000000003"),
-                            TagId = new Guid("aa000006-0000-4000-8000-000000000006")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000003-0000-4000-8000-000000000003"),
-                            TagId = new Guid("aa000003-0000-4000-8000-000000000003")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000004-0000-4000-8000-000000000004"),
-                            TagId = new Guid("aa000002-0000-4000-8000-000000000002")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000004-0000-4000-8000-000000000004"),
-                            TagId = new Guid("aa00000a-0000-4000-8000-00000000000a")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000005-0000-4000-8000-000000000005"),
-                            TagId = new Guid("aa000002-0000-4000-8000-000000000002")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000005-0000-4000-8000-000000000005"),
-                            TagId = new Guid("aa000005-0000-4000-8000-000000000005")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000006-0000-4000-8000-000000000006"),
-                            TagId = new Guid("aa000002-0000-4000-8000-000000000002")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000006-0000-4000-8000-000000000006"),
-                            TagId = new Guid("aa00000a-0000-4000-8000-00000000000a")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000007-0000-4000-8000-000000000007"),
-                            TagId = new Guid("aa000004-0000-4000-8000-000000000004")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000007-0000-4000-8000-000000000007"),
-                            TagId = new Guid("aa000009-0000-4000-8000-000000000009")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000008-0000-4000-8000-000000000008"),
-                            TagId = new Guid("aa000004-0000-4000-8000-000000000004")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000009-0000-4000-8000-000000000009"),
-                            TagId = new Guid("aa000003-0000-4000-8000-000000000003")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb000009-0000-4000-8000-000000000009"),
-                            TagId = new Guid("aa000005-0000-4000-8000-000000000005")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb00000a-0000-4000-8000-00000000000a"),
-                            TagId = new Guid("aa000005-0000-4000-8000-000000000005")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb00000a-0000-4000-8000-00000000000a"),
-                            TagId = new Guid("aa000003-0000-4000-8000-000000000003")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb00000b-0000-4000-8000-00000000000b"),
-                            TagId = new Guid("aa000003-0000-4000-8000-000000000003")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb00000b-0000-4000-8000-00000000000b"),
-                            TagId = new Guid("aa000005-0000-4000-8000-000000000005")
-                        },
-                        new
-                        {
-                            QuestionId = new Guid("bb00000c-0000-4000-8000-00000000000c"),
-                            TagId = new Guid("aa000005-0000-4000-8000-000000000005")
                         });
                 });
 
@@ -2949,6 +2419,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Navigation("Question");
 
                     b.Navigation("User");
+                });
+
             modelBuilder.Entity("Intervu.Domain.Entities.BookingRequest", b =>
                 {
                     b.Navigation("Rounds");
@@ -2961,6 +2433,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Navigation("InterviewBookingTransactions");
                 });
 
+            modelBuilder.Entity("Intervu.Domain.Entities.CoachProfile", b =>
+                {
+                    b.Navigation("InterviewServices");
+                });
+
             modelBuilder.Entity("Intervu.Domain.Entities.Company", b =>
                 {
                     b.Navigation("QuestionCompanies");
@@ -2969,9 +2446,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
             modelBuilder.Entity("Intervu.Domain.Entities.InterviewExperience", b =>
                 {
                     b.Navigation("Questions");
-            modelBuilder.Entity("Intervu.Domain.Entities.CoachProfile", b =>
-                {
-                    b.Navigation("InterviewServices");
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.InterviewRoom", b =>

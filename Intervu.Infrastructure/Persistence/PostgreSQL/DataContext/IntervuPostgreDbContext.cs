@@ -44,7 +44,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
         public DbSet<UserCommentLike> UserCommentLikes { get; set; }
         public DbSet<CoachInterviewService> CoachInterviewServices { get; set; }
         public DbSet<BookingRequest> BookingRequests { get; set; }
-        public DbSet<InterviewRound> InterviewRounds { get; set; }
+        public DbSet<Intervu.Domain.Entities.InterviewRound> InterviewRounds { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -102,6 +102,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.PortfolioUrl).HasMaxLength(1000);
                 b.Property(x => x.Bio).HasColumnType("text");
 
+                var savedQuestionComparer = new Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer<System.Collections.Generic.List<Intervu.Domain.Entities.QuestionSnapshot>>(
+                    (c1, c2) => System.Text.Json.JsonSerializer.Serialize(c1, (System.Text.Json.JsonSerializerOptions?)null) == System.Text.Json.JsonSerializer.Serialize(c2, (System.Text.Json.JsonSerializerOptions?)null),
+                    c => c == null ? 0 : System.Text.Json.JsonSerializer.Serialize(c, (System.Text.Json.JsonSerializerOptions?)null).GetHashCode(),
+                    c => System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<Intervu.Domain.Entities.QuestionSnapshot>>(System.Text.Json.JsonSerializer.Serialize(c, (System.Text.Json.JsonSerializerOptions?)null), (System.Text.Json.JsonSerializerOptions?)null)!);
+
                 // Saved questions stored as JSONB (nullable)
                 b.Property(x => x.SavedQuestions)
                  .HasColumnName("SavedQuestions")
@@ -109,7 +114,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                  .HasConversion(
                      v => v == null ? null : System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
                      v => v == null ? null : System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<Intervu.Domain.Entities.QuestionSnapshot>>(v, (System.Text.Json.JsonSerializerOptions?)null))
-                 .IsRequired(false);
+                 .IsRequired(false)
+                 .Metadata.SetValueComparer(savedQuestionComparer);
 
                 // Explicitly map navigation to User (like CoachProfile)
                 b.HasOne(x => x.User)
@@ -150,6 +156,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                  .HasForeignKey<CoachProfile>(p => p.Id)
                  .OnDelete(DeleteBehavior.Cascade);
 
+                var savedQuestionComparer = new Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer<System.Collections.Generic.List<Intervu.Domain.Entities.QuestionSnapshot>>(
+                    (c1, c2) => System.Text.Json.JsonSerializer.Serialize(c1, (System.Text.Json.JsonSerializerOptions?)null) == System.Text.Json.JsonSerializer.Serialize(c2, (System.Text.Json.JsonSerializerOptions?)null),
+                    c => c == null ? 0 : System.Text.Json.JsonSerializer.Serialize(c, (System.Text.Json.JsonSerializerOptions?)null).GetHashCode(),
+                    c => System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<Intervu.Domain.Entities.QuestionSnapshot>>(System.Text.Json.JsonSerializer.Serialize(c, (System.Text.Json.JsonSerializerOptions?)null), (System.Text.Json.JsonSerializerOptions?)null)!);
+
                 // Saved questions stored as JSONB (nullable)
                 b.Property(x => x.SavedQuestions)
                  .HasColumnName("SavedQuestions")
@@ -157,7 +168,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                  .HasConversion(
                      v => v == null ? null : System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
                      v => v == null ? null : System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<Intervu.Domain.Entities.QuestionSnapshot>>(v, (System.Text.Json.JsonSerializerOptions?)null))
-                 .IsRequired(false);
+                 .IsRequired(false)
+                 .Metadata.SetValueComparer(savedQuestionComparer);
 
                 b.HasMany(x => x.Companies)
                  .WithMany(c => c.CoachProfiles)
@@ -219,19 +231,31 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                     WriteIndented = false
                 };
 
+                var dictComparer = new Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer<Dictionary<string, string>>(
+                    (c1, c2) => JsonSerializer.Serialize(c1, jsonOptions) == JsonSerializer.Serialize(c2, jsonOptions),
+                    c => c == null ? 0 : JsonSerializer.Serialize(c, jsonOptions).GetHashCode(),
+                    c => JsonSerializer.Deserialize<Dictionary<string, string>>(JsonSerializer.Serialize(c, jsonOptions), jsonOptions)!);
+
                 b.Property(x => x.LanguageCodes)
                     .HasColumnName("LanguageCodes")
                     .HasConversion(
                         v => JsonSerializer.Serialize(v, jsonOptions),
                         v => JsonSerializer.Deserialize<Dictionary<string, string>>(v, jsonOptions))
-                    .HasColumnType("text");
+                    .HasColumnType("text")
+                    .Metadata.SetValueComparer(dictComparer);
+
+                var objArrayComparer = new Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer<object[]>(
+                    (c1, c2) => JsonSerializer.Serialize(c1, jsonOptions) == JsonSerializer.Serialize(c2, jsonOptions),
+                    c => c == null ? 0 : JsonSerializer.Serialize(c, jsonOptions).GetHashCode(),
+                    c => JsonSerializer.Deserialize<object[]>(JsonSerializer.Serialize(c, jsonOptions), jsonOptions)!);
 
                 b.Property(x => x.TestCases)
                     .HasColumnName("TestCases")
                     .HasConversion(
                         v => JsonSerializer.Serialize(v, jsonOptions),
                         v => JsonSerializer.Deserialize<object[]>(v, jsonOptions))
-                    .HasColumnType("text");
+                    .HasColumnType("text")
+                    .Metadata.SetValueComparer(objArrayComparer);
 
                 b.Property(x => x.CurrentLanguage).HasColumnName("CurrentLanguage").HasMaxLength(50);
                 b.Property(x => x.ProblemDescription).HasColumnName("ProblemDescription").HasColumnType("text");
@@ -574,7 +598,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             });
 
             // InterviewRound (multi-round for Flow C JD interviews)
-            modelBuilder.Entity<InterviewRound>(b =>
+            modelBuilder.Entity<Intervu.Domain.Entities.InterviewRound>(b =>
             {
                 b.ToTable("InterviewRounds");
                 b.HasKey(x => x.Id);
@@ -1092,28 +1116,28 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             });
 
             // ===================== SEED DATA – Tags =====================
-            var tagAI       = Guid.Parse("aa000001-0000-4000-8000-000000000001");
-            var tagSQL      = Guid.Parse("aa000002-0000-4000-8000-000000000002");
-            var tagSysDes   = Guid.Parse("aa000003-0000-4000-8000-000000000003");
-            var tagProdStrat= Guid.Parse("aa000004-0000-4000-8000-000000000004");
-            var tagBackend  = Guid.Parse("aa000005-0000-4000-8000-000000000005");
-            var tagGenAI    = Guid.Parse("aa000006-0000-4000-8000-000000000006");
-            var tagAlgo     = Guid.Parse("aa000007-0000-4000-8000-000000000007");
+            var tagAI = Guid.Parse("aa000001-0000-4000-8000-000000000001");
+            var tagSQL = Guid.Parse("aa000002-0000-4000-8000-000000000002");
+            var tagSysDes = Guid.Parse("aa000003-0000-4000-8000-000000000003");
+            var tagProdStrat = Guid.Parse("aa000004-0000-4000-8000-000000000004");
+            var tagBackend = Guid.Parse("aa000005-0000-4000-8000-000000000005");
+            var tagGenAI = Guid.Parse("aa000006-0000-4000-8000-000000000006");
+            var tagAlgo = Guid.Parse("aa000007-0000-4000-8000-000000000007");
             var tagFrontend = Guid.Parse("aa000008-0000-4000-8000-000000000008");
             var tagBehavior = Guid.Parse("aa000009-0000-4000-8000-000000000009");
-            var tagData     = Guid.Parse("aa00000a-0000-4000-8000-00000000000a");
+            var tagData = Guid.Parse("aa00000a-0000-4000-8000-00000000000a");
 
             modelBuilder.Entity<Tag>().HasData(
-                new Tag { Id = tagAI,        Name = "AI",               Description = "Artificial Intelligence & Machine Learning" },
-                new Tag { Id = tagSQL,       Name = "SQL",              Description = "SQL & Database querying" },
-                new Tag { Id = tagSysDes,    Name = "System Design",    Description = "Distributed systems & architecture design" },
-                new Tag { Id = tagProdStrat,  Name = "Product Strategy", Description = "Product management & strategy" },
-                new Tag { Id = tagBackend,   Name = "Backend",          Description = "Backend engineering & APIs" },
-                new Tag { Id = tagGenAI,     Name = "GenAI",            Description = "Generative AI, LLMs, prompt engineering" },
-                new Tag { Id = tagAlgo,      Name = "Algorithms",       Description = "Data structures & algorithms" },
-                new Tag { Id = tagFrontend,  Name = "Frontend",         Description = "Frontend & UI engineering" },
-                new Tag { Id = tagBehavior,  Name = "Behavioral",       Description = "Behavioral & leadership questions" },
-                new Tag { Id = tagData,      Name = "Data Engineering", Description = "Data pipelines, ETL, big data" }
+                new Tag { Id = tagAI, Name = "AI", Description = "Artificial Intelligence & Machine Learning" },
+                new Tag { Id = tagSQL, Name = "SQL", Description = "SQL & Database querying" },
+                new Tag { Id = tagSysDes, Name = "System Design", Description = "Distributed systems & architecture design" },
+                new Tag { Id = tagProdStrat, Name = "Product Strategy", Description = "Product management & strategy" },
+                new Tag { Id = tagBackend, Name = "Backend", Description = "Backend engineering & APIs" },
+                new Tag { Id = tagGenAI, Name = "GenAI", Description = "Generative AI, LLMs, prompt engineering" },
+                new Tag { Id = tagAlgo, Name = "Algorithms", Description = "Data structures & algorithms" },
+                new Tag { Id = tagFrontend, Name = "Frontend", Description = "Frontend & UI engineering" },
+                new Tag { Id = tagBehavior, Name = "Behavioral", Description = "Behavioral & leadership questions" },
+                new Tag { Id = tagData, Name = "Data Engineering", Description = "Data pipelines, ETL, big data" }
             );
 
             // ===================== SEED DATA – InterviewExperiences (kept) =====================
@@ -1168,23 +1192,23 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
 
             // ===================== SEED DATA – Questions (normalized) =====================
             // Company IDs (reusing existing seed)
-            var googleId    = Guid.Parse("11111111-1111-4111-8111-111111111111");
-            var metaId      = Guid.Parse("22222222-2222-4222-8222-222222222222");
-            var amazonId    = Guid.Parse("33333333-3333-4333-8333-333333333333");
+            var googleId = Guid.Parse("11111111-1111-4111-8111-111111111111");
+            var metaId = Guid.Parse("22222222-2222-4222-8222-222222222222");
+            var amazonId = Guid.Parse("33333333-3333-4333-8333-333333333333");
             var microsoftId = Guid.Parse("44444444-4444-4444-8444-444444444444");
-            var appleId     = Guid.Parse("55555555-5555-4555-8555-555555555555");
-            var netflixId   = Guid.Parse("66666666-6666-4666-8666-666666666666");
-            var stripeId    = Guid.Parse("99999999-9999-4999-8999-999999999999");
+            var appleId = Guid.Parse("55555555-5555-4555-8555-555555555555");
+            var netflixId = Guid.Parse("66666666-6666-4666-8666-666666666666");
+            var stripeId = Guid.Parse("99999999-9999-4999-8999-999999999999");
 
-            var q1  = Guid.Parse("d4e5f6a1-b2c3-4d4e-1f5a-6b7c8d9e0f1a");
-            var q2  = Guid.Parse("e5f6a1b2-c3d4-4e5f-2a6b-7c8d9e0f1a2b");
-            var q3  = Guid.Parse("f6a1b2c3-d4e5-4f6a-3b7c-8d9e0f1a2b3c");
-            var q4  = Guid.Parse("a1b2c3d4-e5f6-4a7b-4c8d-9e0f1a2b3c4d");
-            var q5  = Guid.Parse("bb000001-0000-4000-8000-000000000001");
-            var q6  = Guid.Parse("bb000002-0000-4000-8000-000000000002");
-            var q7  = Guid.Parse("bb000003-0000-4000-8000-000000000003");
-            var q8  = Guid.Parse("bb000004-0000-4000-8000-000000000004");
-            var q9  = Guid.Parse("bb000005-0000-4000-8000-000000000005");
+            var q1 = Guid.Parse("d4e5f6a1-b2c3-4d4e-1f5a-6b7c8d9e0f1a");
+            var q2 = Guid.Parse("e5f6a1b2-c3d4-4e5f-2a6b-7c8d9e0f1a2b");
+            var q3 = Guid.Parse("f6a1b2c3-d4e5-4f6a-3b7c-8d9e0f1a2b3c");
+            var q4 = Guid.Parse("a1b2c3d4-e5f6-4a7b-4c8d-9e0f1a2b3c4d");
+            var q5 = Guid.Parse("bb000001-0000-4000-8000-000000000001");
+            var q6 = Guid.Parse("bb000002-0000-4000-8000-000000000002");
+            var q7 = Guid.Parse("bb000003-0000-4000-8000-000000000003");
+            var q8 = Guid.Parse("bb000004-0000-4000-8000-000000000004");
+            var q9 = Guid.Parse("bb000005-0000-4000-8000-000000000005");
             var q10 = Guid.Parse("bb000006-0000-4000-8000-000000000006");
             var q11 = Guid.Parse("bb000007-0000-4000-8000-000000000007");
             var q12 = Guid.Parse("bb000008-0000-4000-8000-000000000008");
@@ -1195,89 +1219,45 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
 
             modelBuilder.Entity<Question>().HasData(
                 // ── AI / GenAI questions ──
-                new { Id = q1,  Title = "Longest Substring Without Repeating Characters", Content = "Find the longest substring without repeating characters. Explain your approach and time complexity.", InterviewExperienceId = (Guid?)exp1Id, Level = ExperienceLevel.Senior, Round = InterviewRound.TechnicalScreen, Status = QuestionStatus.Approved, Category = QuestionCategory.Coding, ViewCount = 0, SaveCount = 0, Vote = 0, IsHot = true,  CreatedBy = (Guid?)user1Id, CreatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc) },
+                new { Id = q1, Title = "Longest Substring Without Repeating Characters", Content = "Find the longest substring without repeating characters. Explain your approach and time complexity.", InterviewExperienceId = (Guid?)exp1Id, Level = ExperienceLevel.Senior, Round = Intervu.Domain.Entities.Constants.QuestionConstants.InterviewRound.TechnicalScreen, Status = QuestionStatus.Approved, Category = QuestionCategory.Coding, ViewCount = 0, SaveCount = 0, Vote = 0, IsHot = true, CreatedBy = (Guid?)user1Id, CreatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc) },
 
                 // ── Backend Engineering questions ──
-                new { Id = q2,  Title = "Design a URL Shortener like bit.ly", Content = "Design a URL shortener service like bit.ly. Discuss hashing strategy, data storage, redirect flow, analytics, and scaling.", InterviewExperienceId = (Guid?)exp1Id, Level = ExperienceLevel.Senior, Round = InterviewRound.SystemDesignRound, Status = QuestionStatus.Approved, Category = QuestionCategory.SystemDesign, ViewCount = 0, SaveCount = 0, Vote = 0, IsHot = true, CreatedBy = (Guid?)user1Id, CreatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc) },
-                new { Id = q3,  Title = "Explain == vs === in JavaScript", Content = "Explain the difference between == and === in JavaScript. Give examples where they produce different results.", InterviewExperienceId = (Guid?)exp2Id, Level = ExperienceLevel.Middle, Round = InterviewRound.TechnicalScreen, Status = QuestionStatus.Approved, Category = QuestionCategory.Technical, ViewCount = 0, SaveCount = 0, Vote = 0, IsHot = false, CreatedBy = (Guid?)user1Id, CreatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc) },
-                new { Id = q4,  Title = "Reverse a Linked List", Content = "Reverse a singly linked list. Provide both iterative and recursive solutions with time/space complexity analysis.", InterviewExperienceId = (Guid?)exp3Id, Level = ExperienceLevel.Junior, Round = InterviewRound.CodingChallenge, Status = QuestionStatus.Approved, Category = QuestionCategory.Coding, ViewCount = 0, SaveCount = 0, Vote = 0, IsHot = false, CreatedBy = (Guid?)user3Id, CreatedAt = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc) }
+                new { Id = q2, Title = "Design a URL Shortener like bit.ly", Content = "Design a URL shortener service like bit.ly. Discuss hashing strategy, data storage, redirect flow, analytics, and scaling.", InterviewExperienceId = (Guid?)exp1Id, Level = ExperienceLevel.Senior, Round = Intervu.Domain.Entities.Constants.QuestionConstants.InterviewRound.SystemDesignRound, Status = QuestionStatus.Approved, Category = QuestionCategory.SystemDesign, ViewCount = 0, SaveCount = 0, Vote = 0, IsHot = true, CreatedBy = (Guid?)user1Id, CreatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc) },
+                new { Id = q3, Title = "Explain == vs === in JavaScript", Content = "Explain the difference between == and === in JavaScript. Give examples where they produce different results.", InterviewExperienceId = (Guid?)exp2Id, Level = ExperienceLevel.Middle, Round = Intervu.Domain.Entities.Constants.QuestionConstants.InterviewRound.TechnicalScreen, Status = QuestionStatus.Approved, Category = QuestionCategory.Technical, ViewCount = 0, SaveCount = 0, Vote = 0, IsHot = false, CreatedBy = (Guid?)user1Id, CreatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc) },
+                new { Id = q4, Title = "Reverse a Linked List", Content = "Reverse a singly linked list. Provide both iterative and recursive solutions with time/space complexity analysis.", InterviewExperienceId = (Guid?)exp3Id, Level = ExperienceLevel.Junior, Round = Intervu.Domain.Entities.Constants.QuestionConstants.InterviewRound.CodingChallenge, Status = QuestionStatus.Approved, Category = QuestionCategory.Coding, ViewCount = 0, SaveCount = 0, Vote = 0, IsHot = false, CreatedBy = (Guid?)user3Id, CreatedAt = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc) }
             );
 
             // ===================== SEED DATA – QuestionCompany (asked at) =====================
             modelBuilder.Entity<QuestionCompany>().HasData(
                 // Q1: asked at Google
-                new { QuestionId = q1,  CompanyId = googleId },
+                new { QuestionId = q1, CompanyId = googleId },
                 // Q2: asked at Netflix
-                new { QuestionId = q2,  CompanyId = netflixId },
+                new { QuestionId = q2, CompanyId = netflixId },
                 // Q3: asked at Meta
-                new { QuestionId = q3,  CompanyId = metaId },
+                new { QuestionId = q3, CompanyId = metaId },
                 // Q4: asked at Microsoft
-                new { QuestionId = q4,  CompanyId = microsoftId }
+                new { QuestionId = q4, CompanyId = microsoftId }
             );
 
             // ===================== SEED DATA – QuestionRole =====================
             modelBuilder.Entity<QuestionRole>().HasData(
-                new { QuestionId = q1,  Role = Role.SoftwareEngineer },
-                new { QuestionId = q1,  Role = Role.BackendEngineer },
-                new { QuestionId = q2,  Role = Role.BackendEngineer },
-                new { QuestionId = q2,  Role = Role.SoftwareEngineer },
-                new { QuestionId = q3,  Role = Role.FrontendEngineer },
-                new { QuestionId = q3,  Role = Role.FullStackEngineer },
-                new { QuestionId = q4,  Role = Role.SoftwareEngineer },
-                new { QuestionId = q4,  Role = Role.BackendEngineer },
-                new { QuestionId = q5,  Role = Role.MachineLearningEngineer },
-                new { QuestionId = q5,  Role = Role.DataScientist },
-                new { QuestionId = q6,  Role = Role.MachineLearningEngineer },
-                new { QuestionId = q6,  Role = Role.SoftwareEngineer },
-                new { QuestionId = q7,  Role = Role.MachineLearningEngineer },
-                new { QuestionId = q7,  Role = Role.SolutionArchitect },
-                new { QuestionId = q8,  Role = Role.DataEngineer },
-                new { QuestionId = q8,  Role = Role.SoftwareEngineer },
-                new { QuestionId = q9,  Role = Role.DataEngineer },
-                new { QuestionId = q9,  Role = Role.BackendEngineer },
-                new { QuestionId = q10, Role = Role.DataEngineer },
-                new { QuestionId = q10, Role = Role.DataScientist },
-                new { QuestionId = q11, Role = Role.ProductManager },
-                new { QuestionId = q12, Role = Role.ProductManager },
-                new { QuestionId = q13, Role = Role.BackendEngineer },
-                new { QuestionId = q13, Role = Role.SoftwareEngineer },
-                new { QuestionId = q14, Role = Role.BackendEngineer },
-                new { QuestionId = q14, Role = Role.SolutionArchitect },
-                new { QuestionId = q15, Role = Role.SoftwareEngineer },
-                new { QuestionId = q15, Role = Role.SolutionArchitect },
-                new { QuestionId = q16, Role = Role.BackendEngineer },
-                new { QuestionId = q16, Role = Role.SoftwareEngineer }
+                new { QuestionId = q1, Role = Role.SoftwareEngineer },
+                new { QuestionId = q1, Role = Role.BackendEngineer },
+                new { QuestionId = q2, Role = Role.BackendEngineer },
+                new { QuestionId = q2, Role = Role.SoftwareEngineer },
+                new { QuestionId = q3, Role = Role.FrontendEngineer },
+                new { QuestionId = q3, Role = Role.FullStackEngineer },
+                new { QuestionId = q4, Role = Role.SoftwareEngineer },
+                new { QuestionId = q4, Role = Role.BackendEngineer }
             );
 
             // ===================== SEED DATA – QuestionTag =====================
             modelBuilder.Entity<QuestionTag>().HasData(
-                new { QuestionId = q1,  TagId = tagAlgo },
-                new { QuestionId = q2,  TagId = tagSysDes },
-                new { QuestionId = q2,  TagId = tagBackend },
-                new { QuestionId = q3,  TagId = tagFrontend },
-                new { QuestionId = q4,  TagId = tagAlgo },
-                new { QuestionId = q5,  TagId = tagAI },
-                new { QuestionId = q5,  TagId = tagGenAI },
-                new { QuestionId = q6,  TagId = tagAI },
-                new { QuestionId = q6,  TagId = tagGenAI },
-                new { QuestionId = q7,  TagId = tagGenAI },
-                new { QuestionId = q7,  TagId = tagSysDes },
-                new { QuestionId = q8,  TagId = tagSQL },
-                new { QuestionId = q8,  TagId = tagData },
-                new { QuestionId = q9,  TagId = tagSQL },
-                new { QuestionId = q9,  TagId = tagBackend },
-                new { QuestionId = q10, TagId = tagSQL },
-                new { QuestionId = q10, TagId = tagData },
-                new { QuestionId = q11, TagId = tagProdStrat },
-                new { QuestionId = q11, TagId = tagBehavior },
-                new { QuestionId = q12, TagId = tagProdStrat },
-                new { QuestionId = q13, TagId = tagSysDes },
-                new { QuestionId = q13, TagId = tagBackend },
-                new { QuestionId = q14, TagId = tagBackend },
-                new { QuestionId = q14, TagId = tagSysDes },
-                new { QuestionId = q15, TagId = tagSysDes },
-                new { QuestionId = q15, TagId = tagBackend },
-                new { QuestionId = q16, TagId = tagBackend }
+                new { QuestionId = q1, TagId = tagAlgo },
+                new { QuestionId = q2, TagId = tagSysDes },
+                new { QuestionId = q2, TagId = tagBackend },
+                new { QuestionId = q3, TagId = tagFrontend },
+                new { QuestionId = q4, TagId = tagAlgo }
             );
 
             // ===================== SEED DATA – Comments (legacy, kept for backward compat) =====================

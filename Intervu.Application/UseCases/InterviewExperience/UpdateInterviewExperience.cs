@@ -6,7 +6,7 @@ using Intervu.Domain.Repositories;
 
 namespace Intervu.Application.UseCases.InterviewExperience
 {
-public class UpdateInterviewExperience(IUnitOfWork unitOfWork, IMapper mapper)
+    public class UpdateInterviewExperience(IUnitOfWork unitOfWork)
         : IUpdateInterviewExperience
     {
         public async Task ExecuteAsync(Guid id, UpdateInterviewExperienceRequest request, Guid userId)
