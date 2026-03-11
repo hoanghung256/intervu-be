@@ -26,6 +26,7 @@ namespace Intervu.API.Middlewares
                 context.Response.StatusCode = ex.StatusCode;
                 await context.Response.WriteAsJsonAsync(new
                 {
+                    success = false,
                     message = ex.Message
                 });
             }
@@ -36,7 +37,7 @@ namespace Intervu.API.Middlewares
                 context.Response.StatusCode = StatusCodes.Status500InternalServerError;
                 await context.Response.WriteAsJsonAsync(new
                 {
-                    message = "Internal server error"
+                    message = "Something went wrong. Please try again later."
                 });
             }
         }

@@ -47,7 +47,8 @@ namespace Intervu.API.Controllers.v1.Authentication
                     user = response.User,
                     token = response.Token,
                     expiresIn = response.ExpiresIn
-                }
+                },
+                message = "Successful"
             });
         }
 

@@ -1,11 +1,6 @@
 ﻿using Intervu.Domain.Abstractions.Entity;
 using Intervu.Domain.Entities.Constants;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Intervu.Domain.Entities
 {
@@ -13,17 +8,20 @@ namespace Intervu.Domain.Entities
     {
         [Required]
         [MaxLength(150)]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
-        public string Description { get; set; }
+        public string Description { get; set; } = string.Empty;
 
         public bool IsCoding { get; set; }
 
-        [Range(30, 180)]
-        public int DurationMinutes { get; set; }
+        [Range(0, int.MaxValue)]
+        public int MinPrice { get; set; }
 
         [Range(0, int.MaxValue)]
-        public int BasePrice { get; set; }
+        public int MaxPrice { get; set; }
+
+        [Range(15, 300)]
+        public int SuggestedDurationMinutes { get; set; }
 
         public InterviewTypeStatus Status { get; set; }
     }

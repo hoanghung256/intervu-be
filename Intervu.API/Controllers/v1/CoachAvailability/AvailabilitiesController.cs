@@ -12,13 +12,20 @@ namespace Intervu.API.Controllers.v1.CoachAvailability
     public class AvailabilitiesController : ControllerBase
     {
         private readonly IGetCoachAvailabilities _getCoachAvailabilities;
+        private readonly IGetCoachFreeSlots _getCoachFreeSlots;
         private readonly ICreateCoachAvailability _createCoachAvailability;
         private readonly IDeleteCoachAvailability _deleteCoachAvailability;
         private readonly IUpdateCoachAvailability _updateCoachAvailability;
 
-        public AvailabilitiesController(IGetCoachAvailabilities getCoachAvailabilities, ICreateCoachAvailability createCoachAvailability, IDeleteCoachAvailability deleteCoachAvailability, IUpdateCoachAvailability updateCoachAvailability)
+        public AvailabilitiesController(
+            IGetCoachAvailabilities getCoachAvailabilities,
+            IGetCoachFreeSlots getCoachFreeSlots,
+            ICreateCoachAvailability createCoachAvailability,
+            IDeleteCoachAvailability deleteCoachAvailability,
+            IUpdateCoachAvailability updateCoachAvailability)
         {
             _getCoachAvailabilities = getCoachAvailabilities;
+            _getCoachFreeSlots = getCoachFreeSlots;
             _createCoachAvailability = createCoachAvailability;
             _deleteCoachAvailability = deleteCoachAvailability;
             _updateCoachAvailability = updateCoachAvailability;
@@ -27,6 +34,22 @@ namespace Intervu.API.Controllers.v1.CoachAvailability
         public async Task<IActionResult> GetCoachAvailabilities([FromRoute]Guid coachId, [FromQuery] int month = 0, [FromQuery] int year = 0)
         {
             var data = await _getCoachAvailabilities.ExecuteAsync(coachId, month, year);
+            return Ok(new
+            {
+                success = true,
+                message = "Success",
+                data = data
+            });
+        }
+
+        /// <summary>
+        /// Returns computed free time slots (availability minus active bookings).
+        /// Used by candidates to see bookable times on the calendar.
+        /// </summary>
+        [HttpGet("{coachId}/free-slots")]
+        public async Task<IActionResult> GetCoachFreeSlots([FromRoute] Guid coachId, [FromQuery] int month = 0, [FromQuery] int year = 0)
+        {
+            var data = await _getCoachFreeSlots.ExecuteAsync(coachId, month, year);
             return Ok(new
             {
                 success = true,

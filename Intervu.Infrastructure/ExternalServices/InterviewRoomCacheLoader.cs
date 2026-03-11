@@ -22,7 +22,7 @@ namespace Intervu.Infrastructure.ExternalServices
             using var scope = _services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<IntervuPostgreDbContext>();
 
-            var rooms = await db.InterviewRooms.ToListAsync(cancellationToken);
+             var rooms = await db.InterviewRooms.ToListAsync(cancellationToken);
             _cache.SetAll(rooms);
             Console.WriteLine("Successfully add room to cache: " +
     string.Join(", ", rooms.Select(r => $"RoomId: {r.Id}, Status: {r.Status}")));

@@ -16,6 +16,7 @@ using Intervu.API.Utils.Constant;
 using Intervu.API.Utils;
 using Intervu.API.Middlewares;
 using Hangfire;
+using Intervu.Infrastructure.ExternalServices;
 using Newtonsoft.Json;
 
 namespace Intervu.API
@@ -94,6 +95,9 @@ namespace Intervu.API
             builder.Services.AddPersistenceSqlServer(builder.Configuration, builder.Environment);
             builder.Services.AddInfrastructureExternalServices(builder.Configuration);
 
+            // Notification real-time push
+            builder.Services.AddScoped<Intervu.Application.Interfaces.ExternalServices.INotificationPusher, Intervu.API.Services.SignalRNotificationPusher>();
+
             // --- AUTHENTICATION WITH JWT CONFIGURATION ---
             builder.Services.AddAuthentication(options =>
             {
@@ -156,6 +160,14 @@ namespace Intervu.API
                         context.User.IsInRole(UserRole.Candidate.ToString()) ||
                         context.User.IsInRole(UserRole.Admin.ToString()))
                 );
+
+                options.AddPolicy(
+                    AuthorizationPolicies.AllRoles,
+                    policy => policy.RequireAssertion(context =>
+                        context.User.IsInRole(UserRole.Candidate.ToString()) ||
+                        context.User.IsInRole(UserRole.Coach.ToString()) ||
+                        context.User.IsInRole(UserRole.Admin.ToString()))
+                );
             });
 
             // --- CORS CONFIGURATION ---
@@ -193,7 +205,14 @@ namespace Intervu.API
             });
 
             // --- SIGNALR ---
-            builder.Services.AddSignalR();
+            builder.Services.AddSignalR(options =>
+            {
+                // Enable this to see the specific exception message on the frontend in dev and test env
+                options.EnableDetailedErrors = builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing");
+
+                // Changing the default behavior of injected services
+                options.DisableImplicitFromServicesParameters = true;
+            });
 
             var app = builder.Build();
             app.Logger.LogInformation(
@@ -233,7 +252,8 @@ namespace Intervu.API
 
                 app.UseHttpsRedirection();
 
-                app.Use(async (context, next) => {
+                app.Use(async (context, next) =>
+                {
                     context.Response.Headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups";
                     context.Response.Headers["Cross-Origin-Embedder-Policy"] = "require-corp";
                     await next();
@@ -247,10 +267,18 @@ namespace Intervu.API
 
             app.MapControllers();
             app.MapHub<InterviewRoomHub>("/api/v1/hubs/interviewroom");
+            app.MapHub<NotificationHub>("/api/v1/hubs/notification");
+
+            // --- REGISTER RECURRING JOBS ---
+            using (var scope = app.Services.CreateScope())
+            {
+                var jobScheduler = scope.ServiceProvider.GetRequiredService<HangfireJobScheduler>();
+                jobScheduler.RegisterRecurringJobs();
+            }
 
             app.Run();
         }
-            
+
         public static string? GetLocalIPv4()
         {
             foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())

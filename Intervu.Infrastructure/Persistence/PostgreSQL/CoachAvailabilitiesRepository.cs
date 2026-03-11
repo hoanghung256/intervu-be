@@ -14,11 +14,15 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             int year = 0)
         {
             var query = _context.CoachAvailabilities.AsQueryable();
-            var filtered = query.Where(x => x.CoachId == coachId);
+            var filtered = query.Where(x => x.CoachId == coachId && x.Status == CoachAvailabilityStatus.Available);
 
             if (month > 0 && year > 0)
             {
-                filtered = filtered.Where(x => x.StartTime.Month == month && x.StartTime.Year == year);
+                // Use date-range comparison instead of .Month/.Year to avoid
+                // UTC timezone edge cases (e.g. 01:00 AM March 1 UTC+7 = Feb 28 UTC)
+                var startDate = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Utc);
+                var endDate = startDate.AddMonths(1);
+                filtered = filtered.Where(x => x.StartTime >= startDate && x.StartTime < endDate);
             }
             else if (month > 0)
             {
@@ -69,16 +73,14 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             return true;
         }
 
-        public async Task<bool> UpdateCoachAvailabilityAsync(Guid availabilityId, InterviewFocus focus,DateTimeOffset startTime, DateTimeOffset endTime, Guid? typeId)
+        public async Task<bool> UpdateCoachAvailabilityAsync(Guid availabilityId, DateTimeOffset startTime, DateTimeOffset endTime)
         {
             var availability = await _context.CoachAvailabilities.FindAsync(availabilityId);
             if (availability == null)
                 return false;
 
-            availability.Focus = focus;
             availability.StartTime = startTime.UtcDateTime;
             availability.EndTime = endTime.UtcDateTime;
-            availability.TypeId = typeId;
 
             _context.CoachAvailabilities.Update(availability);
             await _context.SaveChangesAsync();
@@ -91,30 +93,14 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .FirstOrDefaultAsync(a => a.CoachId == coachId && a.StartTime == startTime);
         }
 
-        public async Task ExpireReservedSlot(Guid availabilityId, Guid reseverForUserId)
+        public Task<CoachAvailability?> FindContainingAvailabilityAsync(Guid coachId, DateTime startTime, DateTime endTime)
         {
-            var slot = await _context.CoachAvailabilities.FindAsync(availabilityId);
-            if (slot == null || slot.Status != CoachAvailabilityStatus.Reserved || slot.ReservingForUserId != reseverForUserId)
-            {
-                return;
-            }
-
-            slot.Status = CoachAvailabilityStatus.Available;
-            slot.ReservingForUserId = null;
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task ReserveForSlot(Guid availabilityId, Guid reseverForUserId)
-        {
-            var slot = await _context.CoachAvailabilities.FindAsync(availabilityId);
-            if (slot == null || slot.Status != CoachAvailabilityStatus.Reserved || slot.ReservingForUserId != reseverForUserId)
-            {
-                return;
-            }
-
-            slot.Status = CoachAvailabilityStatus.Reserved;
-            slot.ReservingForUserId = reseverForUserId;
-            await _context.SaveChangesAsync();
+            return _context.CoachAvailabilities
+                .FirstOrDefaultAsync(a =>
+                    a.CoachId == coachId
+                    && a.Status == CoachAvailabilityStatus.Available
+                    && a.StartTime <= startTime
+                    && a.EndTime >= endTime);
         }
     }
 }

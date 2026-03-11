@@ -45,7 +45,13 @@ namespace Intervu.API.Controllers.v1.Payment
         {
             _ = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
 
-            string? checkOutUrl = await _createBookingCheckoutUrl.ExecuteAsync(userId, request.CoachId, request.CoachAvailabilityId, request.ReturnUrl);
+            string? checkOutUrl = await _createBookingCheckoutUrl.ExecuteAsync(
+                userId,
+                request.CoachId,
+                request.CoachAvailabilityId,
+                request.CoachInterviewServiceId,
+                request.StartTime,
+                request.ReturnUrl);
 
             return Ok(new
             {

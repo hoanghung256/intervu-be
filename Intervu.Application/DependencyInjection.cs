@@ -41,8 +41,18 @@ using Intervu.Application.UseCases.CandidateProfile;
 using Intervu.Application.Interfaces.UseCases.RescheduleRequest;
 using Intervu.Application.UseCases.RescheduleRequest;
 using Intervu.Application.UseCases.InterviewType;
+using Intervu.Application.Interfaces.UseCases.InterviewExperience;
+using Intervu.Application.UseCases.InterviewExperience;
+using Intervu.Application.Interfaces.UseCases.Question;
+using Intervu.Application.UseCases.Question;
+using Intervu.Application.Interfaces.UseCases.Comment;
+using Intervu.Application.UseCases.Comment;
 using Intervu.Domain.Abstractions.Policies.Interfaces;
 using Intervu.Domain.Abstractions.Policies;
+using BookingRequestInterfaces = Intervu.Application.Interfaces.UseCases.BookingRequest;
+using BookingRequestUseCases = Intervu.Application.UseCases.BookingRequest;
+using CoachServiceInterfaces = Intervu.Application.Interfaces.UseCases.CoachInterviewService;
+using CoachServiceUseCases = Intervu.Application.UseCases.CoachInterviewService;
 
 namespace Intervu.Application
 {
@@ -103,13 +113,14 @@ namespace Intervu.Application
 
             // ----- Coach Availability ----
             services.AddScoped<IGetCoachAvailabilities, GetCoachAvailabilities>();
+            services.AddScoped<IGetCoachFreeSlots, GetCoachFreeSlots>();
             services.AddScoped<ICreateCoachAvailability, CreateCoachAvailability>();
             services.AddScoped<IDeleteCoachAvailability, DeleteCoachAvailability>();
             services.AddScoped<IUpdateAvailabilityStatus, UpdateAvailabilityStatus>();
             services.AddScoped<IUpdateCoachAvailability, UpdateCoachAvailability>();
             // ----- Email ----
             services.AddScoped<ISendBookingConfirmationEmail, SendBookingConfirmationEmail>();
-          
+
             // ----- UserProfile ----
             services.AddScoped<IGetUserProfile, GetUserProfile>();
             services.AddScoped<IUpdateUserProfile, UpdateUserProfile>();
@@ -146,6 +157,49 @@ namespace Intervu.Application
             services.AddScoped<IUpdateInterviewType, UpdateInterviewType>();
             services.AddScoped<ICreateInterviewType, CreateInterviewType>();
             services.AddScoped<IDeleteInterviewType, DeleteInterviewType>();
+
+            // --- Interview Experience ---
+            services.AddScoped<IGetInterviewExperiences, GetInterviewExperiences>();
+            services.AddScoped<IGetInterviewExperienceDetail, GetInterviewExperienceDetail>();
+            services.AddScoped<ICreateInterviewExperience, CreateInterviewExperience>();
+            services.AddScoped<IUpdateInterviewExperience, UpdateInterviewExperience>();
+            services.AddScoped<IDeleteInterviewExperience, DeleteInterviewExperience>();
+            services.AddScoped<IAddQuestion, AddQuestion>();
+            services.AddScoped<IUpdateQuestion, UpdateQuestion>();
+            services.AddScoped<IDeleteQuestion, DeleteQuestion>();
+            services.AddScoped<IGetQuestionList, GetQuestionList>();
+            services.AddScoped<IGetQuestionDetail, GetQuestionDetail>();
+            services.AddScoped<ISearchQuestions, SearchQuestions>();
+
+            // --- Comments ---
+            services.AddScoped<IGetComments, GetComments>();
+            services.AddScoped<IAddComment, AddComment>();
+            services.AddScoped<IUpdateComment, UpdateComment>();
+            services.AddScoped<IDeleteComment, DeleteComment>();
+
+            // --- Likes & Saves ---
+            services.AddScoped<ILikeQuestion, LikeQuestion>();
+            services.AddScoped<ISaveQuestion, SaveQuestion>();
+            services.AddScoped<IGetSavedQuestions, GetSavedQuestions>();
+            services.AddScoped<ILikeComment, LikeComment>();
+
+            // ----- CoachInterviewService ----
+            services.AddScoped<CoachServiceInterfaces.ICreateCoachInterviewService, CoachServiceUseCases.CreateCoachInterviewService>();
+            services.AddScoped<CoachServiceInterfaces.IUpdateCoachInterviewService, CoachServiceUseCases.UpdateCoachInterviewService>();
+            services.AddScoped<CoachServiceInterfaces.IDeleteCoachInterviewService, CoachServiceUseCases.DeleteCoachInterviewService>();
+            services.AddScoped<CoachServiceInterfaces.IGetCoachInterviewServices, CoachServiceUseCases.GetCoachInterviewServices>();
+
+            // ----- BookingRequest ----
+            services.AddScoped<BookingRequestInterfaces.ICreateJDBookingRequest, BookingRequestUseCases.CreateJDBookingRequest>();
+            services.AddScoped<BookingRequestInterfaces.IRespondToBookingRequest, BookingRequestUseCases.RespondToBookingRequest>();
+            services.AddScoped<BookingRequestInterfaces.IGetBookingRequests, BookingRequestUseCases.GetBookingRequests>();
+            services.AddScoped<BookingRequestInterfaces.IGetBookingRequestDetail, BookingRequestUseCases.GetBookingRequestDetail>();
+            services.AddScoped<BookingRequestInterfaces.IExpireBookingRequests, BookingRequestUseCases.ExpireBookingRequests>();
+            services.AddScoped<BookingRequestInterfaces.IPayBookingRequest, BookingRequestUseCases.PayBookingRequest>();
+            services.AddScoped<BookingRequestInterfaces.ICancelBookingRequest, BookingRequestUseCases.CancelBookingRequest>();
+            
+            // ----- Notification ----
+            services.AddScoped<Interfaces.UseCases.Notification.INotificationUseCase, UseCases.Notification.NotificationUseCase>();
 
             return services;
         }

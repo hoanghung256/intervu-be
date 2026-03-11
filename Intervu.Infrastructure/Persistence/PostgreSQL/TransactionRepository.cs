@@ -55,6 +55,35 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .ToListAsync();
 
             return (items, total);
+        public async Task<bool> HasOverlappingBookingAsync(Guid coachId, DateTime startTime, DateTime endTime)
+        {
+            return await _context.InterviewBookingTransaction
+                .AnyAsync(t =>
+                    t.CoachId == coachId
+                    && t.Type == TransactionType.Payment
+                    && (t.Status == TransactionStatus.Created || t.Status == TransactionStatus.Paid)
+                    && t.BookedStartTime.HasValue
+                    && t.BookedDurationMinutes.HasValue
+                    && t.BookedStartTime.Value < endTime
+                    && t.BookedStartTime.Value.AddMinutes(t.BookedDurationMinutes.Value) > startTime
+                );
+        }
+
+        public async Task<List<InterviewBookingTransaction>> GetActiveBookingsByCoachAsync(
+            Guid coachId, DateTime rangeStart, DateTime rangeEnd)
+        {
+            return await _context.InterviewBookingTransaction
+                .Where(t =>
+                    t.CoachId == coachId
+                    && t.Type == TransactionType.Payment
+                    && (t.Status == TransactionStatus.Created || t.Status == TransactionStatus.Paid)
+                    && t.BookedStartTime.HasValue
+                    && t.BookedDurationMinutes.HasValue
+                    && t.BookedStartTime.Value < rangeEnd
+                    && t.BookedStartTime.Value.AddMinutes(t.BookedDurationMinutes.Value) > rangeStart
+                )
+                .AsNoTracking()
+                .ToListAsync();
         }
     }
 }
