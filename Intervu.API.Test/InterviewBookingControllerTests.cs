@@ -96,7 +96,12 @@ namespace Intervu.API.Test
 
         private class DummyCreateBookingCheckoutUrl : ICreateBookingCheckoutUrl
         {
-            public Task<string?> ExecuteAsync(Guid candidateId, Guid coachId, Guid coachAvailabilityId, string returnUrl)
+            public Task<string?> ExecuteAsync(Guid candidateId,
+                Guid coachId,
+                Guid coachAvailabilityId,
+                Guid coachInterviewServiceId,
+                DateTime startTime,
+                string returnUrl)
             {
                 return Task.FromResult<string?>(null);
             }

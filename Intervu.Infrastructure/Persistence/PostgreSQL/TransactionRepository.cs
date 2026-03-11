@@ -55,6 +55,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .ToListAsync();
 
             return (items, total);
+        }
+
         public async Task<bool> HasOverlappingBookingAsync(Guid coachId, DateTime startTime, DateTime endTime)
         {
             return await _context.InterviewBookingTransaction

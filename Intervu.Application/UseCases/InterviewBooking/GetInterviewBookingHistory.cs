@@ -31,7 +31,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 Id = t.Id,
                 OrderCode = t.OrderCode,
                 UserId = t.UserId,
-                CoachAvailabilityId = t.CoachAvailabilityId,
+                CoachAvailabilityId = (Guid)t.CoachAvailabilityId,
                 CoachId = t.CoachAvailability?.CoachId,
                 StartTime = t.CoachAvailability?.StartTime,
                 EndTime = t.CoachAvailability?.EndTime,
