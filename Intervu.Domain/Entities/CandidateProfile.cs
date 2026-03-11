@@ -21,5 +21,10 @@ namespace Intervu.Domain.Entities
         public string? Bio { get; set; }
 
         public int CurrentAmount { get; set; }
+
+        /// <summary>
+        /// JSON list of saved question snapshots. Nullable.
+        /// </summary>
+        public List<QuestionSnapshot>? SavedQuestions { get; set; }
     }
 }

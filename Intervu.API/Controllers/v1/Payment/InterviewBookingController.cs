@@ -21,19 +21,22 @@ namespace Intervu.API.Controllers.v1.Payment
         private readonly IHandldeInterviewBookingUpdate _handldeInterviewBookingUpdate;
         private readonly IGetInterviewBooking _getInterviewBooking;
         private readonly ICancelInterview _cancelInterview;
+        private readonly IGetInterviewBookingHistory _getInterviewBookingHistory;
 
         public InterviewBookingController(
             ILogger<InterviewBookingController> logger,
             ICreateBookingCheckoutUrl createBookingCheckoutUrl,
             IGetInterviewBooking getInterviewBooking,
             IHandldeInterviewBookingUpdate handldeInterviewBookingUpdate,
-            ICancelInterview cancelInterview)
+            ICancelInterview cancelInterview,
+            IGetInterviewBookingHistory getInterviewBookingHistory)
         {
             _logger = logger;
             _createBookingCheckoutUrl = createBookingCheckoutUrl;
             _handldeInterviewBookingUpdate = handldeInterviewBookingUpdate;
             _getInterviewBooking = getInterviewBooking;
             _cancelInterview = cancelInterview;
+            _getInterviewBookingHistory = getInterviewBookingHistory;
         }
 
         [HttpPost]
@@ -42,7 +45,13 @@ namespace Intervu.API.Controllers.v1.Payment
         {
             _ = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
 
-            string? checkOutUrl = await _createBookingCheckoutUrl.ExecuteAsync(userId, request.CoachId, request.CoachAvailabilityId, request.ReturnUrl);
+            string? checkOutUrl = await _createBookingCheckoutUrl.ExecuteAsync(
+                userId,
+                request.CoachId,
+                request.CoachAvailabilityId,
+                request.CoachInterviewServiceId,
+                request.StartTime,
+                request.ReturnUrl);
 
             return Ok(new
             {
@@ -79,6 +88,22 @@ namespace Intervu.API.Controllers.v1.Payment
             {
                 success = true,
                 data = t
+            });
+        }
+
+        [HttpGet("history")]
+        [Authorize(Policy = AuthorizationPolicies.CandidateOrInterviewer)]
+        public async Task<IActionResult> GetHistory([FromQuery] GetInterviewBookingHistoryRequest request)
+        {
+            _ = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
+
+            var history = await _getInterviewBookingHistory.ExecuteAsync(userId, request);
+
+            return Ok(new
+            {
+                success = true,
+                message = "Success",
+                data = history
             });
         }
 

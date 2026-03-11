@@ -1,6 +1,7 @@
 ﻿using Intervu.Domain.Abstractions.Entity;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
+using Intervu.Domain.Entities.Constants.QuestionConstants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using System.Linq.Expressions;
@@ -27,12 +28,23 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
         public DbSet<InterviewBookingTransaction> InterviewBookingTransaction { get; set; }
         public DbSet<InterviewRescheduleRequest> InterviewRescheduleRequests { get; set; }
         public DbSet<Notification> Notifications { get; set; }
-        public DbSet<NotificationReceive> NotificationReceives { get; set; }
         public DbSet<Company> Companies { get; set; }
         public DbSet<Skill> Skills { get; set; }
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<InterviewType> InterviewTypes { get; set; }
+        public DbSet<InterviewExperience> InterviewExperiences { get; set; }
+        public DbSet<Question> Questions { get; set; }
+        public DbSet<Comment> Comments { get; set; }
+        public DbSet<Tag> Tags { get; set; }
+        public DbSet<QuestionTag> QuestionTags { get; set; }
+        public DbSet<QuestionCompany> QuestionCompanies { get; set; }
+        public DbSet<QuestionRole> QuestionRoles { get; set; }
+        public DbSet<UserQuestionLike> UserQuestionLikes { get; set; }
+        public DbSet<UserCommentLike> UserCommentLikes { get; set; }
+        public DbSet<CoachInterviewService> CoachInterviewServices { get; set; }
+        public DbSet<BookingRequest> BookingRequests { get; set; }
+        public DbSet<Intervu.Domain.Entities.InterviewRound> InterviewRounds { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -90,6 +102,21 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.PortfolioUrl).HasMaxLength(1000);
                 b.Property(x => x.Bio).HasColumnType("text");
 
+                var savedQuestionComparer = new Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer<System.Collections.Generic.List<Intervu.Domain.Entities.QuestionSnapshot>>(
+                    (c1, c2) => System.Text.Json.JsonSerializer.Serialize(c1, (System.Text.Json.JsonSerializerOptions?)null) == System.Text.Json.JsonSerializer.Serialize(c2, (System.Text.Json.JsonSerializerOptions?)null),
+                    c => c == null ? 0 : System.Text.Json.JsonSerializer.Serialize(c, (System.Text.Json.JsonSerializerOptions?)null).GetHashCode(),
+                    c => System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<Intervu.Domain.Entities.QuestionSnapshot>>(System.Text.Json.JsonSerializer.Serialize(c, (System.Text.Json.JsonSerializerOptions?)null), (System.Text.Json.JsonSerializerOptions?)null)!);
+
+                // Saved questions stored as JSONB (nullable)
+                b.Property(x => x.SavedQuestions)
+                 .HasColumnName("SavedQuestions")
+                 .HasColumnType("jsonb")
+                 .HasConversion(
+                     v => v == null ? null : System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
+                     v => v == null ? null : System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<Intervu.Domain.Entities.QuestionSnapshot>>(v, (System.Text.Json.JsonSerializerOptions?)null))
+                 .IsRequired(false)
+                 .Metadata.SetValueComparer(savedQuestionComparer);
+
                 // Explicitly map navigation to User (like CoachProfile)
                 b.HasOne(x => x.User)
                  .WithOne()
@@ -129,6 +156,21 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                  .HasForeignKey<CoachProfile>(p => p.Id)
                  .OnDelete(DeleteBehavior.Cascade);
 
+                var savedQuestionComparer = new Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer<System.Collections.Generic.List<Intervu.Domain.Entities.QuestionSnapshot>>(
+                    (c1, c2) => System.Text.Json.JsonSerializer.Serialize(c1, (System.Text.Json.JsonSerializerOptions?)null) == System.Text.Json.JsonSerializer.Serialize(c2, (System.Text.Json.JsonSerializerOptions?)null),
+                    c => c == null ? 0 : System.Text.Json.JsonSerializer.Serialize(c, (System.Text.Json.JsonSerializerOptions?)null).GetHashCode(),
+                    c => System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<Intervu.Domain.Entities.QuestionSnapshot>>(System.Text.Json.JsonSerializer.Serialize(c, (System.Text.Json.JsonSerializerOptions?)null), (System.Text.Json.JsonSerializerOptions?)null)!);
+
+                // Saved questions stored as JSONB (nullable)
+                b.Property(x => x.SavedQuestions)
+                 .HasColumnName("SavedQuestions")
+                 .HasColumnType("jsonb")
+                 .HasConversion(
+                     v => v == null ? null : System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
+                     v => v == null ? null : System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<Intervu.Domain.Entities.QuestionSnapshot>>(v, (System.Text.Json.JsonSerializerOptions?)null))
+                 .IsRequired(false)
+                 .Metadata.SetValueComparer(savedQuestionComparer);
+
                 b.HasMany(x => x.Companies)
                  .WithMany(c => c.CoachProfiles)
                  .UsingEntity<Dictionary<string, object>>(
@@ -155,35 +197,21 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             });
 
 
-            // CoachAvailability (many availabilities per coach)
+            // CoachAvailability (available time ranges per coach)
             modelBuilder.Entity<CoachAvailability>(b =>
             {
                 b.ToTable("CoachAvailabilities");
                 b.HasKey(x => x.Id);
-                b.Property(x => x.Focus)
-                .HasConversion<int>()
-                .IsRequired();
 
                 b.Property(x => x.StartTime).IsRequired();
                 b.Property(x => x.EndTime).IsRequired();
+                b.Property(x => x.Status).IsRequired();
 
                 b.HasOne(x => x.CoachProfile)
                 .WithMany()
                 .HasForeignKey(x => x.CoachId)
                 .HasConstraintName("FK_CoachAvailabilities_CoachProfiles_CoachId")
                 .OnDelete(DeleteBehavior.Restrict);
-
-                b.HasOne(x => x.ReservingForUser)
-                .WithMany()
-                .HasForeignKey(x => x.ReservingForUserId)
-                .HasConstraintName("FK_CoachAvailabilities_Users_ReservingForUserId")
-                .OnDelete(DeleteBehavior.Restrict);
-
-                b.HasOne<InterviewType>()
-                 .WithMany()
-                  .HasForeignKey(x => x.TypeId).IsRequired(false)
-                  .HasConstraintName("FK_CoachAvailabilities_InterviewTypes_TypeId")
-                 .OnDelete(DeleteBehavior.SetNull);
             });
 
             // InterviewRoom
@@ -203,19 +231,31 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                     WriteIndented = false
                 };
 
+                var dictComparer = new Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer<Dictionary<string, string>>(
+                    (c1, c2) => JsonSerializer.Serialize(c1, jsonOptions) == JsonSerializer.Serialize(c2, jsonOptions),
+                    c => c == null ? 0 : JsonSerializer.Serialize(c, jsonOptions).GetHashCode(),
+                    c => JsonSerializer.Deserialize<Dictionary<string, string>>(JsonSerializer.Serialize(c, jsonOptions), jsonOptions)!);
+
                 b.Property(x => x.LanguageCodes)
                     .HasColumnName("LanguageCodes")
                     .HasConversion(
                         v => JsonSerializer.Serialize(v, jsonOptions),
                         v => JsonSerializer.Deserialize<Dictionary<string, string>>(v, jsonOptions))
-                    .HasColumnType("text");
+                    .HasColumnType("text")
+                    .Metadata.SetValueComparer(dictComparer);
+
+                var objArrayComparer = new Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer<object[]>(
+                    (c1, c2) => JsonSerializer.Serialize(c1, jsonOptions) == JsonSerializer.Serialize(c2, jsonOptions),
+                    c => c == null ? 0 : JsonSerializer.Serialize(c, jsonOptions).GetHashCode(),
+                    c => JsonSerializer.Deserialize<object[]>(JsonSerializer.Serialize(c, jsonOptions), jsonOptions)!);
 
                 b.Property(x => x.TestCases)
                     .HasColumnName("TestCases")
                     .HasConversion(
                         v => JsonSerializer.Serialize(v, jsonOptions),
                         v => JsonSerializer.Deserialize<object[]>(v, jsonOptions))
-                    .HasColumnType("text");
+                    .HasColumnType("text")
+                    .Metadata.SetValueComparer(objArrayComparer);
 
                 b.Property(x => x.CurrentLanguage).HasColumnName("CurrentLanguage").HasMaxLength(50);
                 b.Property(x => x.ProblemDescription).HasColumnName("ProblemDescription").HasColumnType("text");
@@ -242,8 +282,30 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.HasOne(x => x.CurrentAvailability)
                  .WithMany()
                  .HasForeignKey(x => x.CurrentAvailabilityId)
+                 .IsRequired(false)
                  .HasConstraintName("FK_InterviewRooms_CoachAvailabilities_CurrentAvailabilityId")
                  .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasOne(x => x.BookingRequest)
+                 .WithMany()
+                 .HasForeignKey(x => x.BookingRequestId)
+                 .IsRequired(false)
+                 .HasConstraintName("FK_InterviewRooms_BookingRequests_BookingRequestId")
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasOne(x => x.CoachInterviewService)
+                 .WithMany()
+                 .HasForeignKey(x => x.CoachInterviewServiceId)
+                 .IsRequired(false)
+                 .HasConstraintName("FK_InterviewRooms_CoachInterviewServices_CoachInterviewServiceId")
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                b.Property(x => x.AimLevel)
+                 .HasConversion<int?>()
+                 .IsRequired(false);
+
+                b.Property(x => x.RoundNumber)
+                 .IsRequired(false);
             });
 
             // Feedback
@@ -282,14 +344,21 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.HasKey(x => x.Id);
                 b.Property(x => x.OrderCode).UseIdentityByDefaultColumn();
                 b.Property(x => x.Amount).IsRequired();
-                b.Property(x => x.CoachAvailabilityId).IsRequired();
                 b.Property(x => x.Type).IsRequired();
                 b.Property(x => x.Status).IsRequired();
 
                 b.HasOne(x => x.CoachAvailability)
                 .WithMany(x => x.InterviewBookingTransactions)
                 .HasForeignKey(x => x.CoachAvailabilityId)
+                .IsRequired(false)
                 .HasConstraintName("FK_InterviewBookingTransaction_CoachAvailabilities_CoachAvailabilityId")
+                .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasOne(x => x.BookingRequest)
+                .WithMany(x => x.Transactions)
+                .HasForeignKey(x => x.BookingRequestId)
+                .IsRequired(false)
+                .HasConstraintName("FK_InterviewBookingTransaction_BookingRequests_BookingRequestId")
                 .OnDelete(DeleteBehavior.Restrict);
 
                 b.HasOne(x => x.User)
@@ -304,7 +373,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             {
                 b.ToTable("InterviewRescheduleRequests");
                 b.HasKey(x => x.Id);
-                
+
                 b.Property(x => x.InterviewRoomId).IsRequired();
                 b.Property(x => x.CurrentAvailabilityId).IsRequired();
                 b.Property(x => x.ProposedAvailabilityId).IsRequired();
@@ -357,26 +426,25 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             {
                 b.ToTable("Notifications");
                 b.HasKey(x => x.Id);
-                b.Property(x => x.Title).HasMaxLength(255);
-                b.Property(x => x.Message).HasColumnType("text");
-                b.Property(x => x.CreatedAt).IsRequired();
-            });
+                b.Property(x => x.UserId).IsRequired();
+                b.Property(x => x.Type).HasConversion<int>().IsRequired();
+                b.Property(x => x.Title).HasMaxLength(200).IsRequired();
+                b.Property(x => x.Message).HasColumnType("text").IsRequired();
+                b.Property(x => x.ActionUrl).HasMaxLength(500);
+                b.Property(x => x.IsRead).IsRequired().HasDefaultValue(false);
+                b.Property(x => x.CreatedAt).IsRequired().HasDefaultValueSql("NOW()");
 
-            // NotificationReceive (join)
-            modelBuilder.Entity<NotificationReceive>(b =>
-            {
-                b.ToTable("NotificationReceives");
-                b.HasKey(x => new { x.NotificationId, x.ReceiverId });
-
-                b.HasOne<Notification>()
+                b.HasOne(x => x.User)
                  .WithMany()
-                 .HasForeignKey(x => x.NotificationId)
+                 .HasForeignKey(x => x.UserId)
+                 .HasConstraintName("FK_Notifications_Users_UserId")
                  .OnDelete(DeleteBehavior.Cascade);
 
-                b.HasOne<User>()
-                 .WithMany()
-                 .HasForeignKey(x => x.ReceiverId)
-                 .OnDelete(DeleteBehavior.Cascade);
+                b.HasIndex(x => new { x.UserId, x.CreatedAt })
+                 .IsDescending(false, true);
+
+                // Partial-index equivalent: fast unread count
+                b.HasIndex(x => new { x.UserId, x.IsRead });
             });
 
             modelBuilder.Entity<Company>(b =>
@@ -451,11 +519,117 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                       .IsRequired()
                       .HasMaxLength(150);
 
-                entity.Property(e => e.BasePrice)
+                entity.Property(e => e.MinPrice)
                       .HasDefaultValue(0);
+
+                entity.Property(e => e.MaxPrice)
+                      .HasDefaultValue(0);
+
+                entity.Property(e => e.SuggestedDurationMinutes)
+                      .HasDefaultValue(60);
 
                 entity.Property(e => e.Status)
                       .HasConversion<int>();
+            });
+
+            // CoachInterviewService (many-to-many with payload: Coach × InterviewType)
+            modelBuilder.Entity<CoachInterviewService>(b =>
+            {
+                b.ToTable("CoachInterviewServices");
+                b.HasKey(x => x.Id);
+
+                b.Property(x => x.Price).IsRequired();
+                b.Property(x => x.DurationMinutes).IsRequired();
+
+                b.HasOne(x => x.CoachProfile)
+                 .WithMany(c => c.InterviewServices)
+                 .HasForeignKey(x => x.CoachId)
+                 .HasConstraintName("FK_CoachInterviewServices_CoachProfiles_CoachId")
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasOne(x => x.InterviewType)
+                 .WithMany()
+                 .HasForeignKey(x => x.InterviewTypeId)
+                 .HasConstraintName("FK_CoachInterviewServices_InterviewTypes_InterviewTypeId")
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasIndex(x => new { x.CoachId, x.InterviewTypeId })
+                 .IsUnique()
+                 .HasDatabaseName("IX_CoachInterviewServices_CoachId_InterviewTypeId");
+            });
+
+            // BookingRequest (Flow B: External, Flow C: JD Multi-Round)
+            modelBuilder.Entity<BookingRequest>(b =>
+            {
+                b.ToTable("BookingRequests");
+                b.HasKey(x => x.Id);
+
+                b.Property(x => x.Type).HasConversion<int>().IsRequired();
+                b.Property(x => x.Status).HasConversion<int>().IsRequired();
+                b.Property(x => x.AimLevel).HasConversion<int?>().IsRequired(false);
+                b.Property(x => x.TotalAmount).IsRequired();
+                b.Property(x => x.JobDescriptionUrl).HasMaxLength(1000);
+                b.Property(x => x.CVUrl).HasMaxLength(1000);
+                b.Property(x => x.RejectionReason).HasColumnType("text");
+
+                b.HasOne(x => x.Candidate)
+                 .WithMany()
+                 .HasForeignKey(x => x.CandidateId)
+                 .HasConstraintName("FK_BookingRequests_CandidateProfiles_CandidateId")
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasOne(x => x.Coach)
+                 .WithMany()
+                 .HasForeignKey(x => x.CoachId)
+                 .HasConstraintName("FK_BookingRequests_CoachProfiles_CoachId")
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasOne(x => x.CoachInterviewService)
+                 .WithMany()
+                 .HasForeignKey(x => x.CoachInterviewServiceId)
+                 .IsRequired(false)
+                 .HasConstraintName("FK_BookingRequests_CoachInterviewServices_CoachInterviewServiceId")
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasIndex(x => x.Status);
+                b.HasIndex(x => x.CandidateId);
+                b.HasIndex(x => x.CoachId);
+                b.HasIndex(x => x.ExpiresAt);
+            });
+
+            // InterviewRound (multi-round for Flow C JD interviews)
+            modelBuilder.Entity<Intervu.Domain.Entities.InterviewRound>(b =>
+            {
+                b.ToTable("InterviewRounds");
+                b.HasKey(x => x.Id);
+
+                b.Property(x => x.RoundNumber).IsRequired();
+                b.Property(x => x.StartTime).IsRequired();
+                b.Property(x => x.EndTime).IsRequired();
+                b.Property(x => x.Price).IsRequired();
+
+                b.HasOne(x => x.BookingRequest)
+                 .WithMany(br => br.Rounds)
+                 .HasForeignKey(x => x.BookingRequestId)
+                 .HasConstraintName("FK_InterviewRounds_BookingRequests_BookingRequestId")
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasOne(x => x.CoachInterviewService)
+                 .WithMany()
+                 .HasForeignKey(x => x.CoachInterviewServiceId)
+                 .HasConstraintName("FK_InterviewRounds_CoachInterviewServices_CoachInterviewServiceId")
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasOne(x => x.InterviewRoom)
+                 .WithMany()
+                 .HasForeignKey(x => x.InterviewRoomId)
+                 .IsRequired(false)
+                 .HasConstraintName("FK_InterviewRounds_InterviewRooms_InterviewRoomId")
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasIndex(x => new { x.BookingRequestId, x.RoundNumber })
+                 .IsUnique()
+                 .HasDatabaseName("IX_InterviewRounds_BookingRequestId_RoundNumber");
             });
 
             /// <summary>
@@ -495,7 +669,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
 
             var room1Id = Guid.Parse("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a66");
             var CoachAvail1Id = Guid.Parse("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77");
-            
+
             // Additional test data for reschedule functionality
             var CoachAvail2Id = Guid.Parse("aaaaaaaa-1111-4a1a-8a1a-111111111111"); // For reschedule testing
 
@@ -620,17 +794,17 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 {
                     Id = CoachAvail1Id,
                     CoachId = user2Id,
-                    StartTime = DateTime.SpecifyKind(new DateTime(2026, 2, 10, 9, 0, 0), DateTimeKind.Utc), // Match room1's ScheduledTime
-                    EndTime = DateTime.SpecifyKind(new DateTime(2026, 2, 10, 10, 0, 0), DateTimeKind.Utc),
-                    Status = CoachAvailabilityStatus.Booked // Already booked
+                    StartTime = DateTime.SpecifyKind(new DateTime(2026, 2, 10, 9, 0, 0), DateTimeKind.Utc),
+                    EndTime = DateTime.SpecifyKind(new DateTime(2026, 2, 10, 12, 0, 0), DateTimeKind.Utc),
+                    Status = CoachAvailabilityStatus.Available
                 },
-                // Proposed availability for reschedule (available future slot)
+                // Another availability range
                 new CoachAvailability
                 {
                     Id = CoachAvail2Id,
                     CoachId = user2Id,
-                    StartTime = DateTime.SpecifyKind(new DateTime(2026, 3, 15, 14, 0, 0), DateTimeKind.Utc), // Future date for reschedule
-                    EndTime = DateTime.SpecifyKind(new DateTime(2026, 3, 15, 15, 0, 0), DateTimeKind.Utc),
+                    StartTime = DateTime.SpecifyKind(new DateTime(2026, 3, 15, 14, 0, 0), DateTimeKind.Utc),
+                    EndTime = DateTime.SpecifyKind(new DateTime(2026, 3, 15, 17, 0, 0), DateTimeKind.Utc),
                     Status = CoachAvailabilityStatus.Available
                 }
             );
@@ -688,12 +862,15 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             modelBuilder.Entity<Notification>().HasData(new Notification
             {
                 Id = Guid.Parse("0a1b2c3d-4e5f-4a6b-8c9d-0e1f2a3b4c20"),
+                UserId = user1Id,
+                Type = Intervu.Domain.Entities.Constants.NotificationType.SystemAnnouncement,
                 Title = "Welcome",
                 Message = "Welcome to Intervu platform",
+                ActionUrl = null,
+                ReferenceId = null,
+                IsRead = false,
                 CreatedAt = DateTime.SpecifyKind(new DateTime(2025, 10, 1), DateTimeKind.Utc)
             });
-
-            modelBuilder.Entity<NotificationReceive>().HasData(new { NotificationId = Guid.Parse("0a1b2c3d-4e5f-4a6b-8c9d-0e1f2a3b4c20"), ReceiverId = user1Id });
 
             modelBuilder.Entity<Company>().HasData(
                 new Company { Id = Guid.Parse("11111111-1111-4111-8111-111111111111"), Name = "Google", Website = "https://google.com", LogoPath = "logos/google.png" },
@@ -705,7 +882,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 new Company { Id = Guid.Parse("77777777-7777-4777-8777-777777777777"), Name = "Apple", Website = "https://apple.com", LogoPath = "logos/apple.png" },
                 new Company { Id = Guid.Parse("88888888-8888-4888-8888-888888888888"), Name = "Uber", Website = "https://uber.com", LogoPath = "logos/uber.png" },
                 new Company { Id = Guid.Parse("99999999-9999-4999-8999-999999999999"), Name = "Spotify", Website = "https://spotify.com", LogoPath = "logos/spotify.png" },
-                new Company { Id = Guid.Parse("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"), Name = "Stripe", Website = "https://stripe.com", LogoPath = "logos/stripe.png" }
+                new Company { Id = Guid.Parse("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"), Name = "Stripe", Website = "https://stripe.com", LogoPath = "logos/stripe.png" },
+                new Company { Id = Guid.Parse("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"), Name = "Shopee", Website = "https://shopee.com", LogoPath = "logos/shopee.png" }
             );
 
             modelBuilder.Entity<Skill>().HasData(
@@ -773,6 +951,327 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 new { CoachProfilesId = user6Id, SkillsId = Guid.Parse("0a0a0a0a-0a0a-4a0a-8a0a-0a0a0a0a0a0a") }
             );
 
+            // InterviewExperience
+            modelBuilder.Entity<InterviewExperience>(b =>
+            {
+                b.ToTable("InterviewExperiences");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.CompanyId).IsRequired();
+                b.HasOne(x => x.Company)
+                    .WithMany()
+                    .HasForeignKey(x => x.CompanyId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                b.Property(x => x.Role).IsRequired().HasMaxLength(300);
+                b.Property(x => x.Level).HasConversion<int>();
+                b.Property(x => x.LastRoundCompleted).IsRequired().HasMaxLength(200);
+                b.Property(x => x.InterviewProcess).IsRequired().HasColumnType("text");
+                b.Property(x => x.CreatedAt).IsRequired();
+                b.Property(x => x.UpdatedAt).IsRequired();
+
+                b.HasOne(x => x.User)
+                    .WithMany()
+                    .HasForeignKey(x => x.CreatedBy)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasMany(x => x.Questions)
+                    .WithOne(x => x.InterviewExperience)
+                    .HasForeignKey(x => x.InterviewExperienceId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // Question (normalized – supports M:M with companies, roles, tags, categories)
+            modelBuilder.Entity<Question>(b =>
+            {
+                b.ToTable("Questions");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Title).IsRequired().HasMaxLength(500);
+                b.Property(x => x.Content).IsRequired().HasColumnType("text");
+                b.Property(x => x.Level).HasConversion<int>();
+                b.Property(x => x.Round).HasConversion<int>();
+                b.Property(x => x.Status).HasConversion<int>().HasDefaultValue(QuestionStatus.Approved);
+                b.Property(x => x.ViewCount).HasDefaultValue(0);
+                b.Property(x => x.SaveCount).HasDefaultValue(0);
+                b.Property(x => x.Vote).HasDefaultValue(0);
+                b.Property(x => x.IsHot).HasDefaultValue(false);
+                b.Property(x => x.Category).HasConversion<int>();
+                b.Property(x => x.CreatedAt).IsRequired();
+                b.Property(x => x.UpdatedAt).IsRequired();
+
+                b.HasOne(x => x.Author)
+                    .WithMany()
+                    .HasForeignKey(x => x.CreatedBy)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasMany(x => x.Comments)
+                    .WithOne(c => c.Question)
+                    .HasForeignKey(c => c.QuestionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Indexes for optimized filtering
+                b.HasIndex(x => x.CreatedAt);
+                b.HasIndex(x => x.ViewCount);
+                b.HasIndex(x => x.Level);
+                b.HasIndex(x => x.IsHot);
+                b.HasIndex(x => x.Status);
+                b.HasIndex(x => x.Category);
+            });
+
+            // Tag
+            modelBuilder.Entity<Tag>(b =>
+            {
+                b.ToTable("Tags");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Name).IsRequired().HasMaxLength(100);
+                b.Property(x => x.Description).HasMaxLength(500);
+                b.HasIndex(x => x.Name).IsUnique();
+            });
+
+            // QuestionTag (M:M join)
+            modelBuilder.Entity<QuestionTag>(b =>
+            {
+                b.ToTable("QuestionTags");
+                b.HasKey(x => new { x.QuestionId, x.TagId });
+                b.HasOne(x => x.Question).WithMany(q => q.QuestionTags).HasForeignKey(x => x.QuestionId).OnDelete(DeleteBehavior.Cascade);
+                b.HasOne(x => x.Tag).WithMany(t => t.QuestionTags).HasForeignKey(x => x.TagId).OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // QuestionCompany (M:M join – "asked at" companies)
+            modelBuilder.Entity<QuestionCompany>(b =>
+            {
+                b.ToTable("QuestionCompanies");
+                b.HasKey(x => new { x.QuestionId, x.CompanyId });
+                b.HasOne(x => x.Question).WithMany(q => q.QuestionCompanies).HasForeignKey(x => x.QuestionId).OnDelete(DeleteBehavior.Cascade);
+                b.HasOne(x => x.Company).WithMany(c => c.QuestionCompanies).HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // QuestionRole (M:M join – relevant roles)
+            modelBuilder.Entity<QuestionRole>(b =>
+            {
+                b.ToTable("QuestionRoles");
+                b.HasKey(x => new { x.QuestionId, x.Role });
+                b.Property(x => x.Role).HasConversion<int>();
+                b.HasOne(x => x.Question).WithMany(q => q.QuestionRoles).HasForeignKey(x => x.QuestionId).OnDelete(DeleteBehavior.Cascade);
+                b.HasIndex(x => x.Role);
+            });
+
+            // Comment (belongs to a Question; legacy discussion comments)
+            modelBuilder.Entity<Comment>(b =>
+            {
+                b.ToTable("Comments");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Content).IsRequired().HasColumnType("text");
+                b.Property(x => x.Vote).HasDefaultValue(0);
+                b.Property(x => x.IsAnswer).HasDefaultValue(false);
+                b.Property(x => x.CreatedAt).IsRequired();
+                b.Property(x => x.UpdateAt).IsRequired();
+                b.Property(x => x.CreateBy).IsRequired();
+                b.Property(x => x.UpdateBy).IsRequired();
+                b.HasIndex(x => x.QuestionId);
+            });
+
+            // UserQuestionLike (tracks which user liked which question)
+            modelBuilder.Entity<UserQuestionLike>(b =>
+            {
+                b.ToTable("UserQuestionLikes");
+                b.HasKey(x => new { x.UserId, x.QuestionId });
+                b.Property(x => x.CreatedAt).IsRequired();
+
+                b.HasOne(x => x.User)
+                 .WithMany()
+                 .HasForeignKey(x => x.UserId)
+                 .HasConstraintName("FK_UserQuestionLikes_Users_UserId")
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasOne(x => x.Question)
+                 .WithMany()
+                 .HasForeignKey(x => x.QuestionId)
+                 .HasConstraintName("FK_UserQuestionLikes_Questions_QuestionId")
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasIndex(x => x.UserId);
+                b.HasIndex(x => x.QuestionId);
+            });
+
+            // UserCommentLike (tracks which user liked which comment)
+            modelBuilder.Entity<UserCommentLike>(b =>
+            {
+                b.ToTable("UserCommentLikes");
+                b.HasKey(x => new { x.UserId, x.CommentId });
+                b.Property(x => x.CreatedAt).IsRequired();
+
+                b.HasOne(x => x.User)
+                 .WithMany()
+                 .HasForeignKey(x => x.UserId)
+                 .HasConstraintName("FK_UserCommentLikes_Users_UserId")
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasOne(x => x.Comment)
+                 .WithMany()
+                 .HasForeignKey(x => x.CommentId)
+                 .HasConstraintName("FK_UserCommentLikes_Comments_CommentId")
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasIndex(x => x.UserId);
+                b.HasIndex(x => x.CommentId);
+            });
+
+            // ===================== SEED DATA – Tags =====================
+            var tagAI = Guid.Parse("aa000001-0000-4000-8000-000000000001");
+            var tagSQL = Guid.Parse("aa000002-0000-4000-8000-000000000002");
+            var tagSysDes = Guid.Parse("aa000003-0000-4000-8000-000000000003");
+            var tagProdStrat = Guid.Parse("aa000004-0000-4000-8000-000000000004");
+            var tagBackend = Guid.Parse("aa000005-0000-4000-8000-000000000005");
+            var tagGenAI = Guid.Parse("aa000006-0000-4000-8000-000000000006");
+            var tagAlgo = Guid.Parse("aa000007-0000-4000-8000-000000000007");
+            var tagFrontend = Guid.Parse("aa000008-0000-4000-8000-000000000008");
+            var tagBehavior = Guid.Parse("aa000009-0000-4000-8000-000000000009");
+            var tagData = Guid.Parse("aa00000a-0000-4000-8000-00000000000a");
+
+            modelBuilder.Entity<Tag>().HasData(
+                new Tag { Id = tagAI, Name = "AI", Description = "Artificial Intelligence & Machine Learning" },
+                new Tag { Id = tagSQL, Name = "SQL", Description = "SQL & Database querying" },
+                new Tag { Id = tagSysDes, Name = "System Design", Description = "Distributed systems & architecture design" },
+                new Tag { Id = tagProdStrat, Name = "Product Strategy", Description = "Product management & strategy" },
+                new Tag { Id = tagBackend, Name = "Backend", Description = "Backend engineering & APIs" },
+                new Tag { Id = tagGenAI, Name = "GenAI", Description = "Generative AI, LLMs, prompt engineering" },
+                new Tag { Id = tagAlgo, Name = "Algorithms", Description = "Data structures & algorithms" },
+                new Tag { Id = tagFrontend, Name = "Frontend", Description = "Frontend & UI engineering" },
+                new Tag { Id = tagBehavior, Name = "Behavioral", Description = "Behavioral & leadership questions" },
+                new Tag { Id = tagData, Name = "Data Engineering", Description = "Data pipelines, ETL, big data" }
+            );
+
+            // ===================== SEED DATA – InterviewExperiences (kept) =====================
+            var exp1Id = Guid.Parse("a1b2c3d4-e5f6-4a1b-8c2d-3e4f5a6b7c8d");
+            var exp2Id = Guid.Parse("b2c3d4e5-f6a1-4b2c-9d3e-4f5a6b7c8d9e");
+            var exp3Id = Guid.Parse("c3d4e5f6-a1b2-4c3d-0e4f-5a6b7c8d9e0f");
+
+            modelBuilder.Entity<InterviewExperience>().HasData(
+                new InterviewExperience
+                {
+                    Id = exp1Id,
+                    CompanyId = Guid.Parse("11111111-1111-4111-8111-111111111111"),
+                    Role = "Software Engineer",
+                    Level = ExperienceLevel.Senior,
+                    LastRoundCompleted = "Onsite",
+                    InterviewProcess = "Phone screen → 2 technical rounds → system design → behavioral",
+                    IsInterestedInContact = true,
+                    CreatedBy = user1Id,
+                    UpdatedBy = user1Id,
+                    CreatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc),
+                    UpdatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new InterviewExperience
+                {
+                    Id = exp2Id,
+                    CompanyId = Guid.Parse("22222222-2222-4222-8222-222222222222"),
+                    Role = "Frontend Developer",
+                    Level = ExperienceLevel.Middle,
+                    LastRoundCompleted = "System Design",
+                    InterviewProcess = "Online assessment → coding interview → system design",
+                    IsInterestedInContact = false,
+                    CreatedBy = user1Id,
+                    UpdatedBy = user1Id,
+                    CreatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc),
+                    UpdatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new InterviewExperience
+                {
+                    Id = exp3Id,
+                    CompanyId = Guid.Parse("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"),
+                    Role = "Backend Engineer",
+                    Level = ExperienceLevel.Junior,
+                    LastRoundCompleted = "Technical",
+                    InterviewProcess = "CV screening → HR call → technical interview with coding challenge",
+                    IsInterestedInContact = true,
+                    CreatedBy = user3Id,
+                    UpdatedBy = user3Id,
+                    CreatedAt = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc),
+                    UpdatedAt = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc)
+                }
+            );
+
+            // ===================== SEED DATA – Questions (normalized) =====================
+            // Company IDs (reusing existing seed)
+            var googleId = Guid.Parse("11111111-1111-4111-8111-111111111111");
+            var metaId = Guid.Parse("22222222-2222-4222-8222-222222222222");
+            var amazonId = Guid.Parse("33333333-3333-4333-8333-333333333333");
+            var microsoftId = Guid.Parse("44444444-4444-4444-8444-444444444444");
+            var appleId = Guid.Parse("55555555-5555-4555-8555-555555555555");
+            var netflixId = Guid.Parse("66666666-6666-4666-8666-666666666666");
+            var stripeId = Guid.Parse("99999999-9999-4999-8999-999999999999");
+
+            var q1 = Guid.Parse("d4e5f6a1-b2c3-4d4e-1f5a-6b7c8d9e0f1a");
+            var q2 = Guid.Parse("e5f6a1b2-c3d4-4e5f-2a6b-7c8d9e0f1a2b");
+            var q3 = Guid.Parse("f6a1b2c3-d4e5-4f6a-3b7c-8d9e0f1a2b3c");
+            var q4 = Guid.Parse("a1b2c3d4-e5f6-4a7b-4c8d-9e0f1a2b3c4d");
+            var q5 = Guid.Parse("bb000001-0000-4000-8000-000000000001");
+            var q6 = Guid.Parse("bb000002-0000-4000-8000-000000000002");
+            var q7 = Guid.Parse("bb000003-0000-4000-8000-000000000003");
+            var q8 = Guid.Parse("bb000004-0000-4000-8000-000000000004");
+            var q9 = Guid.Parse("bb000005-0000-4000-8000-000000000005");
+            var q10 = Guid.Parse("bb000006-0000-4000-8000-000000000006");
+            var q11 = Guid.Parse("bb000007-0000-4000-8000-000000000007");
+            var q12 = Guid.Parse("bb000008-0000-4000-8000-000000000008");
+            var q13 = Guid.Parse("bb000009-0000-4000-8000-000000000009");
+            var q14 = Guid.Parse("bb00000a-0000-4000-8000-00000000000a");
+            var q15 = Guid.Parse("bb00000b-0000-4000-8000-00000000000b");
+            var q16 = Guid.Parse("bb00000c-0000-4000-8000-00000000000c");
+
+            modelBuilder.Entity<Question>().HasData(
+                // ── AI / GenAI questions ──
+                new { Id = q1, Title = "Longest Substring Without Repeating Characters", Content = "Find the longest substring without repeating characters. Explain your approach and time complexity.", InterviewExperienceId = (Guid?)exp1Id, Level = ExperienceLevel.Senior, Round = Intervu.Domain.Entities.Constants.QuestionConstants.InterviewRound.TechnicalScreen, Status = QuestionStatus.Approved, Category = QuestionCategory.Coding, ViewCount = 0, SaveCount = 0, Vote = 0, IsHot = true, CreatedBy = (Guid?)user1Id, CreatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc) },
+
+                // ── Backend Engineering questions ──
+                new { Id = q2, Title = "Design a URL Shortener like bit.ly", Content = "Design a URL shortener service like bit.ly. Discuss hashing strategy, data storage, redirect flow, analytics, and scaling.", InterviewExperienceId = (Guid?)exp1Id, Level = ExperienceLevel.Senior, Round = Intervu.Domain.Entities.Constants.QuestionConstants.InterviewRound.SystemDesignRound, Status = QuestionStatus.Approved, Category = QuestionCategory.SystemDesign, ViewCount = 0, SaveCount = 0, Vote = 0, IsHot = true, CreatedBy = (Guid?)user1Id, CreatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc) },
+                new { Id = q3, Title = "Explain == vs === in JavaScript", Content = "Explain the difference between == and === in JavaScript. Give examples where they produce different results.", InterviewExperienceId = (Guid?)exp2Id, Level = ExperienceLevel.Middle, Round = Intervu.Domain.Entities.Constants.QuestionConstants.InterviewRound.TechnicalScreen, Status = QuestionStatus.Approved, Category = QuestionCategory.Technical, ViewCount = 0, SaveCount = 0, Vote = 0, IsHot = false, CreatedBy = (Guid?)user1Id, CreatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc) },
+                new { Id = q4, Title = "Reverse a Linked List", Content = "Reverse a singly linked list. Provide both iterative and recursive solutions with time/space complexity analysis.", InterviewExperienceId = (Guid?)exp3Id, Level = ExperienceLevel.Junior, Round = Intervu.Domain.Entities.Constants.QuestionConstants.InterviewRound.CodingChallenge, Status = QuestionStatus.Approved, Category = QuestionCategory.Coding, ViewCount = 0, SaveCount = 0, Vote = 0, IsHot = false, CreatedBy = (Guid?)user3Id, CreatedAt = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc) }
+            );
+
+            // ===================== SEED DATA – QuestionCompany (asked at) =====================
+            modelBuilder.Entity<QuestionCompany>().HasData(
+                // Q1: asked at Google
+                new { QuestionId = q1, CompanyId = googleId },
+                // Q2: asked at Netflix
+                new { QuestionId = q2, CompanyId = netflixId },
+                // Q3: asked at Meta
+                new { QuestionId = q3, CompanyId = metaId },
+                // Q4: asked at Microsoft
+                new { QuestionId = q4, CompanyId = microsoftId }
+            );
+
+            // ===================== SEED DATA – QuestionRole =====================
+            modelBuilder.Entity<QuestionRole>().HasData(
+                new { QuestionId = q1, Role = Role.SoftwareEngineer },
+                new { QuestionId = q1, Role = Role.BackendEngineer },
+                new { QuestionId = q2, Role = Role.BackendEngineer },
+                new { QuestionId = q2, Role = Role.SoftwareEngineer },
+                new { QuestionId = q3, Role = Role.FrontendEngineer },
+                new { QuestionId = q3, Role = Role.FullStackEngineer },
+                new { QuestionId = q4, Role = Role.SoftwareEngineer },
+                new { QuestionId = q4, Role = Role.BackendEngineer }
+            );
+
+            // ===================== SEED DATA – QuestionTag =====================
+            modelBuilder.Entity<QuestionTag>().HasData(
+                new { QuestionId = q1, TagId = tagAlgo },
+                new { QuestionId = q2, TagId = tagSysDes },
+                new { QuestionId = q2, TagId = tagBackend },
+                new { QuestionId = q3, TagId = tagFrontend },
+                new { QuestionId = q4, TagId = tagAlgo }
+            );
+
+            // ===================== SEED DATA – Comments (legacy, kept for backward compat) =====================
+            modelBuilder.Entity<Comment>().HasData(
+                new Comment { Id = Guid.Parse("c1c1c1c1-1111-4c11-8c11-c1c1c1c1c111"), QuestionId = q1, Content = "Use sliding window with a HashSet. O(n) time.", IsAnswer = true, Vote = 0, CreatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc), UpdateAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc), CreateBy = user1Id, UpdateBy = user1Id },
+                new Comment { Id = Guid.Parse("c2c2c2c2-2222-4c22-8c22-c2c2c2c2c222"), QuestionId = q1, Content = "You can also use a dictionary to map each character to its latest index for O(n) in a single pass.", IsAnswer = false, Vote = 0, CreatedAt = new DateTime(2026, 1, 12, 0, 0, 0, DateTimeKind.Utc), UpdateAt = new DateTime(2026, 1, 12, 0, 0, 0, DateTimeKind.Utc), CreateBy = user2Id, UpdateBy = user2Id },
+                new Comment { Id = Guid.Parse("c3c3c3c3-3333-4c33-8c33-c3c3c3c3c333"), QuestionId = q2, Content = "Use consistent hashing, a KV store, and a redirect service.", IsAnswer = true, Vote = 0, CreatedAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc), UpdateAt = new DateTime(2026, 1, 10, 0, 0, 0, DateTimeKind.Utc), CreateBy = user1Id, UpdateBy = user1Id },
+                new Comment { Id = Guid.Parse("c4c4c4c4-4444-4c44-8c44-c4c4c4c4c444"), QuestionId = q2, Content = "Don't forget rate limiting and analytics counters when discussing the redirect service design.", IsAnswer = false, Vote = 0, CreatedAt = new DateTime(2026, 1, 13, 0, 0, 0, DateTimeKind.Utc), UpdateAt = new DateTime(2026, 1, 13, 0, 0, 0, DateTimeKind.Utc), CreateBy = user2Id, UpdateBy = user2Id },
+                new Comment { Id = Guid.Parse("c5c5c5c5-5555-4c55-8c55-c5c5c5c5c555"), QuestionId = q3, Content = "== coerces types, === does not.", IsAnswer = true, Vote = 0, CreatedAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc), UpdateAt = new DateTime(2026, 1, 15, 0, 0, 0, DateTimeKind.Utc), CreateBy = user1Id, UpdateBy = user1Id },
+                new Comment { Id = Guid.Parse("c6c6c6c6-6666-4c66-8c66-c6c6c6c6c666"), QuestionId = q3, Content = "Always prefer === in modern JS/TS to avoid implicit coercion bugs. null == undefined is true but null === undefined is false.", IsAnswer = false, Vote = 0, CreatedAt = new DateTime(2026, 1, 16, 0, 0, 0, DateTimeKind.Utc), UpdateAt = new DateTime(2026, 1, 16, 0, 0, 0, DateTimeKind.Utc), CreateBy = user2Id, UpdateBy = user2Id },
+                new Comment { Id = Guid.Parse("c7c7c7c7-7777-4c77-8c77-c7c7c7c7c777"), QuestionId = q4, Content = "Iterative approach using prev, curr, next pointers. O(n) time O(1) space.", IsAnswer = true, Vote = 0, CreatedAt = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc), UpdateAt = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc), CreateBy = user3Id, UpdateBy = user3Id },
+                new Comment { Id = Guid.Parse("c8c8c8c8-8888-4c88-8c88-c8c8c8c8c888"), QuestionId = q4, Content = "Recursive solution is cleaner to write but costs O(n) stack space. Interviewers often ask you to do both.", IsAnswer = false, Vote = 0, CreatedAt = new DateTime(2026, 2, 2, 0, 0, 0, DateTimeKind.Utc), UpdateAt = new DateTime(2026, 2, 2, 0, 0, 0, DateTimeKind.Utc), CreateBy = user1Id, UpdateBy = user1Id }
+            );
+
             modelBuilder.Entity<InterviewType>().HasData(
                 new InterviewType
                 {
@@ -780,8 +1279,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                     Name = "CV Interview",
                     Description = "Resume review and HR-style interview focusing on background and experience.",
                     IsCoding = false,
-                    DurationMinutes = 30,
-                    BasePrice = 20,
+                    SuggestedDurationMinutes = 30,
+                    MinPrice = 10,
+                    MaxPrice = 50,
                     Status = InterviewTypeStatus.Active
                 },
                 new InterviewType
@@ -790,8 +1290,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                     Name = "Technical Interview",
                     Description = "Technical interview with coding problems and system design questions.",
                     IsCoding = true,
-                    DurationMinutes = 60,
-                    BasePrice = 50,
+                    SuggestedDurationMinutes = 60,
+                    MinPrice = 30,
+                    MaxPrice = 100,
                     Status = InterviewTypeStatus.Active
                 },
                 new InterviewType
@@ -800,8 +1301,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                     Name = "Soft Skills Interview",
                     Description = "Behavioral interview focused on communication and interpersonal skills.",
                     IsCoding = false,
-                    DurationMinutes = 45,
-                    BasePrice = 30,
+                    SuggestedDurationMinutes = 45,
+                    MinPrice = 15,
+                    MaxPrice = 60,
                     Status = InterviewTypeStatus.Active
                 },
                 new InterviewType
@@ -810,8 +1312,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                     Name = "Mock Interview",
                     Description = "Full mock interview simulating a real job interview experience.",
                     IsCoding = true,
-                    DurationMinutes = 75,
-                    BasePrice = 70,
+                    SuggestedDurationMinutes = 75,
+                    MinPrice = 40,
+                    MaxPrice = 120,
                     Status = InterviewTypeStatus.Draft
                 }
             );

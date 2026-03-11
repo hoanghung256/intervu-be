@@ -12,13 +12,11 @@ namespace Intervu.Application.UseCases.Availability
     public class UpdateCoachAvailability : IUpdateCoachAvailability
     {
         private readonly ICoachAvailabilitiesRepository _repo;
-        private readonly IInterviewTypeRepository _interviewTypeRepo;
         private readonly IMapper _mapper;
 
-        public UpdateCoachAvailability(ICoachAvailabilitiesRepository repo, IInterviewTypeRepository interviewTypeRepo, IMapper mapper)
+        public UpdateCoachAvailability(ICoachAvailabilitiesRepository repo, IMapper mapper)
         {
             _repo = repo;
-            _interviewTypeRepo = interviewTypeRepo;
             _mapper = mapper;
         }
 
@@ -32,57 +30,35 @@ namespace Intervu.Application.UseCases.Availability
                 throw new ArgumentException("Availability not found");
 
             if (availability.Status != CoachAvailabilityStatus.Available)
-                throw new ArgumentException("You can only update available slots.");
+                throw new ArgumentException("You can only update available time ranges.");
 
             var utcNow = DateTimeOffset.UtcNow;
 
-            TimeSpan slotDuration;
+            if (dto.EndTime <= dto.StartTime)
+                throw new ArgumentException("EndTime must be greater than StartTime");
 
-            if (dto.Focus == InterviewFocus.GeneralSkills)
-            {
-                if (!dto.TypeId.HasValue)
-                    throw new ArgumentException("TypeId is required for General Skill interview");
+            if (dto.EndTime <= utcNow || dto.StartTime <= utcNow)
+                throw new ArgumentException("Cannot update availability to a time in the past");
 
-                var type = await _interviewTypeRepo.GetByIdAsync(dto.TypeId.Value);
-                if (type == null)
-                    throw new ArgumentException("Interview type not found");
+            var duration = dto.EndTime.UtcDateTime - dto.StartTime.UtcDateTime;
+            if (duration < TimeSpan.FromMinutes(30))
+                throw new ArgumentException("Availability must be at least 30 minutes");
 
-                slotDuration = TimeSpan.FromMinutes(type.DurationMinutes);
-            }
-            else // JD
-            {
-
-                if (dto.EndTime <= dto.StartTime) throw new ArgumentException("EndTime must be greater than StartTime");
-
-                if (dto.EndTime <= utcNow || dto.StartTime <= utcNow)
-                    throw new ArgumentException("Cannot update availability to a time in the past");
-
-                slotDuration = (dto.EndTime.UtcDateTime - dto.StartTime.UtcDateTime);
-
-                if (slotDuration < TimeSpan.FromHours(0.5))
-                    throw new ArgumentException("Availability must be at least 30 minutes");
-            }
-
-            dto.EndTime = dto.StartTime.Add(slotDuration);
-
+            // Check overlap with minimum 15-minute gap
             var startOffset = new DateTimeOffset(dto.StartTime.UtcDateTime, TimeSpan.Zero);
             var endOffset = new DateTimeOffset(dto.EndTime.UtcDateTime, TimeSpan.Zero);
-
             var minGap = TimeSpan.FromMinutes(15);
-
             var bufferStart = startOffset.Add(-minGap);
             var bufferEnd = endOffset.Add(minGap);
 
             bool isAvailable = await _repo.IsCoachAvailableAsync(dto.CoachId, bufferStart, bufferEnd, availabilityId);
             if (!isAvailable)
-                throw new ArgumentException($"Time slot gap is within {minGap.TotalMinutes} minutes");
+                throw new ArgumentException($"Time range overlaps or is within {minGap.TotalMinutes} minutes of an existing availability");
 
             var updated = await _repo.UpdateCoachAvailabilityAsync(
                 availabilityId,
-                dto.Focus,
                 dto.StartTime,
-                dto.EndTime,
-                dto.TypeId
+                dto.EndTime
             );
 
             if (!updated)

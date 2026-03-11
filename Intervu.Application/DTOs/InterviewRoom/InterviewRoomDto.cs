@@ -17,6 +17,28 @@ namespace Intervu.Application.DTOs.InterviewRoom
         public string? ProblemShortName { get; set; }
         public InterviewRoomStatus Status { get; set; }
         public int RescheduleAttemptCount { get; set; }
+
+        // --- New booking context fields ---
+
+        /// <summary>
+        /// FK to BookingRequest (for Flow B/C rooms)
+        /// </summary>
+        public Guid? BookingRequestId { get; set; }
+
+        /// <summary>
+        /// The interview service type for this room
+        /// </summary>
+        public string? InterviewTypeName { get; set; }
+
+        /// <summary>
+        /// Target interview level
+        /// </summary>
+        public AimLevel? AimLevel { get; set; }
+
+        /// <summary>
+        /// Round number for JD multi-round interviews (Flow C)
+        /// </summary>
+        public int? RoundNumber { get; set; }
         
         /// <summary>
         /// Indicates if this interview has a pending reschedule request

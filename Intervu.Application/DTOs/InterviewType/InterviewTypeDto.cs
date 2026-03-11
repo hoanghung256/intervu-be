@@ -19,11 +19,14 @@ namespace Intervu.Application.DTOs.InterviewType
 
         public bool IsCoding { get; set; }
 
-        [Range(1, 180)]
-        public int DurationMinutes { get; set; }
+        [Range(0, int.MaxValue)]
+        public int MinPrice { get; set; }
 
         [Range(0, int.MaxValue)]
-        public int BasePrice { get; set; }
+        public int MaxPrice { get; set; }
+
+        [Range(15, 300)]
+        public int SuggestedDurationMinutes { get; set; }
 
         public InterviewTypeStatus Status { get; set; }
     }
