@@ -11,7 +11,7 @@ namespace Intervu.Domain.Repositories
     {
         Task<(List<InterviewExperience> Items, int TotalCount)> GetPagedAsync(
             string? searchTerm, Guid? company, Role? role, ExperienceLevel? level,
-            InterviewRound? lastRoundCompleted, SortOption? sortBy, int page, int pageSize);
+            Intervu.Domain.Entities.Constants.QuestionConstants.InterviewRound? lastRoundCompleted, SortOption? sortBy, int page, int pageSize);
 
         Task<InterviewExperience?> GetDetailAsync(Guid id);
     }

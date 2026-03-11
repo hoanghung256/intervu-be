@@ -16,7 +16,7 @@ namespace Intervu.Domain.Entities
 
         public ExperienceLevel Level { get; set; }
 
-        public InterviewRound Round { get; set; }
+        public Intervu.Domain.Entities.Constants.QuestionConstants.InterviewRound Round { get; set; }
 
         public QuestionStatus Status { get; set; } = QuestionStatus.Approved;
 

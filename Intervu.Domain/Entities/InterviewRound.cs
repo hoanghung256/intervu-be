@@ -11,7 +11,7 @@ namespace Intervu.Domain.Entities
     /// 2. Behavioral rounds (IsCoding=false) must come after Technical rounds (IsCoding=true)
     /// 3. Sum(Price) == BookingRequest.TotalAmount
     /// </summary>
-    public class InterviewRound : EntityBase<Guid>
+    public class InterviewRound : EntityAuditable<Guid>
     {
         public Guid BookingRequestId { get; set; }
 

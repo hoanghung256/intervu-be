@@ -18,7 +18,7 @@ namespace Intervu.Domain.Repositories
             QuestionCategory? category,
             Role? role,
             ExperienceLevel? level,
-            InterviewRound? round,
+            Intervu.Domain.Entities.Constants.QuestionConstants.InterviewRound? round,
             SortOption? sortBy,
             int page,
             int pageSize);

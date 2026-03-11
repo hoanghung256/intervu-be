@@ -19,7 +19,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
         public async Task<(List<InterviewExperience> Items, int TotalCount)> GetPagedAsync(
             string? searchTerm, Guid? company, Role? role, ExperienceLevel? level,
-            InterviewRound? lastRoundCompleted, SortOption? sortBy, int page, int pageSize)
+            Intervu.Domain.Entities.Constants.QuestionConstants.InterviewRound? lastRoundCompleted, SortOption? sortBy, int page, int pageSize)
         {
             var query = _context.InterviewExperiences
                 .Include(e => e.Company)
