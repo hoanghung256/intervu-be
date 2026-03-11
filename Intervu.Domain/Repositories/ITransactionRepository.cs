@@ -11,6 +11,12 @@ namespace Intervu.Domain.Repositories
 
         Task<InterviewBookingTransaction?> Get(int orderCode, TransactionType type);
 
+        Task<(IReadOnlyList<InterviewBookingTransaction> Items, int TotalItems)> GetListByUserAsync(
+            Guid userId,
+            int page,
+            int pageSize,
+            TransactionType? type = null,
+            TransactionStatus? status = null);
         /// <summary>
         /// Checks whether any active (Created or Paid) Payment-type booking for the given coach
         /// overlaps the requested [startTime, endTime) range.

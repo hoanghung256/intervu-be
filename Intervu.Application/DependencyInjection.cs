@@ -135,6 +135,7 @@ namespace Intervu.Application
             services.AddScoped<IGetInterviewBooking, GetInterviewBooking>();
             services.AddScoped<ICancelInterview, CancelInterview>();
             services.AddScoped<IPayoutForCoachAfterInterview, PayoutForCoachAfterInterview>();
+            services.AddScoped<IGetInterviewBookingHistory, GetInterviewBookingHistory>();
 
             // ----- Coach & Candidate Details ---
             services.AddScoped<IGetCoachDetails, GetCoachDetails>();
