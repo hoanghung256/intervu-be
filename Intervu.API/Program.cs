@@ -260,7 +260,10 @@ namespace Intervu.API
                 });
             }
 
-            app.UseHangfireDashboard("/hangfire");
+            app.UseHangfireDashboard("/hangfire", new Hangfire.Dashboard.DashboardOptions
+            {
+                Authorization = new[] { new AllowAllDashboardAuthorizationFilter() }
+            });
 
             app.UseAuthentication();
             app.UseAuthorization();
@@ -297,5 +300,12 @@ namespace Intervu.API
             }
             return null;
         }
+    }
+
+    // WARNING: This authorization filter allows anonymous access to the Hangfire dashboard.
+    // Use only if you intentionally want the dashboard publicly accessible.
+    public class AllowAllDashboardAuthorizationFilter : Hangfire.Dashboard.IDashboardAuthorizationFilter
+    {
+        public bool Authorize(Hangfire.Dashboard.DashboardContext context) => true;
     }
 }
