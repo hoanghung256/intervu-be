@@ -260,7 +260,7 @@ namespace Intervu.API
                 });
             }
 
-            app.UseHangfireDashboard("/hangfire", new Hangfire.Dashboard.DashboardOptions
+            app.UseHangfireDashboard("/hangfire", new DashboardOptions
             {
                 Authorization = new[] { new AllowAllDashboardAuthorizationFilter() }
             });
