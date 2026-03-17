@@ -28,6 +28,11 @@ namespace Intervu.Application.UseCases.Authentication
                 return false;
             }
 
+            if (request.Password.Length < 8)
+            {
+                return false;
+            }
+
             var emailExists = await _userRepository.EmailExistsAsync(request.Email);
             if (emailExists)
             {
