@@ -239,7 +239,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
             var (before, after) = AvailabilitySplitService.Split(containingAvailability, bookingStart, bookingEnd);
 
             // Remove the original availability
-            availabilityRepo.DeleteAsync(containingAvailability);
+            //availabilityRepo.DeleteAsync(containingAvailability);
 
             // Insert the split ranges
             if (before != null)
