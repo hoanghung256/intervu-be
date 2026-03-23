@@ -306,6 +306,14 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
 
                 b.Property(x => x.RoundNumber)
                  .IsRequired(false);
+
+                b.Property(x => x.EvaluationResultsJson)
+                  .HasColumnName("EvaluationStructure")
+                  .HasColumnType("jsonb");
+
+                b.Ignore(x => x.EvaluationResults);
+
+                b.Property(x => x.IsEvaluationCompleted);
             });
 
             // Feedback

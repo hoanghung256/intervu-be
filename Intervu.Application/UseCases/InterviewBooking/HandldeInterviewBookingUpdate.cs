@@ -9,6 +9,7 @@ using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
 
 namespace Intervu.Application.UseCases.InterviewBooking
 {
@@ -19,6 +20,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
         private readonly ICoachAvailabilitiesRepository _coachAvailabilitiesRepository;
         private readonly IBackgroundService _backgroundService;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ICoachInterviewServiceRepository _coachInterviewServiceRepository;
         private readonly ILogger<HandldeInterviewBookingUpdate> _logger;
 
         public HandldeInterviewBookingUpdate(
@@ -27,6 +29,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
             ICoachAvailabilitiesRepository coachAvailabilitiesRepository,
             IBackgroundService backgroundService,
             IUnitOfWork unitOfWork,
+            ICoachInterviewServiceRepository coachInterviewServiceRepository,
             ILogger<HandldeInterviewBookingUpdate> logger)
         {
             _transactionRepository = transactionRepository;
@@ -34,6 +37,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
             _coachAvailabilitiesRepository = coachAvailabilitiesRepository;
             _backgroundService = backgroundService;
             _unitOfWork = unitOfWork;
+            _coachInterviewServiceRepository = coachInterviewServiceRepository;
             _logger = logger;
         }
 
@@ -67,7 +71,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 {
                     throw new NotFoundException("Transaction has no associated booking context");
                 }
-                
+
                 // Notify candidate — booking confirmed
                 _backgroundService.Enqueue<INotificationUseCase>(
                     uc => uc.CreateAsync(
@@ -175,6 +179,8 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     BookingRequestId = bookingRequest.Id,
                     CoachInterviewServiceId = bookingRequest.CoachInterviewServiceId,
                     AimLevel = bookingRequest.AimLevel,
+                    EvaluationResults = await CreateEvaluationResultsFromInterviewService(bookingRequest.CoachInterviewServiceId),
+                    IsEvaluationCompleted = false
                 };
                 await roomRepo.AddAsync(room);
 
@@ -204,6 +210,8 @@ namespace Intervu.Application.UseCases.InterviewBooking
                         CoachInterviewServiceId = round.CoachInterviewServiceId,
                         AimLevel = bookingRequest.AimLevel,
                         RoundNumber = round.RoundNumber,
+                        EvaluationResults = await CreateEvaluationResultsFromInterviewService(round.CoachInterviewServiceId),
+                        IsEvaluationCompleted = false
                     };
                     await roomRepo.AddAsync(room);
                 }
@@ -212,6 +220,25 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     "Created {RoundCount} interview rooms for JD BookingRequest {BookingRequestId}",
                     bookingRequest.Rounds.Count, bookingRequest.Id);
             }
+        }
+
+        private async Task<List<EvaluationResult>> CreateEvaluationResultsFromInterviewService(Guid? coachInterviewServiceId)
+        {
+            if (coachInterviewServiceId == null)
+                return [];
+
+            var service = await _coachInterviewServiceRepository.GetByIdWithDetailsAsync(coachInterviewServiceId.Value);
+
+            if (service == null)
+                return [];
+
+            return [.. service.InterviewType.EvaluationStructure.Select(c => new EvaluationResult
+            {
+                Type = c.Type,
+                Question = c.Question,
+                Score = 0,
+                Answer = ""
+            })];
         }
 
         /// <summary>
