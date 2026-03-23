@@ -3,6 +3,8 @@ using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Org.BouncyCastle.Asn1;
 
 namespace Intervu.Infrastructure.Persistence.PostgreSQL
 {
@@ -106,6 +108,50 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .AsNoTracking()
                 .ToListAsync()
                 .ContinueWith(t => t.Result.Select(r => (r.StartTime, r.EndTime)).ToList());
+        }
+
+        public async Task<List<(DateTime Start, DateTime End)>> GetConfirmedBookingsForCoachAsync(Guid coachId, int month, int year)
+        {
+            var query = _context.BookingRequests
+                .Where(br => br.CoachId == coachId)
+                .Where(br => br.Status == BookingRequestStatus.Accepted || br.Status == BookingRequestStatus.Paid)
+                .SelectMany(br => br.Rounds);
+
+            if (month > 0 && year > 0)
+            {
+                var startDate = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Utc);
+                var endDate = startDate.AddMonths(1);
+                query = query.Where(r => r.StartTime >= startDate && r.StartTime < endDate);
+            }
+
+            return await query
+                .Select(r => new ValueTuple<DateTime, DateTime>(r.StartTime, r.EndTime))
+                .ToListAsync();
+        }
+
+        public async Task<List<InterviewRound>> GetConfirmedBookingEntitiesForCoachAsync(Guid coachId, int month, int year)
+        {
+            var query = _context.BookingRequests
+                .Include(br => br.Candidate)
+                    .ThenInclude(c => c.User)
+                .Where(br => br.CoachId == coachId)
+                .Where(br => br.Status == BookingRequestStatus.Accepted || br.Status == BookingRequestStatus.Paid);
+
+            // Wait, EF Core requires care with filtering included collections or we just filter the rounds
+            var roundsQuery = query.SelectMany(br => br.Rounds);
+
+            if (month > 0 && year > 0)
+            {
+                var startDate = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Utc);
+                var endDate = startDate.AddMonths(1);
+                roundsQuery = roundsQuery.Where(r => r.StartTime >= startDate && r.StartTime < endDate);
+            }
+
+            return await roundsQuery
+                .Include(r => r.BookingRequest)
+                    .ThenInclude(br => br.Candidate)
+                        .ThenInclude(c => c.User)
+                .ToListAsync();
         }
     }
 }
