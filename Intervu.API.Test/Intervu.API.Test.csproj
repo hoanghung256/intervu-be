@@ -24,6 +24,7 @@
     <ProjectReference Include="..\Intervu.API\Intervu.API.csproj" />
     <ProjectReference Include="..\Intervu.Application\Intervu.Application.csproj" />
     <ProjectReference Include="..\Intervu.Domain\Intervu.Domain.csproj" />
+    <ProjectReference Include="..\Intervu.Infrastructure\Intervu.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

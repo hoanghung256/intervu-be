@@ -201,6 +201,10 @@ namespace Intervu.Application
             // ----- Notification ----
             services.AddScoped<Interfaces.UseCases.Notification.INotificationUseCase, UseCases.Notification.NotificationUseCase>();
 
+            // ----- SmartSearch ----
+            services.AddScoped<Interfaces.UseCases.SmartSearch.ISyncCoachVectors, UseCases.SmartSearch.SyncCoachVectors>();
+            services.AddScoped<Interfaces.UseCases.SmartSearch.ISmartSearchCoach, UseCases.SmartSearch.SmartSearchCoach>();
+
             return services;
         }
 
