@@ -1,6 +1,8 @@
 using Asp.Versioning;
+using Intervu.API.Utils.Constant;
 using Intervu.Application.DTOs.SmartSearch;
 using Intervu.Application.Interfaces.UseCases.SmartSearch;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Intervu.API.Controllers.v1
@@ -60,6 +62,7 @@ namespace Intervu.API.Controllers.v1
         /// <summary>
         /// Sync all coach profiles to Pinecone vector store (Admin only)
         /// </summary>
+        [Authorize(Policy = AuthorizationPolicies.Admin)]
         [HttpPost("sync-vectors")]
         public async Task<IActionResult> SyncVectors()
         {

@@ -32,7 +32,7 @@ namespace Intervu.Application.UseCases.SmartSearch
                 throw new ArgumentException("Search query cannot be empty.");
 
             // Step 1: Embed the query text
-            var queryVector = await _embeddingService.GetEmbeddingAsync(request.Query);
+            var queryVector = await _embeddingService.GetEmbeddingAsync(request.Query, "query");
 
             // Step 2: Search Pinecone for similar vectors
             var vectorMatches = await _vectorStoreService.SearchAsync(queryVector, request.TopK);

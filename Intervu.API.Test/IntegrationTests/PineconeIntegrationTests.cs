@@ -48,7 +48,7 @@ namespace Intervu.API.Test.IntegrationTests
         public async Task Test_PineconeVectorStore_UpsertAndSearch()
         {
             // Arrange
-            var vectorStore = new PineconeVectorStoreService(_configuration);
+            var vectorStore = new PineconeVectorStoreService(new HttpClient(), _configuration);
             var embeddingService = new PineconeInferenceService(new HttpClient(), _configuration);
             
             var testId = "test-coach-id-" + System.Guid.NewGuid().ToString();

@@ -27,17 +27,19 @@ namespace Intervu.Infrastructure.ExternalServices.Pinecone
             }
         }
 
-        public async Task<float[]> GetEmbeddingAsync(string text)
+        public async Task<float[]> GetEmbeddingAsync(string text, string inputType = "passage")
         {
-            var results = await GetEmbeddingsAsync(new List<string> { text });
+            var results = await GetEmbeddingsAsync(new List<string> { text }, inputType);
             return results.FirstOrDefault() ?? Array.Empty<float>();
         }
 
-        public async Task<List<float[]>> GetEmbeddingsAsync(List<string> texts)
+        public async Task<List<float[]>> GetEmbeddingsAsync(List<string> texts, string inputType = "passage")
         {
+            var normalizedInputType = NormalizeInputType(inputType);
+
             var parameters = new Dictionary<string, object>
             {
-                ["input_type"] = "passage",
+                ["input_type"] = normalizedInputType,
                 ["truncate"] = "END"
             };
 
@@ -77,6 +79,21 @@ namespace Intervu.Infrastructure.ExternalServices.Pinecone
             }
 
             return result?.Data?.Select(d => d.Values).ToList() ?? new List<float[]>();
+        }
+
+        private static string NormalizeInputType(string inputType)
+        {
+            if (string.Equals(inputType, "query", StringComparison.OrdinalIgnoreCase))
+            {
+                return "query";
+            }
+
+            if (string.Equals(inputType, "passage", StringComparison.OrdinalIgnoreCase))
+            {
+                return "passage";
+            }
+
+            throw new ArgumentException("inputType must be either 'query' or 'passage'.", nameof(inputType));
         }
 
         private class PineconeEmbeddingResponse

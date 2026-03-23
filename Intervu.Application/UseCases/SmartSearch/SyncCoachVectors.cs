@@ -32,7 +32,7 @@ namespace Intervu.Application.UseCases.SmartSearch
             foreach (var coach in coaches)
             {
                 var documentText = BuildCoachDocumentText(coach);
-                var vector = await _embeddingService.GetEmbeddingAsync(documentText);
+                var vector = await _embeddingService.GetEmbeddingAsync(documentText, "passage");
                 var metadata = BuildMetadata(coach);
 
                 await _vectorStoreService.UpsertAsync(coach.Id.ToString(), vector, metadata);

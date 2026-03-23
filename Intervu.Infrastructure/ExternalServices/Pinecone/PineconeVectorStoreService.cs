@@ -27,11 +27,6 @@ namespace Intervu.Infrastructure.ExternalServices.Pinecone
                 : $"https://{rawHost}";
         }
 
-        public PineconeVectorStoreService(IConfiguration configuration)
-            : this(new HttpClient(), configuration)
-        {
-        }
-
         public async Task UpsertAsync(string id, float[] vector, Dictionary<string, string> metadata)
         {
             var body = new

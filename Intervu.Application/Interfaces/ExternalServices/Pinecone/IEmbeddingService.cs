@@ -8,7 +8,7 @@ namespace Intervu.Application.Interfaces.ExternalServices.Pinecone
 {
     public interface IEmbeddingService
     {
-        Task<float[]> GetEmbeddingAsync(string text);
-        Task<List<float[]>> GetEmbeddingsAsync(List<string> texts);
+        Task<float[]> GetEmbeddingAsync(string text, string inputType = "passage");
+        Task<List<float[]>> GetEmbeddingsAsync(List<string> texts, string inputType = "passage");
     }
 }
