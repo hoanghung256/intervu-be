@@ -13,12 +13,18 @@ namespace Intervu.Infrastructure.ExternalServices.Pinecone
         private readonly string _apiKey;
         private readonly string _apiVersion;
         private readonly string _indexHost;
+        private readonly string _namespace;
 
         public PineconeVectorStoreService(HttpClient httpClient, IConfiguration configuration)
         {
             _httpClient = httpClient;
             _apiKey = configuration["PineCone:PINECONE_API_KEY"] ?? throw new ArgumentNullException("Pinecone API Key is missing");
             _apiVersion = configuration["PineCone:PINECONE_API_VERSION"] ?? "2025-10";
+
+            var configuredNamespace = configuration["PineCone:PINECONE_NAMESPACE"];
+            _namespace = string.IsNullOrWhiteSpace(configuredNamespace)
+                ? "__default__"
+                : configuredNamespace.Trim();
 
             var rawHost = configuration["PineCone:PINECONE_HOST_URL"] ?? throw new ArgumentNullException("Pinecone Host URL is missing");
             rawHost = rawHost.Trim().TrimEnd('/');
@@ -39,7 +45,8 @@ namespace Intervu.Infrastructure.ExternalServices.Pinecone
                         values = vector,
                         metadata = metadata ?? new Dictionary<string, string>()
                     }
-                }
+                },
+                @namespace = _namespace
             };
 
             await SendAsync(HttpMethod.Post, "vectors/upsert", body);
@@ -51,13 +58,14 @@ namespace Intervu.Infrastructure.ExternalServices.Pinecone
             {
                 vector = queryVector,
                 topK,
-                includeMetadata = true
+                includeMetadata = true,
+                @namespace = _namespace
             };
 
             var content = await SendAsync(HttpMethod.Post, "query", body);
             var queryResponse = JsonConvert.DeserializeObject<QueryResponse>(content);
 
-            if (queryResponse.Matches == null) return new List<VectorMatch>();
+            if (queryResponse?.Matches == null) return new List<VectorMatch>();
 
             return queryResponse.Matches.Select(m => new VectorMatch(
                 m.Id,
@@ -72,7 +80,8 @@ namespace Intervu.Infrastructure.ExternalServices.Pinecone
         {
             var body = new
             {
-                ids = new[] { id }
+                ids = new[] { id },
+                @namespace = _namespace
             };
 
             await SendAsync(HttpMethod.Post, "vectors/delete", body);
