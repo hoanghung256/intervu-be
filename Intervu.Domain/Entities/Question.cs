@@ -46,5 +46,7 @@ namespace Intervu.Domain.Entities
         public QuestionCategory Category { get; set; }
 
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
+
+        public ICollection<QuestionReport> Reports { get; set; } = new List<QuestionReport>();
     }
 }
