@@ -31,20 +31,28 @@ namespace Intervu.Application.UseCases.SmartSearch
             if (string.IsNullOrWhiteSpace(request.Query))
                 throw new ArgumentException("Search query cannot be empty.");
 
-            // Step 1: Embed the query text
+            // Use query embedding mode for user text.
             var queryVector = await _embeddingService.GetEmbeddingAsync(request.Query, "query");
 
-            // Step 2: Search Pinecone for similar vectors
-            var vectorMatches = await _vectorStoreService.SearchAsync(queryVector, request.TopK);
+            // Search only in coach vectors.
+            var vectorMatches = await _vectorStoreService.SearchAsync(
+                queryVector,
+                request.TopK,
+                request.Namespace,
+                new Dictionary<string, string> { ["entityType"] = "coach" });
 
             if (!vectorMatches.Any())
                 return new List<SmartSearchResultDto>();
 
-            // Step 3: Fetch coach details from PostgreSQL
             var results = new List<SmartSearchResultDto>();
 
             foreach (var match in vectorMatches)
             {
+                if (!IsValidCoachMatch(match))
+                {
+                    continue;
+                }
+
                 if (Guid.TryParse(match.Id, out var coachId))
                 {
                     var coachProfile = await _coachProfileRepository.GetProfileByIdAsync(coachId);
@@ -62,6 +70,30 @@ namespace Intervu.Application.UseCases.SmartSearch
             }
 
             return results;
+        }
+
+        private static bool IsValidCoachMatch(VectorMatch match)
+        {
+            // Guard against cross-entity or mismatched metadata.
+            if (match.Metadata == null)
+            {
+                return false;
+            }
+
+            if (!match.Metadata.TryGetValue("entityType", out var entityType) ||
+                !string.Equals(entityType, "coach", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            if (match.Metadata.TryGetValue("entityId", out var entityId) &&
+                Guid.TryParse(entityId, out var parsedEntityId) &&
+                Guid.TryParse(match.Id, out var parsedMatchId))
+            {
+                return parsedEntityId == parsedMatchId;
+            }
+
+            return true;
         }
     }
 }

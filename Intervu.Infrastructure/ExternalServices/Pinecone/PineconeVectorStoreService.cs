@@ -33,7 +33,7 @@ namespace Intervu.Infrastructure.ExternalServices.Pinecone
                 : $"https://{rawHost}";
         }
 
-        public async Task UpsertAsync(string id, float[] vector, Dictionary<string, string> metadata)
+        public async Task UpsertAsync(string id, float[] vector, Dictionary<string, string> metadata, string? @namespace = null)
         {
             var body = new
             {
@@ -46,20 +46,28 @@ namespace Intervu.Infrastructure.ExternalServices.Pinecone
                         metadata = metadata ?? new Dictionary<string, string>()
                     }
                 },
-                @namespace = _namespace
+                @namespace = ResolveNamespace(@namespace)
             };
 
             await SendAsync(HttpMethod.Post, "vectors/upsert", body);
         }
 
-        public async Task<List<VectorMatch>> SearchAsync(float[] queryVector, int topK = 5)
+        public async Task<List<VectorMatch>> SearchAsync(
+            float[] queryVector,
+            int topK = 5,
+            string? @namespace = null,
+            Dictionary<string, string>? metadataFilter = null)
         {
+            // Build Pinecone metadata filter (if provided).
+            var filter = BuildFilter(metadataFilter);
+
             var body = new
             {
                 vector = queryVector,
                 topK,
                 includeMetadata = true,
-                @namespace = _namespace
+                @namespace = ResolveNamespace(@namespace),
+                filter
             };
 
             var content = await SendAsync(HttpMethod.Post, "query", body);
@@ -76,12 +84,12 @@ namespace Intervu.Infrastructure.ExternalServices.Pinecone
             )).ToList();
         }
 
-        public async Task DeleteAsync(string id)
+        public async Task DeleteAsync(string id, string? @namespace = null)
         {
             var body = new
             {
                 ids = new[] { id },
-                @namespace = _namespace
+                @namespace = ResolveNamespace(@namespace)
             };
 
             await SendAsync(HttpMethod.Post, "vectors/delete", body);
@@ -107,6 +115,34 @@ namespace Intervu.Infrastructure.ExternalServices.Pinecone
             }
 
             return content;
+        }
+
+        private string ResolveNamespace(string? namespaceOverride)
+        {
+            // Fallback to configured namespace when request does not provide one.
+            return string.IsNullOrWhiteSpace(namespaceOverride)
+                ? _namespace
+                : namespaceOverride.Trim();
+        }
+
+        private static JObject? BuildFilter(Dictionary<string, string>? metadataFilter)
+        {
+            if (metadataFilter == null || metadataFilter.Count == 0)
+            {
+                return null;
+            }
+
+            // Convert key/value filters to Pinecone $eq format.
+            var filter = new JObject();
+            foreach (var kvp in metadataFilter)
+            {
+                filter[kvp.Key] = new JObject
+                {
+                    ["$eq"] = kvp.Value
+                };
+            }
+
+            return filter;
         }
 
         private sealed class QueryResponse

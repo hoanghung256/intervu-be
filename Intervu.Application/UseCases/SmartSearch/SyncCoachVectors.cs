@@ -23,8 +23,7 @@ namespace Intervu.Application.UseCases.SmartSearch
 
         public async Task<int> ExecuteAsync()
         {
-            // Fetch all coaches with related data
-            var (coaches, totalCount) = await _coachProfileRepository.GetPagedCoachProfilesAsync(
+            var (coaches, _) = await _coachProfileRepository.GetPagedCoachProfilesAsync(
                 search: null, skillId: null, companyId: null, page: 1, pageSize: 1000);
 
             int syncedCount = 0;
@@ -43,34 +42,27 @@ namespace Intervu.Application.UseCases.SmartSearch
         }
 
         /// <summary>
-        /// Builds a rich text document from coach profile data for AI embedding.
-        /// This is the core of the semantic search — the richer the text, the better the search quality.
+        /// Build text used to generate the coach embedding vector.
         /// </summary>
         private static string BuildCoachDocumentText(CoachProfileEntity coach)
         {
             var parts = new List<string>();
 
-            // Coach name
             if (coach.User != null)
                 parts.Add($"Coach: {coach.User.FullName}");
 
-            // Bio
             if (!string.IsNullOrWhiteSpace(coach.Bio))
                 parts.Add($"Bio: {coach.Bio}");
 
-            // Experience
             if (coach.ExperienceYears.HasValue)
                 parts.Add($"Experience: {coach.ExperienceYears} years");
 
-            // Skills
             if (coach.Skills.Any())
                 parts.Add($"Skills: {string.Join(", ", coach.Skills.Select(s => s.Name))}");
 
-            // Companies
             if (coach.Companies.Any())
                 parts.Add($"Companies: {string.Join(", ", coach.Companies.Select(c => c.Name))}");
 
-            // Interview services offered
             if (coach.InterviewServices.Any())
             {
                 var services = coach.InterviewServices
@@ -87,6 +79,8 @@ namespace Intervu.Application.UseCases.SmartSearch
         {
             var metadata = new Dictionary<string, string>
             {
+                { "entityType", "coach" },
+                { "entityId", coach.Id.ToString() },
                 { "coachId", coach.Id.ToString() },
                 { "name", coach.User?.FullName ?? "" },
                 { "bio", coach.Bio ?? "" }
