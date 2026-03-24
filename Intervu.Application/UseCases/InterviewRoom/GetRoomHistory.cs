@@ -103,7 +103,8 @@ namespace Intervu.Application.UseCases.InterviewRoom
                     Status = room.Status,
                     RescheduleAttemptCount = room.RescheduleAttemptCount,
                     HasPendingReschedule = hasPendingReschedule,
-                    CanReschedule = canReschedule
+                    CanReschedule = canReschedule,
+                    Type = room.Type
                 });
             }
 

@@ -44,6 +44,8 @@ namespace Intervu.Domain.Entities
 
         public int RescheduleAttemptCount { get; set; } = 0;
 
+        public InterviewRoomType Type { get; set; }
+
         // --- New booking context fields ---
 
         /// <summary>

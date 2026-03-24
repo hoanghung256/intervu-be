@@ -45,6 +45,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
         public DbSet<CoachInterviewService> CoachInterviewServices { get; set; }
         public DbSet<BookingRequest> BookingRequests { get; set; }
         public DbSet<Intervu.Domain.Entities.InterviewRound> InterviewRounds { get; set; }
+        public DbSet<AudioChunk> AudioChunks { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -223,6 +224,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.DurationMinutes);
                 b.Property(x => x.VideoCallRoomUrl).HasMaxLength(1000);
                 b.Property(x => x.Status).IsRequired();
+                b.Property(x => x.Type).HasConversion<int>().IsRequired();
 
                 // JSON converters for complex properties
                 var jsonOptions = new JsonSerializerOptions
@@ -646,6 +648,24 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                  .HasDatabaseName("IX_InterviewRounds_BookingRequestId_RoundNumber");
             });
 
+            // AudioChunk
+            modelBuilder.Entity<AudioChunk>(b =>
+            {
+                b.ToTable("AudioChunks");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.AudioData).IsRequired();
+                b.Property(x => x.CreatedAt).IsRequired().HasDefaultValueSql("NOW()");
+                b.Property(x => x.RecordingSessionId).IsRequired();
+                b.Property(x => x.ChunkSequenceNumber).IsRequired().HasDefaultValue(0);
+                
+                // Index for grouping chunks by recording session
+                b.HasIndex(x => x.RecordingSessionId).HasName("IX_AudioChunks_RecordingSessionId");
+                
+                // Composite index for ordering chunks by session and sequence
+                b.HasIndex(x => new { x.RecordingSessionId, x.ChunkSequenceNumber })
+                    .HasName("IX_AudioChunks_RecordingSession_Sequence");
+            });
+
             /// <summary>
             /// Global query filter for soft delete
             /// When querying any entity that has an "IsDeleted" property.
@@ -683,9 +703,15 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
 
             var room1Id = Guid.Parse("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a66");
             var CoachAvail1Id = Guid.Parse("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77");
+            
+            var room2Id = Guid.Parse("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a77");
 
             // Additional test data for reschedule functionality
             var CoachAvail2Id = Guid.Parse("aaaaaaaa-1111-4a1a-8a1a-111111111111"); // For reschedule testing
+
+            var room3Id = Guid.Parse("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a88");
+            var transaction4Id = Guid.Parse("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a00");
+            var CoachAvail3Id = Guid.Parse("aaaaaaaa-1111-4a1a-8a1a-111111111112");
 
             // Users
             var user1 = new User
@@ -820,12 +846,21 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                     StartTime = DateTime.SpecifyKind(new DateTime(2026, 3, 15, 14, 0, 0), DateTimeKind.Utc),
                     EndTime = DateTime.SpecifyKind(new DateTime(2026, 3, 15, 17, 0, 0), DateTimeKind.Utc),
                     Status = CoachAvailabilityStatus.Available
+                },
+                new CoachAvailability
+                {
+                    Id = CoachAvail3Id,
+                    CoachId = user2Id,
+                    StartTime = DateTime.SpecifyKind(new DateTime(2026, 4, 1, 10, 0, 0), DateTimeKind.Utc),
+                    EndTime = DateTime.SpecifyKind(new DateTime(2026, 4, 1, 11, 0, 0), DateTimeKind.Utc),
+                    Status = CoachAvailabilityStatus.Available
                 }
             );
 
             // Seed transactions for testing
             var transaction1Id = Guid.Parse("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a88");
             var transaction2Id = Guid.Parse("8f9a0b1c-d2e3-4f5a-9b0c-1d2e3f4a5b99");
+            var transaction3Id = Guid.Parse("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a99");
 
             modelBuilder.Entity<InterviewBookingTransaction>().HasData(
                 new InterviewBookingTransaction
@@ -845,22 +880,71 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                     Amount = 500,
                     Type = TransactionType.Payout,
                     Status = TransactionStatus.Paid
+                },
+                new InterviewBookingTransaction
+                {
+                    Id = transaction3Id,
+                    UserId = user1Id,
+                    CoachAvailabilityId = CoachAvail2Id,
+                    Amount = 1500,
+                    Type = TransactionType.Payment,
+                    Status = TransactionStatus.Paid
+                },
+                new InterviewBookingTransaction
+                {
+                    Id = transaction4Id,
+                    UserId = user1Id,
+                    CoachAvailabilityId = CoachAvail3Id,
+                    Amount = 2000,
+                    Type = TransactionType.Payment,
+                    Status = TransactionStatus.Paid
                 }
             );
 
-            modelBuilder.Entity<InterviewRoom>().HasData(new InterviewRoom
-            {
-                Id = room1Id,
-                CandidateId = user1Id,
-                CoachId = user2Id,
-                TransactionId = transaction1Id,
-                CurrentAvailabilityId = CoachAvail1Id, // Link to current availability
-                ScheduledTime = DateTime.SpecifyKind(new DateTime(2026, 2, 10, 9, 0, 0), DateTimeKind.Utc),
-                DurationMinutes = 60,
-                VideoCallRoomUrl = "https://meet.example/room1",
-                Status = InterviewRoomStatus.Scheduled,
-                RescheduleAttemptCount = 0
-            });
+            modelBuilder.Entity<InterviewRoom>().HasData(
+                new InterviewRoom
+                {
+                    Id = room1Id,
+                    CandidateId = user1Id,
+                    CoachId = user2Id,
+                    TransactionId = transaction1Id,
+                    CurrentAvailabilityId = CoachAvail1Id, // Link to current availability
+                    ScheduledTime = DateTime.SpecifyKind(new DateTime(2026, 2, 10, 9, 0, 0), DateTimeKind.Utc),
+                    DurationMinutes = 60,
+                    VideoCallRoomUrl = "https://meet.example/room1",
+                    Status = InterviewRoomStatus.Scheduled,
+                    RescheduleAttemptCount = 0,
+                    Type = InterviewRoomType.Normal
+                },
+                new InterviewRoom
+                {
+                    Id = room2Id,
+                    CandidateId = user1Id,
+                    CoachId = null,
+                    TransactionId = transaction3Id,
+                    CurrentAvailabilityId = CoachAvail2Id,
+                    ScheduledTime = DateTime.SpecifyKind(new DateTime(2026, 3, 15, 14, 30, 0), DateTimeKind.Utc),
+                    DurationMinutes = 60,
+                    VideoCallRoomUrl = "https://meet.example/room-ai",
+                    Status = InterviewRoomStatus.Ongoing,
+                    RescheduleAttemptCount = 0,
+                    Type = InterviewRoomType.WithAI
+                },
+                new InterviewRoom
+                {
+                    Id = room3Id,
+                    CandidateId = user1Id,
+                    CoachId = user2Id,
+                    TransactionId = transaction4Id,
+                    CurrentAvailabilityId = CoachAvail3Id,
+                    ScheduledTime = DateTime.SpecifyKind(new DateTime(2026, 4, 1, 10, 0, 0), DateTimeKind.Utc),
+                    DurationMinutes = 60,
+                    VideoCallRoomUrl = "https://meet.example/room3",
+                    Status = InterviewRoomStatus.Ongoing,
+                    RescheduleAttemptCount = 0,
+                    Type = InterviewRoomType.Normal
+                }
+            );
 
             modelBuilder.Entity<Feedback>().HasData(new Feedback
             {

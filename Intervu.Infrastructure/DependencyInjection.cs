@@ -86,6 +86,7 @@ namespace Intervu.Infrastructure
             services.AddScoped<IBookingRequestRepository, BookingRequestRepository>();
             services.AddScoped<IInterviewRoundRepository, InterviewRoundRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
+            services.AddScoped<IAudioChunkRepository, AudioChunkRepository>();
 
             return services;
         }
@@ -163,6 +164,7 @@ namespace Intervu.Infrastructure
             });
 
             services.AddScoped<CodeExecutionService>();
+            services.AddScoped<IAiService, AiService>();
 
             //Add HttpClient to call from API
             services.AddHttpClient("CodeExecutionClient", (sp, client) =>
@@ -171,6 +173,17 @@ namespace Intervu.Infrastructure
                 string baseUrl = config["ApiClients:CodeExecution"];
 
                 client.BaseAddress = new Uri(baseUrl);
+            });
+
+            services.AddHttpClient("AiServiceClient", (sp, client) =>
+            {
+                var config = sp.GetRequiredService<IConfiguration>();
+                string baseUrl = config["ApiClients:AiService"];
+
+                if (!string.IsNullOrWhiteSpace(baseUrl))
+                {
+                    client.BaseAddress = new Uri(baseUrl);
+                }
             });
 
             services.AddHostedService<InterviewRoomCacheLoader>();

@@ -17,6 +17,7 @@ namespace Intervu.Application.DTOs.InterviewRoom
         public string? ProblemShortName { get; set; }
         public InterviewRoomStatus Status { get; set; }
         public int RescheduleAttemptCount { get; set; }
+        public InterviewRoomType Type { get; set; }
 
         // --- New booking context fields ---
 

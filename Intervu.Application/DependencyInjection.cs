@@ -53,6 +53,9 @@ using BookingRequestInterfaces = Intervu.Application.Interfaces.UseCases.Booking
 using BookingRequestUseCases = Intervu.Application.UseCases.BookingRequest;
 using CoachServiceInterfaces = Intervu.Application.Interfaces.UseCases.CoachInterviewService;
 using CoachServiceUseCases = Intervu.Application.UseCases.CoachInterviewService;
+using Intervu.Application.Interfaces.UseCases.AudioChunk;
+using AudioChunk = Intervu.Application.UseCases.AudioChunk;
+using Intervu.Application.Interfaces.Services;
 
 namespace Intervu.Application
 {
@@ -200,6 +203,11 @@ namespace Intervu.Application
             
             // ----- Notification ----
             services.AddScoped<Interfaces.UseCases.Notification.INotificationUseCase, UseCases.Notification.NotificationUseCase>();
+
+            // ----- AudioChunk ----
+            services.AddScoped<IStoreAudioChunk, AudioChunk.StoreAudioChunk>();
+            services.AddScoped<IGetAudioChunk, AudioChunk.GetAudioChunk>();
+            services.AddSingleton<IAudioProcessingService, AudioProcessingService>();
 
             return services;
         }
