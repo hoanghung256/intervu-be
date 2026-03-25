@@ -1,13 +1,13 @@
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Asp.Versioning;
-using Google.Apis.Auth;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Intervu.Domain.Repositories;
-using Intervu.Application.Utils;
 using Intervu.Application.Interfaces.UseCases.PasswordReset;
 using Intervu.Application.DTOs.PasswordReset;
+using Intervu.Application.Interfaces.UseCases.Authentication;
+using Intervu.Application.DTOs.User;
 
 namespace Intervu.API.Controllers.v1.Authentication
 {
@@ -16,32 +16,27 @@ namespace Intervu.API.Controllers.v1.Authentication
     [Route("api/v{version:apiVersion}/[controller]")]
     public class AuthController : ControllerBase
     {
-        private readonly IUserRepository _userRepository;
-        private readonly JwtService _jwtService;
+        private readonly IGoogleLoginUseCase _googleLoginUseCase;
         private readonly IConfiguration _configuration;
         private readonly ILogger<AuthController> _logger;
         private readonly IForgotPasswordUseCase _forgotPasswordUseCase;
         private readonly IValidateResetTokenUseCase _validateResetTokenUseCase;
         private readonly IResetPasswordUseCase _resetPasswordUseCase;
-        private readonly IRefreshTokenRepository _refreshTokenRepository;
 
-        public AuthController(IUserRepository userRepository, JwtService jwtService, IConfiguration configuration, ILogger<AuthController> logger, IForgotPasswordUseCase forgotPasswordUseCase, IValidateResetTokenUseCase validateResetTokenUseCase, IResetPasswordUseCase resetPasswordUseCase, IRefreshTokenRepository refreshTokenRepository)
+        public AuthController(
+            IGoogleLoginUseCase googleLoginUseCase,
+            IConfiguration configuration,
+            ILogger<AuthController> logger,
+            IForgotPasswordUseCase forgotPasswordUseCase,
+            IValidateResetTokenUseCase validateResetTokenUseCase,
+            IResetPasswordUseCase resetPasswordUseCase)
         {
-            _userRepository = userRepository;
-            _jwtService = jwtService;
+            _googleLoginUseCase = googleLoginUseCase;
             _configuration = configuration;
             _logger = logger;
             _forgotPasswordUseCase = forgotPasswordUseCase;
             _validateResetTokenUseCase = validateResetTokenUseCase;
             _resetPasswordUseCase = resetPasswordUseCase;
-            _refreshTokenRepository = refreshTokenRepository;
-        }
-
-        // Accept either { "idToken": "..." } or { "credential": "..." }
-        public class GoogleLoginRequest
-        {
-            public string? IdToken { get; set; }
-            public string? credential { get; set; }
         }
 
         [HttpPost("google")]
@@ -49,10 +44,8 @@ namespace Intervu.API.Controllers.v1.Authentication
         [Consumes("application/json", "application/x-www-form-urlencoded")]
         public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest? body, [FromForm] GoogleLoginRequest? form)
         {
-            var contentType = Request.ContentType;
-
             // Try to get token from JSON body first, then from form, then directly from Request.Form
-            var rawToken = body?.IdToken ?? body?.credential ?? form?.IdToken ?? form?.credential;
+            var rawToken = body?.IdToken ?? body?.Credential ?? form?.IdToken ?? form?.Credential;
             if (string.IsNullOrEmpty(rawToken) && Request.HasFormContentType)
             {
                 var f = Request.Form;
@@ -61,76 +54,22 @@ namespace Intervu.API.Controllers.v1.Authentication
                            ?? f["id_token"].FirstOrDefault()
                            ?? f["token"].FirstOrDefault();
             }
-            if (string.IsNullOrEmpty(rawToken))
-            {
-                _logger.LogWarning("Google login missing token. ContentType: {ContentType}", contentType);
-                return BadRequest(new { success = false, message = "IdToken (or credential) is required", contentType });
-            }
 
-            // Validate ID token using Google.Apis.Auth
-            var configuredClientId = _configuration["Google:ClientId"];
-            var envName = _configuration["ASPNETCORE_ENVIRONMENT"] ?? Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "";
-            var isDevelopment = string.Equals(envName, "Development", StringComparison.OrdinalIgnoreCase);
-            GoogleJsonWebSignature.Payload payload;
-            try
-            {
-                var settings = new GoogleJsonWebSignature.ValidationSettings();
-                // In Development, skip audience enforcement to ease local testing
-                if (!isDevelopment && !string.IsNullOrEmpty(configuredClientId))
-                    settings.Audience = new[] { configuredClientId };
-                payload = await GoogleJsonWebSignature.ValidateAsync(rawToken, settings);
-            }
-            catch (InvalidJwtException ex)
-            {
-                _logger.LogWarning(ex, "Invalid Google ID token. Env: {Env}, ClientId: {ClientId}", envName, configuredClientId);
-                return BadRequest(new { success = false, message = "Invalid Google ID token", detail = ex.Message, env = envName });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Google token validation failed");
-                return BadRequest(new { success = false, message = "Google token validation failed", detail = ex.Message });
-            }
+            var response = await _googleLoginUseCase.ExecuteAsync(rawToken ?? string.Empty);
 
-            var email = payload.Email;
-            var name = payload.Name;
-            var picture = payload.Picture;
-            // optional: require email_verified == true
-            if (payload.EmailVerified == false)
-            {
-                return BadRequest(new { success = false, message = "Google account email not verified" });
-            }
+            SetRefreshTokenCookie(response.RefreshToken);
 
-            // find or create user
-            var user = await _userRepository.GetByEmailAsync(email!);
-            if (user == null)
+            return Ok(new
             {
-                user = new User
+                success = true,
+                message = "Logged in",
+                data = new
                 {
-                    FullName = string.IsNullOrEmpty(name) ? email!.Split('@')[0] : name!,
-                    Email = email!,
-                    Password = PasswordHashHandler.HashPassword(Guid.NewGuid().ToString()),
-                    Role = UserRole.Candidate,
-                    Status = UserStatus.Active,
-                    ProfilePicture = picture
-                };
-
-                await _userRepository.AddAsync(user);
-                await _userRepository.SaveChangesAsync();
-            }
-
-            // generate jwt
-            var token = _jwtService.GenerateToken(user.Id, user.Email, user.Role.ToString());
-            var expiresIn = _jwtService.GetTokenValidityInSeconds();
-
-            user.Password = null!;
-
-            // generate refresh token
-            var refreshToken = await _refreshTokenRepository.CreateRefreshTokenAsync(user.Id);
-
-            // Set HttpOnly cookie
-            SetRefreshTokenCookie(refreshToken);
-
-            return Ok(new { success = true, message = "Logged in", data = new { user, token, expiresIn } });
+                    user = response.User,
+                    token = response.Token,
+                    expiresIn = response.ExpiresIn
+                }
+            });
         }
 
         [HttpPost("forgot-password")]

@@ -82,6 +82,7 @@ namespace Intervu.Infrastructure
             services.AddScoped<ITagRepository, TagRepository>();
             services.AddScoped<IUserQuestionLikeRepository, UserQuestionLikeRepository>();
             services.AddScoped<IUserCommentLikeRepository, UserCommentLikeRepository>();
+            services.AddScoped<IQuestionReportRepository, QuestionReportRepository>();
             services.AddScoped<ICoachInterviewServiceRepository, CoachInterviewServiceRepository>();
             services.AddScoped<IBookingRequestRepository, BookingRequestRepository>();
             services.AddScoped<IInterviewRoundRepository, InterviewRoundRepository>();
@@ -114,6 +115,7 @@ namespace Intervu.Infrastructure
             services.AddSingleton(StorageClient.Create(credential));
 
             services.AddSingleton<string>(sp => bucketName);
+            services.AddScoped<IGoogleTokenValidator, GoogleTokenValidator>();
 
             services.AddTransient<IFileService>(sp =>
             {

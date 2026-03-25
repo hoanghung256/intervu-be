@@ -40,6 +40,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
         public DbSet<QuestionTag> QuestionTags { get; set; }
         public DbSet<QuestionCompany> QuestionCompanies { get; set; }
         public DbSet<QuestionRole> QuestionRoles { get; set; }
+        public DbSet<QuestionReport> QuestionReports { get; set; }
         public DbSet<UserQuestionLike> UserQuestionLikes { get; set; }
         public DbSet<UserCommentLike> UserCommentLikes { get; set; }
         public DbSet<CoachInterviewService> CoachInterviewServices { get; set; }
@@ -1007,6 +1008,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                     .HasForeignKey(c => c.QuestionId)
                     .OnDelete(DeleteBehavior.Cascade);
 
+                b.HasMany(x => x.Reports)
+                    .WithOne(r => r.Question)
+                    .HasForeignKey(r => r.QuestionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
                 // Indexes for optimized filtering
                 b.HasIndex(x => x.CreatedAt);
                 b.HasIndex(x => x.ViewCount);
@@ -1067,6 +1073,34 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.CreateBy).IsRequired();
                 b.Property(x => x.UpdateBy).IsRequired();
                 b.HasIndex(x => x.QuestionId);
+            });
+
+            modelBuilder.Entity<QuestionReport>(b =>
+            {
+                b.ToTable("QuestionReports");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.QuestionId).IsRequired();
+                b.Property(x => x.ReportedBy).IsRequired();
+                b.Property(x => x.Reason).IsRequired().HasMaxLength(1000);
+                b.Property(x => x.Status).HasConversion<int>().HasDefaultValue(QuestionReportStatus.Pending);
+                b.Property(x => x.CreatedAt).IsRequired();
+                b.Property(x => x.UpdatedAt).IsRequired();
+
+                b.HasOne(x => x.Question)
+                    .WithMany(q => q.Reports)
+                    .HasForeignKey(x => x.QuestionId)
+                    .HasConstraintName("FK_QuestionReports_Questions_QuestionId")
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasOne(x => x.Reporter)
+                    .WithMany()
+                    .HasForeignKey(x => x.ReportedBy)
+                    .HasConstraintName("FK_QuestionReports_Users_ReportedBy")
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasIndex(x => x.QuestionId);
+                b.HasIndex(x => x.ReportedBy);
+                b.HasIndex(x => x.Status);
             });
 
             // UserQuestionLike (tracks which user liked which question)
