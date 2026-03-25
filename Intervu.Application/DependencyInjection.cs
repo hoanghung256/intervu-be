@@ -73,6 +73,7 @@ namespace Intervu.Application
 
             // Auth UseCases
             services.AddTransient<ILoginUseCase, LoginUseCase>();
+            services.AddTransient<IGoogleLoginUseCase, GoogleLoginUseCase>();
             services.AddTransient<IRegisterUseCase, RegisterUseCase>();
             services.AddTransient<IRefreshTokenUseCase, RefreshTokenUseCase>();
 
@@ -172,6 +173,9 @@ namespace Intervu.Application
             services.AddScoped<IGetQuestionList, GetQuestionList>();
             services.AddScoped<IGetQuestionDetail, GetQuestionDetail>();
             services.AddScoped<ISearchQuestions, SearchQuestions>();
+            services.AddScoped<IReportQuestion, ReportQuestion>();
+            services.AddScoped<IGetQuestionReports, GetQuestionReports>();
+            services.AddScoped<IUpdateQuestionReportStatus, UpdateQuestionReportStatus>();
 
             // --- Comments ---
             services.AddScoped<IGetComments, GetComments>();
