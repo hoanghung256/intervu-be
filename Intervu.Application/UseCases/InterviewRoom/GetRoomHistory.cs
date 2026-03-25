@@ -101,6 +101,7 @@ namespace Intervu.Application.UseCases.InterviewRoom
                     ProblemDescription = room.ProblemDescription,
                     ProblemShortName = room.ProblemShortName,
                     Status = room.Status,
+                    IsEvaluationCompleted = room.IsEvaluationCompleted,
                     RescheduleAttemptCount = room.RescheduleAttemptCount,
                     HasPendingReschedule = hasPendingReschedule,
                     CanReschedule = canReschedule

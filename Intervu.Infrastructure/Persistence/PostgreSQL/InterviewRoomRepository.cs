@@ -105,6 +105,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             return await _context.InterviewRooms
                 .Include(r => r.Transaction)
                 .Include(r => r.CurrentAvailability)
+                .Include(r => r.CoachInterviewService)!
+                    .ThenInclude(s => s!.InterviewType)
                 .Include(r => r.RescheduleRequests)
                 .FirstOrDefaultAsync(r => r.Id == id);
         }
