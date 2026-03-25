@@ -7,5 +7,10 @@ namespace Intervu.Application.DTOs.SmartSearch
         public Guid CoachId { get; set; }
         public double MatchScore { get; set; }
         public CoachViewDto? Coach { get; set; }
+        
+        // AI Reasoning Fields
+        public double? RerankScore { get; set; }
+        public string? Reasoning { get; set; }
+        public string? RerankSource { get; set; } // e.g. "Pinecone" or "Gemini"
     }
 }

@@ -2,6 +2,7 @@ using AutoMapper;
 using Intervu.Application.DTOs.Coach;
 using Intervu.Application.DTOs.SmartSearch;
 using Intervu.Application.Interfaces.ExternalServices.Pinecone;
+using Intervu.Application.Interfaces.ExternalServices.AI;
 using Intervu.Application.Interfaces.UseCases.SmartSearch;
 using Intervu.Domain.Repositories;
 
@@ -12,17 +13,20 @@ namespace Intervu.Application.UseCases.SmartSearch
         private readonly IEmbeddingService _embeddingService;
         private readonly IVectorStoreService _vectorStoreService;
         private readonly ICoachProfileRepository _coachProfileRepository;
+        private readonly ISmartSearchReasoningService _reasoningService;
         private readonly IMapper _mapper;
 
         public SmartSearchCoach(
             IEmbeddingService embeddingService,
             IVectorStoreService vectorStoreService,
             ICoachProfileRepository coachProfileRepository,
+            ISmartSearchReasoningService reasoningService,
             IMapper mapper)
         {
             _embeddingService = embeddingService;
             _vectorStoreService = vectorStoreService;
             _coachProfileRepository = coachProfileRepository;
+            _reasoningService = reasoningService;
             _mapper = mapper;
         }
 
@@ -45,13 +49,11 @@ namespace Intervu.Application.UseCases.SmartSearch
                 return new List<SmartSearchResultDto>();
 
             var results = new List<SmartSearchResultDto>();
+            var reasoningCandidates = new List<ReasoningCandidate>();
 
             foreach (var match in vectorMatches)
             {
-                if (!IsValidCoachMatch(match))
-                {
-                    continue;
-                }
+                if (!IsValidCoachMatch(match)) continue;
 
                 if (Guid.TryParse(match.Id, out var coachId))
                 {
@@ -63,9 +65,52 @@ namespace Intervu.Application.UseCases.SmartSearch
                         {
                             CoachId = coachId,
                             MatchScore = match.Score,
-                            Coach = coachDto
+                            Coach = coachDto,
+                            RerankSource = "Pinecone"
+                        });
+
+                        // Prepare concise summary for LLM to avoid token bloat
+                        var skills = string.Join(", ", coachDto.Skills.Select(s => s.Name));
+                        var roles = coachDto.Bio ?? "";
+                        reasoningCandidates.Add(new ReasoningCandidate
+                        {
+                            Id = coachId.ToString(),
+                            Summary = $"Portfolio: {coachDto.PortfolioUrl}. Experience: {coachDto.ExperienceYears} yrs. Bio: {roles}. Skills: {skills}."
                         });
                     }
+                }
+            }
+
+            // Step 4: AI Reasoning & Re-ranking
+            if (reasoningCandidates.Any())
+            {
+                var reasoningResults = await _reasoningService.RerankAndReasonAsync(request.Query, reasoningCandidates);
+
+                if (reasoningResults.Any())
+                {
+                    // Apply new scores and reasoning
+                    var reasoningMap = reasoningResults.ToDictionary(r => r.Id, r => r);
+                    foreach (var result in results)
+                    {
+                        if (reasoningMap.TryGetValue(result.CoachId.ToString(), out var aiResult))
+                        {
+                            result.RerankScore = aiResult.Score;
+                            result.Reasoning = aiResult.Reasoning;
+                            result.RerankSource = "Gemini";
+                        }
+                        else
+                        {
+                            result.RerankScore = 0; // Penalize if AI dropped it entirely
+                        }
+                    }
+
+                    // Re-sort by AI score
+                    results = results.OrderByDescending(r => r.RerankScore ?? 0).ToList();
+                }
+                else
+                {
+                    // Fallback to Pinecone sorting
+                    results = results.OrderByDescending(r => r.MatchScore).ToList();
                 }
             }
 
