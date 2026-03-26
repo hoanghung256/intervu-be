@@ -11,7 +11,7 @@ namespace Intervu.Infrastructure.ExternalServices.AI
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
         private readonly ILogger<GeminiReasoningService> _logger;
-        private const string GEMINI_MODEL = "gemini-2.5-flash"; // Fast and cheap reasoning model
+        private const string GEMINI_MODEL = "gemini-3-flash-preview"; // Fast and cheap reasoning model
 
         public GeminiReasoningService(
             HttpClient httpClient, 

@@ -1,6 +1,7 @@
 using AutoMapper;
 using Intervu.Application.DTOs.Coach;
 using Intervu.Application.DTOs.SmartSearch;
+using Intervu.Application.DTOs.User;
 using Intervu.Application.Interfaces.ExternalServices.Pinecone;
 using Intervu.Application.Interfaces.ExternalServices.AI;
 using Intervu.Application.Interfaces.UseCases.SmartSearch;
@@ -61,6 +62,13 @@ namespace Intervu.Application.UseCases.SmartSearch
                     if (coachProfile != null)
                     {
                         var coachDto = _mapper.Map<CoachViewDto>(coachProfile);
+
+                        // Mapping profile ignores User, so map it explicitly for API response.
+                        if (coachDto.User == null && coachProfile.User != null)
+                        {
+                            coachDto.User = _mapper.Map<UserDto>(coachProfile.User);
+                        }
+
                         results.Add(new SmartSearchResultDto
                         {
                             CoachId = coachId,
