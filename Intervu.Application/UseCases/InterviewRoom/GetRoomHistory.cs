@@ -103,6 +103,10 @@ namespace Intervu.Application.UseCases.InterviewRoom
                     Status = room.Status,
                     IsEvaluationCompleted = room.IsEvaluationCompleted,
                     RescheduleAttemptCount = room.RescheduleAttemptCount,
+                    BookingRequestId = room.BookingRequestId,
+                    InterviewTypeName = room.CoachInterviewService?.InterviewType?.Name,
+                    AimLevel = room.AimLevel,
+                    RoundNumber = room.RoundNumber,
                     HasPendingReschedule = hasPendingReschedule,
                     CanReschedule = canReschedule
                 });

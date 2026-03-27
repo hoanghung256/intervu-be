@@ -96,9 +96,9 @@ namespace Intervu.Application.UseCases.Authentication
                 await _candidateProfileRepository.SaveChangesAsync();
             }
 
-            if (user.Status != UserStatus.Active)
+            if (user.Status == UserStatus.Deleted)
             {
-                throw new ForbiddenException("Account is not active");
+                throw new ForbiddenException("Account is deleted");
             }
 
             await _refreshTokenRepository.RevokeAllUserTokensAsync(user.Id);

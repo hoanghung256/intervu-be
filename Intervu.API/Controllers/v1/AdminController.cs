@@ -23,6 +23,7 @@ namespace Intervu.API.Controllers.v1
         private readonly IGetUserByIdForAdmin _getUserByIdForAdmin;
         private readonly IUpdateUserForAdmin _updateUserForAdmin;
         private readonly IDeleteUserForAdmin _deleteUserForAdmin;
+        private readonly IActivateUserForAdmin _activateUserForAdmin;
 
         public AdminController(
             IGetDashboardStats getDashboardStats,
@@ -35,7 +36,8 @@ namespace Intervu.API.Controllers.v1
             ICreateUserForAdmin createUserForAdmin,
             IGetUserByIdForAdmin getUserByIdForAdmin,
             IUpdateUserForAdmin updateUserForAdmin,
-            IDeleteUserForAdmin deleteUserForAdmin)
+            IDeleteUserForAdmin deleteUserForAdmin,
+            IActivateUserForAdmin activateUserForAdmin)
         {
             _getDashboardStats = getDashboardStats;
             _getAllUsers = getAllUsers;
@@ -48,6 +50,7 @@ namespace Intervu.API.Controllers.v1
             _getUserByIdForAdmin = getUserByIdForAdmin;
             _updateUserForAdmin = updateUserForAdmin;
             _deleteUserForAdmin = deleteUserForAdmin;
+            _activateUserForAdmin = activateUserForAdmin;
         }
 
         /// <summary>
@@ -352,28 +355,76 @@ namespace Intervu.API.Controllers.v1
         }
 
         /// <summary>
-        /// Delete user
+        /// Suspend user (soft-delete)
         /// </summary>
         [HttpDelete("users/{id}")]
         public async Task<IActionResult> DeleteUser([FromRoute] Guid id)
         {
             try
             {
-                var result = await _deleteUserForAdmin.ExecuteAsync(id);
-                
-                if (!result)
+                var status = await _deleteUserForAdmin.ExecuteAsync(id);
+
+                if (status == null)
+                {
                     return NotFound(new
                     {
                         success = false,
                         message = "User not found",
                         data = (object?)null
                     });
+                }
 
                 return Ok(new
                 {
                     success = true,
-                    message = "User deleted successfully",
-                    data = result
+                    message = "User marked as inactive",
+                    data = new
+                    {
+                        userId = id,
+                        status = status.ToString()
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = ex.Message,
+                    data = (object?)null
+                });
+            }
+        }
+
+        /// <summary>
+        /// Activate user
+        /// </summary>
+        [HttpPut("users/{id}/activate")]
+        public async Task<IActionResult> ActivateUser([FromRoute] Guid id)
+        {
+            try
+            {
+                var success = await _activateUserForAdmin.ExecuteAsync(id);
+
+                if (!success)
+                {
+                    return NotFound(new
+                    {
+                        success = false,
+                        message = "User not found or already active",
+                        data = (object?)null
+                    });
+                }
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "User has been activated successfully",
+                    data = new
+                    {
+                        userId = id,
+                        status = "Active"
+                    }
                 });
             }
             catch (Exception ex)

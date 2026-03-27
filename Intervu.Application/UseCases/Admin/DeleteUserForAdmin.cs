@@ -26,26 +26,8 @@ namespace Intervu.Application.UseCases.Admin
             if (user == null)
                 return false;
 
-            if (user.Role == UserRole.Candidate)
-            {
-                var existingCandidate = await _candidateProfileRepository.GetProfileByIdAsync(userId);
-                if (existingCandidate != null)
-                {
-                    _candidateProfileRepository.DeleteCandidateProfile(userId);
-                    await _candidateProfileRepository.SaveChangesAsync();
-                }
-            }
-            else if (user.Role == UserRole.Coach)
-            {
-                var existingCoach = await _coachProfileRepository.GetProfileByIdAsync(userId);
-                if (existingCoach != null)
-                {
-                    _coachProfileRepository.DeleteCoachProfile(userId);
-                    await _coachProfileRepository.SaveChangesAsync();
-                }
-            }
-
-            _userRepository.DeleteAsync(user);
+            user.Status = UserStatus.Suspended;
+            _userRepository.UpdateAsync(user);
             await _userRepository.SaveChangesAsync();
 
             return true;
