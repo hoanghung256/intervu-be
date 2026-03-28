@@ -16,14 +16,14 @@ namespace Intervu.Application.UseCases.InterviewRoom
             _roomRepo = roomRepo;
         }
 
-        public async Task<CoachEvaluationResponseDto> ExecuteAsync(Guid interviewRoomId, Guid coachId)
+        public async Task<CoachEvaluationResponseDto> ExecuteAsync(Guid interviewRoomId, Guid userId)
         {
             var room = await _roomRepo.GetByIdWithDetailsAsync(interviewRoomId)
                 ?? throw new NotFoundException("Interview room not found");
 
-            if (room.CoachId != coachId)
+            if (room.CoachId != userId && room.CandidateId != userId)
             {
-                throw new ForbiddenException("You are not the coach for this interview");
+                throw new ForbiddenException("You are not authorized to view this evaluation");
             }
 
             if (room.Status != InterviewRoomStatus.Completed)

@@ -1,4 +1,4 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
 using Intervu.API.Utils.Constant;
 using Intervu.Application.DTOs.InterviewRoom;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
@@ -64,7 +64,7 @@ namespace Intervu.API.Controllers.v1
         /// <summary>
         /// Get evaluation form and current answers for a completed interview (coach only)
         /// </summary>
-        [Authorize(Policy = AuthorizationPolicies.Interviewer)]
+        [Authorize(Policy = AuthorizationPolicies.CandidateOrInterviewer)]
         [HttpGet("{interviewRoomId}/coach-evaluation")]
         public async Task<IActionResult> GetCoachEvaluation([FromRoute] Guid interviewRoomId)
         {

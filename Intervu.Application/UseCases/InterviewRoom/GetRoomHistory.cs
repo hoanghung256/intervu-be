@@ -1,4 +1,4 @@
-﻿using Intervu.Application.DTOs.Common;
+using Intervu.Application.DTOs.Common;
 using Intervu.Application.DTOs.InterviewRoom;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Intervu.Domain.Entities.Constants;
@@ -102,6 +102,9 @@ namespace Intervu.Application.UseCases.InterviewRoom
                     ProblemShortName = room.ProblemShortName,
                     Status = room.Status,
                     IsEvaluationCompleted = room.IsEvaluationCompleted,
+                    Score = room.EvaluationResults?.Any() == true 
+                            ? Math.Round(room.EvaluationResults.Average(x => x.Score), 1) 
+                            : null,
                     RescheduleAttemptCount = room.RescheduleAttemptCount,
                     BookingRequestId = room.BookingRequestId,
                     InterviewTypeName = room.CoachInterviewService?.InterviewType?.Name,

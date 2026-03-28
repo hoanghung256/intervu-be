@@ -1,4 +1,4 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
 using Intervu.API.Utils.Constant;
 using Intervu.Application.Interfaces.UseCases.Feedbacks;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
@@ -105,7 +105,7 @@ namespace Intervu.API.Controllers.v1
             });
         }
 
-        [Authorize(Policy = AuthorizationPolicies.InterviewOrAdmin)]
+        [Authorize(Policy = AuthorizationPolicies.CandidateOrInterviewer)]
         [HttpGet("interview-room/{interviewRoomId}")]
         public async Task<IActionResult> GetFeedbacksByInterviewRoom([FromRoute] Guid interviewRoomId)
         {
