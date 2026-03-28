@@ -1,17 +1,19 @@
 using Asp.Versioning;
 using Intervu.API.Utils.Constant;
 using Intervu.Application.DTOs.Ai;
-using Intervu.Application.DTOs.Question;
 using Intervu.Application.Interfaces.ExternalServices;
-using Intervu.Application.Interfaces.UseCases.Question;
+using Intervu.Application.Interfaces.Services;
+using Intervu.Application.Interfaces.UseCases.AudioChunk;
+using Intervu.Application.Interfaces.UseCases.GeneratedQuestion;
+using Intervu.Application.Interfaces.UseCases.InterviewRoom;
+using Intervu.Domain.Entities.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
+using System.IO;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Intervu.Application.Interfaces.UseCases.AudioChunk;
-using Intervu.Application.Interfaces.Services;
 
 namespace Intervu.API.Controllers.v1
 {
@@ -21,33 +23,36 @@ namespace Intervu.API.Controllers.v1
     public class AiController : ControllerBase
     {
         private readonly IAiService _aiService;
-        private readonly IGetQuestionList _getQuestionList;
         private readonly ILogger<AiController> _logger;
         private readonly IStoreAudioChunk _storeAudioChunk;
         private readonly IGetAudioChunk _getAudioChunk;
         private readonly IAudioProcessingService _audioProcessingService;
+        private readonly IStoreGeneratedQuestions _storeGeneratedQuestions;
+        private readonly IGetCurrentRoom _getCurrentRoom;
 
         public AiController(
             IAiService aiService,
-            IGetQuestionList getQuestionList,
             ILogger<AiController> logger,
             IStoreAudioChunk storeAudioChunk,
             IGetAudioChunk getAudioChunk,
-            IAudioProcessingService audioProcessingService)
+            IAudioProcessingService audioProcessingService,
+            IStoreGeneratedQuestions storeGeneratedQuestions,
+            IGetCurrentRoom getCurrentRoom
+            )
         {
             _aiService = aiService;
-            _getQuestionList = getQuestionList;
             _logger = logger;
             _storeAudioChunk = storeAudioChunk;
             _getAudioChunk = getAudioChunk;
             _audioProcessingService = audioProcessingService;
+            _storeGeneratedQuestions = storeGeneratedQuestions;
+            _getCurrentRoom = getCurrentRoom;
         }
 
         [Authorize(Policy = AuthorizationPolicies.AllRoles)]
         [HttpPost("transcript/questions")]
         public async Task<IActionResult> GetNewQuestionsFromTranscript([FromBody] TranscriptRequest request)
         {
-            // Get all audio chunks for the recording session and merge them
             var audioChunks = await _getAudioChunk.ExecuteAllByRecordingSessionAsync(request.RecordingSessionId);
             
             if (audioChunks == null || audioChunks.Count == 0)
@@ -55,13 +60,13 @@ namespace Intervu.API.Controllers.v1
                 return NotFound(new { success = false, message = "No audio chunks found for this recording session" });
             }
 
-            var mergeResult = _audioProcessingService.MergeAllTakesAsPcm16kMono(audioChunks);
+            var mergeResult = _audioProcessingService.MergeAllTakesAsMp3(audioChunks);
             if (!mergeResult.Success)
             {
                 return Conflict(new { success = false, message = mergeResult.Error });
             }
 
-            _logger.LogInformation("Playing full recording session ID: {SessionId}, Total chunks: {ChunkCount}, Merged size: {Size}", 
+            _logger.LogInformation("Processing transcript for session ID: {SessionId}, Total chunks: {ChunkCount}, Merged size: {Size}", 
                 request.RecordingSessionId, audioChunks.Count, mergeResult.Data.Length);
             
             var result = await _aiService.GetNewQuestionsFromTranscriptAsync(mergeResult.Data, request.RecordingSessionId);
@@ -73,9 +78,14 @@ namespace Intervu.API.Controllers.v1
                 return BadRequest(new { success = false, message = errorMsg });
             }
             
-            _logger.LogInformation("AI transcript questions extracted successfully");
-            
-            return Ok(new { success = result.Status, message = "Successfully extract question from transcript"});
+            var storedCount = await _storeGeneratedQuestions.ExecuteAsync(request.RecordingSessionId, result.QuestionList);
+
+            return Ok(new
+            {
+                success = result.Status,
+                message = "Successfully extract question from transcript",
+                data = new { storedCount }
+            });
         }
 
         [Authorize(Policy = AuthorizationPolicies.Interviewer)]
@@ -92,19 +102,48 @@ namespace Intervu.API.Controllers.v1
                 return BadRequest(new { success = false, message = "Recording session ID is required" });
             }
 
-            var id = await _storeAudioChunk.ExecuteAsync(request.AudioData, request.RecordingSessionId, request.SequenceNumber);
+            var room = await _getCurrentRoom.ExecuteAsync(request.RecordingSessionId);
 
-            _logger.LogInformation("Stored audio chunk with ID: {Id}, SessionId: {SessionId}, Sequence: {Seq}, Length: {Length}", 
-                id, request.RecordingSessionId, request.SequenceNumber, request.AudioData.Length);
+            if (room.Status != InterviewRoomStatus.Ongoing)
+            {
+                return BadRequest(new { success = false, message = "Room is not active" });
+            }
+
+            var id = await _storeAudioChunk.ExecuteAsync(request.AudioData, request.RecordingSessionId, request.SequenceNumber);
 
             return Ok(new { success = true, message = "Audio chunk stored successfully", data = new { id } });
         }
+
+#if DEBUG
+        /// <summary>
+        /// DEBUG ONLY: Upload a full audio file to simulate chunks
+        /// </summary>
+        [HttpPost("debug/upload-audio-file")]
+        [Authorize(Policy = AuthorizationPolicies.Interviewer)]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadAudioFileDebug([FromForm] UploadAudioFileDebugRequest request)
+        {
+            if (request.File == null || request.File.Length == 0)
+            {
+                return BadRequest(new { success = false, message = "No file uploaded" });
+            }
+
+            using var ms = new MemoryStream();
+            await request.File.CopyToAsync(ms);
+            var audioData = ms.ToArray();
+
+            var id = await _storeAudioChunk.ExecuteAsync(audioData, request.RecordingSessionId, 0);
+
+            _logger.LogInformation("DEBUG: Uploaded audio file {FileName} as chunk for session {SessionId}", request.File.FileName, request.RecordingSessionId);
+
+            return Ok(new { success = true, message = "File uploaded and stored as chunk", data = new { id, size = audioData.Length } });
+        }
+#endif
 
         [Authorize(Policy = AuthorizationPolicies.AllRoles)]
         [HttpGet("play-recording/{recordingSessionId}")]
         public async Task<IActionResult> PlayFullRecording(Guid recordingSessionId)
         {
-            // Get all audio chunks for the recording session and merge them
             var audioChunks = await _getAudioChunk.ExecuteAllByRecordingSessionAsync(recordingSessionId);
             
             if (audioChunks == null || audioChunks.Count == 0)
@@ -112,16 +151,13 @@ namespace Intervu.API.Controllers.v1
                 return NotFound(new { success = false, message = "No audio chunks found for this recording session" });
             }
 
-            var mergeResult = _audioProcessingService.MergeAllTakesAsPcm16kMono(audioChunks);
+            var mergeResult = _audioProcessingService.MergeAllTakesAsMp3(audioChunks);
             if (!mergeResult.Success)
             {
                 return Conflict(new { success = false, message = mergeResult.Error });
             }
 
-            _logger.LogInformation("Playing full recording session ID: {SessionId}, Total chunks: {ChunkCount}, Merged size: {Size}", 
-                recordingSessionId, audioChunks.Count, mergeResult.Data.Length);
-
-            return File(mergeResult.Data, "audio/wav", $"recording-{recordingSessionId}.wav");
+            return File(mergeResult.Data, "audio/mpeg", $"recording-{recordingSessionId}.mp3");
         }
 
         [Authorize(Policy = AuthorizationPolicies.AllRoles)]
@@ -135,16 +171,13 @@ namespace Intervu.API.Controllers.v1
                 return NotFound(new { success = false, message = "No audio chunks found for this recording session" });
             }
 
-            var mergeResult = _audioProcessingService.MergeLatestTakeAsPcm16kMono(audioChunks);
+            var mergeResult = _audioProcessingService.MergeLatestTakeAsMp3(audioChunks);
             if (!mergeResult.Success)
             {
                 return Conflict(new { success = false, message = mergeResult.Error });
             }
 
-            _logger.LogInformation("Playing latest take for session ID: {SessionId}, Total chunks: {ChunkCount}, Merged size: {Size}", 
-                recordingSessionId, audioChunks.Count, mergeResult.Data.Length);
-
-            return File(mergeResult.Data, "audio/wav", $"recording-latest-{recordingSessionId}.wav");
+            return File(mergeResult.Data, "audio/mpeg", $"recording-latest-{recordingSessionId}.mp3");
         }
 
         [Authorize(Policy = AuthorizationPolicies.AllRoles)]
@@ -157,7 +190,6 @@ namespace Intervu.API.Controllers.v1
                 return NotFound(new { success = false, message = "Audio chunk not found" });
             }
 
-            // Assuming the audio is in WAV format; adjust content type if different
             return File(audioChunk.AudioData, "audio/wav", $"audio-{id}.wav");
         }
     }

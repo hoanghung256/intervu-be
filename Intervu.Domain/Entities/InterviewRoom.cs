@@ -97,6 +97,8 @@ namespace Intervu.Domain.Entities
         
         public ICollection<InterviewRescheduleRequest>? RescheduleRequests { get; set; }
 
+        public ICollection<GeneratedQuestion> GeneratedQuestions { get; set; } = new List<GeneratedQuestion>();
+
         public bool IsAvailableForReschedule()
         {
             if (ScheduledTime == null) return false;

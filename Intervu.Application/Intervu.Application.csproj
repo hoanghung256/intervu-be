@@ -20,6 +20,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.21" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.10" />
     <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Include="NAudio.Lame" Version="2.1.0" />
   </ItemGroup>
 
   <ItemGroup>

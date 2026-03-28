@@ -80,6 +80,7 @@ namespace Intervu.Infrastructure
             services.AddScoped<IRescheduleRequestRepository, RescheduleRequestRepository>();
             services.AddScoped<IInterviewTypeRepository, InterviewTypeRepository>();
             services.AddScoped<IQuestionRepository, QuestionRepository>();
+            services.AddScoped<IGeneratedQuestionRepository, GeneratedQuestionRepository>();
             services.AddScoped<ICommentRepository, CommentRepository>();
             services.AddScoped<IInterviewExperienceRepository, InterviewExperienceRepository>();
             services.AddScoped<ITagRepository, TagRepository>();

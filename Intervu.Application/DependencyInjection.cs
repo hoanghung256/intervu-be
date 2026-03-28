@@ -56,6 +56,10 @@ using CoachServiceUseCases = Intervu.Application.UseCases.CoachInterviewService;
 using Intervu.Application.Interfaces.UseCases.AudioChunk;
 using AudioChunk = Intervu.Application.UseCases.AudioChunk;
 using Intervu.Application.Interfaces.Services;
+using Intervu.Application.Interfaces.UseCases.SmartSearch;
+using Intervu.Application.UseCases.SmartSearch;
+using Intervu.Application.Interfaces.UseCases.GeneratedQuestion;
+using Intervu.Application.UseCases.GeneratedQuestion;
 
 namespace Intervu.Application
 {
@@ -174,6 +178,12 @@ namespace Intervu.Application
             services.AddScoped<IGetQuestionDetail, GetQuestionDetail>();
             services.AddScoped<ISearchQuestions, SearchQuestions>();
 
+            // --- Generated Questions ---
+            services.AddScoped<IStoreGeneratedQuestions, StoreGeneratedQuestions>();
+            services.AddScoped<IGetGeneratedQuestionsByRoom, GetGeneratedQuestionsByRoom>();
+            services.AddScoped<IApproveGeneratedQuestion, ApproveGeneratedQuestion>();
+            services.AddScoped<IRejectGeneratedQuestion, RejectGeneratedQuestion>();
+
             // --- Comments ---
             services.AddScoped<IGetComments, GetComments>();
             services.AddScoped<IAddComment, AddComment>();
@@ -205,10 +215,11 @@ namespace Intervu.Application
             services.AddScoped<Interfaces.UseCases.Notification.INotificationUseCase, UseCases.Notification.NotificationUseCase>();
 
             // ----- SmartSearch ----
-            services.AddScoped<Interfaces.UseCases.SmartSearch.ISyncCoachVectors, UseCases.SmartSearch.SyncCoachVectors>();
-            services.AddScoped<Interfaces.UseCases.SmartSearch.ISyncQuestionVectors, UseCases.SmartSearch.SyncQuestionVectors>();
-            services.AddScoped<Interfaces.UseCases.SmartSearch.ISmartSearchCoach, UseCases.SmartSearch.SmartSearchCoach>();
-            services.AddScoped<Interfaces.UseCases.SmartSearch.ISmartSearchQuestion, UseCases.SmartSearch.SmartSearchQuestion>();
+            services.AddScoped<ISyncCoachVectors, SyncCoachVectors>();
+            services.AddScoped<ISyncQuestionVectors, SyncQuestionVectors>();
+            services.AddScoped<ISmartSearchCoach, SmartSearchCoach>();
+            services.AddScoped<ISmartSearchQuestion, SmartSearchQuestion>();
+            services.AddScoped<IGetDuplicateQuestion, GetDuplicateQuestion>();
 
             // ----- AudioChunk ----
             services.AddScoped<IStoreAudioChunk, AudioChunk.StoreAudioChunk>();

@@ -5,7 +5,7 @@ namespace Intervu.Application.Interfaces.Services
 {
     public interface IAudioProcessingService
     {
-        AudioProcessingResult MergeLatestTakeAsPcm16kMono(List<AudioChunk> chunks);
-        AudioProcessingResult MergeAllTakesAsPcm16kMono(List<AudioChunk> chunks);
+        AudioProcessingResult MergeLatestTakeAsMp3(List<AudioChunk> chunks);
+        AudioProcessingResult MergeAllTakesAsMp3(List<AudioChunk> chunks);
     }
 }

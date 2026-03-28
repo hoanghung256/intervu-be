@@ -1,4 +1,7 @@
-﻿using System.Text.Json.Serialization;
+﻿using Microsoft.AspNetCore.Http;
+using System;
+using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace Intervu.Application.DTOs.Ai
 {
@@ -10,7 +13,7 @@ namespace Intervu.Application.DTOs.Ai
         [JsonPropertyName("transcript")]
         public string Transcript { get; set; } = string.Empty;
 
-        [JsonPropertyName("question list")]
+        [JsonPropertyName("question_list")]
         public List<AiQuestionDto> QuestionList { get; set; } = new();
 
         [JsonIgnore]
@@ -41,5 +44,11 @@ namespace Intervu.Application.DTOs.Ai
         public byte[] AudioData { get; set; } = Array.Empty<byte>();
         public Guid RecordingSessionId { get; set; }
         public int SequenceNumber { get; set; } = 0;
+    }
+
+    public class UploadAudioFileDebugRequest
+    {
+        public IFormFile File { get; set; } = null!;
+        public Guid RecordingSessionId { get; set; }
     }
 }

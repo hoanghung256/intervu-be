@@ -6,16 +6,27 @@ using Microsoft.AspNetCore.Http;
 using System.Net.Http.Headers;
 using Intervu.Application.DTOs.Ai;
 using Intervu.Application.DTOs.Question;
+using Intervu.Application.Interfaces.UseCases.SmartSearch;
+using Intervu.Application.DTOs.SmartSearch;
+using System.Linq;
+using Microsoft.Extensions.Logging;
 
 namespace Intervu.Infrastructure.ExternalServices
 {
     public class AiService : IAiService
     {
         private readonly HttpClient _httpClient;
+        private readonly IGetDuplicateQuestion _getDuplicateQuestion;
+        private readonly ILogger<AiService> _logger;
 
-        public AiService(IHttpClientFactory httpClientFactory)
+        public AiService(
+            IHttpClientFactory httpClientFactory, 
+            IGetDuplicateQuestion getDuplicateQuestion,
+            ILogger<AiService> logger)
         {
             _httpClient = httpClientFactory.CreateClient("AiServiceClient");
+            _getDuplicateQuestion = getDuplicateQuestion;
+            _logger = logger;
         }
 
         public async Task<bool> StoreCvUrlAsync(Guid roomId, string cvUrl, IFormFile? file)
@@ -161,6 +172,99 @@ namespace Intervu.Infrastructure.ExternalServices
                         result.Error = "Extract new question failed";
                         return result;
                     }
+
+                    // Loop through questions and filter based on similarity
+                    var validQuestions = new List<AiQuestionDto>();
+                    foreach (var question in result.QuestionList)
+                    {
+                        var searchQuery = $"Title: {question.Title}. Content: {question.Content}";
+                        var topK = 5;
+                        List<QuestionSmartSearchResultDto> searchResults;
+
+                        // Increment topK if results are all highly similar
+                        while (true)
+                        {
+                            searchResults = await _getDuplicateQuestion.ExecuteAsync(new QuestionSmartSearchRequestDto
+                            {
+                                Query = searchQuery,
+                                TopK = topK,
+                                EntityType = "question"
+                            });
+
+                            if (!searchResults.Any())
+                                break;
+
+                            if (searchResults.Count == topK && searchResults.All(r => r.MatchScore >= 0.5))
+                            {
+                                topK += 10;
+                                if (topK > 50) break; // Safety break
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+
+                        // Tiered similarity logic
+                        var hasHighSimilarityMatch = searchResults.Any(r => r.MatchScore > 0.7);
+
+                        if (hasHighSimilarityMatch)
+                        {
+                            // Exclude immediately, do nothing else.
+                            continue;
+                        }
+
+                        var mediumSimilarityMatches = searchResults.Where(r => r.MatchScore >= 0.5).ToList();
+
+                        if (mediumSimilarityMatches.Any())
+                        {
+                            var payload = new
+                            {
+                                SimilarMatchQuestionList = mediumSimilarityMatches.Select(m => new
+                                {
+                                    Title = m.Question?.Title ?? string.Empty,
+                                    Content = m.Question?.Content ?? string.Empty
+                                }).ToList(),
+                                Question = new
+                                {
+                                    Title = question.Title,
+                                    Content = question.Content
+                                }
+                            };
+
+                            try
+                            {
+                                var similarityEndpoint = "api/check-similarity";
+                                var similarityResponse = await _httpClient.PostAsJsonAsync(similarityEndpoint, payload);
+
+                                if (similarityResponse.IsSuccessStatusCode)
+                                {
+                                    var similarityJson = await similarityResponse.Content.ReadAsStringAsync();
+                                    using var doc = JsonDocument.Parse(similarityJson);
+                                    
+                                    if (doc.RootElement.ValueKind == JsonValueKind.Object && doc.RootElement.EnumerateObject().Any())
+                                    {
+                                        validQuestions.Add(question);
+                                    }
+                                }
+                                else
+                                {
+                                    var errorContent = await similarityResponse.Content.ReadAsStringAsync();
+                                    _logger.LogError("Similarity check API failed with status {StatusCode}: {Response}", similarityResponse.StatusCode, errorContent);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(ex, "An exception occurred during the similarity check API call.");
+                            }
+                        }
+                        else
+                        {
+                            validQuestions.Add(question);
+                        }
+                    }
+
+                    result.QuestionList = validQuestions;
 
                     return result;
                 }

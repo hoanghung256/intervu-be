@@ -35,6 +35,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
         public DbSet<InterviewType> InterviewTypes { get; set; }
         public DbSet<InterviewExperience> InterviewExperiences { get; set; }
         public DbSet<Question> Questions { get; set; }
+        public DbSet<GeneratedQuestion> GeneratedQuestions { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<Tag> Tags { get; set; }
         public DbSet<QuestionTag> QuestionTags { get; set; }
@@ -316,6 +317,22 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Ignore(x => x.EvaluationResults);
 
                 b.Property(x => x.IsEvaluationCompleted);
+            });
+
+            // GeneratedQuestion
+            modelBuilder.Entity<GeneratedQuestion>(b =>
+            {
+                b.ToTable("GeneratedQuestions");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Title).HasMaxLength(500).IsRequired();
+                b.Property(x => x.Content).HasColumnType("text").IsRequired();
+                b.Property(x => x.Status).HasConversion<int>().IsRequired();
+
+                b.HasOne(x => x.InterviewRoom)
+                 .WithMany(r => r.GeneratedQuestions)
+                 .HasForeignKey(x => x.InterviewRoomId)
+                 .HasConstraintName("FK_GeneratedQuestions_InterviewRooms_InterviewRoomId")
+                 .OnDelete(DeleteBehavior.Restrict);
             });
 
             // Feedback
