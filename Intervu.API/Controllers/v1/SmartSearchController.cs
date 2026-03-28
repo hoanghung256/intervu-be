@@ -16,16 +16,19 @@ namespace Intervu.API.Controllers.v1
         private readonly ISmartSearchQuestion _smartSearchQuestion;
         private readonly ISyncCoachVectors _syncCoachVectors;
         private readonly ISyncQuestionVectors _syncQuestionVectors;
+        private readonly ISmartSearchExtractDataFromFile _smartSearchExtractUseCase;
 
         public SmartSearchController(
             ISmartSearchCoach smartSearchCoach,
             ISmartSearchQuestion smartSearchQuestion,
             ISyncCoachVectors syncCoachVectors,
+            ISmartSearchExtractDataFromFile smartSearchExtractUseCase,
             ISyncQuestionVectors syncQuestionVectors)
         {
             _smartSearchCoach = smartSearchCoach;
             _smartSearchQuestion = smartSearchQuestion;
             _syncCoachVectors = syncCoachVectors;
+            _smartSearchExtractUseCase = smartSearchExtractUseCase;
             _syncQuestionVectors = syncQuestionVectors;
         }
 
@@ -60,6 +63,50 @@ namespace Intervu.API.Controllers.v1
                 {
                     success = false,
                     message = ex.Message,
+                    data = (object?)null
+                });
+            }
+        }
+
+        /// <summary>
+        /// Extract content from CV or JD for Human-in-the-Loop verification
+        /// </summary>
+        [HttpPost("extract")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> ExtractDocument([FromForm] SmartSearchExtractRequestDto request)
+        {
+            try
+            {
+                // This returns a raw JSON string from Python AI service
+                var jsonResult = await _smartSearchExtractUseCase.ExecuteAsync(request);
+                
+                // Construct the JSON response string directly to bypass ASP.NET Core generic object serialization quirks
+                var responseJson = $$"""
+                {
+                    "success": true,
+                    "message": "Successfully extracted document.",
+                    "data": {{jsonResult}}
+                }
+                """;
+                
+                return Content(responseJson, "application/json");
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = ex.Message,
+                    data = (object?)null
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Failed to extract document. The AI service might be unavailable.",
+                    error = ex.Message,
                     data = (object?)null
                 });
             }

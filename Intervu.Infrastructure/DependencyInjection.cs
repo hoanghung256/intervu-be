@@ -173,6 +173,7 @@ namespace Intervu.Infrastructure
             
             // AI Reasoning Services
             services.AddHttpClient<Application.Interfaces.ExternalServices.AI.ISmartSearchReasoningService, ExternalServices.AI.GeminiReasoningService>();
+            services.AddHttpClient<IPythonAiService, ExternalServices.AI.PythonAiService>();
 
 
             //Add HttpClient to call from API

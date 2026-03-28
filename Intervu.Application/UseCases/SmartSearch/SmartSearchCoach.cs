@@ -33,11 +33,18 @@ namespace Intervu.Application.UseCases.SmartSearch
 
         public async Task<List<SmartSearchResultDto>> ExecuteAsync(SmartSearchRequest request)
         {
-            if (string.IsNullOrWhiteSpace(request.Query))
-                throw new ArgumentException("Search query cannot be empty.");
+            if (string.IsNullOrWhiteSpace(request.Query) && string.IsNullOrWhiteSpace(request.ExtractedProfileContext))
+                throw new ArgumentException("Search query and profile context cannot both be empty.");
 
-            // Use query embedding mode for user text.
-            var queryVector = await _embeddingService.GetEmbeddingAsync(request.Query, "query");
+            // Combine the natural language query and structured JSON context to maximize vector search accuracy
+            string searchContext = request.Query;
+            if (!string.IsNullOrWhiteSpace(request.ExtractedProfileContext))
+            {
+                searchContext = $"Query: {request.Query}\nContext: {request.ExtractedProfileContext}";
+            }
+
+            // Use query embedding mode for the combined text context.
+            var queryVector = await _embeddingService.GetEmbeddingAsync(searchContext, "query");
 
             // Search only in coach vectors.
             var vectorMatches = await _vectorStoreService.SearchAsync(
@@ -61,29 +68,36 @@ namespace Intervu.Application.UseCases.SmartSearch
                     var coachProfile = await _coachProfileRepository.GetProfileByIdAsync(coachId);
                     if (coachProfile != null)
                     {
-                        var coachDto = _mapper.Map<CoachViewDto>(coachProfile);
-
-                        // Mapping profile ignores User, so map it explicitly for API response.
-                        if (coachDto.User == null && coachProfile.User != null)
+                        var topSkills = coachProfile.Skills?.Take(3).Select(s => s.Name).ToList() ?? new List<string>();
+                        var companies = coachProfile.Companies?.Select(c => new CompanySummaryDto
                         {
-                            coachDto.User = _mapper.Map<UserDto>(coachProfile.User);
-                        }
+                            Id = c.Id,
+                            Name = c.Name,
+                            LogoPath = c.LogoPath
+                        }).ToList() ?? new List<CompanySummaryDto>();
 
                         results.Add(new SmartSearchResultDto
                         {
                             CoachId = coachId,
+                            FullName = coachProfile.User?.FullName ?? "Unknown User",
+                            ProfilePicture = coachProfile.User?.ProfilePicture,
+                            SlugProfileUrl = coachProfile.User?.SlugProfileUrl,
+                            ExperienceYears = coachProfile.ExperienceYears ?? 0,
+                            PortfolioUrl = coachProfile.PortfolioUrl,
+                            TopSkills = topSkills,
+                            Companies = companies,
                             MatchScore = match.Score,
-                            Coach = coachDto,
+                            FinalScore = match.Score, // Initially fallback to vector score
                             RerankSource = "Pinecone"
                         });
 
                         // Prepare concise summary for LLM to avoid token bloat
-                        var skills = string.Join(", ", coachDto.Skills.Select(s => s.Name));
-                        var roles = coachDto.Bio ?? "";
+                        var skills = string.Join(", ", topSkills);
+                        var roles = coachProfile.Bio ?? "";
                         reasoningCandidates.Add(new ReasoningCandidate
                         {
                             Id = coachId.ToString(),
-                            Summary = $"Portfolio: {coachDto.PortfolioUrl}. Experience: {coachDto.ExperienceYears} yrs. Bio: {roles}. Skills: {skills}."
+                            Summary = $"Portfolio: {coachProfile.PortfolioUrl}. Experience: {coachProfile.ExperienceYears ?? 0} yrs. Bio: {roles}. Skills: {skills}."
                         });
                     }
                 }
@@ -92,7 +106,7 @@ namespace Intervu.Application.UseCases.SmartSearch
             // Step 4: AI Reasoning & Re-ranking
             if (reasoningCandidates.Any())
             {
-                var reasoningResults = await _reasoningService.RerankAndReasonAsync(request.Query, reasoningCandidates);
+                var reasoningResults = await _reasoningService.RerankAndReasonAsync(searchContext, reasoningCandidates);
 
                 if (reasoningResults.Any())
                 {
@@ -103,22 +117,24 @@ namespace Intervu.Application.UseCases.SmartSearch
                         if (reasoningMap.TryGetValue(result.CoachId.ToString(), out var aiResult))
                         {
                             result.RerankScore = aiResult.Score;
+                            result.FinalScore = aiResult.Score; // AI score overrides final score
                             result.Reasoning = aiResult.Reasoning;
                             result.RerankSource = "Gemini";
                         }
                         else
                         {
                             result.RerankScore = 0; // Penalize if AI dropped it entirely
+                            result.FinalScore = 0;
                         }
                     }
 
                     // Re-sort by AI score
-                    results = results.OrderByDescending(r => r.RerankScore ?? 0).ToList();
+                    results = results.OrderByDescending(r => r.FinalScore).ToList();
                 }
                 else
                 {
                     // Fallback to Pinecone sorting
-                    results = results.OrderByDescending(r => r.MatchScore).ToList();
+                    results = results.OrderByDescending(r => r.FinalScore).ToList();
                 }
             }
 

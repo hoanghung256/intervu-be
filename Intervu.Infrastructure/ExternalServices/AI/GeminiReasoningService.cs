@@ -11,7 +11,7 @@ namespace Intervu.Infrastructure.ExternalServices.AI
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
         private readonly ILogger<GeminiReasoningService> _logger;
-        private const string GEMINI_MODEL = "gemini-3-flash-preview"; // Fast and cheap reasoning model
+        private const string GEMINI_MODEL = "gemini-3.1-flash-lite-preview"; // User requested flash 3
 
         public GeminiReasoningService(
             HttpClient httpClient, 
@@ -48,22 +48,55 @@ namespace Intervu.Infrastructure.ExternalServices.AI
 
             var CandidatesJson = JsonConvert.SerializeObject(candidates);
 
-            var systemInstruction = $@"You are an expert AI recruiting and matching assistant.
-Your task is to re-evaluate and re-rank candidate profiles based on how well they match the user's explicit query.
-The candidates were initially retrieved via vector similarity search, which might miss nuance. You must fix this by reasoning over their actual summaries.
+                        var systemInstruction = $@"You are an expert AI mentor-matching assistant.
 
-USER QUERY:
+IMPORTANT CONTEXT:
+- This is NOT a hiring/recruitment ranking.
+- You are selecting interview coaches for the user (candidate), not evaluating candidates for a company.
+- Input text may include:
+    1) user natural-language goal,
+    2) extracted CV context,
+    3) extracted JD context.
+
+TASK:
+Re-rank coach candidates by coaching suitability for the user's TARGET ROLE and interview goal.
+
+USER CONTEXT:
 ""{query}""
 
-CANDIDATES (JSON format):
+COACH CANDIDATES (JSON format):
 {CandidatesJson}
 
-INSTRUCTIONS:
-1. Analyze each candidate against the exact requirements in the user's query.
-2. Provide a new relevance 'score' between 0.0 and 1.0 (1.0 being an absolute perfect match).
-3. Provide a very concise 'reasoning' (maximum 2 sentences) explaining *why* this candidate is a good fit tailored exactly to the user's query. Do not summarize their entire profile, focus only on the match.
-4. If a candidate is a completely irrelevant match, give them a score below 0.3.
-5. Return the result strictly matching the provided JSON schema.
+TARGET ROLE PRIORITY (STRICT):
+1. Identify the primary target role from explicit user goal first.
+2. If unclear, infer from JD role/title and requirements.
+3. If still unclear, infer from CV target role (not incidental past stacks).
+4. Treat past internship/legacy stacks in CV as secondary unless directly required by the target role/JD.
+
+EVALUATION CRITERIA:
+1. Target-role alignment: coach expertise is relevant to the user's target role.
+2. JD alignment (if present): coach can train the skills/responsibilities required by that JD.
+3. Gap-closing value: coach can help close the user's current gaps from CV context toward the target role.
+4. Seniority fit: coach level is appropriate for the user's goal.
+5. Practical interview value: coach profile suggests concrete interview preparation guidance.
+
+SCORING RULES:
+- Be strict and uncompromising. Do NOT inflate scores.
+- If evidence is weak, missing, or ambiguous, score lower.
+- 0.85-1.00: strong fit for the target role and likely high coaching value.
+- 0.60-0.84: reasonable fit with notable gaps.
+- 0.30-0.59: weak fit.
+- below 0.30: irrelevant or off-track.
+- If coach is off-track from target role/JD, score <= 0.20.
+- If no coach is truly suitable, score all candidates low instead of forcing a high match.
+
+OUTPUT STYLE RULES:
+1. Return one item per relevant coach ID from the input list.
+2. Reasoning must be concise (max 2 sentences), direct, and in second-person style (use ""you""/""your"").
+3. Explain why this coach is or is not a fit for your target role (not generic recruiting language).
+4. If mismatch is large, explicitly name the key gaps.
+5. Do not invent facts not present in the input.
+6. Return ONLY JSON that matches the required schema.
 ";
 
             // Enforce strictly typed JSON schema for guaranteed parsable output
@@ -107,6 +140,12 @@ INSTRUCTIONS:
                 using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(timeoutMs));
                 var response = await _httpClient.PostAsync(url, jsonContent, cts.Token);
 
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorBody = await response.Content.ReadAsStringAsync();
+                    _logger.LogError("Gemini API rejected request. Status: {StatusCode}. Body: {ErrorBody}", response.StatusCode, errorBody);
+                }
+                
                 response.EnsureSuccessStatusCode();
 
                 var responseBody = await response.Content.ReadAsStringAsync();

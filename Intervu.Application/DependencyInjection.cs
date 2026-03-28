@@ -205,6 +205,7 @@ namespace Intervu.Application
             services.AddScoped<Interfaces.UseCases.SmartSearch.ISyncCoachVectors, UseCases.SmartSearch.SyncCoachVectors>();
             services.AddScoped<Interfaces.UseCases.SmartSearch.ISyncQuestionVectors, UseCases.SmartSearch.SyncQuestionVectors>();
             services.AddScoped<Interfaces.UseCases.SmartSearch.ISmartSearchCoach, UseCases.SmartSearch.SmartSearchCoach>();
+            services.AddScoped<Interfaces.UseCases.SmartSearch.ISmartSearchExtractDataFromFile, UseCases.SmartSearch.SmartSearchExtractDataFromFile>();
             services.AddScoped<Interfaces.UseCases.SmartSearch.ISmartSearchQuestion, UseCases.SmartSearch.SmartSearchQuestion>();
 
             return services;
