@@ -45,6 +45,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
         public DbSet<CoachInterviewService> CoachInterviewServices { get; set; }
         public DbSet<BookingRequest> BookingRequests { get; set; }
         public DbSet<Intervu.Domain.Entities.InterviewRound> InterviewRounds { get; set; }
+        public DbSet<UserAssessmentAnswer> UserAssessmentAnswers { get; set; }
+        public DbSet<UserSkillAssessmentSnapshot> UserSkillAssessments { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -462,6 +464,94 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.HasKey(x => x.Id);
                 b.Property(x => x.Name).HasMaxLength(200).IsRequired();
                 b.Property(x => x.Description).HasColumnType("text");
+            });
+
+            // UserAssessmentAnswer - raw answers store
+            modelBuilder.Entity<UserAssessmentAnswer>(b =>
+            {
+                b.ToTable("UserAssessmentAnswers");
+                b.HasKey(x => x.Id);
+
+                b.Property(x => x.UserId).IsRequired();
+                b.Property(x => x.AssessmentId).IsRequired();
+
+                b.Property(x => x.QuestionId)
+                 .IsRequired()
+                 .HasMaxLength(200);
+
+                b.Property(x => x.Skill)
+                 .IsRequired()
+                 .HasMaxLength(200);
+
+                b.Property(x => x.Answer)
+                 .HasColumnType("text")
+                 .IsRequired(false);
+
+                b.Property(x => x.SelectedLevel)
+                 .IsRequired()
+                 .HasMaxLength(20);
+
+                b.Property(x => x.Type)
+                 .IsRequired()
+                 .HasMaxLength(20);
+
+                b.Property(x => x.SfiaLevel)
+                 .IsRequired();
+
+                b.Property(x => x.CreatedAt)
+                 .IsRequired()
+                 .HasColumnType("timestamp with time zone")
+                 .HasDefaultValueSql("NOW()");
+
+                b.HasIndex(x => x.UserId);
+                b.HasIndex(x => x.AssessmentId);
+                b.HasIndex(x => x.Skill);
+
+                b.HasOne(x => x.User)
+                 .WithMany()
+                 .HasForeignKey(x => x.UserId)
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasCheckConstraint("CK_UserAssessmentAnswers_SelectedLevel", "\"SelectedLevel\" IN ('None','Basic','Intermediate','Advanced')");
+                b.HasCheckConstraint("CK_UserAssessmentAnswers_SfiaLevel", "\"SfiaLevel\" IN (0,2,3,5)");
+            });
+
+            modelBuilder.Entity<UserSkillAssessmentSnapshot>(b =>
+            {
+                b.ToTable("UserSkillAssessmentSnapshots");
+                b.HasKey(x => x.Id);
+
+                b.Property(x => x.UserId).IsRequired();
+
+                b.Property(x => x.TargetJson)
+                 .IsRequired()
+                 .HasColumnType("jsonb");
+
+                b.Property(x => x.CurrentJson)
+                 .IsRequired()
+                 .HasColumnType("jsonb");
+
+                b.Property(x => x.GapJson)
+                 .IsRequired()
+                 .HasColumnType("jsonb");
+
+                b.Property(x => x.CreatedAt)
+                 .IsRequired()
+                 .HasColumnType("timestamp with time zone")
+                 .HasDefaultValueSql("NOW()");
+
+                b.Property(x => x.UpdatedAt)
+                 .IsRequired()
+                 .HasColumnType("timestamp with time zone")
+                 .HasDefaultValueSql("NOW()");
+
+                b.HasIndex(x => x.UserId)
+                 .IsUnique();
+
+                b.HasOne(x => x.User)
+                 .WithMany()
+                 .HasForeignKey(x => x.UserId)
+                 .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<PasswordResetToken>(b =>
