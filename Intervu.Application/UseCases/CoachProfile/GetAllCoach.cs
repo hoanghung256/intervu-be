@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -32,6 +32,7 @@ namespace Intervu.Application.UseCases.CoachProfile
                 request.Search,
                 request.SkillId,
                 request.CompanyId,
+                request.IndustryId,
                 request.Page,
                 request.PageSize,
                 request.SkillIds,

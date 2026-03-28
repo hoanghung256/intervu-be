@@ -1,4 +1,4 @@
-﻿using Intervu.Domain.Entities;
+using Intervu.Domain.Entities;
 using Intervu.Domain.Repositories;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Microsoft.EntityFrameworkCore;
@@ -72,6 +72,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             string? search,
             Guid? skillId,
             Guid? companyId,
+            Guid? industryId,
             int page,
             int pageSize,
             List<Guid>? skillIds = null,
@@ -111,6 +112,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             if (companyId.HasValue)
             {
                 query = query.Where(x => x.Companies.Any(c => c.Id == companyId.Value));
+            }
+
+            if (industryId.HasValue)
+            {
+                query = query.Where(x => x.Industries.Any(i => i.Id == industryId.Value));
             }
 
             if (minExperienceYears.HasValue)

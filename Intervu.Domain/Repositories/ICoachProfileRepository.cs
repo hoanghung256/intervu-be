@@ -14,6 +14,7 @@ namespace Intervu.Domain.Repositories
             string? search,
             Guid? skillId,
             Guid? companyId,
+            Guid? industryId,
             int page,
             int pageSize,
             List<Guid>? skillIds = null,

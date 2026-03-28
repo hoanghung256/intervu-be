@@ -1,4 +1,4 @@
-﻿using Intervu.Domain.Abstractions.Entity;
+using Intervu.Domain.Abstractions.Entity;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Entities.Constants.QuestionConstants;
@@ -77,6 +77,16 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // Seed GUIDs
+            var user1Id = Guid.Parse("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11");
+            var user2Id = Guid.Parse("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22");
+            var user3Id = Guid.Parse("2f8c7a6b-6d5e-4e2f-8c7a-9d6e5c4b3a33");
+            var user5Id = Guid.Parse("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44");
+            var user6Id = Guid.Parse("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55");
+
+            var room1Id = Guid.Parse("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a66");
+            var CoachAvail1Id = Guid.Parse("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77");
 
             // Users
             modelBuilder.Entity<User>(b =>
@@ -208,6 +218,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                      {
                          j.HasKey("CoachProfilesId", "IndustriesId");
                          j.ToTable("CoachIndustries");
+
+
                      });
             });
 
@@ -699,17 +711,10 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             }
 
             // Seed data
-            var user1Id = Guid.Parse("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11");
-            var user2Id = Guid.Parse("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22");
-            var user3Id = Guid.Parse("2f8c7a6b-6d5e-4e2f-8c7a-9d6e5c4b3a33");
-            var user5Id = Guid.Parse("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44");
-            var user6Id = Guid.Parse("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55");
-
-            var room1Id = Guid.Parse("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a66");
-            var CoachAvail1Id = Guid.Parse("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77");
-
             // Additional test data for reschedule functionality
             var CoachAvail2Id = Guid.Parse("aaaaaaaa-1111-4a1a-8a1a-111111111111"); // For reschedule testing
+
+            // Users
 
             // Users
             var user1 = new User

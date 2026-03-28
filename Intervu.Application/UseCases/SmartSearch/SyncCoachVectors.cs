@@ -24,7 +24,7 @@ namespace Intervu.Application.UseCases.SmartSearch
         public async Task<int> ExecuteAsync()
         {
             var (coaches, _) = await _coachProfileRepository.GetPagedCoachProfilesAsync(
-                search: null, skillId: null, companyId: null, page: 1, pageSize: 1000);
+                search: null, skillId: null, companyId: null, industryId: null, page: 1, pageSize: 1000);
 
             int syncedCount = 0;
 

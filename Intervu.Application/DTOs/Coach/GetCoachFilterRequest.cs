@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,6 +10,7 @@ namespace Intervu.Application.DTOs.Coach
     {
         public string? Search { get; set; }
         public Guid? CompanyId { get; set; }
+        public Guid? IndustryId { get; set; }
         public Guid? SkillId { get; set; }
         public List<Guid>? SkillIds { get; set; }
         public List<string>? Levels { get; set; }

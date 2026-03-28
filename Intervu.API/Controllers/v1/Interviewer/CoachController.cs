@@ -1,4 +1,4 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
 using Intervu.Application.DTOs.Coach;
 using Intervu.Application.Interfaces.UseCases.CoachProfile;
 using Microsoft.AspNetCore.Mvc;
@@ -24,6 +24,7 @@ namespace Intervu.API.Controllers.v1.Interviewer
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 24,
             [FromQuery] Guid? companyId = null,
+            [FromQuery] Guid? industryId = null,
             [FromQuery] Guid? skillId = null,
             [FromQuery] string? skillIds = null,
             [FromQuery] string? levels = null,
@@ -40,6 +41,7 @@ namespace Intervu.API.Controllers.v1.Interviewer
             {
                 Search = searchTerm,
                 CompanyId = companyId,
+                IndustryId = industryId,
                 SkillId = skillId,
                 SkillIds = parsedSkillIds,
                 Levels = parsedLevels,

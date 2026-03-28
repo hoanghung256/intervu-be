@@ -9,6 +9,18 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
     {
         private readonly IntervuPostgreDbContext _context = context;
 
+        public async Task<(IReadOnlyList<Industry> Items, int TotalCount)> GetPagedIndustriesAsync(int page, int pageSize)
+        {
+            var query = _context.Industries.AsQueryable();
+            var totalCount = await query.CountAsync();
+            var items = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (items, totalCount);
+        }
+
         public async Task<IReadOnlyList<Industry>> GetByIdsAsync(IEnumerable<Guid> ids)
         {
             if (ids == null)

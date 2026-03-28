@@ -53,6 +53,8 @@ using BookingRequestInterfaces = Intervu.Application.Interfaces.UseCases.Booking
 using BookingRequestUseCases = Intervu.Application.UseCases.BookingRequest;
 using CoachServiceInterfaces = Intervu.Application.Interfaces.UseCases.CoachInterviewService;
 using CoachServiceUseCases = Intervu.Application.UseCases.CoachInterviewService;
+using Intervu.Application.Interfaces.UseCases.Industry;
+using Intervu.Application.UseCases.Industry;
 
 namespace Intervu.Application
 {
@@ -97,6 +99,7 @@ namespace Intervu.Application
             services.AddScoped<IGetAllCoach, GetAllCoach>();
             services.AddScoped<CompanyInterfaces.IGetAllCompanies, CompanyUseCases.GetAllCompanies>();
             services.AddScoped<IGetAllSkills, GetAllSkills>();
+            services.AddScoped<IGetAllIndustries, GetAllIndustries>();
             // ----- Admin ----
             services.AddScoped<IGetDashboardStats, AdminUseCases.GetDashboardStats>();
             services.AddScoped<IGetAllUsersForAdmin, AdminUseCases.GetAllUsers>();
