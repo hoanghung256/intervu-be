@@ -1,4 +1,4 @@
-﻿using Intervu.Application.Exceptions;
+using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
 using Intervu.Application.Utils;
 using Intervu.Domain.Abstractions.Entity.Interfaces;
@@ -28,6 +28,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 var interviewRoomRepo = _unitOfWork.GetRepository<IInterviewRoomRepository>();
                 var transactionRepo = _unitOfWork.GetRepository<ITransactionRepository>();
                 var availabilityRepo = _unitOfWork.GetRepository<ICoachAvailabilitiesRepository>();
+                var bookingRepo = _unitOfWork.GetRepository<IBookingRequestRepository>();
 
                 Domain.Entities.InterviewRoom room = await interviewRoomRepo.GetByIdAsync(interviewRoomId)
                     ?? throw new NotFoundException("Interview room not found");
@@ -61,6 +62,17 @@ namespace Intervu.Application.UseCases.InterviewBooking
 
                 room.Status = InterviewRoomStatus.Cancelled;
                 interviewRoomRepo.UpdateAsync(room);
+
+                // If this room belongs to a BookingRequest, also cancel the parent request
+                if (room.BookingRequestId.HasValue)
+                {
+                    var bookingRequest = await bookingRepo.GetByIdAsync(room.BookingRequestId.Value);
+                    if (bookingRequest != null)
+                    {
+                        bookingRequest.Status = BookingRequestStatus.Cancelled;
+                        bookingRepo.UpdateAsync(bookingRequest);
+                    }
+                }
 
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();

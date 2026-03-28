@@ -41,6 +41,16 @@ namespace Intervu.Application.DTOs.Question
         public bool IsLinked { get; set; }
     }
 
+    public class ReportQuestionRequest
+    {
+        public string Reason { get; set; } = string.Empty;
+    }
+
+    public class ReportQuestionResult
+    {
+        public Guid ReportId { get; set; }
+    }
+
     public class QuestionSearchResultDto
     {
         public Guid Id { get; set; }
@@ -149,5 +159,31 @@ namespace Intervu.Application.DTOs.Question
         public List<RelatedQuestionDto> RelatedQuestions { get; set; } = new();
         public bool IsLikedByUser { get; set; }
         public bool IsSavedByUser { get; set; }
+    }
+
+    public class QuestionReportFilterRequest
+    {
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+        public QuestionReportStatus? Status { get; set; }
+        public string? SearchTerm { get; set; }
+    }
+
+    public class QuestionReportItemDto
+    {
+        public Guid Id { get; set; }
+        public Guid QuestionId { get; set; }
+        public string QuestionTitle { get; set; } = string.Empty;
+        public Guid ReporterId { get; set; }
+        public string ReporterName { get; set; } = string.Empty;
+        public string Reason { get; set; } = string.Empty;
+        public QuestionReportStatus Status { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
+
+    public class UpdateQuestionReportStatusRequest
+    {
+        public QuestionReportStatus Status { get; set; }
     }
 }
