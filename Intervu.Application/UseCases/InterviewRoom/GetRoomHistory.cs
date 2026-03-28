@@ -111,7 +111,8 @@ namespace Intervu.Application.UseCases.InterviewRoom
                     AimLevel = room.AimLevel,
                     RoundNumber = room.RoundNumber,
                     HasPendingReschedule = hasPendingReschedule,
-                    CanReschedule = canReschedule
+                    CanReschedule = canReschedule,
+                    Type = room.Type
                 });
             }
 

@@ -80,6 +80,7 @@ namespace Intervu.Infrastructure
             services.AddScoped<IRescheduleRequestRepository, RescheduleRequestRepository>();
             services.AddScoped<IInterviewTypeRepository, InterviewTypeRepository>();
             services.AddScoped<IQuestionRepository, QuestionRepository>();
+            services.AddScoped<IGeneratedQuestionRepository, GeneratedQuestionRepository>();
             services.AddScoped<ICommentRepository, CommentRepository>();
             services.AddScoped<IInterviewExperienceRepository, InterviewExperienceRepository>();
             services.AddScoped<ITagRepository, TagRepository>();
@@ -90,6 +91,7 @@ namespace Intervu.Infrastructure
             services.AddScoped<IBookingRequestRepository, BookingRequestRepository>();
             services.AddScoped<IInterviewRoundRepository, InterviewRoundRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
+            services.AddScoped<IAudioChunkRepository, AudioChunkRepository>();
 
             return services;
         }
@@ -168,6 +170,7 @@ namespace Intervu.Infrastructure
             });
 
             services.AddScoped<CodeExecutionService>();
+            services.AddScoped<IAiService, AiService>();
 
             // Pinecone Services
             services.AddHttpClient<IEmbeddingService, PineconeInferenceService>();
@@ -185,6 +188,17 @@ namespace Intervu.Infrastructure
                 string baseUrl = config["ApiClients:CodeExecution"];
 
                 client.BaseAddress = new Uri(baseUrl);
+            });
+
+            services.AddHttpClient("AiServiceClient", (sp, client) =>
+            {
+                var config = sp.GetRequiredService<IConfiguration>();
+                string baseUrl = config["ApiClients:AiService"];
+
+                if (!string.IsNullOrWhiteSpace(baseUrl))
+                {
+                    client.BaseAddress = new Uri(baseUrl);
+                }
             });
 
             services.AddHostedService<InterviewRoomCacheLoader>();

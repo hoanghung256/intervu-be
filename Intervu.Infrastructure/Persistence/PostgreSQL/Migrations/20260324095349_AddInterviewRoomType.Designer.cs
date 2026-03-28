@@ -3,6 +3,7 @@ using System;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 {
     [DbContext(typeof(IntervuPostgreDbContext))]
-    partial class IntervuPostgreDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260324095349_AddInterviewRoomType")]
+    partial class AddInterviewRoomType
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -822,34 +825,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             InterviewRoomId = new Guid("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a66"),
                             Rating = 5
                         });
-                });
-
-            modelBuilder.Entity("Intervu.Domain.Entities.GeneratedQuestion", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("InterviewRoomId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("InterviewRoomId");
-
-                    b.ToTable("GeneratedQuestions", (string)null);
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.InterviewBookingTransaction", b =>
@@ -1669,45 +1644,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Intervu.Domain.Entities.QuestionReport", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("QuestionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<Guid>("ReportedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Status")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(1);
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("QuestionId");
-
-                    b.HasIndex("ReportedBy");
-
-                    b.HasIndex("Status");
-
-                    b.ToTable("QuestionReports", (string)null);
-                });
-
             modelBuilder.Entity("Intervu.Domain.Entities.QuestionRole", b =>
                 {
                     b.Property<Guid>("QuestionId")
@@ -2321,18 +2257,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Intervu.Domain.Entities.GeneratedQuestion", b =>
-                {
-                    b.HasOne("Intervu.Domain.Entities.InterviewRoom", "InterviewRoom")
-                        .WithMany("GeneratedQuestions")
-                        .HasForeignKey("InterviewRoomId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("FK_GeneratedQuestions_InterviewRooms_InterviewRoomId");
-
-                    b.Navigation("InterviewRoom");
-                });
-
             modelBuilder.Entity("Intervu.Domain.Entities.InterviewBookingTransaction", b =>
                 {
                     b.HasOne("Intervu.Domain.Entities.BookingRequest", "BookingRequest")
@@ -2562,27 +2486,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Navigation("Question");
                 });
 
-            modelBuilder.Entity("Intervu.Domain.Entities.QuestionReport", b =>
-                {
-                    b.HasOne("Intervu.Domain.Entities.Question", "Question")
-                        .WithMany("Reports")
-                        .HasForeignKey("QuestionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_QuestionReports_Questions_QuestionId");
-
-                    b.HasOne("Intervu.Domain.Entities.User", "Reporter")
-                        .WithMany()
-                        .HasForeignKey("ReportedBy")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_QuestionReports_Users_ReportedBy");
-
-                    b.Navigation("Question");
-
-                    b.Navigation("Reporter");
-                });
-
             modelBuilder.Entity("Intervu.Domain.Entities.QuestionRole", b =>
                 {
                     b.HasOne("Intervu.Domain.Entities.Question", "Question")
@@ -2695,8 +2598,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 
             modelBuilder.Entity("Intervu.Domain.Entities.InterviewRoom", b =>
                 {
-                    b.Navigation("GeneratedQuestions");
-
                     b.Navigation("RescheduleRequests");
                 });
 
@@ -2709,8 +2610,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Navigation("QuestionRoles");
 
                     b.Navigation("QuestionTags");
-
-                    b.Navigation("Reports");
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.Tag", b =>

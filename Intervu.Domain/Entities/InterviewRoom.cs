@@ -44,6 +44,8 @@ namespace Intervu.Domain.Entities
 
         public int RescheduleAttemptCount { get; set; } = 0;
 
+        public InterviewRoomType Type { get; set; }
+
         // --- New booking context fields ---
 
         /// <summary>
@@ -94,6 +96,8 @@ namespace Intervu.Domain.Entities
         public CoachInterviewService? CoachInterviewService { get; set; }
         
         public ICollection<InterviewRescheduleRequest>? RescheduleRequests { get; set; }
+
+        public ICollection<GeneratedQuestion> GeneratedQuestions { get; set; } = new List<GeneratedQuestion>();
 
         public bool IsAvailableForReschedule()
         {

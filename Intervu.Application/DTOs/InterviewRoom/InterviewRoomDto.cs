@@ -19,6 +19,7 @@ namespace Intervu.Application.DTOs.InterviewRoom
         public bool IsEvaluationCompleted { get; set; }
         public double? Score { get; set; }
         public int RescheduleAttemptCount { get; set; }
+        public InterviewRoomType Type { get; set; }
 
         // --- New booking context fields ---
 
