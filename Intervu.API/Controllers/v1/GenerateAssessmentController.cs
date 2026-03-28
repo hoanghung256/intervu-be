@@ -19,7 +19,7 @@ namespace Intervu.API.Controllers.v1
             IAiService aiService,
             IGenerateAssessmentCatalogService catalogService)
         {
-            _aiService = aiService;
+            _aiService = aiService;     
             _catalogService = catalogService;
         }
 
