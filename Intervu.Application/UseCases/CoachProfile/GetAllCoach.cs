@@ -33,7 +33,13 @@ namespace Intervu.Application.UseCases.CoachProfile
                 request.SkillId,
                 request.CompanyId,
                 request.Page,
-                request.PageSize
+                request.PageSize,
+                request.SkillIds,
+                request.Levels,
+                request.MinExperienceYears,
+                request.MaxExperienceYears,
+                request.MinPrice,
+                request.MaxPrice
             );
 
             List<CoachProfileDto> dtoList = _mapper.Map<List<CoachProfileDto>>(items);

@@ -10,7 +10,18 @@ namespace Intervu.Domain.Repositories
         Task CreateCoachProfileAsync(CoachProfile profile);
         Task<CoachProfile?> GetProfileBySlugAsync(string slug);
         Task<CoachProfile?> GetProfileByIdAsync(Guid id);
-        Task<(IReadOnlyList<CoachProfile> Items, int TotalCount)> GetPagedCoachProfilesAsync(string? search, Guid? skillId, Guid? companyId, int page, int pageSize);
+        Task<(IReadOnlyList<CoachProfile> Items, int TotalCount)> GetPagedCoachProfilesAsync(
+            string? search,
+            Guid? skillId,
+            Guid? companyId,
+            int page,
+            int pageSize,
+            List<Guid>? skillIds = null,
+            List<string>? levels = null,
+            int? minExperienceYears = null,
+            int? maxExperienceYears = null,
+            int? minPrice = null,
+            int? maxPrice = null);
         Task UpdateCoachProfileAsync(CoachProfile updatedProfile);
         void DeleteCoachProfile(Guid id);
         Task<int> GetTotalCoachCountAsync();

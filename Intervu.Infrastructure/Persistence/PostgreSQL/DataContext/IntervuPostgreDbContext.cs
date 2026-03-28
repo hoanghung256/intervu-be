@@ -30,6 +30,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<Company> Companies { get; set; }
         public DbSet<Skill> Skills { get; set; }
+        public DbSet<Industry> Industries { get; set; }
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<InterviewType> InterviewTypes { get; set; }
@@ -150,6 +151,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.BankBinNumber);
                 b.Property(x => x.BankAccountNumber);
                 b.Property(x => x.ExperienceYears);
+                b.Property(x => x.CurrentJobTitle).HasMaxLength(200);
                 b.Property(x => x.Status).IsRequired();
 
                 b.HasOne(x => x.User)
@@ -195,8 +197,29 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                          j.HasKey("CoachProfilesId", "SkillsId");
                          j.ToTable("CoachSkills");
                      });
+
+                b.HasMany(x => x.Industries)
+                 .WithMany(i => i.CoachProfiles)
+                 .UsingEntity<Dictionary<string, object>>(
+                     "CoachIndustries",
+                     l => l.HasOne<Industry>().WithMany().HasForeignKey("IndustriesId").OnDelete(DeleteBehavior.Cascade),
+                     r => r.HasOne<CoachProfile>().WithMany().HasForeignKey("CoachProfilesId").OnDelete(DeleteBehavior.Cascade),
+                     j =>
+                     {
+                         j.HasKey("CoachProfilesId", "IndustriesId");
+                         j.ToTable("CoachIndustries");
+                     });
             });
 
+            modelBuilder.Entity<Industry>(b =>
+            {
+                b.ToTable("Industries");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Name).HasMaxLength(120).IsRequired();
+                b.Property(x => x.Slug).HasMaxLength(150).IsRequired();
+                b.HasIndex(x => x.Name).IsUnique();
+                b.HasIndex(x => x.Slug).IsUnique();
+            });
 
             // CoachAvailability (available time ranges per coach)
             modelBuilder.Entity<CoachAvailability>(b =>
@@ -773,6 +796,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 Id = user2Id,
                 PortfolioUrl = "https://portfolio.example.com/bob",
                 ExperienceYears = 8,
+                CurrentJobTitle = "Senior Backend Engineer",
                 Status = CoachProfileStatus.Enable,
                 CurrentAmount = 0,
                 Bio = "Senior Backend Engineer with real interview experience",
@@ -784,6 +808,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 Id = user5Id,
                 PortfolioUrl = "https://portfolio.example.com/john",
                 ExperienceYears = 6,
+                CurrentJobTitle = "Technical Lead",
                 CurrentAmount = 0,
                 Bio = "Fullstack Engineer previously at Uber",
                 Status = CoachProfileStatus.Enable,
@@ -795,6 +820,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 Id = user6Id,
                 PortfolioUrl = "https://portfolio.example.com/sarah",
                 ExperienceYears = 7,
+                CurrentJobTitle = "Senior Frontend Engineer",
                 CurrentAmount = 0,
                 Bio = "Senior Frontend Engineer focusing on UI/UX interviews",
                 Status = CoachProfileStatus.Enable,
@@ -919,6 +945,17 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 new Skill { Id = Guid.Parse("0a0a0a0a-0a0a-4a0a-8a0a-0a0a0a0a0a0a"), Name = "Machine Learning" }
             );
 
+            modelBuilder.Entity<Industry>().HasData(
+                new Industry { Id = Guid.Parse("11110000-0000-4000-8000-000000000001"), Name = "Fintech", Slug = "fintech" },
+                new Industry { Id = Guid.Parse("11110000-0000-4000-8000-000000000002"), Name = "E-commerce", Slug = "e-commerce" },
+                new Industry { Id = Guid.Parse("11110000-0000-4000-8000-000000000003"), Name = "EdTech", Slug = "edtech" },
+                new Industry { Id = Guid.Parse("11110000-0000-4000-8000-000000000004"), Name = "Blockchain", Slug = "blockchain" },
+                new Industry { Id = Guid.Parse("11110000-0000-4000-8000-000000000005"), Name = "HealthTech", Slug = "healthtech" },
+                new Industry { Id = Guid.Parse("11110000-0000-4000-8000-000000000006"), Name = "SaaS", Slug = "saas" },
+                new Industry { Id = Guid.Parse("11110000-0000-4000-8000-000000000007"), Name = "AI/ML", Slug = "ai-ml" },
+                new Industry { Id = Guid.Parse("11110000-0000-4000-8000-000000000008"), Name = "GameDev", Slug = "gamedev" }
+            );
+
             // Bob (user2Id)
             modelBuilder.Entity("CoachCompanies").HasData(
                 new { CoachProfilesId = user2Id, CompaniesId = Guid.Parse("11111111-1111-4111-8111-111111111111") }, // Google
@@ -964,6 +1001,15 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 new { CoachProfilesId = user6Id, SkillsId = Guid.Parse("e4e4e4e4-e4e4-44e4-84e4-e4e4e4e4e4e4") },
                 new { CoachProfilesId = user6Id, SkillsId = Guid.Parse("f5f5f5f5-f5f5-45f5-85f5-f5f5f5f5f5f5") },
                 new { CoachProfilesId = user6Id, SkillsId = Guid.Parse("0a0a0a0a-0a0a-4a0a-8a0a-0a0a0a0a0a0a") }
+            );
+
+            modelBuilder.Entity("CoachIndustries").HasData(
+                new { CoachProfilesId = user2Id, IndustriesId = Guid.Parse("11110000-0000-4000-8000-000000000001") },
+                new { CoachProfilesId = user2Id, IndustriesId = Guid.Parse("11110000-0000-4000-8000-000000000006") },
+                new { CoachProfilesId = user5Id, IndustriesId = Guid.Parse("11110000-0000-4000-8000-000000000002") },
+                new { CoachProfilesId = user5Id, IndustriesId = Guid.Parse("11110000-0000-4000-8000-000000000007") },
+                new { CoachProfilesId = user6Id, IndustriesId = Guid.Parse("11110000-0000-4000-8000-000000000003") },
+                new { CoachProfilesId = user6Id, IndustriesId = Guid.Parse("11110000-0000-4000-8000-000000000008") }
             );
 
             // InterviewExperience

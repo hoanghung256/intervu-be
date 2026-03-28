@@ -18,13 +18,15 @@ namespace Intervu.Application.UseCases.CoachProfile
         private readonly ICoachProfileRepository _repo;
         private readonly ICompanyRepository _companyRepository;
         private readonly ISkillRepository _skillRepository;
+        private readonly IIndustryRepository _industryRepository;
         private readonly IMapper _mapper;
 
-        public UpdateCoachProfile(ICoachProfileRepository repo, ICompanyRepository companyRepository, ISkillRepository skillRepository, IMapper mapper)
+        public UpdateCoachProfile(ICoachProfileRepository repo, ICompanyRepository companyRepository, ISkillRepository skillRepository, IIndustryRepository industryRepository, IMapper mapper)
         {
             _repo = repo;
             _companyRepository = companyRepository;
             _skillRepository = skillRepository;
+            _industryRepository = industryRepository;
             _mapper = mapper;
         }
 
@@ -48,6 +50,12 @@ namespace Intervu.Application.UseCases.CoachProfile
             {
                 var skills = await _skillRepository.GetByIdsAsync(coachUpdateDto.SkillIds);
                 existing.Skills = skills.ToList();
+            }
+
+            if (coachUpdateDto.IndustryIds != null)
+            {
+                var industries = await _industryRepository.GetByIdsAsync(coachUpdateDto.IndustryIds);
+                existing.Industries = industries.ToList();
             }
 
             // Map simple properties from DTO to existing entity

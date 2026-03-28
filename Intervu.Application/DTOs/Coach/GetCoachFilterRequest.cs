@@ -11,6 +11,12 @@ namespace Intervu.Application.DTOs.Coach
         public string? Search { get; set; }
         public Guid? CompanyId { get; set; }
         public Guid? SkillId { get; set; }
+        public List<Guid>? SkillIds { get; set; }
+        public List<string>? Levels { get; set; }
+        public int? MinExperienceYears { get; set; }
+        public int? MaxExperienceYears { get; set; }
+        public int? MinPrice { get; set; }
+        public int? MaxPrice { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 24;
     }
