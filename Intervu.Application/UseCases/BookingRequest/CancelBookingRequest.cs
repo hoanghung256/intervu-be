@@ -61,7 +61,11 @@ namespace Intervu.Application.UseCases.BookingRequest
 
             foreach (var room in rooms)
             {
-                // Only cancel rooms that are Scheduled or Ongoing
+                // Skip rows that are already cancelled, but cancel every other room state.
+                if (room.Status == InterviewRoomStatus.Cancelled)
+                    continue;
+
+                // Only active sessions should trigger payout/refund handling.
                 if (room.Status == InterviewRoomStatus.Scheduled || room.Status == InterviewRoomStatus.Ongoing)
                 {
                     // If room has an associated availability and transactions, handle refunds similar to CancelInterview
@@ -110,10 +114,10 @@ namespace Intervu.Application.UseCases.BookingRequest
                             });
                         }
                     }
-
-                    room.Status = InterviewRoomStatus.Cancelled;
-                    _roomRepo.UpdateAsync(room);
                 }
+
+                room.Status = InterviewRoomStatus.Cancelled;
+                _roomRepo.UpdateAsync(room);
             }
 
             _bookingRepo.UpdateAsync(bookingRequest);
