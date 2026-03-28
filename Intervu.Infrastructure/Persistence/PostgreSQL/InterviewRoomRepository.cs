@@ -27,6 +27,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
         {
             var rooms = await _context.InterviewRooms
                 .Include(r => r.CurrentAvailability)
+                .Include(r => r.CoachInterviewService)!
+                    .ThenInclude(s => s!.InterviewType)
                 .Where(r => r.CandidateId == candidateId)
                 .ToListAsync();
 
@@ -59,6 +61,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
         {
             var rooms = await _context.InterviewRooms
                 .Include(r => r.CurrentAvailability)
+                .Include(r => r.CoachInterviewService)!
+                    .ThenInclude(s => s!.InterviewType)
                 .Where(r => r.CoachId == coachId)
                 .ToListAsync();
 
@@ -109,6 +113,13 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                     .ThenInclude(s => s!.InterviewType)
                 .Include(r => r.RescheduleRequests)
                 .FirstOrDefaultAsync(r => r.Id == id);
+        }
+
+        public async Task<List<InterviewRoom>> GetByBookingRequestIdAsync(Guid bookingRequestId)
+        {
+            return await _context.InterviewRooms
+                .Where(r => r.BookingRequestId == bookingRequestId)
+                .ToListAsync();
         }
     }
 }

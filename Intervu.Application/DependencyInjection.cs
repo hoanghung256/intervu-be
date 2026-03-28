@@ -109,6 +109,7 @@ namespace Intervu.Application
             services.AddScoped<IGetUserByIdForAdmin, AdminUseCases.GetUserByIdForAdmin>();
             services.AddScoped<IUpdateUserForAdmin, AdminUseCases.UpdateUserForAdmin>();
             services.AddScoped<IDeleteUserForAdmin, AdminUseCases.DeleteUserForAdmin>();
+            services.AddScoped<IActivateUserForAdmin, AdminUseCases.ActivateUserForAdmin>();
             // ----- Feedback ----
             services.AddScoped<IGetFeedbacks, GetFeedbacks>();
             services.AddScoped<ICreateFeedback, CreateFeedback>();
