@@ -71,6 +71,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             var query = _context.CoachProfiles
                 .Include(i => i.Companies)
                 .Include(i => i.Skills)
+                .Include(i => i.User)
                 .AsQueryable();
 
             if (!string.IsNullOrEmpty(search))
