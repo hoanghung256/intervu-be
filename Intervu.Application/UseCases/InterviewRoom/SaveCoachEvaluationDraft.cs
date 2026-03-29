@@ -1,4 +1,4 @@
-using Intervu.Application.DTOs.InterviewRoom;
+﻿using Intervu.Application.DTOs.InterviewRoom;
 using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Intervu.Domain.Entities;
@@ -8,12 +8,12 @@ using Microsoft.Extensions.Logging;
 
 namespace Intervu.Application.UseCases.InterviewRoom
 {
-    public class SubmitCoachEvaluation : ISubmitCoachEvaluation
+    public class SaveCoachEvaluationDraft : ISaveCoachEvaluationDraft
     {
         private readonly IInterviewRoomRepository _roomRepo;
-        private readonly ILogger<SubmitCoachEvaluation> _logger;
+        private readonly ILogger<SaveCoachEvaluationDraft> _logger;
 
-        public SubmitCoachEvaluation(IInterviewRoomRepository roomRepo, ILogger<SubmitCoachEvaluation> logger)
+        public SaveCoachEvaluationDraft(IInterviewRoomRepository roomRepo, ILogger<SaveCoachEvaluationDraft> logger)
         {
             _roomRepo = roomRepo;
             _logger = logger;
@@ -51,12 +51,11 @@ namespace Intervu.Application.UseCases.InterviewRoom
                 Answer = r.Answer,
                 Score = r.Score
             }).ToList();
-            room.IsEvaluationCompleted = true;
 
             _roomRepo.UpdateAsync(room);
             await _roomRepo.SaveChangesAsync();
 
-            _logger.LogInformation("Coach {CoachId} submitted evaluation for interview room {RoomId}", coachId, interviewRoomId);
+            _logger.LogInformation("Coach {CoachId} saved evaluation draft for interview room {RoomId}", coachId, interviewRoomId);
         }
     }
 }
