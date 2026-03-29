@@ -1,6 +1,7 @@
 using Intervu.Application.Mappings;
 using Intervu.Application.Services;
 using Intervu.Application.UseCases.Authentication;
+using Intervu.Application.Interfaces.Services;
 using Intervu.Application.Interfaces.UseCases.Authentication;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Microsoft.Extensions.Configuration;
@@ -18,6 +19,7 @@ using AdminUseCases = Intervu.Application.UseCases.Admin;
 using Intervu.Application.Interfaces.UseCases.Availability;
 using Intervu.Application.UseCases.Availability;
 using Intervu.Application.Interfaces.ExternalServices;
+using System;
 using Intervu.Application.Interfaces.UseCases.Candidate;
 using Intervu.Application.Interfaces.UseCases.CandidateProfile;
 using Intervu.Application.Services.CodeGeneration;
@@ -77,6 +79,18 @@ namespace Intervu.Application
             services.AddSingleton<ICodeGenerationService, CSharpCodeGenerationService>();
             services.AddSingleton<ICodeGenerationService, JavaScriptCodeGenerationService>();
             services.AddSingleton<ICodeGenerationService, JavaCodeGenerationService>();
+            services.AddScoped<IAssessmentService, AssessmentService>();
+            services.AddScoped<IGenerateAssessmentCatalogService, GenerateAssessmentCatalogService>();
+
+            // AI Service HttpClient and registration
+            services.AddHttpClient("AiServiceClient", client =>
+            {
+                client.BaseAddress = new Uri(
+                    configuration["ApiClients:AIService"]
+                    ?? configuration["AiService:BaseUrl"]
+                    ?? "https://api.example.com/");
+            });
+            services.AddScoped<IAiService, AiService>();
 
             // Auth UseCases
             services.AddTransient<ILoginUseCase, LoginUseCase>();

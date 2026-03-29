@@ -6,6 +6,8 @@ using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.BackgroundJobs;
 using Intervu.Application.Interfaces.ExternalServices.Email;
 using Intervu.Domain.Repositories;
+using Intervu.Application.Interfaces.Repositories;
+using Intervu.Infrastructure.Persistence.PostgreSQL.Repositories;
 using Intervu.Infrastructure.ExternalServices;
 using Intervu.Infrastructure.ExternalServices.EmailServices;
 using Intervu.Infrastructure.ExternalServices.FirebaseStorageService;
@@ -78,6 +80,8 @@ namespace Intervu.Infrastructure
             services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             services.AddScoped<IRescheduleRequestRepository, RescheduleRequestRepository>();
+            // Assessment raw answers repo not registered — we only store processed survey snapshots
+            services.AddScoped<IUserSkillAssessmentSnapshotRepository, UserSkillAssessmentSnapshotRepository>();
             services.AddScoped<IInterviewTypeRepository, InterviewTypeRepository>();
             services.AddScoped<IQuestionRepository, QuestionRepository>();
             services.AddScoped<IGeneratedQuestionRepository, GeneratedQuestionRepository>();
