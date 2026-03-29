@@ -20,7 +20,7 @@ namespace Intervu.API.Test.ApiTests.Candidate
         // Seeded Data
         private readonly Guid _aliceId = Guid.Parse("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11");
         private readonly string _aliceEmail = "alice@example.com";
-        private readonly string _aliceSlug = "alice-candidate_1719000000001";
+        private readonly string _aliceSlug = "alice-candidate";
 
         private readonly string _adminEmail = "admin@example.com";
 

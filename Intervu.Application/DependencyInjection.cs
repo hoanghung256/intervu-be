@@ -55,6 +55,13 @@ using BookingRequestInterfaces = Intervu.Application.Interfaces.UseCases.Booking
 using BookingRequestUseCases = Intervu.Application.UseCases.BookingRequest;
 using CoachServiceInterfaces = Intervu.Application.Interfaces.UseCases.CoachInterviewService;
 using CoachServiceUseCases = Intervu.Application.UseCases.CoachInterviewService;
+using Intervu.Application.Interfaces.UseCases.AudioChunk;
+using AudioChunk = Intervu.Application.UseCases.AudioChunk;
+using Intervu.Application.Interfaces.Services;
+using Intervu.Application.Interfaces.UseCases.SmartSearch;
+using Intervu.Application.UseCases.SmartSearch;
+using Intervu.Application.Interfaces.UseCases.GeneratedQuestion;
+using Intervu.Application.UseCases.GeneratedQuestion;
 
 namespace Intervu.Application
 {
@@ -87,6 +94,7 @@ namespace Intervu.Application
 
             // Auth UseCases
             services.AddTransient<ILoginUseCase, LoginUseCase>();
+            services.AddTransient<IGoogleLoginUseCase, GoogleLoginUseCase>();
             services.AddTransient<IRegisterUseCase, RegisterUseCase>();
             services.AddTransient<IRefreshTokenUseCase, RefreshTokenUseCase>();
 
@@ -100,6 +108,8 @@ namespace Intervu.Application
             services.AddScoped<IGetRoomHistory, GetRoomHistory>();
             services.AddScoped<IUpdateRoom, UpdateRoom>();
             services.AddScoped<IGetCurrentRoom, GetCurrentRoom>();
+            services.AddScoped<IGetCoachEvaluation, GetCoachEvaluation>();
+            services.AddScoped<ISubmitCoachEvaluation, SubmitCoachEvaluation>();
             // ----- CoachProfile ----
             services.AddScoped<ICreateCoachProfile, CreateCoachProfile>();
             services.AddScoped<IUpdateCoachProfile, UpdateCoachProfile>();
@@ -120,6 +130,7 @@ namespace Intervu.Application
             services.AddScoped<IGetUserByIdForAdmin, AdminUseCases.GetUserByIdForAdmin>();
             services.AddScoped<IUpdateUserForAdmin, AdminUseCases.UpdateUserForAdmin>();
             services.AddScoped<IDeleteUserForAdmin, AdminUseCases.DeleteUserForAdmin>();
+            services.AddScoped<IActivateUserForAdmin, AdminUseCases.ActivateUserForAdmin>();
             // ----- Feedback ----
             services.AddScoped<IGetFeedbacks, GetFeedbacks>();
             services.AddScoped<ICreateFeedback, CreateFeedback>();
@@ -184,6 +195,15 @@ namespace Intervu.Application
             services.AddScoped<IGetQuestionList, GetQuestionList>();
             services.AddScoped<IGetQuestionDetail, GetQuestionDetail>();
             services.AddScoped<ISearchQuestions, SearchQuestions>();
+            services.AddScoped<IReportQuestion, ReportQuestion>();
+            services.AddScoped<IGetQuestionReports, GetQuestionReports>();
+            services.AddScoped<IUpdateQuestionReportStatus, UpdateQuestionReportStatus>();
+
+            // --- Generated Questions ---
+            services.AddScoped<IStoreGeneratedQuestions, StoreGeneratedQuestions>();
+            services.AddScoped<IGetGeneratedQuestionsByRoom, GetGeneratedQuestionsByRoom>();
+            services.AddScoped<IApproveGeneratedQuestion, ApproveGeneratedQuestion>();
+            services.AddScoped<IRejectGeneratedQuestion, RejectGeneratedQuestion>();
 
             // --- Comments ---
             services.AddScoped<IGetComments, GetComments>();
@@ -214,6 +234,18 @@ namespace Intervu.Application
             
             // ----- Notification ----
             services.AddScoped<Interfaces.UseCases.Notification.INotificationUseCase, UseCases.Notification.NotificationUseCase>();
+
+            // ----- SmartSearch ----
+            services.AddScoped<ISyncCoachVectors, SyncCoachVectors>();
+            services.AddScoped<ISyncQuestionVectors, SyncQuestionVectors>();
+            services.AddScoped<ISmartSearchCoach, SmartSearchCoach>();
+            services.AddScoped<ISmartSearchQuestion, SmartSearchQuestion>();
+            services.AddScoped<IGetDuplicateQuestion, GetDuplicateQuestion>();
+
+            // ----- AudioChunk ----
+            services.AddScoped<IStoreAudioChunk, AudioChunk.StoreAudioChunk>();
+            services.AddScoped<IGetAudioChunk, AudioChunk.GetAudioChunk>();
+            services.AddSingleton<IAudioProcessingService, AudioProcessingService>();
 
             return services;
         }

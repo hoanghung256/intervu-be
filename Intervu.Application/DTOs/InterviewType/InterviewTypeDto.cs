@@ -1,4 +1,5 @@
-﻿using Intervu.Domain.Entities.Constants;
+﻿using Intervu.Domain.Entities;
+using Intervu.Domain.Entities.Constants;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -27,6 +28,8 @@ namespace Intervu.Application.DTOs.InterviewType
 
         [Range(15, 300)]
         public int SuggestedDurationMinutes { get; set; }
+
+        public List<EvaluationItem>? EvaluationStructure { get; set; }
 
         public InterviewTypeStatus Status { get; set; }
     }

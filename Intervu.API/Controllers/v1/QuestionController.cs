@@ -5,6 +5,7 @@ using Intervu.Application.Interfaces.UseCases.Question;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
@@ -23,6 +24,9 @@ namespace Intervu.API.Controllers.v1
         private readonly ILikeQuestion _likeQuestion;
         private readonly ISaveQuestion _saveQuestion;
         private readonly IGetSavedQuestions _getSaved;
+        private readonly IReportQuestion _reportQuestion;
+        private readonly IGetQuestionReports _getQuestionReports;
+        private readonly IUpdateQuestionReportStatus _updateReportStatus;
 
         public QuestionController(
             IGetQuestionList getList,
@@ -32,7 +36,10 @@ namespace Intervu.API.Controllers.v1
             ISearchQuestions search,
             ILikeQuestion likeQuestion,
             ISaveQuestion saveQuestion,
-            IGetSavedQuestions getSaved)
+            IGetSavedQuestions getSaved,
+            IReportQuestion reportQuestion,
+            IGetQuestionReports getQuestionReports,
+            IUpdateQuestionReportStatus updateReportStatus)
         {
             _getList = getList;
             _getDetail = getDetail;
@@ -42,12 +49,30 @@ namespace Intervu.API.Controllers.v1
             _likeQuestion = likeQuestion;
             _saveQuestion = saveQuestion;
             _getSaved = getSaved;
+            _reportQuestion = reportQuestion;
+            _getQuestionReports = getQuestionReports;
+            _updateReportStatus = updateReportStatus;
         }
 
         private Guid? GetOptionalUserId()
         {
-            var raw = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var raw = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+                ?? User.FindFirstValue("sub");
             return Guid.TryParse(raw, out var id) ? id : null;
+        }
+
+        private bool TryGetRequiredUserId(out Guid userId)
+        {
+            userId = Guid.Empty;
+            var optionalUserId = GetOptionalUserId();
+            if (!optionalUserId.HasValue)
+            {
+                return false;
+            }
+
+            userId = optionalUserId.Value;
+            return true;
         }
 
         [HttpGet]
@@ -78,7 +103,11 @@ namespace Intervu.API.Controllers.v1
         [HttpGet("saved")]
         public async Task<IActionResult> GetSaved()
         {
-            _ = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
+            if (!TryGetRequiredUserId(out Guid userId))
+            {
+                return Unauthorized(new { success = false, message = "Invalid token" });
+            }
+
             var result = await _getSaved.ExecuteAsync(userId);
             return Ok(new { success = true, message = "Success", data = result });
         }
@@ -87,7 +116,11 @@ namespace Intervu.API.Controllers.v1
         [HttpPost("{questionId:guid}/like")]
         public async Task<IActionResult> LikeQuestion(Guid questionId)
         {
-            _ = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
+            if (!TryGetRequiredUserId(out Guid userId))
+            {
+                return Unauthorized(new { success = false, message = "Invalid token" });
+            }
+
             var isLiked = await _likeQuestion.ExecuteAsync(questionId, userId);
             var isUpvote = isLiked;
             await _update.VoteAsync(questionId, isUpvote, userId);
@@ -98,16 +131,37 @@ namespace Intervu.API.Controllers.v1
         [HttpPost("{questionId:guid}/save")]
         public async Task<IActionResult> SaveQuestion(Guid questionId, [FromBody] bool isSaved)
         {
-            _ = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
+            if (!TryGetRequiredUserId(out Guid userId))
+            {
+                return Unauthorized(new { success = false, message = "Invalid token" });
+            }
+
             var isSavedQuestion = await _saveQuestion.ExecuteAsync(questionId, isSaved, userId);
             return Ok(new { success = true, message = isSaved ? "Saved" : "Unsaved", data = new { isSaved } });
+        }
+
+        [Authorize(Policy = AuthorizationPolicies.AllRoles)]
+        [HttpPost("{questionId:guid}/report")]
+        public async Task<IActionResult> ReportQuestion(Guid questionId, [FromBody] ReportQuestionRequest request)
+        {
+            if (!TryGetRequiredUserId(out Guid userId))
+            {
+                return Unauthorized(new { success = false, message = "Invalid token" });
+            }
+
+            var result = await _reportQuestion.ExecuteAsync(questionId, request, userId);
+            return Ok(new { success = true, message = "Question reported", data = result });
         }
 
         [Authorize(Policy = AuthorizationPolicies.AllRoles)]
         [HttpPut("{questionId:guid}")]
         public async Task<IActionResult> Update(Guid questionId, [FromBody] UpdateQuestionRequest request)
         {
-            _ = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
+            if (!TryGetRequiredUserId(out Guid userId))
+            {
+                return Unauthorized(new { success = false, message = "Invalid token" });
+            }
+
             await _update.ExecuteAsync(questionId, request, userId);
             return Ok(new { success = true, message = "Question updated" });
         }
@@ -116,9 +170,29 @@ namespace Intervu.API.Controllers.v1
         [HttpDelete("{questionId:guid}")]
         public async Task<IActionResult> Delete(Guid questionId)
         {
-            _ = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
+            if (!TryGetRequiredUserId(out Guid userId))
+            {
+                return Unauthorized(new { success = false, message = "Invalid token" });
+            }
+
             await _delete.ExecuteAsync(questionId, userId);
             return Ok(new { success = true, message = "Question deleted" });
+        }
+
+        [Authorize(Policy = AuthorizationPolicies.Admin)]
+        [HttpGet("reports")]
+        public async Task<IActionResult> GetReports([FromQuery] QuestionReportFilterRequest filter)
+        {
+            var result = await _getQuestionReports.ExecuteAsync(filter);
+            return Ok(new { success = true, message = "Success", data = result });
+        }
+
+        [Authorize(Policy = AuthorizationPolicies.Admin)]
+        [HttpPut("reports/{reportId:guid}/status")]
+        public async Task<IActionResult> UpdateReportStatus(Guid reportId, [FromBody] UpdateQuestionReportStatusRequest request)
+        {
+            await _updateReportStatus.ExecuteAsync(reportId, request.Status);
+            return Ok(new { success = true, message = "Report status updated" });
         }
 
         //[HttpPost("{questionId:guid}/vote")]

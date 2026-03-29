@@ -1,4 +1,4 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
 using Intervu.API.Utils.Constant;
 using Intervu.Application.DTOs.InterviewRoom;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
@@ -9,6 +9,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using System;
+using System.Collections.Generic;
 
 namespace Intervu.API.Controllers.v1
 {
@@ -18,10 +19,17 @@ namespace Intervu.API.Controllers.v1
     public class InterviewRoomController : Controller
     {
         private readonly IGetRoomHistory _getRoomHistory;
+        private readonly IGetCoachEvaluation _getCoachEvaluation;
+        private readonly ISubmitCoachEvaluation _submitCoachEvaluation;
 
-        public InterviewRoomController(IGetRoomHistory getRoomHistory)
+        public InterviewRoomController(
+            IGetRoomHistory getRoomHistory,
+            IGetCoachEvaluation getCoachEvaluation,
+            ISubmitCoachEvaluation submitCoachEvaluation)
         {
             _getRoomHistory = getRoomHistory;
+            _getCoachEvaluation = getCoachEvaluation;
+            _submitCoachEvaluation = submitCoachEvaluation;
         }
 
         /// <summary>
@@ -50,6 +58,66 @@ namespace Intervu.API.Controllers.v1
                 success = true,
                 message = "Success",
                 data = result.Items
+            });
+        }
+
+        /// <summary>
+        /// Get evaluation form and current answers for a completed interview (coach only)
+        /// </summary>
+        [Authorize(Policy = AuthorizationPolicies.CandidateOrInterviewer)]
+        [HttpGet("{interviewRoomId}/coach-evaluation")]
+        public async Task<IActionResult> GetCoachEvaluation([FromRoute] Guid interviewRoomId)
+        {
+            bool isGetUserIdSuccess = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
+
+            if (!isGetUserIdSuccess)
+            {
+                return Unauthorized(new
+                {
+                    success = false,
+                    message = "Invalid user credentials"
+                });
+            }
+
+            var evaluation = await _getCoachEvaluation.ExecuteAsync(interviewRoomId, userId);
+
+            return Ok(new
+            {
+                success = true,
+                message = "Success",
+                data = evaluation
+            });
+        }
+
+        /// <summary>
+        /// Submit coach evaluation for a completed interview
+        /// </summary>
+        [Authorize(Policy = AuthorizationPolicies.Interviewer)]
+        [HttpPost("{interviewRoomId}/coach-evaluation")]
+        public async Task<IActionResult> SubmitCoachEvaluation(
+            [FromRoute] Guid interviewRoomId,
+            [FromBody] SubmitCoachEvaluationRequest request)
+        {
+            bool isGetUserIdSuccess = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
+
+            if (!isGetUserIdSuccess)
+            {
+                return Unauthorized(new
+                {
+                    success = false,
+                    message = "Invalid user credentials"
+                });
+            }
+
+            await _submitCoachEvaluation.ExecuteAsync(
+                interviewRoomId,
+                userId,
+                request?.Results ?? new List<EvaluationResultDto>());
+
+            return Ok(new
+            {
+                success = true,
+                message = "Evaluation submitted successfully"
             });
         }
 

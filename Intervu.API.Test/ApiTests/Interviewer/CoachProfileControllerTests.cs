@@ -19,7 +19,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
         // Seeded Data
         private readonly Guid _bobId = Guid.Parse("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22");
         private readonly string _bobEmail = "bob@example.com";
-        private readonly string _bobSlug = "bob-Coach_1719000000002";
+        private readonly string _bobSlug = "bob-coach";
 
         private readonly Guid _johnId = Guid.Parse("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"); // Another coach for Admin tests
         

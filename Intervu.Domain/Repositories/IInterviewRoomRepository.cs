@@ -1,8 +1,6 @@
 ﻿using Intervu.Domain.Entities;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Intervu.Domain.Repositories
@@ -24,5 +22,10 @@ namespace Intervu.Domain.Repositories
         /// Get rooms with participant names for a coach
         /// </summary>
         Task<IEnumerable<(InterviewRoom Room, string? CandidateName, string? CoachName)>> GetListWithNamesByCoachIdAsync(Guid coachId);
+
+        /// <summary>
+        /// Get interview rooms linked to a booking request
+        /// </summary>
+        Task<List<InterviewRoom>> GetByBookingRequestIdAsync(Guid bookingRequestId);
     }
 }

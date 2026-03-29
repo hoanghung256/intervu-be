@@ -1,8 +1,9 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Intervu.Application.DTOs.User;
 using Intervu.Application.Interfaces.UseCases.Authentication;
 using Intervu.Application.Utils;
 using Intervu.Domain.Entities;
+using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 
 namespace Intervu.Application.UseCases.Authentication
@@ -39,6 +40,11 @@ namespace Intervu.Application.UseCases.Authentication
 
             // Verify user exists and password is correct
             if (user == null || !PasswordHashHandler.VerifyPassword(request.Password, user.Password))
+            {
+                return null;
+            }
+
+            if (user.Status == UserStatus.Deleted)
             {
                 return null;
             }

@@ -5,6 +5,7 @@ using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Application.Utils;
 using Intervu.Domain.Repositories;
+using System.Net.Mail;
 
 namespace Intervu.Application.UseCases.Authentication
 {
@@ -24,6 +25,11 @@ namespace Intervu.Application.UseCases.Authentication
         public async Task<bool> ExecuteAsync(RegisterRequest request)
         {
             if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
+            {
+                return false;
+            }
+
+            if (!IsValidEmail(request.Email))
             {
                 return false;
             }
@@ -80,6 +86,19 @@ namespace Intervu.Application.UseCases.Authentication
             }
 
             return true;
+        }
+
+        private static bool IsValidEmail(string email)
+        {
+            try
+            {
+                _ = new MailAddress(email);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }
