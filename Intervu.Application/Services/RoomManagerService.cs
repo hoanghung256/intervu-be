@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Intervu.Domain.Repositories;
 
 namespace Intervu.Application.Services
 {
@@ -79,11 +80,16 @@ namespace Intervu.Application.Services
                 try
                 {
                     using var scope = _scopeFactory.CreateScope();
+                    var roomRepo = scope.ServiceProvider.GetRequiredService<IInterviewRoomRepository>();
                     var updateRoom = scope.ServiceProvider.GetRequiredService<IUpdateRoom>();
+                    
                     if (_roomStates.TryGetValue(roomId, out var roomState))
                     {
                         var roomGuid = Guid.Parse(roomId);
-                        InterviewRoom room = _cache.Rooms.SingleOrDefault(r => r.Id == roomGuid);
+                        
+                        // Fetch fresh from DB to avoid overwriting unrelated fields (like evaluation) with stale cache data
+                        var room = await roomRepo.GetByIdAsync(roomGuid);
+                        
                         if (room != null)
                         {
                             room.CurrentLanguage = roomState.CurrentLanguage;
@@ -91,6 +97,7 @@ namespace Intervu.Application.Services
                             room.ProblemDescription = roomState.ProblemDescription;
                             room.ProblemShortName = roomState.ProblemShortName;
                             room.TestCases = roomState.TestCases;
+                            
                             await updateRoom.ExecuteAsync(room);
                             _logger.LogInformation("Periodically saved data for room '{RoomId}'.", roomId);
                         }
@@ -135,12 +142,15 @@ namespace Intervu.Application.Services
             {
                 using var scope = _scopeFactory.CreateScope();
 
+                var roomRepo = scope.ServiceProvider.GetRequiredService<IInterviewRoomRepository>();
                 var updateRoom = scope.ServiceProvider.GetRequiredService<IUpdateRoom>();
                 var getFeedbacks = scope.ServiceProvider.GetRequiredService<IGetFeedbacks>();
                 var createFeedback = scope.ServiceProvider.GetRequiredService<ICreateFeedback>();
                 
                 var roomGuid = Guid.Parse(roomId);
-                InterviewRoom room = _cache.Rooms.SingleOrDefault(r => r.Id == roomGuid);
+                
+                // Fetch fresh from DB instead of using cache to prevent overwriting evaluation results
+                var room = await roomRepo.GetByIdAsync(roomGuid);
 
                 if (room != null)
                 {
@@ -155,7 +165,7 @@ namespace Intervu.Application.Services
                     }
                     room.Status = InterviewRoomStatus.Completed;
                     _logger.LogInformation("Saved data for room '{RoomId}'.", roomId);                    
-                    _cache.Update(room);
+
                     await updateRoom.ExecuteAsync(room);
 
                     //Create feedback

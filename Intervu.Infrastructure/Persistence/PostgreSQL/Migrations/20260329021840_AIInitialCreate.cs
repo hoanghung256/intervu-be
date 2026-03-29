@@ -9,11 +9,26 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class AIInitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "AudioChunks",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    AudioData = table.Column<byte[]>(type: "bytea", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()"),
+                    RecordingSessionId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ChunkSequenceNumber = table.Column<int>(type: "integer", nullable: false, defaultValue: 0)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AudioChunks", x => x.Id);
+                });
+
             migrationBuilder.CreateTable(
                 name: "Companies",
                 columns: table => new
@@ -29,6 +44,19 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Industries",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: false),
+                    Slug = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Industries", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "InterviewTypes",
                 columns: table => new
                 {
@@ -39,6 +67,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     MinPrice = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     MaxPrice = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     SuggestedDurationMinutes = table.Column<int>(type: "integer", nullable: false, defaultValue: 60),
+                    EvaluationStructure = table.Column<string>(type: "jsonb", nullable: true),
                     Status = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
@@ -120,6 +149,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     PortfolioUrl = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: true),
                     CurrentAmount = table.Column<int>(type: "integer", nullable: true),
                     ExperienceYears = table.Column<int>(type: "integer", nullable: true),
+                    CurrentJobTitle = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     Bio = table.Column<string>(type: "text", nullable: false),
                     BankBinNumber = table.Column<string>(type: "text", nullable: false),
                     BankAccountNumber = table.Column<string>(type: "text", nullable: false),
@@ -239,6 +269,57 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "UserAssessmentAnswers",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    AssessmentId = table.Column<Guid>(type: "uuid", nullable: false),
+                    QuestionId = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Skill = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Answer = table.Column<string>(type: "text", nullable: true),
+                    SelectedLevel = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    SfiaLevel = table.Column<int>(type: "integer", nullable: false),
+                    Type = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserAssessmentAnswers", x => x.Id);
+                    table.CheckConstraint("CK_UserAssessmentAnswers_SelectedLevel", "\"SelectedLevel\" IN ('None','Basic','Intermediate','Advanced')");
+                    table.CheckConstraint("CK_UserAssessmentAnswers_SfiaLevel", "\"SfiaLevel\" IN (0,2,3,5)");
+                    table.ForeignKey(
+                        name: "FK_UserAssessmentAnswers_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserSkillAssessmentSnapshots",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TargetJson = table.Column<string>(type: "jsonb", nullable: false),
+                    CurrentJson = table.Column<string>(type: "jsonb", nullable: false),
+                    GapJson = table.Column<string>(type: "jsonb", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()"),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserSkillAssessmentSnapshots", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserSkillAssessmentSnapshots_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "CandidateSkills",
                 columns: table => new
                 {
@@ -303,6 +384,30 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         name: "FK_CoachCompanies_Companies_CompaniesId",
                         column: x => x.CompaniesId,
                         principalTable: "Companies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CoachIndustries",
+                columns: table => new
+                {
+                    CoachProfilesId = table.Column<Guid>(type: "uuid", nullable: false),
+                    IndustriesId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CoachIndustries", x => new { x.CoachProfilesId, x.IndustriesId });
+                    table.ForeignKey(
+                        name: "FK_CoachIndustries_CoachProfiles_CoachProfilesId",
+                        column: x => x.CoachProfilesId,
+                        principalTable: "CoachProfiles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_CoachIndustries_Industries_IndustriesId",
+                        column: x => x.IndustriesId,
+                        principalTable: "Industries",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -490,6 +595,35 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "QuestionReports",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    QuestionId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ReportedBy = table.Column<Guid>(type: "uuid", nullable: false),
+                    Reason = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false, defaultValue: 1),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_QuestionReports", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_QuestionReports_Questions_QuestionId",
+                        column: x => x.QuestionId,
+                        principalTable: "Questions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_QuestionReports_Users_ReportedBy",
+                        column: x => x.ReportedBy,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "QuestionRoles",
                 columns: table => new
                 {
@@ -640,10 +774,13 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     TestCases = table.Column<string>(type: "text", nullable: true),
                     Status = table.Column<int>(type: "integer", nullable: false),
                     RescheduleAttemptCount = table.Column<int>(type: "integer", nullable: false),
+                    Type = table.Column<int>(type: "integer", nullable: false),
                     BookingRequestId = table.Column<Guid>(type: "uuid", nullable: true),
                     CoachInterviewServiceId = table.Column<Guid>(type: "uuid", nullable: true),
                     AimLevel = table.Column<int>(type: "integer", nullable: true),
-                    RoundNumber = table.Column<int>(type: "integer", nullable: true)
+                    RoundNumber = table.Column<int>(type: "integer", nullable: true),
+                    EvaluationStructure = table.Column<string>(type: "jsonb", nullable: true),
+                    IsEvaluationCompleted = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -715,6 +852,27 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Feedbacks_InterviewRooms_InterviewRoomId",
+                        column: x => x.InterviewRoomId,
+                        principalTable: "InterviewRooms",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "GeneratedQuestions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Title = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    Content = table.Column<string>(type: "text", nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    InterviewRoomId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GeneratedQuestions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_GeneratedQuestions_InterviewRooms_InterviewRoomId",
                         column: x => x.InterviewRoomId,
                         principalTable: "InterviewRooms",
                         principalColumn: "Id",
@@ -830,14 +988,29 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 });
 
             migrationBuilder.InsertData(
-                table: "InterviewTypes",
-                columns: new[] { "Id", "Description", "IsCoding", "MaxPrice", "MinPrice", "Name", "Status", "SuggestedDurationMinutes" },
+                table: "Industries",
+                columns: new[] { "Id", "Name", "Slug" },
                 values: new object[,]
                 {
-                    { new Guid("5c9e2a14-73bb-4b61-b7e2-91a8f42d3c6e"), "Behavioral interview focused on communication and interpersonal skills.", false, 60, 15, "Soft Skills Interview", 1, 45 },
-                    { new Guid("a3f1c8b2-9d4e-4c7a-8f21-6b7e4d2c91aa"), "Resume review and HR-style interview focusing on background and experience.", false, 50, 10, "CV Interview", 1, 30 },
-                    { new Guid("e8b74d9f-2c41-4c9a-9b13-1f8a6e52d0c3"), "Technical interview with coding problems and system design questions.", true, 100, 30, "Technical Interview", 1, 60 },
-                    { new Guid("f14a7c6d-88b2-4d55-a9fd-2b4e73c91a08"), "Full mock interview simulating a real job interview experience.", true, 120, 40, "Mock Interview", 0, 75 }
+                    { new Guid("11110000-0000-4000-8000-000000000001"), "Fintech", "fintech" },
+                    { new Guid("11110000-0000-4000-8000-000000000002"), "E-commerce", "e-commerce" },
+                    { new Guid("11110000-0000-4000-8000-000000000003"), "EdTech", "edtech" },
+                    { new Guid("11110000-0000-4000-8000-000000000004"), "Blockchain", "blockchain" },
+                    { new Guid("11110000-0000-4000-8000-000000000005"), "HealthTech", "healthtech" },
+                    { new Guid("11110000-0000-4000-8000-000000000006"), "SaaS", "saas" },
+                    { new Guid("11110000-0000-4000-8000-000000000007"), "AI/ML", "ai-ml" },
+                    { new Guid("11110000-0000-4000-8000-000000000008"), "GameDev", "gamedev" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "InterviewTypes",
+                columns: new[] { "Id", "Description", "EvaluationStructure", "IsCoding", "MaxPrice", "MinPrice", "Name", "Status", "SuggestedDurationMinutes" },
+                values: new object[,]
+                {
+                    { new Guid("5c9e2a14-73bb-4b61-b7e2-91a8f42d3c6e"), "Behavioral interview focused on communication and interpersonal skills.", "[\r\n    { \"Type\": \"Teamwork & Collaboration\", \"Question\": \"Based on the scenarios they shared, how effectively does the candidate collaborate with others, resolve conflicts, and support their teammates?\" },\r\n    { \"Type\": \"Adaptability & Working Under Pressure\", \"Question\": \"How does the candidate react to sudden changes in project requirements, tight deadlines, or high-pressure situations?\" },\r\n    { \"Type\": \"Ownership & Attitude\", \"Question\": \"Does the candidate demonstrate a strong sense of ownership (taking accountability for mistakes) and a proactive, growth-oriented mindset?\" },\r\n    { \"Type\": \"Professionalism Advice\", \"Question\": \"What specific advice would you give the candidate to improve their professionalism, interview etiquette, and overall impression on hiring managers?\" }\r\n]", false, 2000, 1000, "Soft Skills Interview", 1, 45 },
+                    { new Guid("a3f1c8b2-9d4e-4c7a-8f21-6b7e4d2c91aa"), "Resume review and HR-style interview focusing on background and experience.", "[\r\n    { \"Type\": \"Experience Authenticity\", \"Question\": \"How well does the candidate's explanation of their past work match the details on their CV? (e.g., Did they exaggerate their contributions? Do they deeply understand the projects they listed?)\" },\r\n    { \"Type\": \"Communication & Presentation\", \"Question\": \"How would you rate the candidate's communication skills, clarity of expression, and overall confidence during the interview?\" },\r\n    { \"Type\": \"Career Alignment\", \"Question\": \"Are the candidate's short-term and long-term career goals clear, realistic, and aligned with the typical progression in this field?\" },\r\n    { \"Type\": \"CV Improvement (Actionable Advice)\", \"Question\": \"What is the strongest highlight of their CV? Are there any red flags, formatting issues, or vague details they need to fix immediately?\" }\r\n]", false, 2000, 1000, "CV Interview", 1, 30 },
+                    { new Guid("e8b74d9f-2c41-4c9a-9b13-1f8a6e52d0c3"), "Technical interview with coding problems and system design questions.", "[\r\n    { \"Type\": \"Problem Solving & Logic\", \"Question\": \"How would you evaluate the candidate's ability to analyze requirements, clarify edge cases, and approach the problem logically before writing code?\" },\r\n    { \"Type\": \"Code Quality & Optimization\", \"Question\": \"Rate the candidate's code quality (clean code principles, naming conventions) and their ability to optimize for time and space complexity (Big O).\" },\r\n    { \"Type\": \"Tech Stack & Fundamentals\", \"Question\": \"Assess the candidate's grasp of core computer science fundamentals (OOP, Databases, System Design) and their proficiency in their primary tech stack/framework.\" },\r\n    { \"Type\": \"Actionable Tech Advice\", \"Question\": \"Where are the candidate's technical blind spots? Please list 1-3 specific technologies, concepts, or keywords they must study to improve.\" }\r\n]", true, 2000, 1000, "Technical Interview", 1, 60 },
+                    { new Guid("f14a7c6d-88b2-4d55-a9fd-2b4e73c91a08"), "Full mock interview simulating a real job interview experience.", "[\r\n    { \"Type\": \"Technical Readiness\", \"Question\": \"Summarize the candidate's technical competencies: Which areas meet the standard for their target level (Fresher/Junior/Mid/Senior), and which areas fall short?\" },\r\n    { \"Type\": \"Culture & Behavioral Fit\", \"Question\": \"Summarize their soft skills: Would this candidate be a solid cultural addition to a standard software engineering team?\" },\r\n    { \"Type\": \"Final Verdict\", \"Question\": \"If this were a real interview and you were the Hiring Manager, what would your decision be? (Strong Hire / Hire / Leaning Hire / No Hire) – Briefly explain your reasoning.\" },\r\n    { \"Type\": \"Top Priorities\", \"Question\": \"List the top 3 most critical action items the candidate must execute immediately to increase their chances of passing a real job interview.\" }\r\n]", true, 2000, 1000, "Mock Interview", 1, 75 }
                 });
 
             migrationBuilder.InsertData(
@@ -898,12 +1071,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 
             migrationBuilder.InsertData(
                 table: "CoachProfiles",
-                columns: new[] { "Id", "BankAccountNumber", "BankBinNumber", "Bio", "CurrentAmount", "ExperienceYears", "PortfolioUrl", "SavedQuestions", "Status" },
+                columns: new[] { "Id", "BankAccountNumber", "BankBinNumber", "Bio", "CurrentAmount", "CurrentJobTitle", "ExperienceYears", "PortfolioUrl", "SavedQuestions", "Status" },
                 values: new object[,]
                 {
-                    { new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), "", "", "Senior Backend Engineer with real interview experience", 0, 8, "https://portfolio.example.com/bob", null, 0 },
-                    { new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"), "", "", "Fullstack Engineer previously at Uber", 0, 6, "https://portfolio.example.com/john", null, 0 },
-                    { new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"), "", "", "Senior Frontend Engineer focusing on UI/UX interviews", 0, 7, "https://portfolio.example.com/sarah", null, 0 }
+                    { new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), "", "", "Senior Backend Engineer with real interview experience", 0, "Senior Backend Engineer", 8, "https://portfolio.example.com/bob", null, 0 },
+                    { new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"), "", "", "Fullstack Engineer previously at Uber", 0, "Technical Lead", 6, "https://portfolio.example.com/john", null, 0 },
+                    { new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"), "", "", "Senior Frontend Engineer focusing on UI/UX interviews", 0, "Senior Frontend Engineer", 7, "https://portfolio.example.com/sarah", null, 0 }
                 });
 
             migrationBuilder.InsertData(
@@ -936,7 +1109,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 values: new object[,]
                 {
                     { new Guid("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77"), new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), new DateTime(2026, 2, 10, 12, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 2, 10, 9, 0, 0, 0, DateTimeKind.Utc), 0 },
-                    { new Guid("aaaaaaaa-1111-4a1a-8a1a-111111111111"), new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), new DateTime(2026, 3, 15, 17, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 15, 14, 0, 0, 0, DateTimeKind.Utc), 0 }
+                    { new Guid("aaaaaaaa-1111-4a1a-8a1a-111111111111"), new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), new DateTime(2026, 3, 15, 17, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 3, 15, 14, 0, 0, 0, DateTimeKind.Utc), 0 },
+                    { new Guid("aaaaaaaa-1111-4a1a-8a1a-111111111112"), new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), new DateTime(2026, 4, 1, 11, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 4, 1, 10, 0, 0, 0, DateTimeKind.Utc), 0 }
                 });
 
             migrationBuilder.InsertData(
@@ -953,6 +1127,30 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     { new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"), new Guid("22222222-2222-4222-8222-222222222222") },
                     { new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"), new Guid("77777777-7777-4777-8777-777777777777") },
                     { new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"), new Guid("99999999-9999-4999-8999-999999999999") }
+                });
+
+            migrationBuilder.InsertData(
+                table: "CoachIndustries",
+                columns: new[] { "CoachProfilesId", "IndustriesId" },
+                values: new object[,]
+                {
+                    { new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), new Guid("11110000-0000-4000-8000-000000000001") },
+                    { new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), new Guid("11110000-0000-4000-8000-000000000006") },
+                    { new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"), new Guid("11110000-0000-4000-8000-000000000002") },
+                    { new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"), new Guid("11110000-0000-4000-8000-000000000007") },
+                    { new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"), new Guid("11110000-0000-4000-8000-000000000003") },
+                    { new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"), new Guid("11110000-0000-4000-8000-000000000008") }
+                });
+
+            migrationBuilder.InsertData(
+                table: "CoachInterviewServices",
+                columns: new[] { "Id", "CoachId", "DurationMinutes", "InterviewTypeId", "Price" },
+                values: new object[,]
+                {
+                    { new Guid("019d1466-f54f-7a12-a89e-3d459032ba89"), new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), 30, new Guid("a3f1c8b2-9d4e-4c7a-8f21-6b7e4d2c91aa"), 2000 },
+                    { new Guid("019d1467-d415-7224-8808-39aa3e3b6377"), new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), 45, new Guid("5c9e2a14-73bb-4b61-b7e2-91a8f42d3c6e"), 2000 },
+                    { new Guid("019d1467-d415-74d5-8d8a-de2143f27c35"), new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), 60, new Guid("e8b74d9f-2c41-4c9a-9b13-1f8a6e52d0c3"), 2000 },
+                    { new Guid("019d1467-d415-79f8-9bdc-5bb25a0b25cf"), new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), 75, new Guid("f14a7c6d-88b2-4d55-a9fd-2b4e73c91a08"), 2000 }
                 });
 
             migrationBuilder.InsertData(
@@ -1040,7 +1238,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 columns: new[] { "Id", "Amount", "BookedDurationMinutes", "BookedStartTime", "BookingRequestId", "CoachAvailabilityId", "CoachId", "Status", "Type", "UserId" },
                 values: new object[,]
                 {
+                    { new Guid("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a00"), 2000, null, null, null, new Guid("aaaaaaaa-1111-4a1a-8a1a-111111111112"), null, 1, 0, new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11") },
                     { new Guid("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a88"), 1000, null, null, null, new Guid("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77"), null, 1, 0, new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11") },
+                    { new Guid("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a99"), 1500, null, null, null, new Guid("aaaaaaaa-1111-4a1a-8a1a-111111111111"), null, 1, 0, new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11") },
                     { new Guid("8f9a0b1c-d2e3-4f5a-9b0c-1d2e3f4a5b99"), 500, null, null, null, new Guid("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77"), null, 1, 1, new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22") }
                 });
 
@@ -1084,13 +1284,28 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 
             migrationBuilder.InsertData(
                 table: "InterviewRooms",
-                columns: new[] { "Id", "AimLevel", "BookingRequestId", "CandidateId", "CoachId", "CoachInterviewServiceId", "CurrentAvailabilityId", "CurrentLanguage", "DurationMinutes", "LanguageCodes", "ProblemDescription", "ProblemShortName", "RescheduleAttemptCount", "RoundNumber", "ScheduledTime", "Status", "TestCases", "TransactionId", "VideoCallRoomUrl" },
-                values: new object[] { new Guid("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a66"), null, null, new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"), new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), null, new Guid("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77"), null, 60, null, null, null, 0, null, new DateTime(2026, 2, 10, 9, 0, 0, 0, DateTimeKind.Utc), 0, null, new Guid("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a88"), "https://meet.example/room1" });
+                columns: new[] { "Id", "AimLevel", "BookingRequestId", "CandidateId", "CoachId", "CoachInterviewServiceId", "CurrentAvailabilityId", "CurrentLanguage", "DurationMinutes", "EvaluationStructure", "IsEvaluationCompleted", "LanguageCodes", "ProblemDescription", "ProblemShortName", "RescheduleAttemptCount", "RoundNumber", "ScheduledTime", "Status", "TestCases", "TransactionId", "Type", "VideoCallRoomUrl" },
+                values: new object[,]
+                {
+                    { new Guid("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a66"), null, null, new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"), new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), null, new Guid("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77"), null, 60, null, false, null, null, null, 0, null, new DateTime(2026, 2, 10, 9, 0, 0, 0, DateTimeKind.Utc), 0, null, new Guid("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a88"), 0, "https://meet.example/room1" },
+                    { new Guid("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a77"), null, null, new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"), null, null, new Guid("aaaaaaaa-1111-4a1a-8a1a-111111111111"), null, 60, null, false, null, null, null, 0, null, new DateTime(2026, 3, 15, 14, 30, 0, 0, DateTimeKind.Utc), 1, null, new Guid("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a99"), 1, "https://meet.example/room-ai" },
+                    { new Guid("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a88"), null, null, new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"), new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), null, new Guid("aaaaaaaa-1111-4a1a-8a1a-111111111112"), null, 60, null, false, null, null, null, 0, null, new DateTime(2026, 4, 1, 10, 0, 0, 0, DateTimeKind.Utc), 1, null, new Guid("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a00"), 0, "https://meet.example/room3" }
+                });
 
             migrationBuilder.InsertData(
                 table: "Feedbacks",
                 columns: new[] { "Id", "AIAnalysis", "CandidateId", "CoachId", "Comments", "InterviewRoomId", "Rating" },
                 values: new object[] { new Guid("9a0b1c2d-e3f4-4a5b-8c9d-0e1f2a3b4c10"), "{}", new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"), new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"), "Great answers and communication.", new Guid("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a66"), 5 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AudioChunks_RecordingSession_Sequence",
+                table: "AudioChunks",
+                columns: new[] { "RecordingSessionId", "ChunkSequenceNumber" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AudioChunks_RecordingSessionId",
+                table: "AudioChunks",
+                column: "RecordingSessionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_BookingRequests_CandidateId",
@@ -1133,6 +1348,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 column: "CompaniesId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_CoachIndustries_IndustriesId",
+                table: "CoachIndustries",
+                column: "IndustriesId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_CoachInterviewServices_CoachId_InterviewTypeId",
                 table: "CoachInterviewServices",
                 columns: new[] { "CoachId", "InterviewTypeId" },
@@ -1167,6 +1387,23 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 name: "IX_Feedbacks_InterviewRoomId",
                 table: "Feedbacks",
                 column: "InterviewRoomId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GeneratedQuestions_InterviewRoomId",
+                table: "GeneratedQuestions",
+                column: "InterviewRoomId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Industries_Name",
+                table: "Industries",
+                column: "Name",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Industries_Slug",
+                table: "Industries",
+                column: "Slug",
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -1307,6 +1544,21 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 column: "CompanyId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_QuestionReports_QuestionId",
+                table: "QuestionReports",
+                column: "QuestionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_QuestionReports_ReportedBy",
+                table: "QuestionReports",
+                column: "ReportedBy");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_QuestionReports_Status",
+                table: "QuestionReports",
+                column: "Status");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_QuestionRoles_Role",
                 table: "QuestionRoles",
                 column: "Role");
@@ -1373,6 +1625,21 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_UserAssessmentAnswers_AssessmentId",
+                table: "UserAssessmentAnswers",
+                column: "AssessmentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserAssessmentAnswers_Skill",
+                table: "UserAssessmentAnswers",
+                column: "Skill");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserAssessmentAnswers_UserId",
+                table: "UserAssessmentAnswers",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_UserCommentLikes_CommentId",
                 table: "UserCommentLikes",
                 column: "CommentId");
@@ -1403,11 +1670,20 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 table: "Users",
                 column: "SlugProfileUrl",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserSkillAssessmentSnapshots_UserId",
+                table: "UserSkillAssessmentSnapshots",
+                column: "UserId",
+                unique: true);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "AudioChunks");
+
             migrationBuilder.DropTable(
                 name: "CandidateSkills");
 
@@ -1415,10 +1691,16 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 name: "CoachCompanies");
 
             migrationBuilder.DropTable(
+                name: "CoachIndustries");
+
+            migrationBuilder.DropTable(
                 name: "CoachSkills");
 
             migrationBuilder.DropTable(
                 name: "Feedbacks");
+
+            migrationBuilder.DropTable(
+                name: "GeneratedQuestions");
 
             migrationBuilder.DropTable(
                 name: "InterviewRescheduleRequests");
@@ -1436,6 +1718,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 name: "QuestionCompanies");
 
             migrationBuilder.DropTable(
+                name: "QuestionReports");
+
+            migrationBuilder.DropTable(
                 name: "QuestionRoles");
 
             migrationBuilder.DropTable(
@@ -1445,10 +1730,19 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                 name: "RefreshTokens");
 
             migrationBuilder.DropTable(
+                name: "UserAssessmentAnswers");
+
+            migrationBuilder.DropTable(
                 name: "UserCommentLikes");
 
             migrationBuilder.DropTable(
                 name: "UserQuestionLikes");
+
+            migrationBuilder.DropTable(
+                name: "UserSkillAssessmentSnapshots");
+
+            migrationBuilder.DropTable(
+                name: "Industries");
 
             migrationBuilder.DropTable(
                 name: "Skills");

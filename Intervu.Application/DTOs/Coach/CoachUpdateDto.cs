@@ -19,6 +19,7 @@ namespace Intervu.Application.DTOs.Coach
         public string? PortfolioUrl { get; set; }
         public int? CurrentAmount { get; set; }
         public int? ExperienceYears { get; set; }
+        public string? CurrentJobTitle { get; set; }
 
         public string? Bio { get; set; }
 
@@ -29,5 +30,7 @@ namespace Intervu.Application.DTOs.Coach
         public List<Guid>? CompanyIds { get; set; }
 
         public List<Guid>? SkillIds { get; set; }
+
+        public List<Guid>? IndustryIds { get; set; }
     }
 }

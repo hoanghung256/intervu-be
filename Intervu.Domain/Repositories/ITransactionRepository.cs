@@ -30,5 +30,9 @@ namespace Intervu.Domain.Repositories
         /// </summary>
         Task<List<InterviewBookingTransaction>> GetActiveBookingsByCoachAsync(
             Guid coachId, DateTime rangeStart, DateTime rangeEnd);
+
+        Task<List<(DateTime Start, DateTime End)>> GetConfirmedBookingsForCoachAsync(Guid coachId, int month, int year);
+
+        Task<List<InterviewBookingTransaction>> GetConfirmedBookingEntitiesForCoachAsync(Guid coachId, int month, int year);
     }
 }

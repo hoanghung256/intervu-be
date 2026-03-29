@@ -1,0 +1,756 @@
+[
+  {
+    "name": "REST API Development",
+    "category": "Backend",
+    "levels": [
+      {
+        "level": "None",
+        "sfia": 0,
+        "description": "Has not yet built or maintained REST endpoints in a production backend."
+      },
+      {
+        "level": "Basic",
+        "sfia": 2,
+        "description": "Builds simple CRUD endpoints, implement request validation, and return standard HTTP responses."
+      },
+      {
+        "level": "Intermediate",
+        "sfia": 3,
+        "description": "Designs resource-based APIs, implement versioning and error handling, and integrate authentication into services."
+      },
+      {
+        "level": "Advanced",
+        "sfia": 5,
+        "description": "Designs scalable API contracts, optimize endpoint performance, and govern consistency across multiple backend services."
+      }
+    ]
+  },
+  {
+    "name": "Database Design",
+    "category": "Backend",
+    "levels": [
+      {
+        "level": "None",
+        "sfia": 0,
+        "description": "Has not yet designed database schemas or modeled data for backend applications."
+      },
+      {
+        "level": "Basic",
+        "sfia": 2,
+        "description": "Creates simple tables, define relationships, and write basic queries for application features."
+      },
+      {
+        "level": "Intermediate",
+        "sfia": 3,
+        "description": "Designs normalized schemas, implement indexes and constraints, and evolve data models safely through migrations."
+      },
+      {
+        "level": "Advanced",
+        "sfia": 5,
+        "description": "Designs complex data architectures, optimize query patterns at scale, and guide database strategy for reliability and growth."
+      }
+    ]
+  },
+  {
+    "name": "ORM and Data Access",
+    "category": "Backend",
+    "levels": [
+      {
+        "level": "None",
+        "sfia": 0,
+        "description": "Has not yet implemented repository logic or worked with an ORM in production code."
+      },
+      {
+        "level": "Basic",
+        "sfia": 2,
+        "description": "Implements basic entity mapping, build simple queries, and perform standard create, read, update, and delete operations."
+      },
+      {
+        "level": "Intermediate",
+        "sfia": 3,
+        "description": "Designs efficient data access layers, implement transaction handling, and reduce common query inefficiencies."
+      },
+      {
+        "level": "Advanced",
+        "sfia": 5,
+        "description": "Optimizes complex persistence flows, design resilient data access patterns, and balance ORM use with direct SQL where needed."
+      }
+    ]
+  },
+  {
+    "name": "Authentication and Authorization",
+    "category": "Backend",
+    "levels": [
+      {
+        "level": "None",
+        "sfia": 0,
+        "description": "Has not yet implemented login, token handling, or access control in backend systems."
+      },
+      {
+        "level": "Basic",
+        "sfia": 2,
+        "description": "Implements basic authentication flows, validate tokens, and enforce simple role-based permissions."
+      },
+      {
+        "level": "Intermediate",
+        "sfia": 3,
+        "description": "Designs secure access control rules, implement refresh and revocation flows, and integrate external identity providers."
+      },
+      {
+        "level": "Advanced",
+        "sfia": 5,
+        "description": "Designs enterprise-grade security models, optimize authorization across services, and lead remediation of access control risks."
+      }
+    ]
+  },
+  {
+    "name": "Caching",
+    "category": "Backend",
+    "levels": [
+      {
+        "level": "None",
+        "sfia": 0,
+        "description": "Has not yet implemented application or distributed caching for backend performance."
+      },
+      {
+        "level": "Basic",
+        "sfia": 2,
+        "description": "Implements simple in-memory or distributed caching, store common lookups, and invalidate entries with basic rules."
+      },
+      {
+        "level": "Intermediate",
+        "sfia": 3,
+        "description": "Designs cache strategies, implement expiration and invalidation patterns, and reduce database load for high-traffic features."
+      },
+      {
+        "level": "Advanced",
+        "sfia": 5,
+        "description": "Optimizes multi-layer caching architectures, design cache consistency approaches, and tune performance for large-scale systems."
+      }
+    ]
+  },
+  {
+    "name": "Message Queue Processing",
+    "category": "Backend",
+    "levels": [
+      {
+        "level": "None",
+        "sfia": 0,
+        "description": "Has not yet built asynchronous workflows using queues or event-driven processing."
+      },
+      {
+        "level": "Basic",
+        "sfia": 2,
+        "description": "Implements basic producers and consumers, publish simple messages, and handle straightforward background tasks."
+      },
+      {
+        "level": "Intermediate",
+        "sfia": 3,
+        "description": "Designs reliable queue workflows, implement retry and dead-letter handling, and monitor message processing behavior."
+      },
+      {
+        "level": "Advanced",
+        "sfia": 5,
+        "description": "Designs scalable event-driven systems, optimize throughput and failure recovery, and govern messaging standards across services."
+      }
+    ]
+  },
+  {
+    "name": "Background Job Development",
+    "category": "Backend",
+    "levels": [
+      {
+        "level": "None",
+        "sfia": 0,
+        "description": "Has not yet implemented scheduled or long-running background jobs in backend applications."
+      },
+      {
+        "level": "Basic",
+        "sfia": 2,
+        "description": "Builds simple scheduled jobs, implement basic retry behavior, and process routine tasks outside user requests."
+      },
+      {
+        "level": "Intermediate",
+        "sfia": 3,
+        "description": "Designs resilient job workflows, implement idempotent processing, and handle execution failures without data corruption."
+      },
+      {
+        "level": "Advanced",
+        "sfia": 5,
+        "description": "Optimizes distributed job execution, design recovery strategies for large workloads, and lead background processing architecture decisions."
+      }
+    ]
+  },
+  {
+    "name": "System Integration",
+    "category": "Backend",
+    "levels": [
+      {
+        "level": "None",
+        "sfia": 0,
+        "description": "Has not yet integrated backend services with external APIs or third-party platforms."
+      },
+      {
+        "level": "Basic",
+        "sfia": 2,
+        "description": "Implements basic API clients, handle authentication with external services, and map responses into application models."
+      },
+      {
+        "level": "Intermediate",
+        "sfia": 3,
+        "description": "Designs reliable integration flows, implement timeout and retry logic, and manage contract changes with partner systems."
+      },
+      {
+        "level": "Advanced",
+        "sfia": 5,
+        "description": "Designs robust integration architecture, optimize resilience across multiple dependencies, and lead strategies for interoperability and failure isolation."
+      }
+    ]
+  },
+  {
+    "name": "Microservices Architecture",
+    "category": "Backend",
+    "levels": [
+      {
+        "level": "None",
+        "sfia": 0,
+        "description": "Has not yet built or maintained backend features in a microservices environment."
+      },
+      {
+        "level": "Basic",
+        "sfia": 2,
+        "description": "Builds features within existing services, implement service-to-service calls, and follow established service boundaries."
+      },
+      {
+        "level": "Intermediate",
+        "sfia": 3,
+        "description": "Designs service responsibilities, implement inter-service communication patterns, and handle data consistency across boundaries."
+      },
+      {
+        "level": "Advanced",
+        "sfia": 5,
+        "description": "Designs scalable service ecosystems, optimize observability and fault isolation, and guide decomposition of complex backend domains."
+      }
+    ]
+  },
+  {
+    "name": "Performance Optimization",
+    "category": "Backend",
+    "levels": [
+      {
+        "level": "None",
+        "sfia": 0,
+        "description": "Has not yet analyzed or improved backend performance bottlenecks in production workloads."
+      },
+      {
+        "level": "Basic",
+        "sfia": 2,
+        "description": "Measures basic response times, identify slow queries or endpoints, and implement straightforward optimizations."
+      },
+      {
+        "level": "Intermediate",
+        "sfia": 3,
+        "description": "Designs targeted improvements using profiling data, optimize I/O and database usage, and reduce latency under typical load."
+      },
+      {
+        "level": "Advanced",
+        "sfia": 5,
+        "description": "Leads performance tuning across services, design scalable throughput strategies, and optimize systems for sustained high-volume traffic."
+      }
+    ]
+  },
+  {
+    "name": "Logging and Monitoring",
+    "category": "Backend",
+    "levels": [
+      {
+        "level": "None",
+        "sfia": 0,
+        "description": "Has not yet implemented structured logging, metrics, or runtime monitoring in backend systems."
+      },
+      {
+        "level": "Basic",
+        "sfia": 2,
+        "description": "Implements application logs, capture key errors and events, and use dashboards to inspect service health."
+      },
+      {
+        "level": "Intermediate",
+        "sfia": 3,
+        "description": "Designs useful observability signals, implement metrics and traces, and investigate incidents using correlated telemetry."
+      },
+      {
+        "level": "Advanced",
+        "sfia": 5,
+        "description": "Designs end-to-end observability standards, optimize alert quality, and lead monitoring strategy for complex distributed systems."
+      }
+    ]
+  },
+  {
+    "name": "Automated Backend Testing",
+    "category": "Backend",
+    "levels": [
+      {
+        "level": "None",
+        "sfia": 0,
+        "description": "Has not yet built automated tests for backend logic, APIs, or data access."
+      },
+      {
+        "level": "Basic",
+        "sfia": 2,
+        "description": "Builds unit tests for core functions, implement basic API tests, and verify expected behavior for simple scenarios."
+      },
+      {
+        "level": "Intermediate",
+        "sfia": 3,
+        "description": "Designs maintainable test suites, implement integration tests with realistic dependencies, and prevent regressions in critical flows."
+      },
+      {
+        "level": "Advanced",
+        "sfia": 5,
+        "description": "Leads backend test strategy, optimize reliability of automated validation, and enforce quality gates across delivery pipelines."
+      }
+    ]
+  },
+  {
+    "name": "CI/CD for Backend Services",
+    "category": "Backend",
+    "levels": [
+      {
+        "level": "None",
+        "sfia": 0,
+        "description": "Has not yet configured automated build, test, or deployment pipelines for backend applications."
+      },
+      {
+        "level": "Basic",
+        "sfia": 2,
+        "description": "Implements basic pipeline steps to build services, run tests, and deploy to non-production environments."
+      },
+      {
+        "level": "Intermediate",
+        "sfia": 3,
+        "description": "Designs reliable delivery workflows, implement environment-specific deployment rules, and automate rollback or approval steps."
+      },
+      {
+        "level": "Advanced",
+        "sfia": 5,
+        "description": "Designs scalable release pipelines, optimize deployment safety and speed, and govern delivery standards across backend teams."
+      }
+    ]
+  },
+  {
+    "name": "Containerization and Deployment",
+    "category": "Backend",
+    "levels": [
+      {
+        "level": "None",
+        "sfia": 0,
+        "description": "Has not yet packaged or deployed backend services using containers or orchestration platforms."
+      },
+      {
+        "level": "Basic",
+        "sfia": 2,
+        "description": "Builds container images, implement basic runtime configuration, and deploy services using existing infrastructure patterns."
+      },
+      {
+        "level": "Intermediate",
+        "sfia": 3,
+        "description": "Designs deployment manifests, implement health checks and scaling settings, and troubleshoot container runtime issues."
+      },
+      {
+        "level": "Advanced",
+        "sfia": 5,
+        "description": "Designs production-grade container platforms, optimize deployment resilience, and lead rollout strategies for distributed services."
+      }
+    ]
+  },
+  {
+    "name": "Secure Coding for Backend",
+    "category": "Backend",
+    "levels": [
+      {
+        "level": "None",
+        "sfia": 0,
+        "description": "Has not yet applied secure coding practices to protect backend services and data."
+      },
+      {
+        "level": "Basic",
+        "sfia": 2,
+        "description": "Implements input validation, handle secrets safely, and prevent common issues such as injection and insecure exposure."
+      },
+      {
+        "level": "Intermediate",
+        "sfia": 3,
+        "description": "Designs secure service patterns, implement dependency and vulnerability controls, and remediate identified backend risks."
+      },
+      {
+        "level": "Advanced",
+        "sfia": 5,
+        "description": "Leads secure backend design reviews, optimize defensive controls, and drive remediation strategy for high-impact security threats."
+      }
+    ]
+  },
+  {
+    "name": "Concurrency and Scalability",
+    "category": "Backend",
+    "levels": [
+      {
+        "level": "None",
+        "sfia": 0,
+        "description": "Has not yet designed backend code to handle concurrency, contention, or workload scaling."
+      },
+      {
+        "level": "Basic",
+        "sfia": 2,
+        "description": "Builds services that handle simple parallel requests, implement safe shared resource access, and avoid obvious blocking issues."
+      },
+      {
+        "level": "Intermediate",
+        "sfia": 3,
+        "description": "Designs concurrent processing flows, implement throttling and synchronization patterns, and improve stability under growing load."
+      },
+      {
+        "level": "Advanced",
+        "sfia": 5,
+        "description": "Designs highly scalable backend systems, optimize resource utilization under concurrency, and lead architecture decisions for sustained growth."
+      }
+    ]
+  },
+  {
+    "name": "HTML and Semantic Markup",
+    "category": "Frontend",
+    "levels": [
+      {
+        "level": "None",
+        "sfia": 0,
+        "description": "Has not yet built production user interfaces using semantic HTML structure."
+      },
+      {
+        "level": "Basic",
+        "sfia": 2,
+        "description": "Builds simple page layouts, use correct semantic elements, and structure forms and content for basic usability."
+      },
+      {
+        "level": "Intermediate",
+        "sfia": 3,
+        "description": "Designs maintainable markup structures, implement accessible document patterns, and support reusable component-based layouts."
+      },
+      {
+        "level": "Advanced",
+        "sfia": 5,
+        "description": "Defines robust markup standards, optimize semantic consistency across large applications, and guide implementation for complex UI systems."
+      }
+    ]
+  },
+  {
+    "name": "CSS and Styling Architecture",
+    "category": "Frontend",
+    "levels": [
+      {
+        "level": "None",
+        "sfia": 0,
+        "description": "Has not yet implemented production styling for web interfaces."
+      },
+      {
+        "level": "Basic",
+        "sfia": 2,
+        "description": "Builds basic component styles, implement layouts with modern CSS, and apply consistent spacing and typography."
+      },
+      {
+        "level": "Intermediate",
+        "sfia": 3,
+        "description": "Designs scalable styling patterns, implement theme-aware components, and organize styles to reduce duplication and conflicts."
+      },
+      {
+        "level": "Advanced",
+        "sfia": 5,
+        "description": "Defines styling architecture for large frontends, optimize maintainability across design systems, and lead adoption of consistent visual standards."
+      }
+    ]
+  },
+  {
+    "name": "JavaScript and TypeScript Development",
+    "category": "Frontend",
+    "levels": [
+      {
+        "level": "None",
+        "sfia": 0,
+        "description": "Has not yet built interactive frontend features using JavaScript or TypeScript."
+      },
+      {
+        "level": "Basic",
+        "sfia": 2,
+        "description": "Builds simple interactive behavior, implement typed models for basic components, and handle common browser events."
+      },
+      {
+        "level": "Intermediate",
+        "sfia": 3,
+        "description": "Designs maintainable client-side logic, implement reusable typed utilities, and manage asynchronous UI behavior safely."
+      },
+      {
+        "level": "Advanced",
+        "sfia": 5,
+        "description": "Defines frontend coding standards, optimize complex stateful logic, and lead TypeScript design for large-scale applications."
+      }
+    ]
+  },
+  {
+    "name": "Frontend Framework Development",
+    "category": "Frontend",
+    "levels": [
+      {
+        "level": "None",
+        "sfia": 0,
+        "description": "Has not yet built production interfaces with a modern frontend framework."
+      },
+      {
+        "level": "Basic",
+        "sfia": 2,
+        "description": "Builds simple components, implement props and local state, and connect views to existing application flows."
+      },
+      {
+        "level": "Intermediate",
+        "sfia": 3,
+        "description": "Designs reusable component structures, implement predictable rendering patterns, and manage feature-level composition cleanly."
+      },
+      {
+        "level": "Advanced",
+        "sfia": 5,
+        "description": "Defines frontend architecture with framework best practices, optimize rendering behavior, and guide reusable patterns across teams."
+      }
+    ]
+  },
+  {
+    "name": "State Management",
+    "category": "Frontend",
+    "levels": [
+      {
+        "level": "None",
+        "sfia": 0,
+        "description": "Has not yet implemented shared or complex client-side state in production applications."
+      },
+      {
+        "level": "Basic",
+        "sfia": 2,
+        "description": "Implements local and shared state for simple screens, update UI from user actions, and handle basic data flows."
+      },
+      {
+        "level": "Intermediate",
+        "sfia": 3,
+        "description": "Designs maintainable state models, implement predictable updates across components, and coordinate async data with UI state."
+      },
+      {
+        "level": "Advanced",
+        "sfia": 5,
+        "description": "Defines scalable state management strategies, optimize reactivity for complex applications, and guide patterns for long-term maintainability."
+      }
+    ]
+  },
+  {
+    "name": "Responsive UI Development",
+    "category": "Frontend",
+    "levels": [
+      {
+        "level": "None",
+        "sfia": 0,
+        "description": "Has not yet built interfaces that adapt reliably across screen sizes and devices."
+      },
+      {
+        "level": "Basic",
+        "sfia": 2,
+        "description": "Builds layouts that adjust for common desktop and mobile sizes, implement basic breakpoints, and fix obvious overflow issues."
+      },
+      {
+        "level": "Intermediate",
+        "sfia": 3,
+        "description": "Designs responsive components, implement adaptive layout behavior, and ensure consistent usability across varied viewports."
+      },
+      {
+        "level": "Advanced",
+        "sfia": 5,
+        "description": "Defines responsive design standards, optimize complex multi-device experiences, and lead implementation for high-traffic frontend products."
+      }
+    ]
+  },
+  {
+    "name": "Web Accessibility",
+    "category": "Frontend",
+    "levels": [
+      {
+        "level": "None",
+        "sfia": 0,
+        "description": "Has not yet implemented accessibility requirements in production frontend work."
+      },
+      {
+        "level": "Basic",
+        "sfia": 2,
+        "description": "Builds accessible forms and navigation, implement labels and keyboard support, and address basic semantic issues."
+      },
+      {
+        "level": "Intermediate",
+        "sfia": 3,
+        "description": "Designs interfaces that meet common accessibility standards, implement screen reader-friendly patterns, and test key interaction paths."
+      },
+      {
+        "level": "Advanced",
+        "sfia": 5,
+        "description": "Defines accessibility practices across frontend systems, optimize inclusive interaction design, and lead remediation of complex compliance gaps."
+      }
+    ]
+  },
+  {
+    "name": "API Integration in Frontend",
+    "category": "Frontend",
+    "levels": [
+      {
+        "level": "None",
+        "sfia": 0,
+        "description": "Has not yet connected frontend applications to backend APIs in production."
+      },
+      {
+        "level": "Basic",
+        "sfia": 2,
+        "description": "Implements simple data fetching, render API results in UI components, and handle basic loading and error states."
+      },
+      {
+        "level": "Intermediate",
+        "sfia": 3,
+        "description": "Designs reliable client data flows, implement caching or refetch behavior, and coordinate API state with user interactions."
+      },
+      {
+        "level": "Advanced",
+        "sfia": 5,
+        "description": "Defines frontend integration patterns, optimize data loading for complex applications, and lead strategies for resilient API consumption."
+      }
+    ]
+  },
+  {
+    "name": "Frontend Testing",
+    "category": "Frontend",
+    "levels": [
+      {
+        "level": "None",
+        "sfia": 0,
+        "description": "Has not yet built automated tests for frontend components or user flows."
+      },
+      {
+        "level": "Basic",
+        "sfia": 2,
+        "description": "Builds unit tests for simple components, implement assertions for UI behavior, and verify common rendering scenarios."
+      },
+      {
+        "level": "Intermediate",
+        "sfia": 3,
+        "description": "Designs maintainable test coverage, implement integration or end-to-end tests, and prevent regressions in critical user journeys."
+      },
+      {
+        "level": "Advanced",
+        "sfia": 5,
+        "description": "Defines frontend test strategy, optimize reliability of automated validation, and lead quality practices across large UI codebases."
+      }
+    ]
+  },
+  {
+    "name": "Frontend Performance Optimization",
+    "category": "Frontend",
+    "levels": [
+      {
+        "level": "None",
+        "sfia": 0,
+        "description": "Has not yet measured or improved rendering and loading performance in frontend applications."
+      },
+      {
+        "level": "Basic",
+        "sfia": 2,
+        "description": "Identifies simple performance issues, implement basic asset or rendering improvements, and reduce obvious page load delays."
+      },
+      {
+        "level": "Intermediate",
+        "sfia": 3,
+        "description": "Designs targeted optimizations using runtime metrics, implement code splitting and efficient rendering patterns, and improve interaction speed."
+      },
+      {
+        "level": "Advanced",
+        "sfia": 5,
+        "description": "Defines frontend performance strategy, optimize large-scale applications for speed and stability, and lead remediation of complex bottlenecks."
+      }
+    ]
+  },
+  {
+    "name": "Build Tools and Bundling",
+    "category": "Frontend",
+    "levels": [
+      {
+        "level": "None",
+        "sfia": 0,
+        "description": "Has not yet configured frontend build pipelines or bundling tools."
+      },
+      {
+        "level": "Basic",
+        "sfia": 2,
+        "description": "Runs and adjust existing build configurations, implement basic environment settings, and troubleshoot common bundling issues."
+      },
+      {
+        "level": "Intermediate",
+        "sfia": 3,
+        "description": "Designs build workflows for multiple environments, implement asset optimization steps, and improve development and deployment efficiency."
+      },
+      {
+        "level": "Advanced",
+        "sfia": 5,
+        "description": "Defines scalable frontend build architecture, optimize bundling and delivery performance, and guide tooling standards across projects."
+      }
+    ]
+  },
+  {
+    "name": "UI Component Design",
+    "category": "Frontend",
+    "levels": [
+      {
+        "level": "None",
+        "sfia": 0,
+        "description": "Has not yet designed reusable UI components for production frontend systems."
+      },
+      {
+        "level": "Basic",
+        "sfia": 2,
+        "description": "Builds simple reusable components, implement consistent props and variants, and support common interface patterns."
+      },
+      {
+        "level": "Intermediate",
+        "sfia": 3,
+        "description": "Designs composable component APIs, implement reusable patterns across features, and reduce duplication in interface code."
+      },
+      {
+        "level": "Advanced",
+        "sfia": 5,
+        "description": "Defines component system standards, optimize reuse and consistency at scale, and lead design system implementation for frontend teams."
+      }
+    ]
+  },
+  {
+    "name": "Browser Debugging and Troubleshooting",
+    "category": "Frontend",
+    "levels": [
+      {
+        "level": "None",
+        "sfia": 0,
+        "description": "Has not yet debugged production frontend issues using browser tools and runtime diagnostics."
+      },
+      {
+        "level": "Basic",
+        "sfia": 2,
+        "description": "Uses browser tools to inspect DOM, network requests, and console errors, and fix straightforward UI defects."
+      },
+      {
+        "level": "Intermediate",
+        "sfia": 3,
+        "description": "Investigates complex client-side issues, implement fixes for rendering and data flow defects, and reproduce bugs across browsers."
+      },
+      {
+        "level": "Advanced",
+        "sfia": 5,
+        "description": "Leads diagnosis of difficult frontend production issues, optimize debugging workflows, and guide teams through cross-browser problem resolution."
+      }
+    ]
+  }
+]

@@ -1,12 +1,16 @@
 using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.UseCases.BookingRequest;
+using Intervu.Application.Services;
 using Intervu.Application.Utils;
 using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Intervu.Application.UseCases.BookingRequest
 {
@@ -24,6 +28,111 @@ namespace Intervu.Application.UseCases.BookingRequest
             _logger = logger;
             _paymentService = paymentService;
             _unitOfWork = unitOfWork;
+        }
+
+        private async Task CreateRoomsForBookingRequestAsync(Domain.Entities.BookingRequest bookingRequest, InterviewBookingTransaction paymentTx)
+        {
+            var roomRepo = _unitOfWork.GetRepository<IInterviewRoomRepository>();
+            var availabilityRepo = _unitOfWork.GetRepository<ICoachAvailabilitiesRepository>();
+            var coachInterviewServiceRepo = _unitOfWork.GetRepository<ICoachInterviewServiceRepository>();
+
+            if (bookingRequest.Type == BookingRequestType.External)
+            {
+                var durationMinutes = bookingRequest.CoachInterviewService?.DurationMinutes ?? 60;
+                var startTime = bookingRequest.RequestedStartTime!
+                    ?? throw new BadRequestException("RequestedStartTime is required for external booking request");
+                var endTime = startTime.AddMinutes(durationMinutes);
+
+                await SplitAvailabilityForBookingAsync(availabilityRepo, bookingRequest.CoachId, startTime, endTime);
+
+                var room = new Domain.Entities.InterviewRoom
+                {
+                    CandidateId = bookingRequest.CandidateId,
+                    CoachId = bookingRequest.CoachId,
+                    ScheduledTime = startTime,
+                    DurationMinutes = durationMinutes,
+                    Status = InterviewRoomStatus.Scheduled,
+                    TransactionId = paymentTx.Id,
+                    BookingRequestId = bookingRequest.Id,
+                    CoachInterviewServiceId = bookingRequest.CoachInterviewServiceId,
+                    AimLevel = bookingRequest.AimLevel,
+                    EvaluationResults = await CreateEvaluationResultsFromInterviewServiceAsync(coachInterviewServiceRepo, bookingRequest.CoachInterviewServiceId),
+                    IsEvaluationCompleted = false
+                };
+
+                await roomRepo.AddAsync(room);
+            }
+            else if (bookingRequest.Type == BookingRequestType.JDInterview)
+            {
+                foreach (var round in bookingRequest.Rounds.OrderBy(r => r.RoundNumber))
+                {
+                    var roundDuration = round.CoachInterviewService?.DurationMinutes ?? 60;
+                    var roundEnd = round.StartTime.AddMinutes(roundDuration);
+
+                    await SplitAvailabilityForBookingAsync(availabilityRepo, bookingRequest.CoachId, round.StartTime, roundEnd);
+
+                    var room = new Domain.Entities.InterviewRoom
+                    {
+                        CandidateId = bookingRequest.CandidateId,
+                        CoachId = bookingRequest.CoachId,
+                        ScheduledTime = round.StartTime,
+                        DurationMinutes = roundDuration,
+                        Status = InterviewRoomStatus.Scheduled,
+                        TransactionId = paymentTx.Id,
+                        BookingRequestId = bookingRequest.Id,
+                        CoachInterviewServiceId = round.CoachInterviewServiceId,
+                        AimLevel = bookingRequest.AimLevel,
+                        RoundNumber = round.RoundNumber,
+                        EvaluationResults = await CreateEvaluationResultsFromInterviewServiceAsync(coachInterviewServiceRepo, round.CoachInterviewServiceId),
+                        IsEvaluationCompleted = false
+                    };
+
+                    await roomRepo.AddAsync(room);
+                }
+            }
+        }
+
+        private static async Task<List<EvaluationResult>> CreateEvaluationResultsFromInterviewServiceAsync(
+            ICoachInterviewServiceRepository coachInterviewServiceRepo,
+            Guid? coachInterviewServiceId)
+        {
+            if (coachInterviewServiceId == null)
+                return [];
+
+            var service = await coachInterviewServiceRepo.GetByIdWithDetailsAsync(coachInterviewServiceId.Value);
+
+            if (service == null)
+                return [];
+
+            return [.. service.InterviewType.EvaluationStructure.Select(c => new EvaluationResult
+            {
+                Type = c.Type,
+                Question = c.Question,
+                Score = 0,
+                Answer = ""
+            })];
+        }
+
+        private static async Task SplitAvailabilityForBookingAsync(
+            ICoachAvailabilitiesRepository availabilityRepo,
+            Guid coachId,
+            DateTime bookingStart,
+            DateTime bookingEnd)
+        {
+            var containingAvailability = await availabilityRepo.FindContainingAvailabilityAsync(
+                coachId, bookingStart, bookingEnd);
+
+            if (containingAvailability == null)
+            {
+                return;
+            }
+
+            var (before, after) = AvailabilitySplitService.Split(containingAvailability, bookingStart, bookingEnd);
+
+            if (before != null)
+                await availabilityRepo.AddAsync(before);
+            if (after != null)
+                await availabilityRepo.AddAsync(after);
         }
 
         public async Task<string?> ExecuteAsync(Guid candidateId, Guid bookingRequestId, string returnUrl)
@@ -82,6 +191,9 @@ namespace Intervu.Application.UseCases.BookingRequest
                     payoutTx.Status = TransactionStatus.Paid;
                     bookingRequest.Status = BookingRequestStatus.Paid;
                     bookingRequest.UpdatedAt = DateTime.UtcNow;
+
+                    // For free bookings, no webhook will fire — create rooms now
+                    await CreateRoomsForBookingRequestAsync(bookingRequest, paymentTx);
                 }
                 else
                 {

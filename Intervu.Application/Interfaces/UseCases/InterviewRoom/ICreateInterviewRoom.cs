@@ -11,5 +11,7 @@ namespace Intervu.Application.Interfaces.UseCases.InterviewRoom
     {
         Task<Guid> ExecuteAsync(Guid interveweeId);
         Task<Guid> ExecuteAsync(Guid interveweeId, Guid interviewerId, Guid availabilityId, DateTime startTime, Guid transactionId, int duration);
+
+        Task ExecuteAsync(Domain.Entities.InterviewRoom room);
     }
 }

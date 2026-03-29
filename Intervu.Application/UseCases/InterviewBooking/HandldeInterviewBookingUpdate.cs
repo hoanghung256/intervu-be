@@ -9,6 +9,7 @@ using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
 
 namespace Intervu.Application.UseCases.InterviewBooking
 {
@@ -19,6 +20,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
         private readonly ICoachAvailabilitiesRepository _coachAvailabilitiesRepository;
         private readonly IBackgroundService _backgroundService;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ICoachInterviewServiceRepository _coachInterviewServiceRepository;
         private readonly ILogger<HandldeInterviewBookingUpdate> _logger;
 
         public HandldeInterviewBookingUpdate(
@@ -27,6 +29,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
             ICoachAvailabilitiesRepository coachAvailabilitiesRepository,
             IBackgroundService backgroundService,
             IUnitOfWork unitOfWork,
+            ICoachInterviewServiceRepository coachInterviewServiceRepository,
             ILogger<HandldeInterviewBookingUpdate> logger)
         {
             _transactionRepository = transactionRepository;
@@ -34,6 +37,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
             _coachAvailabilitiesRepository = coachAvailabilitiesRepository;
             _backgroundService = backgroundService;
             _unitOfWork = unitOfWork;
+            _coachInterviewServiceRepository = coachInterviewServiceRepository;
             _logger = logger;
         }
 
@@ -53,12 +57,12 @@ namespace Intervu.Application.UseCases.InterviewBooking
 
                 transaction.Status = TransactionStatus.Paid;
 
-                // --- Flow B/C: BookingRequest payment ---
+                // --- Flow B/C: BookingRequest payment (Multiple rounds) ---
                 if (transaction.BookingRequestId != null)
                 {
                     await HandleBookingRequestPayment(transaction);
                 }
-                // --- Flow A: Normal availability booking ---
+                // --- Flow A: Normal availability booking (1 round) ---
                 else if (transaction.CoachAvailabilityId != null)
                 {
                     await HandleAvailabilityPayment(transaction);
@@ -67,7 +71,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 {
                     throw new NotFoundException("Transaction has no associated booking context");
                 }
-                
+
                 // Notify candidate — booking confirmed
                 _backgroundService.Enqueue<INotificationUseCase>(
                     uc => uc.CreateAsync(
@@ -115,6 +119,13 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 ?? throw new NotFoundException("Transaction is missing BookedStartTime metadata");
             var duration = transaction.BookedDurationMinutes
                 ?? throw new NotFoundException("Transaction is missing BookedDurationMinutes metadata");
+
+            //var bookingRepo = _unitOfWork.GetRepository<IBookingRequestRepository>();
+            //var roomRepo = _unitOfWork.GetRepository<IInterviewRoomRepository>();
+            //var availabilityRepo = _unitOfWork.GetRepository<ICoachAvailabilitiesRepository>();
+
+            //var bookingRequest = await bookingRepo.GetByIdWithDetailsAsync(transaction.BookingRequestId!.Value)
+            //   ?? throw new NotFoundException("Booking request not found");
 
             _backgroundService.Enqueue<ICreateInterviewRoom>(
                 uc => uc.ExecuteAsync(
@@ -175,6 +186,8 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     BookingRequestId = bookingRequest.Id,
                     CoachInterviewServiceId = bookingRequest.CoachInterviewServiceId,
                     AimLevel = bookingRequest.AimLevel,
+                    EvaluationResults = await CreateEvaluationResultsFromInterviewService(bookingRequest.CoachInterviewServiceId),
+                    IsEvaluationCompleted = false
                 };
                 await roomRepo.AddAsync(room);
 
@@ -204,6 +217,8 @@ namespace Intervu.Application.UseCases.InterviewBooking
                         CoachInterviewServiceId = round.CoachInterviewServiceId,
                         AimLevel = bookingRequest.AimLevel,
                         RoundNumber = round.RoundNumber,
+                        EvaluationResults = await CreateEvaluationResultsFromInterviewService(round.CoachInterviewServiceId),
+                        IsEvaluationCompleted = false
                     };
                     await roomRepo.AddAsync(room);
                 }
@@ -212,6 +227,25 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     "Created {RoundCount} interview rooms for JD BookingRequest {BookingRequestId}",
                     bookingRequest.Rounds.Count, bookingRequest.Id);
             }
+        }
+
+        private async Task<List<EvaluationResult>> CreateEvaluationResultsFromInterviewService(Guid? coachInterviewServiceId)
+        {
+            if (coachInterviewServiceId == null)
+                return [];
+
+            var service = await _coachInterviewServiceRepository.GetByIdWithDetailsAsync(coachInterviewServiceId.Value);
+
+            if (service == null)
+                return [];
+
+            return [.. service.InterviewType.EvaluationStructure.Select(c => new EvaluationResult
+            {
+                Type = c.Type,
+                Question = c.Question,
+                Score = 0,
+                Answer = ""
+            })];
         }
 
         /// <summary>
@@ -239,7 +273,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
             var (before, after) = AvailabilitySplitService.Split(containingAvailability, bookingStart, bookingEnd);
 
             // Remove the original availability
-            availabilityRepo.DeleteAsync(containingAvailability);
+            //availabilityRepo.DeleteAsync(containingAvailability);
 
             // Insert the split ranges
             if (before != null)

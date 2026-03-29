@@ -1,6 +1,7 @@
 using Intervu.Application.Mappings;
 using Intervu.Application.Services;
 using Intervu.Application.UseCases.Authentication;
+using Intervu.Application.Interfaces.Services;
 using Intervu.Application.Interfaces.UseCases.Authentication;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Microsoft.Extensions.Configuration;
@@ -18,6 +19,7 @@ using AdminUseCases = Intervu.Application.UseCases.Admin;
 using Intervu.Application.Interfaces.UseCases.Availability;
 using Intervu.Application.UseCases.Availability;
 using Intervu.Application.Interfaces.ExternalServices;
+using System;
 using Intervu.Application.Interfaces.UseCases.Candidate;
 using Intervu.Application.Interfaces.UseCases.CandidateProfile;
 using Intervu.Application.Services.CodeGeneration;
@@ -53,6 +55,15 @@ using BookingRequestInterfaces = Intervu.Application.Interfaces.UseCases.Booking
 using BookingRequestUseCases = Intervu.Application.UseCases.BookingRequest;
 using CoachServiceInterfaces = Intervu.Application.Interfaces.UseCases.CoachInterviewService;
 using CoachServiceUseCases = Intervu.Application.UseCases.CoachInterviewService;
+using Intervu.Application.Interfaces.UseCases.Industry;
+using Intervu.Application.UseCases.Industry;
+using Intervu.Application.Interfaces.UseCases.AudioChunk;
+using AudioChunk = Intervu.Application.UseCases.AudioChunk;
+using Intervu.Application.Interfaces.Services;
+using Intervu.Application.Interfaces.UseCases.SmartSearch;
+using Intervu.Application.UseCases.SmartSearch;
+using Intervu.Application.Interfaces.UseCases.GeneratedQuestion;
+using Intervu.Application.UseCases.GeneratedQuestion;
 
 namespace Intervu.Application
 {
@@ -70,9 +81,21 @@ namespace Intervu.Application
             services.AddSingleton<ICodeGenerationService, CSharpCodeGenerationService>();
             services.AddSingleton<ICodeGenerationService, JavaScriptCodeGenerationService>();
             services.AddSingleton<ICodeGenerationService, JavaCodeGenerationService>();
+            services.AddScoped<IAssessmentService, AssessmentService>();
+            services.AddScoped<IGenerateAssessmentCatalogService, GenerateAssessmentCatalogService>();
+
+            // AI Service HttpClient and registration
+            services.AddHttpClient("AiServiceClient", client =>
+            {
+                client.BaseAddress = new Uri(
+                    configuration["ApiClients:AIService"]
+                    ?? configuration["AiService:BaseUrl"]
+                    ?? "https://api.example.com/");
+            });
 
             // Auth UseCases
             services.AddTransient<ILoginUseCase, LoginUseCase>();
+            services.AddTransient<IGoogleLoginUseCase, GoogleLoginUseCase>();
             services.AddTransient<IRegisterUseCase, RegisterUseCase>();
             services.AddTransient<IRefreshTokenUseCase, RefreshTokenUseCase>();
 
@@ -86,6 +109,9 @@ namespace Intervu.Application
             services.AddScoped<IGetRoomHistory, GetRoomHistory>();
             services.AddScoped<IUpdateRoom, UpdateRoom>();
             services.AddScoped<IGetCurrentRoom, GetCurrentRoom>();
+            services.AddScoped<IGetCoachEvaluation, GetCoachEvaluation>();
+            services.AddScoped<ISubmitCoachEvaluation, SubmitCoachEvaluation>();
+            services.AddScoped<ISaveCoachEvaluationDraft, SaveCoachEvaluationDraft>();
             // ----- CoachProfile ----
             services.AddScoped<ICreateCoachProfile, CreateCoachProfile>();
             services.AddScoped<IUpdateCoachProfile, UpdateCoachProfile>();
@@ -94,6 +120,7 @@ namespace Intervu.Application
             services.AddScoped<IGetAllCoach, GetAllCoach>();
             services.AddScoped<CompanyInterfaces.IGetAllCompanies, CompanyUseCases.GetAllCompanies>();
             services.AddScoped<IGetAllSkills, GetAllSkills>();
+            services.AddScoped<IGetAllIndustries, GetAllIndustries>();
             // ----- Admin ----
             services.AddScoped<IGetDashboardStats, AdminUseCases.GetDashboardStats>();
             services.AddScoped<IGetAllUsersForAdmin, AdminUseCases.GetAllUsers>();
@@ -106,6 +133,7 @@ namespace Intervu.Application
             services.AddScoped<IGetUserByIdForAdmin, AdminUseCases.GetUserByIdForAdmin>();
             services.AddScoped<IUpdateUserForAdmin, AdminUseCases.UpdateUserForAdmin>();
             services.AddScoped<IDeleteUserForAdmin, AdminUseCases.DeleteUserForAdmin>();
+            services.AddScoped<IActivateUserForAdmin, AdminUseCases.ActivateUserForAdmin>();
             // ----- Feedback ----
             services.AddScoped<IGetFeedbacks, GetFeedbacks>();
             services.AddScoped<ICreateFeedback, CreateFeedback>();
@@ -170,6 +198,15 @@ namespace Intervu.Application
             services.AddScoped<IGetQuestionList, GetQuestionList>();
             services.AddScoped<IGetQuestionDetail, GetQuestionDetail>();
             services.AddScoped<ISearchQuestions, SearchQuestions>();
+            services.AddScoped<IReportQuestion, ReportQuestion>();
+            services.AddScoped<IGetQuestionReports, GetQuestionReports>();
+            services.AddScoped<IUpdateQuestionReportStatus, UpdateQuestionReportStatus>();
+
+            // --- Generated Questions ---
+            services.AddScoped<IStoreGeneratedQuestions, StoreGeneratedQuestions>();
+            services.AddScoped<IGetGeneratedQuestionsByRoom, GetGeneratedQuestionsByRoom>();
+            services.AddScoped<IApproveGeneratedQuestion, ApproveGeneratedQuestion>();
+            services.AddScoped<IRejectGeneratedQuestion, RejectGeneratedQuestion>();
 
             // --- Comments ---
             services.AddScoped<IGetComments, GetComments>();
@@ -197,9 +234,22 @@ namespace Intervu.Application
             services.AddScoped<BookingRequestInterfaces.IExpireBookingRequests, BookingRequestUseCases.ExpireBookingRequests>();
             services.AddScoped<BookingRequestInterfaces.IPayBookingRequest, BookingRequestUseCases.PayBookingRequest>();
             services.AddScoped<BookingRequestInterfaces.ICancelBookingRequest, BookingRequestUseCases.CancelBookingRequest>();
+            services.AddScoped<BookingRequestInterfaces.IRescheduleJDBookingRequest, BookingRequestUseCases.RescheduleJDBookingRequest>();
             
             // ----- Notification ----
             services.AddScoped<Interfaces.UseCases.Notification.INotificationUseCase, UseCases.Notification.NotificationUseCase>();
+
+            // ----- SmartSearch ----
+            services.AddScoped<ISyncCoachVectors, SyncCoachVectors>();
+            services.AddScoped<ISyncQuestionVectors, SyncQuestionVectors>();
+            services.AddScoped<ISmartSearchCoach, SmartSearchCoach>();
+            services.AddScoped<ISmartSearchQuestion, SmartSearchQuestion>();
+            services.AddScoped<IGetDuplicateQuestion, GetDuplicateQuestion>();
+
+            // ----- AudioChunk ----
+            services.AddScoped<IStoreAudioChunk, AudioChunk.StoreAudioChunk>();
+            services.AddScoped<IGetAudioChunk, AudioChunk.GetAudioChunk>();
+            services.AddSingleton<IAudioProcessingService, AudioProcessingService>();
 
             return services;
         }

@@ -1,4 +1,4 @@
-﻿using Intervu.Domain.Abstractions.Entity;
+using Intervu.Domain.Abstractions.Entity;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Entities.Constants.QuestionConstants;
@@ -30,21 +30,27 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<Company> Companies { get; set; }
         public DbSet<Skill> Skills { get; set; }
+        public DbSet<Industry> Industries { get; set; }
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<InterviewType> InterviewTypes { get; set; }
         public DbSet<InterviewExperience> InterviewExperiences { get; set; }
         public DbSet<Question> Questions { get; set; }
+        public DbSet<GeneratedQuestion> GeneratedQuestions { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<Tag> Tags { get; set; }
         public DbSet<QuestionTag> QuestionTags { get; set; }
         public DbSet<QuestionCompany> QuestionCompanies { get; set; }
         public DbSet<QuestionRole> QuestionRoles { get; set; }
+        public DbSet<QuestionReport> QuestionReports { get; set; }
         public DbSet<UserQuestionLike> UserQuestionLikes { get; set; }
         public DbSet<UserCommentLike> UserCommentLikes { get; set; }
         public DbSet<CoachInterviewService> CoachInterviewServices { get; set; }
         public DbSet<BookingRequest> BookingRequests { get; set; }
         public DbSet<Intervu.Domain.Entities.InterviewRound> InterviewRounds { get; set; }
+        public DbSet<UserAssessmentAnswer> UserAssessmentAnswers { get; set; }
+        public DbSet<UserSkillAssessmentSnapshot> UserSkillAssessments { get; set; }
+        public DbSet<AudioChunk> AudioChunks { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -75,6 +81,16 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // Seed GUIDs
+            var user1Id = Guid.Parse("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11");
+            var user2Id = Guid.Parse("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22");
+            var user3Id = Guid.Parse("2f8c7a6b-6d5e-4e2f-8c7a-9d6e5c4b3a33");
+            var user5Id = Guid.Parse("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44");
+            var user6Id = Guid.Parse("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55");
+
+            var room1Id = Guid.Parse("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a66");
+            var CoachAvail1Id = Guid.Parse("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77");
 
             // Users
             modelBuilder.Entity<User>(b =>
@@ -149,6 +165,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.BankBinNumber);
                 b.Property(x => x.BankAccountNumber);
                 b.Property(x => x.ExperienceYears);
+                b.Property(x => x.CurrentJobTitle).HasMaxLength(200);
                 b.Property(x => x.Status).IsRequired();
 
                 b.HasOne(x => x.User)
@@ -194,8 +211,31 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                          j.HasKey("CoachProfilesId", "SkillsId");
                          j.ToTable("CoachSkills");
                      });
+
+                b.HasMany(x => x.Industries)
+                 .WithMany(i => i.CoachProfiles)
+                 .UsingEntity<Dictionary<string, object>>(
+                     "CoachIndustries",
+                     l => l.HasOne<Industry>().WithMany().HasForeignKey("IndustriesId").OnDelete(DeleteBehavior.Cascade),
+                     r => r.HasOne<CoachProfile>().WithMany().HasForeignKey("CoachProfilesId").OnDelete(DeleteBehavior.Cascade),
+                     j =>
+                     {
+                         j.HasKey("CoachProfilesId", "IndustriesId");
+                         j.ToTable("CoachIndustries");
+
+
+                     });
             });
 
+            modelBuilder.Entity<Industry>(b =>
+            {
+                b.ToTable("Industries");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Name).HasMaxLength(120).IsRequired();
+                b.Property(x => x.Slug).HasMaxLength(150).IsRequired();
+                b.HasIndex(x => x.Name).IsUnique();
+                b.HasIndex(x => x.Slug).IsUnique();
+            });
 
             // CoachAvailability (available time ranges per coach)
             modelBuilder.Entity<CoachAvailability>(b =>
@@ -223,6 +263,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.DurationMinutes);
                 b.Property(x => x.VideoCallRoomUrl).HasMaxLength(1000);
                 b.Property(x => x.Status).IsRequired();
+                b.Property(x => x.Type).HasConversion<int>().IsRequired();
 
                 // JSON converters for complex properties
                 var jsonOptions = new JsonSerializerOptions
@@ -306,6 +347,30 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
 
                 b.Property(x => x.RoundNumber)
                  .IsRequired(false);
+
+                b.Property(x => x.EvaluationResultsJson)
+                  .HasColumnName("EvaluationStructure")
+                  .HasColumnType("jsonb");
+
+                b.Ignore(x => x.EvaluationResults);
+
+                b.Property(x => x.IsEvaluationCompleted);
+            });
+
+            // GeneratedQuestion
+            modelBuilder.Entity<GeneratedQuestion>(b =>
+            {
+                b.ToTable("GeneratedQuestions");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Title).HasMaxLength(500).IsRequired();
+                b.Property(x => x.Content).HasColumnType("text").IsRequired();
+                b.Property(x => x.Status).HasConversion<int>().IsRequired();
+
+                b.HasOne(x => x.InterviewRoom)
+                 .WithMany(r => r.GeneratedQuestions)
+                 .HasForeignKey(x => x.InterviewRoomId)
+                 .HasConstraintName("FK_GeneratedQuestions_InterviewRooms_InterviewRoomId")
+                 .OnDelete(DeleteBehavior.Restrict);
             });
 
             // Feedback
@@ -464,6 +529,98 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.Description).HasColumnType("text");
             });
 
+            // UserAssessmentAnswer - raw answers store
+            modelBuilder.Entity<UserAssessmentAnswer>(b =>
+            {
+                b.ToTable("UserAssessmentAnswers");
+                b.HasKey(x => x.Id);
+
+                b.Property(x => x.UserId).IsRequired();
+                b.Property(x => x.AssessmentId).IsRequired();
+
+                b.Property(x => x.QuestionId)
+                 .IsRequired()
+                 .HasMaxLength(200);
+
+                b.Property(x => x.Skill)
+                 .IsRequired()
+                 .HasMaxLength(200);
+
+                b.Property(x => x.Answer)
+                 .HasColumnType("text")
+                 .IsRequired(false);
+
+                b.Property(x => x.SelectedLevel)
+                 .IsRequired()
+                 .HasMaxLength(20);
+
+                b.Property(x => x.Type)
+                 .IsRequired()
+                 .HasMaxLength(20);
+
+                b.Property(x => x.SfiaLevel)
+                 .IsRequired();
+
+                b.Property(x => x.CreatedAt)
+                 .IsRequired()
+                 .HasColumnType("timestamp with time zone")
+                 .HasDefaultValueSql("NOW()");
+
+                b.HasIndex(x => x.UserId);
+                b.HasIndex(x => x.AssessmentId);
+                b.HasIndex(x => x.Skill);
+
+                b.HasOne(x => x.User)
+                 .WithMany()
+                 .HasForeignKey(x => x.UserId)
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasCheckConstraint("CK_UserAssessmentAnswers_SelectedLevel", "\"SelectedLevel\" IN ('None','Basic','Intermediate','Advanced')");
+                b.HasCheckConstraint("CK_UserAssessmentAnswers_SfiaLevel", "\"SfiaLevel\" IN (0,2,3,5)");
+            });
+
+            modelBuilder.Entity<UserSkillAssessmentSnapshot>(b =>
+            {
+                b.ToTable("UserSkillAssessmentSnapshots");
+                b.HasKey(x => x.Id);
+
+                b.Property(x => x.UserId).IsRequired();
+
+                b.Property(x => x.TargetJson)
+                 .IsRequired()
+                 .HasColumnType("jsonb");
+
+                b.Property(x => x.CurrentJson)
+                 .IsRequired()
+                 .HasColumnType("jsonb");
+
+                b.Property(x => x.GapJson)
+                 .IsRequired()
+                 .HasColumnType("jsonb");
+
+                b.Property(x => x.RoadMapJson)
+                 .IsRequired()
+                 .HasColumnType("jsonb");
+
+                b.Property(x => x.CreatedAt)
+                 .IsRequired()
+                 .HasColumnType("timestamp with time zone")
+                 .HasDefaultValueSql("NOW()");
+
+                b.Property(x => x.UpdatedAt)
+                 .IsRequired()
+                 .HasColumnType("timestamp with time zone")
+                 .HasDefaultValueSql("NOW()");
+
+                b.HasIndex(x => x.UserId)
+                 .IsUnique();
+
+                b.HasOne(x => x.User)
+                 .WithMany()
+                 .HasForeignKey(x => x.UserId)
+                 .OnDelete(DeleteBehavior.Cascade);
+            });
+
             modelBuilder.Entity<PasswordResetToken>(b =>
             {
                 b.ToTable("PasswordResetTokens");
@@ -530,6 +687,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
 
                 entity.Property(e => e.Status)
                       .HasConversion<int>();
+
+                entity.Property(e => e.EvaluationStructureJson)
+                  .HasColumnName("EvaluationStructure")
+                  .HasColumnType("jsonb");
+
+                entity.Ignore(e => e.EvaluationStructure);
             });
 
             // CoachInterviewService (many-to-many with payload: Coach × InterviewType)
@@ -632,6 +795,24 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                  .HasDatabaseName("IX_InterviewRounds_BookingRequestId_RoundNumber");
             });
 
+            // AudioChunk
+            modelBuilder.Entity<AudioChunk>(b =>
+            {
+                b.ToTable("AudioChunks");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.AudioData).IsRequired();
+                b.Property(x => x.CreatedAt).IsRequired().HasDefaultValueSql("NOW()");
+                b.Property(x => x.RecordingSessionId).IsRequired();
+                b.Property(x => x.ChunkSequenceNumber).IsRequired().HasDefaultValue(0);
+                
+                // Index for grouping chunks by recording session
+                b.HasIndex(x => x.RecordingSessionId).HasName("IX_AudioChunks_RecordingSessionId");
+                
+                // Composite index for ordering chunks by session and sequence
+                b.HasIndex(x => new { x.RecordingSessionId, x.ChunkSequenceNumber })
+                    .HasName("IX_AudioChunks_RecordingSession_Sequence");
+            });
+
             /// <summary>
             /// Global query filter for soft delete
             /// When querying any entity that has an "IsDeleted" property.
@@ -661,17 +842,25 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             }
 
             // Seed data
-            var user1Id = Guid.Parse("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11");
-            var user2Id = Guid.Parse("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22");
-            var user3Id = Guid.Parse("2f8c7a6b-6d5e-4e2f-8c7a-9d6e5c4b3a33");
-            var user5Id = Guid.Parse("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44");
-            var user6Id = Guid.Parse("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55");
+            //var user1Id = Guid.Parse("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11");
+            //var user2Id = Guid.Parse("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22");
+            //var user3Id = Guid.Parse("2f8c7a6b-6d5e-4e2f-8c7a-9d6e5c4b3a33");
+            //var user5Id = Guid.Parse("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44");
+            //var user6Id = Guid.Parse("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55");
 
-            var room1Id = Guid.Parse("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a66");
-            var CoachAvail1Id = Guid.Parse("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77");
+            //var room1Id = Guid.Parse("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a66");
+            //var CoachAvail1Id = Guid.Parse("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77");
+            
+            var room2Id = Guid.Parse("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a77");
 
             // Additional test data for reschedule functionality
             var CoachAvail2Id = Guid.Parse("aaaaaaaa-1111-4a1a-8a1a-111111111111"); // For reschedule testing
+
+            var room3Id = Guid.Parse("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a88");
+            var transaction4Id = Guid.Parse("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a00");
+            var CoachAvail3Id = Guid.Parse("aaaaaaaa-1111-4a1a-8a1a-111111111112");
+
+            // Users
 
             // Users
             var user1 = new User
@@ -758,6 +947,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 Id = user2Id,
                 PortfolioUrl = "https://portfolio.example.com/bob",
                 ExperienceYears = 8,
+                CurrentJobTitle = "Senior Backend Engineer",
                 Status = CoachProfileStatus.Enable,
                 CurrentAmount = 0,
                 Bio = "Senior Backend Engineer with real interview experience",
@@ -769,6 +959,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 Id = user5Id,
                 PortfolioUrl = "https://portfolio.example.com/john",
                 ExperienceYears = 6,
+                CurrentJobTitle = "Technical Lead",
                 CurrentAmount = 0,
                 Bio = "Fullstack Engineer previously at Uber",
                 Status = CoachProfileStatus.Enable,
@@ -780,6 +971,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 Id = user6Id,
                 PortfolioUrl = "https://portfolio.example.com/sarah",
                 ExperienceYears = 7,
+                CurrentJobTitle = "Senior Frontend Engineer",
                 CurrentAmount = 0,
                 Bio = "Senior Frontend Engineer focusing on UI/UX interviews",
                 Status = CoachProfileStatus.Enable,
@@ -806,12 +998,21 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                     StartTime = DateTime.SpecifyKind(new DateTime(2026, 3, 15, 14, 0, 0), DateTimeKind.Utc),
                     EndTime = DateTime.SpecifyKind(new DateTime(2026, 3, 15, 17, 0, 0), DateTimeKind.Utc),
                     Status = CoachAvailabilityStatus.Available
+                },
+                new CoachAvailability
+                {
+                    Id = CoachAvail3Id,
+                    CoachId = user2Id,
+                    StartTime = DateTime.SpecifyKind(new DateTime(2026, 4, 1, 10, 0, 0), DateTimeKind.Utc),
+                    EndTime = DateTime.SpecifyKind(new DateTime(2026, 4, 1, 11, 0, 0), DateTimeKind.Utc),
+                    Status = CoachAvailabilityStatus.Available
                 }
             );
 
             // Seed transactions for testing
             var transaction1Id = Guid.Parse("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a88");
             var transaction2Id = Guid.Parse("8f9a0b1c-d2e3-4f5a-9b0c-1d2e3f4a5b99");
+            var transaction3Id = Guid.Parse("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a99");
 
             modelBuilder.Entity<InterviewBookingTransaction>().HasData(
                 new InterviewBookingTransaction
@@ -831,22 +1032,71 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                     Amount = 500,
                     Type = TransactionType.Payout,
                     Status = TransactionStatus.Paid
+                },
+                new InterviewBookingTransaction
+                {
+                    Id = transaction3Id,
+                    UserId = user1Id,
+                    CoachAvailabilityId = CoachAvail2Id,
+                    Amount = 1500,
+                    Type = TransactionType.Payment,
+                    Status = TransactionStatus.Paid
+                },
+                new InterviewBookingTransaction
+                {
+                    Id = transaction4Id,
+                    UserId = user1Id,
+                    CoachAvailabilityId = CoachAvail3Id,
+                    Amount = 2000,
+                    Type = TransactionType.Payment,
+                    Status = TransactionStatus.Paid
                 }
             );
 
-            modelBuilder.Entity<InterviewRoom>().HasData(new InterviewRoom
-            {
-                Id = room1Id,
-                CandidateId = user1Id,
-                CoachId = user2Id,
-                TransactionId = transaction1Id,
-                CurrentAvailabilityId = CoachAvail1Id, // Link to current availability
-                ScheduledTime = DateTime.SpecifyKind(new DateTime(2026, 2, 10, 9, 0, 0), DateTimeKind.Utc),
-                DurationMinutes = 60,
-                VideoCallRoomUrl = "https://meet.example/room1",
-                Status = InterviewRoomStatus.Scheduled,
-                RescheduleAttemptCount = 0
-            });
+            modelBuilder.Entity<InterviewRoom>().HasData(
+                new InterviewRoom
+                {
+                    Id = room1Id,
+                    CandidateId = user1Id,
+                    CoachId = user2Id,
+                    TransactionId = transaction1Id,
+                    CurrentAvailabilityId = CoachAvail1Id, // Link to current availability
+                    ScheduledTime = DateTime.SpecifyKind(new DateTime(2026, 2, 10, 9, 0, 0), DateTimeKind.Utc),
+                    DurationMinutes = 60,
+                    VideoCallRoomUrl = "https://meet.example/room1",
+                    Status = InterviewRoomStatus.Scheduled,
+                    RescheduleAttemptCount = 0,
+                    Type = InterviewRoomType.Normal
+                },
+                new InterviewRoom
+                {
+                    Id = room2Id,
+                    CandidateId = user1Id,
+                    CoachId = null,
+                    TransactionId = transaction3Id,
+                    CurrentAvailabilityId = CoachAvail2Id,
+                    ScheduledTime = DateTime.SpecifyKind(new DateTime(2026, 3, 15, 14, 30, 0), DateTimeKind.Utc),
+                    DurationMinutes = 60,
+                    VideoCallRoomUrl = "https://meet.example/room-ai",
+                    Status = InterviewRoomStatus.Ongoing,
+                    RescheduleAttemptCount = 0,
+                    Type = InterviewRoomType.WithAI
+                },
+                new InterviewRoom
+                {
+                    Id = room3Id,
+                    CandidateId = user1Id,
+                    CoachId = user2Id,
+                    TransactionId = transaction4Id,
+                    CurrentAvailabilityId = CoachAvail3Id,
+                    ScheduledTime = DateTime.SpecifyKind(new DateTime(2026, 4, 1, 10, 0, 0), DateTimeKind.Utc),
+                    DurationMinutes = 60,
+                    VideoCallRoomUrl = "https://meet.example/room3",
+                    Status = InterviewRoomStatus.Ongoing,
+                    RescheduleAttemptCount = 0,
+                    Type = InterviewRoomType.Normal
+                }
+            );
 
             modelBuilder.Entity<Feedback>().HasData(new Feedback
             {
@@ -904,6 +1154,17 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 new Skill { Id = Guid.Parse("0a0a0a0a-0a0a-4a0a-8a0a-0a0a0a0a0a0a"), Name = "Machine Learning" }
             );
 
+            modelBuilder.Entity<Industry>().HasData(
+                new Industry { Id = Guid.Parse("11110000-0000-4000-8000-000000000001"), Name = "Fintech", Slug = "fintech" },
+                new Industry { Id = Guid.Parse("11110000-0000-4000-8000-000000000002"), Name = "E-commerce", Slug = "e-commerce" },
+                new Industry { Id = Guid.Parse("11110000-0000-4000-8000-000000000003"), Name = "EdTech", Slug = "edtech" },
+                new Industry { Id = Guid.Parse("11110000-0000-4000-8000-000000000004"), Name = "Blockchain", Slug = "blockchain" },
+                new Industry { Id = Guid.Parse("11110000-0000-4000-8000-000000000005"), Name = "HealthTech", Slug = "healthtech" },
+                new Industry { Id = Guid.Parse("11110000-0000-4000-8000-000000000006"), Name = "SaaS", Slug = "saas" },
+                new Industry { Id = Guid.Parse("11110000-0000-4000-8000-000000000007"), Name = "AI/ML", Slug = "ai-ml" },
+                new Industry { Id = Guid.Parse("11110000-0000-4000-8000-000000000008"), Name = "GameDev", Slug = "gamedev" }
+            );
+
             // Bob (user2Id)
             modelBuilder.Entity("CoachCompanies").HasData(
                 new { CoachProfilesId = user2Id, CompaniesId = Guid.Parse("11111111-1111-4111-8111-111111111111") }, // Google
@@ -949,6 +1210,15 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 new { CoachProfilesId = user6Id, SkillsId = Guid.Parse("e4e4e4e4-e4e4-44e4-84e4-e4e4e4e4e4e4") },
                 new { CoachProfilesId = user6Id, SkillsId = Guid.Parse("f5f5f5f5-f5f5-45f5-85f5-f5f5f5f5f5f5") },
                 new { CoachProfilesId = user6Id, SkillsId = Guid.Parse("0a0a0a0a-0a0a-4a0a-8a0a-0a0a0a0a0a0a") }
+            );
+
+            modelBuilder.Entity("CoachIndustries").HasData(
+                new { CoachProfilesId = user2Id, IndustriesId = Guid.Parse("11110000-0000-4000-8000-000000000001") },
+                new { CoachProfilesId = user2Id, IndustriesId = Guid.Parse("11110000-0000-4000-8000-000000000006") },
+                new { CoachProfilesId = user5Id, IndustriesId = Guid.Parse("11110000-0000-4000-8000-000000000002") },
+                new { CoachProfilesId = user5Id, IndustriesId = Guid.Parse("11110000-0000-4000-8000-000000000007") },
+                new { CoachProfilesId = user6Id, IndustriesId = Guid.Parse("11110000-0000-4000-8000-000000000003") },
+                new { CoachProfilesId = user6Id, IndustriesId = Guid.Parse("11110000-0000-4000-8000-000000000008") }
             );
 
             // InterviewExperience
@@ -1005,6 +1275,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.HasMany(x => x.Comments)
                     .WithOne(c => c.Question)
                     .HasForeignKey(c => c.QuestionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasMany(x => x.Reports)
+                    .WithOne(r => r.Question)
+                    .HasForeignKey(r => r.QuestionId)
                     .OnDelete(DeleteBehavior.Cascade);
 
                 // Indexes for optimized filtering
@@ -1067,6 +1342,34 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.CreateBy).IsRequired();
                 b.Property(x => x.UpdateBy).IsRequired();
                 b.HasIndex(x => x.QuestionId);
+            });
+
+            modelBuilder.Entity<QuestionReport>(b =>
+            {
+                b.ToTable("QuestionReports");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.QuestionId).IsRequired();
+                b.Property(x => x.ReportedBy).IsRequired();
+                b.Property(x => x.Reason).IsRequired().HasMaxLength(1000);
+                b.Property(x => x.Status).HasConversion<int>().HasDefaultValue(QuestionReportStatus.Pending);
+                b.Property(x => x.CreatedAt).IsRequired();
+                b.Property(x => x.UpdatedAt).IsRequired();
+
+                b.HasOne(x => x.Question)
+                    .WithMany(q => q.Reports)
+                    .HasForeignKey(x => x.QuestionId)
+                    .HasConstraintName("FK_QuestionReports_Questions_QuestionId")
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasOne(x => x.Reporter)
+                    .WithMany()
+                    .HasForeignKey(x => x.ReportedBy)
+                    .HasConstraintName("FK_QuestionReports_Users_ReportedBy")
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasIndex(x => x.QuestionId);
+                b.HasIndex(x => x.ReportedBy);
+                b.HasIndex(x => x.Status);
             });
 
             // UserQuestionLike (tracks which user liked which question)
@@ -1273,49 +1576,116 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             );
 
             modelBuilder.Entity<InterviewType>().HasData(
-                new InterviewType
+            new InterviewType
+            {
+                Id = Guid.Parse("a3f1c8b2-9d4e-4c7a-8f21-6b7e4d2c91aa"),
+                Name = "CV Interview",
+                Description = "Resume review and HR-style interview focusing on background and experience.",
+                IsCoding = false,
+                SuggestedDurationMinutes = 30,
+                MinPrice = 1000,
+                MaxPrice = 2000,
+                Status = InterviewTypeStatus.Active,
+                EvaluationStructureJson = """
+                [
+                    { "Type": "Experience Authenticity", "Question": "How well does the candidate's explanation of their past work match the details on their CV? (e.g., Did they exaggerate their contributions? Do they deeply understand the projects they listed?)" },
+                    { "Type": "Communication & Presentation", "Question": "How would you rate the candidate's communication skills, clarity of expression, and overall confidence during the interview?" },
+                    { "Type": "Career Alignment", "Question": "Are the candidate's short-term and long-term career goals clear, realistic, and aligned with the typical progression in this field?" },
+                    { "Type": "CV Improvement (Actionable Advice)", "Question": "What is the strongest highlight of their CV? Are there any red flags, formatting issues, or vague details they need to fix immediately?" }
+                ]
+                """
+            },
+            new InterviewType
+            {
+                Id = Guid.Parse("e8b74d9f-2c41-4c9a-9b13-1f8a6e52d0c3"),
+                Name = "Technical Interview",
+                Description = "Technical interview with coding problems and system design questions.",
+                IsCoding = true,
+                SuggestedDurationMinutes = 60,
+                MinPrice = 1000,
+                MaxPrice = 2000,
+                Status = InterviewTypeStatus.Active,
+                EvaluationStructureJson = """
+                [
+                    { "Type": "Problem Solving & Logic", "Question": "How would you evaluate the candidate's ability to analyze requirements, clarify edge cases, and approach the problem logically before writing code?" },
+                    { "Type": "Code Quality & Optimization", "Question": "Rate the candidate's code quality (clean code principles, naming conventions) and their ability to optimize for time and space complexity (Big O)." },
+                    { "Type": "Tech Stack & Fundamentals", "Question": "Assess the candidate's grasp of core computer science fundamentals (OOP, Databases, System Design) and their proficiency in their primary tech stack/framework." },
+                    { "Type": "Actionable Tech Advice", "Question": "Where are the candidate's technical blind spots? Please list 1-3 specific technologies, concepts, or keywords they must study to improve." }
+                ]
+                """
+            },
+            new InterviewType
+            {
+                Id = Guid.Parse("5c9e2a14-73bb-4b61-b7e2-91a8f42d3c6e"),
+                Name = "Soft Skills Interview",
+                Description = "Behavioral interview focused on communication and interpersonal skills.",
+                IsCoding = false,
+                SuggestedDurationMinutes = 45,
+                MinPrice = 1000,
+                MaxPrice = 2000,
+                Status = InterviewTypeStatus.Active,
+                EvaluationStructureJson = """
+                [
+                    { "Type": "Teamwork & Collaboration", "Question": "Based on the scenarios they shared, how effectively does the candidate collaborate with others, resolve conflicts, and support their teammates?" },
+                    { "Type": "Adaptability & Working Under Pressure", "Question": "How does the candidate react to sudden changes in project requirements, tight deadlines, or high-pressure situations?" },
+                    { "Type": "Ownership & Attitude", "Question": "Does the candidate demonstrate a strong sense of ownership (taking accountability for mistakes) and a proactive, growth-oriented mindset?" },
+                    { "Type": "Professionalism Advice", "Question": "What specific advice would you give the candidate to improve their professionalism, interview etiquette, and overall impression on hiring managers?" }
+                ]
+                """
+            },
+            new InterviewType
+            {
+                Id = Guid.Parse("f14a7c6d-88b2-4d55-a9fd-2b4e73c91a08"),
+                Name = "Mock Interview",
+                Description = "Full mock interview simulating a real job interview experience.",
+                IsCoding = true,
+                SuggestedDurationMinutes = 75,
+                MinPrice = 1000,
+                MaxPrice = 2000,
+                Status = InterviewTypeStatus.Active,
+                EvaluationStructureJson = """
+                [
+                    { "Type": "Technical Readiness", "Question": "Summarize the candidate's technical competencies: Which areas meet the standard for their target level (Fresher/Junior/Mid/Senior), and which areas fall short?" },
+                    { "Type": "Culture & Behavioral Fit", "Question": "Summarize their soft skills: Would this candidate be a solid cultural addition to a standard software engineering team?" },
+                    { "Type": "Final Verdict", "Question": "If this were a real interview and you were the Hiring Manager, what would your decision be? (Strong Hire / Hire / Leaning Hire / No Hire) – Briefly explain your reasoning." },
+                    { "Type": "Top Priorities", "Question": "List the top 3 most critical action items the candidate must execute immediately to increase their chances of passing a real job interview." }
+                ]
+                """
+            }
+        );
+
+            modelBuilder.Entity<CoachInterviewService>().HasData(
+                new CoachInterviewService
                 {
-                    Id = Guid.Parse("a3f1c8b2-9d4e-4c7a-8f21-6b7e4d2c91aa"),
-                    Name = "CV Interview",
-                    Description = "Resume review and HR-style interview focusing on background and experience.",
-                    IsCoding = false,
-                    SuggestedDurationMinutes = 30,
-                    MinPrice = 10,
-                    MaxPrice = 50,
-                    Status = InterviewTypeStatus.Active
+                    Id = Guid.Parse("019d1466-f54f-7a12-a89e-3d459032ba89"),
+                    CoachId = user2Id,
+                    InterviewTypeId = Guid.Parse("a3f1c8b2-9d4e-4c7a-8f21-6b7e4d2c91aa"),
+                    Price = 2000,
+                    DurationMinutes = 30,
                 },
-                new InterviewType
+                new CoachInterviewService
                 {
-                    Id = Guid.Parse("e8b74d9f-2c41-4c9a-9b13-1f8a6e52d0c3"),
-                    Name = "Technical Interview",
-                    Description = "Technical interview with coding problems and system design questions.",
-                    IsCoding = true,
-                    SuggestedDurationMinutes = 60,
-                    MinPrice = 30,
-                    MaxPrice = 100,
-                    Status = InterviewTypeStatus.Active
+                    Id = Guid.Parse("019d1467-d415-74d5-8d8a-de2143f27c35"),
+                    CoachId = user2Id,
+                    InterviewTypeId = Guid.Parse("e8b74d9f-2c41-4c9a-9b13-1f8a6e52d0c3"),
+                    Price = 2000,
+                    DurationMinutes = 60,
                 },
-                new InterviewType
+                new CoachInterviewService
                 {
-                    Id = Guid.Parse("5c9e2a14-73bb-4b61-b7e2-91a8f42d3c6e"),
-                    Name = "Soft Skills Interview",
-                    Description = "Behavioral interview focused on communication and interpersonal skills.",
-                    IsCoding = false,
-                    SuggestedDurationMinutes = 45,
-                    MinPrice = 15,
-                    MaxPrice = 60,
-                    Status = InterviewTypeStatus.Active
+                    Id = Guid.Parse("019d1467-d415-7224-8808-39aa3e3b6377"),
+                    CoachId = user2Id,
+                    InterviewTypeId = Guid.Parse("5c9e2a14-73bb-4b61-b7e2-91a8f42d3c6e"),
+                    Price = 2000,
+                    DurationMinutes = 45,
                 },
-                new InterviewType
+                new CoachInterviewService
                 {
-                    Id = Guid.Parse("f14a7c6d-88b2-4d55-a9fd-2b4e73c91a08"),
-                    Name = "Mock Interview",
-                    Description = "Full mock interview simulating a real job interview experience.",
-                    IsCoding = true,
-                    SuggestedDurationMinutes = 75,
-                    MinPrice = 40,
-                    MaxPrice = 120,
-                    Status = InterviewTypeStatus.Draft
+                    Id = Guid.Parse("019d1467-d415-79f8-9bdc-5bb25a0b25cf"),
+                    CoachId = user2Id,
+                    InterviewTypeId = Guid.Parse("f14a7c6d-88b2-4d55-a9fd-2b4e73c91a08"),
+                    Price = 2000,
+                    DurationMinutes = 75,
                 }
             );
         }

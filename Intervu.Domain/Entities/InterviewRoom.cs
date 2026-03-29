@@ -1,5 +1,7 @@
 using Intervu.Domain.Abstractions.Entity;
 using Intervu.Domain.Entities.Constants;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json;
 
 namespace Intervu.Domain.Entities
 {
@@ -42,6 +44,8 @@ namespace Intervu.Domain.Entities
 
         public int RescheduleAttemptCount { get; set; } = 0;
 
+        public InterviewRoomType Type { get; set; }
+
         // --- New booking context fields ---
 
         /// <summary>
@@ -64,6 +68,24 @@ namespace Intervu.Domain.Entities
         /// </summary>
         public int? RoundNumber { get; set; }
 
+        // Store the evaluation structure as a JSON string in the database, EF purpose
+        [Column(TypeName = "jsonb")]
+        public string? EvaluationResultsJson { get; set; }
+
+        // Use this field for application logic; it will be ignored by EF Core and not mapped to the database
+        [NotMapped]
+        public List<EvaluationResult>? EvaluationResults
+        {
+            get => string.IsNullOrEmpty(EvaluationResultsJson)
+                   ? null
+                   : JsonSerializer.Deserialize<List<EvaluationResult>>(EvaluationResultsJson);
+            set => EvaluationResultsJson = value == null
+                   ? null
+                   : JsonSerializer.Serialize(value);
+        }
+
+        public bool IsEvaluationCompleted { get; set; } = false;
+
         // Navigation Properties
         public InterviewBookingTransaction? Transaction { get; set; }
         
@@ -74,6 +96,8 @@ namespace Intervu.Domain.Entities
         public CoachInterviewService? CoachInterviewService { get; set; }
         
         public ICollection<InterviewRescheduleRequest>? RescheduleRequests { get; set; }
+
+        public ICollection<GeneratedQuestion> GeneratedQuestions { get; set; } = new List<GeneratedQuestion>();
 
         public bool IsAvailableForReschedule()
         {

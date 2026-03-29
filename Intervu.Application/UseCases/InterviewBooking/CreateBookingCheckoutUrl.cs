@@ -20,17 +20,20 @@ namespace Intervu.Application.UseCases.InterviewBooking
         private readonly ILogger<CreateBookingCheckoutUrl> _logger;
         private readonly IPaymentService _paymentService;
         private readonly IBackgroundService _jobService;
+        private readonly ICoachInterviewServiceRepository _coachInterviewServiceRepository;
         private readonly IUnitOfWork _unitOfWork;
 
         public CreateBookingCheckoutUrl(
             ILogger<CreateBookingCheckoutUrl> logger,
             IPaymentService paymentService,
             IBackgroundService jobService,
+            ICoachInterviewServiceRepository coachInterviewServiceRepository,
             IUnitOfWork unitOfWork)
         {
             _logger = logger;
             _paymentService = paymentService;
             _jobService = jobService;
+            _coachInterviewServiceRepository = coachInterviewServiceRepository;
             _unitOfWork = unitOfWork;
         }
 
@@ -123,9 +126,26 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     t.Status = TransactionStatus.Paid;
                     t2.Status = TransactionStatus.Paid;
 
+                    //uc => uc.Ad(candidateId, coachId, coachAvailabilityId, startTime, t.Id, duration);
+                    var evaluation = await CreateEvaluationResultsFromInterviewService(coachInterviewServiceId);
+
                     _jobService.Enqueue<ICreateInterviewRoom>(
-                        uc => uc.ExecuteAsync(candidateId, coachId, coachAvailabilityId, startTime, t.Id, duration)
+                        uc => uc.ExecuteAsync(new Domain.Entities.InterviewRoom()
+                        {
+                            CandidateId = candidateId,
+                            CoachId = coachId,
+                            ScheduledTime = startTime,
+                            DurationMinutes = duration,
+                            Status = InterviewRoomStatus.Scheduled,
+                            TransactionId = t.Id,
+                            BookingRequestId = null,
+                            CoachInterviewServiceId =coachInterviewServiceId,
+                            AimLevel = null,
+                            EvaluationResults = evaluation,
+                            IsEvaluationCompleted = false
+                        })
                     );
+                    
                 }
                 else
                 {
@@ -149,6 +169,25 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 await _unitOfWork.RollbackTransactionAsync();
                 throw;
             }
+        }
+
+        private async Task<List<EvaluationResult>> CreateEvaluationResultsFromInterviewService(Guid? coachInterviewServiceId)
+        {
+            if (coachInterviewServiceId == null)
+                return [];
+
+            var service = await _coachInterviewServiceRepository.GetByIdWithDetailsAsync(coachInterviewServiceId.Value);
+
+            if (service == null)
+                return [];
+
+            return [.. service.InterviewType.EvaluationStructure.Select(c => new EvaluationResult
+            {
+                Type = c.Type,
+                Question = c.Question,
+                Score = 0,
+                Answer = ""
+            })];
         }
     }
 }

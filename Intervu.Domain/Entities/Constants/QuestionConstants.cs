@@ -8,6 +8,13 @@ namespace Intervu.Domain.Entities.Constants.QuestionConstants
         Removed = 4
     }
 
+    public enum QuestionReportStatus
+    {
+        Pending = 1,
+        Reviewed = 2,
+        Dismissed = 3
+    }
+
     public enum Role
     {
         ProductManager = 1,

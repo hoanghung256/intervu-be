@@ -1,4 +1,4 @@
-﻿using Firebase.Storage;
+using Firebase.Storage;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Storage.V1;
@@ -6,10 +6,15 @@ using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.BackgroundJobs;
 using Intervu.Application.Interfaces.ExternalServices.Email;
 using Intervu.Domain.Repositories;
+using Intervu.Application.Interfaces.Repositories;
+using Intervu.Infrastructure.Persistence.PostgreSQL.Repositories;
 using Intervu.Infrastructure.ExternalServices;
 using Intervu.Infrastructure.ExternalServices.EmailServices;
 using Intervu.Infrastructure.ExternalServices.FirebaseStorageService;
 using Intervu.Infrastructure.ExternalServices.PayOSPaymentService;
+using Intervu.Infrastructure.ExternalServices.Pinecone;
+using Intervu.Application.Interfaces.ExternalServices.Pinecone;
+
 using Intervu.Infrastructure.Persistence.PostgreSQL;
 using Intervu.Infrastructure.BackgroundJobs;
 using Intervu.Domain.Abstractions.Entity.Interfaces;
@@ -68,6 +73,7 @@ namespace Intervu.Infrastructure
             services.AddScoped<ICandidateProfileRepository, CandidateProfileRepository>();
             services.AddScoped<ICompanyRepository, CompanyRepository>();
             services.AddScoped<ISkillRepository, SkillRepository>();
+            services.AddScoped<IIndustryRepository, IndustryRepository>();
             //services.AddScoped<IPaymentRepository, PaymentRepository>();
             services.AddScoped<ICoachAvailabilitiesRepository, CoachAvailabilitiesRepository>();
             services.AddScoped<ITransactionRepository, TransactionRepository>();
@@ -75,17 +81,22 @@ namespace Intervu.Infrastructure
             services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             services.AddScoped<IRescheduleRequestRepository, RescheduleRequestRepository>();
+            // Assessment raw answers repo not registered — we only store processed survey snapshots
+            services.AddScoped<IUserSkillAssessmentSnapshotRepository, UserSkillAssessmentSnapshotRepository>();
             services.AddScoped<IInterviewTypeRepository, InterviewTypeRepository>();
             services.AddScoped<IQuestionRepository, QuestionRepository>();
+            services.AddScoped<IGeneratedQuestionRepository, GeneratedQuestionRepository>();
             services.AddScoped<ICommentRepository, CommentRepository>();
             services.AddScoped<IInterviewExperienceRepository, InterviewExperienceRepository>();
             services.AddScoped<ITagRepository, TagRepository>();
             services.AddScoped<IUserQuestionLikeRepository, UserQuestionLikeRepository>();
             services.AddScoped<IUserCommentLikeRepository, UserCommentLikeRepository>();
+            services.AddScoped<IQuestionReportRepository, QuestionReportRepository>();
             services.AddScoped<ICoachInterviewServiceRepository, CoachInterviewServiceRepository>();
             services.AddScoped<IBookingRequestRepository, BookingRequestRepository>();
             services.AddScoped<IInterviewRoundRepository, InterviewRoundRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
+            services.AddScoped<IAudioChunkRepository, AudioChunkRepository>();
 
             return services;
         }
@@ -114,6 +125,7 @@ namespace Intervu.Infrastructure
             services.AddSingleton(StorageClient.Create(credential));
 
             services.AddSingleton<string>(sp => bucketName);
+            services.AddScoped<IGoogleTokenValidator, GoogleTokenValidator>();
 
             services.AddTransient<IFileService>(sp =>
             {
@@ -163,6 +175,16 @@ namespace Intervu.Infrastructure
             });
 
             services.AddScoped<CodeExecutionService>();
+            services.AddScoped<IAiService, AiService>();
+
+            // Pinecone Services
+            services.AddHttpClient<IEmbeddingService, PineconeInferenceService>();
+            services.AddHttpClient<IVectorStoreService, PineconeVectorStoreService>();
+            
+            // AI Reasoning Services
+            services.AddHttpClient<Application.Interfaces.ExternalServices.AI.ISmartSearchReasoningService, ExternalServices.AI.GeminiReasoningService>();
+            services.AddHttpClient<IPythonAiService, ExternalServices.AI.PythonAiService>();
+
 
             //Add HttpClient to call from API
             services.AddHttpClient("CodeExecutionClient", (sp, client) =>
@@ -171,6 +193,17 @@ namespace Intervu.Infrastructure
                 string baseUrl = config["ApiClients:CodeExecution"];
 
                 client.BaseAddress = new Uri(baseUrl);
+            });
+
+            services.AddHttpClient("AiServiceClient", (sp, client) =>
+            {
+                var config = sp.GetRequiredService<IConfiguration>();
+                string baseUrl = config["ApiClients:AiService"];
+
+                if (!string.IsNullOrWhiteSpace(baseUrl))
+                {
+                    client.BaseAddress = new Uri(baseUrl);
+                }
             });
 
             services.AddHostedService<InterviewRoomCacheLoader>();

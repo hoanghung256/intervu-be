@@ -1,6 +1,8 @@
 ﻿using Intervu.Domain.Abstractions.Entity;
 using Intervu.Domain.Entities.Constants;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json;
 
 namespace Intervu.Domain.Entities
 {
@@ -22,6 +24,22 @@ namespace Intervu.Domain.Entities
 
         [Range(15, 300)]
         public int SuggestedDurationMinutes { get; set; }
+
+        // Store the evaluation structure as a JSON string in the database, EF purpose
+        [Column(TypeName = "jsonb")]
+        public string? EvaluationStructureJson { get; set; }
+
+        // Use this field for application logic; it will be ignored by EF Core and not mapped to the database
+        [NotMapped]
+        public List<EvaluationItem>? EvaluationStructure
+        {
+            get => string.IsNullOrEmpty(EvaluationStructureJson)
+                   ? null
+                   : JsonSerializer.Deserialize<List<EvaluationItem>>(EvaluationStructureJson);
+            set => EvaluationStructureJson = value == null
+                   ? null
+                   : JsonSerializer.Serialize(value);
+        }
 
         public InterviewTypeStatus Status { get; set; }
     }

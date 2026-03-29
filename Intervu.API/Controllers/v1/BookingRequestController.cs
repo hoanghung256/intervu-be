@@ -20,6 +20,7 @@ namespace Intervu.API.Controllers.v1
         private readonly IGetBookingRequestDetail _getDetail;
         private readonly IPayBookingRequest _pay;
         private readonly ICancelBookingRequest _cancel;
+        private readonly IRescheduleJDBookingRequest _rescheduleJDBooking;
 
         public BookingRequestController(
             ICreateJDBookingRequest createJD,
@@ -27,7 +28,8 @@ namespace Intervu.API.Controllers.v1
             IGetBookingRequests getList,
             IGetBookingRequestDetail getDetail,
             IPayBookingRequest pay,
-            ICancelBookingRequest cancel)
+            ICancelBookingRequest cancel,
+            IRescheduleJDBookingRequest rescheduleJDBooking)
         {
             _createJD = createJD;
             _respond = respond;
@@ -35,6 +37,7 @@ namespace Intervu.API.Controllers.v1
             _getDetail = getDetail;
             _pay = pay;
             _cancel = cancel;
+            _rescheduleJDBooking = rescheduleJDBooking;
         }
 
         /// <summary>
@@ -150,6 +153,23 @@ namespace Intervu.API.Controllers.v1
                 success = true,
                 message = "Booking request cancelled successfully",
                 data = result
+            });
+        }
+
+        /// <summary>
+        /// Candidate reschedules one or multiple rounds in a paid JD booking.
+        /// </summary>
+        [Authorize(Policy = AuthorizationPolicies.Candidate)]
+        [HttpPost("{id:guid}/reschedule")]
+        public async Task<IActionResult> RescheduleJDBooking(Guid id, [FromBody] RescheduleJDBookingRequestDto dto)
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            await _rescheduleJDBooking.ExecuteAsync(userId, id, dto);
+
+            return Ok(new
+            {
+                success = true,
+                message = "JD booking rescheduled successfully"
             });
         }
     }

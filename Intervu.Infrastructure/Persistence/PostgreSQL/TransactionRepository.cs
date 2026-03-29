@@ -71,21 +71,73 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 );
         }
 
-        public async Task<List<InterviewBookingTransaction>> GetActiveBookingsByCoachAsync(
-            Guid coachId, DateTime rangeStart, DateTime rangeEnd)
+        //public async Task<List<InterviewBookingTransaction>> GetActiveBookingsByCoachAsync(
+        //    Guid coachId, DateTime rangeStart, DateTime rangeEnd)
+        //{
+        //    return await _context.InterviewBookingTransaction
+        //        .Where(t =>
+        //            t.CoachId == coachId
+        //            && t.Type == TransactionType.Payment
+        //            && (t.Status == TransactionStatus.Created || t.Status == TransactionStatus.Paid)
+        //            && t.BookedStartTime.HasValue
+        //            && t.BookedDurationMinutes.HasValue
+        //            && t.BookedStartTime.Value < rangeEnd
+        //            && t.BookedStartTime.Value.AddMinutes(t.BookedDurationMinutes.Value) > rangeStart
+        //        )
+        //        .AsNoTracking()
+        //        .ToListAsync();
+        //}
+
+        public Task<List<InterviewBookingTransaction>> GetActiveBookingsByCoachAsync(Guid coachId, DateTime rangeStart, DateTime rangeEnd)
         {
-            return await _context.InterviewBookingTransaction
-                .Where(t =>
-                    t.CoachId == coachId
-                    && t.Type == TransactionType.Payment
-                    && (t.Status == TransactionStatus.Created || t.Status == TransactionStatus.Paid)
-                    && t.BookedStartTime.HasValue
-                    && t.BookedDurationMinutes.HasValue
-                    && t.BookedStartTime.Value < rangeEnd
-                    && t.BookedStartTime.Value.AddMinutes(t.BookedDurationMinutes.Value) > rangeStart
-                )
-                .AsNoTracking()
+            return _context.InterviewBookingTransaction
+                .Where(t => t.CoachId == coachId)
+                .Where(t => t.Type == TransactionType.Payment)
+                .Where(t => t.Status == TransactionStatus.Created || t.Status == TransactionStatus.Paid)
+                .Where(t => t.BookedStartTime.HasValue && t.BookedDurationMinutes.HasValue)
+                .Where(t => t.BookedStartTime.Value < rangeEnd && t.BookedStartTime.Value.AddMinutes(t.BookedDurationMinutes.Value) > rangeStart)
                 .ToListAsync();
+        }
+
+        public async Task<List<(DateTime Start, DateTime End)>> GetConfirmedBookingsForCoachAsync(Guid coachId, int month, int year)
+        {
+            var query = _context.InterviewBookingTransaction
+                .Where(t => t.CoachId == coachId)
+                .Where(t => t.Type == TransactionType.Payment)
+                .Where(t => t.Status == TransactionStatus.Created || t.Status == TransactionStatus.Paid)
+                .Where(t => t.BookedStartTime.HasValue && t.BookedDurationMinutes.HasValue);
+
+            if (month > 0 && year > 0)
+            {
+                var startDate = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Utc);
+                var endDate = startDate.AddMonths(1);
+                query = query.Where(t => t.BookedStartTime >= startDate && t.BookedStartTime < endDate);
+            }
+
+            return await query
+                .Select(t => new ValueTuple<DateTime, DateTime>(t.BookedStartTime!.Value, t.BookedStartTime!.Value.AddMinutes(t.BookedDurationMinutes!.Value)))
+                .ToListAsync();
+        }
+
+        public async Task<List<InterviewBookingTransaction>> GetConfirmedBookingEntitiesForCoachAsync(Guid coachId, int month, int year)
+        {
+            var query = _context.InterviewBookingTransaction
+                .Include(t => t.BookingRequest)
+                    .ThenInclude(br => br!.Candidate)
+                        .ThenInclude(c => c.User)
+                .Where(t => t.CoachId == coachId)
+                .Where(t => t.Type == TransactionType.Payment)
+                .Where(t => t.Status == TransactionStatus.Created || t.Status == TransactionStatus.Paid)
+                .Where(t => t.BookedStartTime.HasValue && t.BookedDurationMinutes.HasValue);
+
+            if (month > 0 && year > 0)
+            {
+                var startDate = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Utc);
+                var endDate = startDate.AddMonths(1);
+                query = query.Where(t => t.BookedStartTime >= startDate && t.BookedStartTime < endDate);
+            }
+
+            return await query.ToListAsync();
         }
     }
 }
