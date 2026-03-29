@@ -19,6 +19,8 @@ namespace Intervu.Domain.Entities
 
         public int? ExperienceYears { get; set; }
 
+        public string CurrentJobTitle { get; set; } = string.Empty;
+
         public string Bio { get; set; } = string.Empty;
 
         public string BankBinNumber { get; set; } = string.Empty;
@@ -31,6 +33,8 @@ namespace Intervu.Domain.Entities
         public ICollection<Company> Companies { get; set; } = new List<Company>();
         
         public ICollection<Skill> Skills { get; set; } = new List<Skill>();
+
+        public ICollection<Industry> Industries { get; set; } = new List<Industry>();
 
         /// <summary>
         /// JSON list of saved question snapshots. Nullable.

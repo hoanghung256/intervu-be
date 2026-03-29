@@ -73,6 +73,7 @@ namespace Intervu.Infrastructure
             services.AddScoped<ICandidateProfileRepository, CandidateProfileRepository>();
             services.AddScoped<ICompanyRepository, CompanyRepository>();
             services.AddScoped<ISkillRepository, SkillRepository>();
+            services.AddScoped<IIndustryRepository, IndustryRepository>();
             //services.AddScoped<IPaymentRepository, PaymentRepository>();
             services.AddScoped<ICoachAvailabilitiesRepository, CoachAvailabilitiesRepository>();
             services.AddScoped<ITransactionRepository, TransactionRepository>();

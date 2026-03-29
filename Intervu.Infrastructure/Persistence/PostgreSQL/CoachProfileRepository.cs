@@ -1,4 +1,4 @@
-﻿using Intervu.Domain.Entities;
+using Intervu.Domain.Entities;
 using Intervu.Domain.Repositories;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Microsoft.EntityFrameworkCore;
@@ -48,6 +48,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Where(p => p.User.SlugProfileUrl == slug)
                 .Include(p => p.Companies)
                 .Include(p => p.Skills)
+                .Include(p => p.Industries)
                 .Include(p => p.User)
                 .FirstOrDefaultAsync();
 
@@ -60,23 +61,42 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Where(p => p.Id == id)
                 .Include(p => p.Companies)
                 .Include(p => p.Skills)
+                .Include(p => p.Industries)
                 .Include(p => p.User)
                 .FirstOrDefaultAsync();
 
             return profile;
         }
 
-        public async Task<(IReadOnlyList<CoachProfile> Items, int TotalCount)> GetPagedCoachProfilesAsync(string? search, Guid? skillId, Guid? companyId, int page, int pageSize)
+        public async Task<(IReadOnlyList<CoachProfile> Items, int TotalCount)> GetPagedCoachProfilesAsync(
+            string? search,
+            Guid? skillId,
+            Guid? companyId,
+            Guid? industryId,
+            int page,
+            int pageSize,
+            List<Guid>? skillIds = null,
+            List<string>? levels = null,
+            int? minExperienceYears = null,
+            int? maxExperienceYears = null,
+            int? minPrice = null,
+            int? maxPrice = null)
         {
             var query = _context.CoachProfiles
                 .Include(i => i.Companies)
                 .Include(i => i.Skills)
+                .Include(i => i.Industries)
                 .Include(i => i.User)
                 .AsQueryable();
 
             if (!string.IsNullOrEmpty(search))
             {
-                query = query.Where(i => i.Bio.Contains(search));
+                var normalized = search.Trim().ToLower();
+                query = query.Where(i =>
+                    (i.Bio ?? string.Empty).ToLower().Contains(normalized)
+                    || (i.CurrentJobTitle ?? string.Empty).ToLower().Contains(normalized)
+                    || i.Industries.Any(ind => (ind.Name ?? string.Empty).ToLower().Contains(normalized))
+                    || (i.User != null && (i.User.FullName ?? string.Empty).ToLower().Contains(normalized)));
             }
 
             if (skillId.HasValue)
@@ -84,9 +104,51 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 query = query.Where(x => x.Skills.Any(c => c.Id == skillId.Value));
             }
 
+            if (skillIds != null && skillIds.Count > 0)
+            {
+                query = query.Where(x => x.Skills.Any(c => skillIds.Contains(c.Id)));
+            }
+
             if (companyId.HasValue)
             {
                 query = query.Where(x => x.Companies.Any(c => c.Id == companyId.Value));
+            }
+
+            if (industryId.HasValue)
+            {
+                query = query.Where(x => x.Industries.Any(i => i.Id == industryId.Value));
+            }
+
+            if (minExperienceYears.HasValue)
+            {
+                query = query.Where(x => (x.ExperienceYears ?? 0) >= minExperienceYears.Value);
+            }
+
+            if (maxExperienceYears.HasValue)
+            {
+                query = query.Where(x => (x.ExperienceYears ?? 0) <= maxExperienceYears.Value);
+            }
+
+            if (levels != null && levels.Count > 0)
+            {
+                var hasJunior = levels.Any(l => string.Equals(l, "Junior", StringComparison.OrdinalIgnoreCase));
+                var hasMid = levels.Any(l => string.Equals(l, "Mid", StringComparison.OrdinalIgnoreCase));
+                var hasSenior = levels.Any(l => string.Equals(l, "Senior", StringComparison.OrdinalIgnoreCase));
+
+                query = query.Where(x =>
+                    (hasJunior && (x.ExperienceYears ?? 0) <= 1)
+                    || (hasMid && (x.ExperienceYears ?? 0) >= 2 && (x.ExperienceYears ?? 0) <= 4)
+                    || (hasSenior && (x.ExperienceYears ?? 0) >= 5));
+            }
+
+            if (minPrice.HasValue)
+            {
+                query = query.Where(x => (x.CurrentAmount ?? 0) >= minPrice.Value);
+            }
+
+            if (maxPrice.HasValue)
+            {
+                query = query.Where(x => (x.CurrentAmount ?? 0) <= maxPrice.Value);
             }
 
             var totalItems = await query.CountAsync();
@@ -104,6 +166,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             var existingProfile = await _context.CoachProfiles
                 .Include(p => p.Companies)
                 .Include(p => p.Skills)
+                .Include(p => p.Industries)
                 .Include(p => p.User)
                 .FirstOrDefaultAsync(p => p.Id == updatedProfile.Id);
 
@@ -113,12 +176,14 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             existingProfile.PortfolioUrl = updatedProfile.PortfolioUrl;
             existingProfile.CurrentAmount = updatedProfile.CurrentAmount;
             existingProfile.ExperienceYears = updatedProfile.ExperienceYears;
+            existingProfile.CurrentJobTitle = updatedProfile.CurrentJobTitle;
             existingProfile.Bio = updatedProfile.Bio;
             existingProfile.BankBinNumber = updatedProfile.BankBinNumber;
             existingProfile.BankAccountNumber = updatedProfile.BankAccountNumber;
 
             existingProfile.Companies = updatedProfile.Companies ?? new List<Company>();
             existingProfile.Skills = updatedProfile.Skills ?? new List<Skill>();
+            existingProfile.Industries = updatedProfile.Industries ?? new List<Industry>();
 
             if (existingProfile.User != null && updatedProfile.User != null)
             {

@@ -7,6 +7,7 @@ using Intervu.Application.DTOs.Coach;
 using Intervu.Application.DTOs.Comment;
 using Intervu.Application.DTOs.CoachInterviewService;
 using Intervu.Application.DTOs.Company;
+using Intervu.Application.DTOs.Industry;
 using Intervu.Application.DTOs.InterviewExperience;
 using Intervu.Application.DTOs.InterviewType;
 using Intervu.Application.DTOs.Question;
@@ -52,6 +53,7 @@ namespace Intervu.Application.Mappings
 
             CreateMap<Company, DTOs.Company.CompanyDto>().ReverseMap();
             CreateMap<Skill, SkillDto>().ReverseMap();
+            CreateMap<Industry, IndustryDto>().ReverseMap();
 
             // Candidate mappings
             CreateMap<CandidateProfile, CandidateProfileDto>().ForMember(dest => dest.User, opt => opt.Ignore()).ReverseMap();

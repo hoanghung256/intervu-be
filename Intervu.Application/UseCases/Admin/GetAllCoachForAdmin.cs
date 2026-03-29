@@ -29,6 +29,7 @@ namespace Intervu.Application.UseCases.Admin
                 search: null,
                 skillId: null,
                 companyId: null,
+                industryId: null,
                 page: page,
                 pageSize: pageSize
             );

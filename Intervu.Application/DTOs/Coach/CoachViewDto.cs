@@ -1,5 +1,6 @@
 ﻿using AutoMapper.Configuration.Annotations;
 using Intervu.Application.DTOs.Company;
+using Intervu.Application.DTOs.Industry;
 using Intervu.Application.DTOs.Skill;
 using Intervu.Application.DTOs.User;
 using Intervu.Domain.Entities.Constants;
@@ -18,8 +19,12 @@ namespace Intervu.Application.DTOs.Coach
 
         public string? Bio { get; set; }
 
+        public string? CurrentJobTitle { get; set; }
+
         public ICollection<CompanyDto> Companies { get; set; } = new List<CompanyDto>();
 
         public ICollection<SkillDto> Skills { get; set; } = new List<SkillDto>();
+
+        public ICollection<IndustryDto> Industries { get; set; } = new List<IndustryDto>();
     }
 }

@@ -24,7 +24,7 @@ namespace Intervu.Application.UseCases.SmartSearch
         public async Task<int> ExecuteAsync()
         {
             var (coaches, _) = await _coachProfileRepository.GetPagedCoachProfilesAsync(
-                search: null, skillId: null, companyId: null, page: 1, pageSize: 1000);
+                search: null, skillId: null, companyId: null, industryId: null, page: 1, pageSize: 1000);
 
             int syncedCount = 0;
 
@@ -54,6 +54,9 @@ namespace Intervu.Application.UseCases.SmartSearch
             if (!string.IsNullOrWhiteSpace(coach.Bio))
                 parts.Add($"Bio: {coach.Bio}");
 
+            if (!string.IsNullOrWhiteSpace(coach.CurrentJobTitle))
+                parts.Add($"Current title: {coach.CurrentJobTitle}");
+
             if (coach.ExperienceYears.HasValue)
                 parts.Add($"Experience: {coach.ExperienceYears} years");
 
@@ -62,6 +65,9 @@ namespace Intervu.Application.UseCases.SmartSearch
 
             if (coach.Companies.Any())
                 parts.Add($"Companies: {string.Join(", ", coach.Companies.Select(c => c.Name))}");
+
+            if (coach.Industries.Any())
+                parts.Add($"Industries: {string.Join(", ", coach.Industries.Select(i => i.Name))}");
 
             if (coach.InterviewServices.Any())
             {
@@ -83,7 +89,8 @@ namespace Intervu.Application.UseCases.SmartSearch
                 { "entityId", coach.Id.ToString() },
                 { "coachId", coach.Id.ToString() },
                 { "name", coach.User?.FullName ?? "" },
-                { "bio", coach.Bio ?? "" }
+                { "bio", coach.Bio ?? "" },
+                { "currentJobTitle", coach.CurrentJobTitle ?? "" }
             };
 
             if (coach.Skills.Any())
@@ -91,6 +98,9 @@ namespace Intervu.Application.UseCases.SmartSearch
 
             if (coach.Companies.Any())
                 metadata["companies"] = string.Join(", ", coach.Companies.Select(c => c.Name));
+
+            if (coach.Industries.Any())
+                metadata["industries"] = string.Join(", ", coach.Industries.Select(i => i.Name));
 
             if (coach.ExperienceYears.HasValue)
                 metadata["experienceYears"] = coach.ExperienceYears.Value.ToString();

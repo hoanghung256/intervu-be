@@ -3,6 +3,7 @@ using System;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 {
     [DbContext(typeof(IntervuPostgreDbContext))]
-    partial class IntervuPostgreDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260328142616_FinalIndustryFix")]
+    partial class FinalIndustryFix
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -245,40 +248,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Intervu.Domain.Entities.AudioChunk", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<byte[]>("AudioData")
-                        .IsRequired()
-                        .HasColumnType("bytea");
-
-                    b.Property<int>("ChunkSequenceNumber")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.Property<Guid>("RecordingSessionId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RecordingSessionId")
-                        .HasDatabaseName("IX_AudioChunks_RecordingSessionId");
-
-                    b.HasIndex("RecordingSessionId", "ChunkSequenceNumber")
-                        .HasDatabaseName("IX_AudioChunks_RecordingSession_Sequence");
-
-                    b.ToTable("AudioChunks", (string)null);
-                });
-
             modelBuilder.Entity("Intervu.Domain.Entities.BookingRequest", b =>
                 {
                     b.Property<Guid>("Id")
@@ -427,14 +396,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             CoachId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
                             EndTime = new DateTime(2026, 3, 15, 17, 0, 0, 0, DateTimeKind.Utc),
                             StartTime = new DateTime(2026, 3, 15, 14, 0, 0, 0, DateTimeKind.Utc),
-                            Status = 0
-                        },
-                        new
-                        {
-                            Id = new Guid("aaaaaaaa-1111-4a1a-8a1a-111111111112"),
-                            CoachId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
-                            EndTime = new DateTime(2026, 4, 1, 11, 0, 0, 0, DateTimeKind.Utc),
-                            StartTime = new DateTime(2026, 4, 1, 10, 0, 0, 0, DateTimeKind.Utc),
                             Status = 0
                         });
                 });
@@ -879,8 +840,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         });
                 });
 
-
             modelBuilder.Entity("Intervu.Domain.Entities.Industry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(120)
@@ -950,32 +915,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             Name = "GameDev",
                             Slug = "gamedev"
                         });
-
-            modelBuilder.Entity("Intervu.Domain.Entities.GeneratedQuestion", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("InterviewRoomId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("InterviewRoomId");
-
-                    b.ToTable("GeneratedQuestions", (string)null);
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.InterviewBookingTransaction", b =>
@@ -1047,26 +986,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             Status = 1,
                             Type = 1,
                             UserId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22")
-                        },
-                        new
-                        {
-                            Id = new Guid("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a99"),
-                            Amount = 1500,
-                            CoachAvailabilityId = new Guid("aaaaaaaa-1111-4a1a-8a1a-111111111111"),
-                            OrderCode = 0,
-                            Status = 1,
-                            Type = 0,
-                            UserId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11")
-                        },
-                        new
-                        {
-                            Id = new Guid("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a00"),
-                            Amount = 2000,
-                            CoachAvailabilityId = new Guid("aaaaaaaa-1111-4a1a-8a1a-111111111112"),
-                            OrderCode = 0,
-                            Status = 1,
-                            Type = 0,
-                            UserId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11")
                         });
                 });
 
@@ -1292,9 +1211,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<Guid?>("TransactionId")
                         .HasColumnType("uuid");
 
-                    b.Property<int>("Type")
-                        .HasColumnType("integer");
-
                     b.Property<string>("VideoCallRoomUrl")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
@@ -1328,37 +1244,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             ScheduledTime = new DateTime(2026, 2, 10, 9, 0, 0, 0, DateTimeKind.Utc),
                             Status = 0,
                             TransactionId = new Guid("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a88"),
-                            Type = 0,
                             VideoCallRoomUrl = "https://meet.example/room1"
-                        },
-                        new
-                        {
-                            Id = new Guid("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a77"),
-                            CandidateId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
-                            CurrentAvailabilityId = new Guid("aaaaaaaa-1111-4a1a-8a1a-111111111111"),
-                            DurationMinutes = 60,
-                            IsEvaluationCompleted = false,
-                            RescheduleAttemptCount = 0,
-                            ScheduledTime = new DateTime(2026, 3, 15, 14, 30, 0, 0, DateTimeKind.Utc),
-                            Status = 1,
-                            TransactionId = new Guid("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a99"),
-                            Type = 1,
-                            VideoCallRoomUrl = "https://meet.example/room-ai"
-                        },
-                        new
-                        {
-                            Id = new Guid("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a88"),
-                            CandidateId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
-                            CoachId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
-                            CurrentAvailabilityId = new Guid("aaaaaaaa-1111-4a1a-8a1a-111111111112"),
-                            DurationMinutes = 60,
-                            IsEvaluationCompleted = false,
-                            RescheduleAttemptCount = 0,
-                            ScheduledTime = new DateTime(2026, 4, 1, 10, 0, 0, 0, DateTimeKind.Utc),
-                            Status = 1,
-                            TransactionId = new Guid("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a00"),
-                            Type = 0,
-                            VideoCallRoomUrl = "https://meet.example/room3"
                         });
                 });
 
@@ -2244,65 +2130,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Intervu.Domain.Entities.UserAssessmentAnswer", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Answer")
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("AssessmentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.Property<string>("QuestionId")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("SelectedLevel")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<int>("SfiaLevel")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Skill")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AssessmentId");
-
-                    b.HasIndex("Skill");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserAssessmentAnswers", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_UserAssessmentAnswers_SelectedLevel", "\"SelectedLevel\" IN ('None','Basic','Intermediate','Advanced')");
-
-                            t.HasCheckConstraint("CK_UserAssessmentAnswers_SfiaLevel", "\"SfiaLevel\" IN (0,2,3,5)");
-                        });
-                });
-
             modelBuilder.Entity("Intervu.Domain.Entities.UserCommentLike", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -2341,45 +2168,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("UserQuestionLikes", (string)null);
-                });
-
-            modelBuilder.Entity("Intervu.Domain.Entities.UserSkillAssessmentSnapshot", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.Property<string>("CurrentJson")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<string>("GapJson")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<string>("TargetJson")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
-
-                    b.ToTable("UserSkillAssessmentSnapshots", (string)null);
                 });
 
             modelBuilder.Entity("CandidateSkills", b =>
@@ -2558,18 +2346,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .HasForeignKey("Intervu.Domain.Entities.Feedback", "InterviewRoomId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("Intervu.Domain.Entities.GeneratedQuestion", b =>
-                {
-                    b.HasOne("Intervu.Domain.Entities.InterviewRoom", "InterviewRoom")
-                        .WithMany("GeneratedQuestions")
-                        .HasForeignKey("InterviewRoomId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("FK_GeneratedQuestions_InterviewRooms_InterviewRoomId");
-
-                    b.Navigation("InterviewRoom");
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.InterviewBookingTransaction", b =>
@@ -2863,17 +2639,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Intervu.Domain.Entities.UserAssessmentAnswer", b =>
-                {
-                    b.HasOne("Intervu.Domain.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Intervu.Domain.Entities.UserCommentLike", b =>
                 {
                     b.HasOne("Intervu.Domain.Entities.Comment", "Comment")
@@ -2916,17 +2681,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Intervu.Domain.Entities.UserSkillAssessmentSnapshot", b =>
-                {
-                    b.HasOne("Intervu.Domain.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Intervu.Domain.Entities.BookingRequest", b =>
                 {
                     b.Navigation("Rounds");
@@ -2956,8 +2710,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 
             modelBuilder.Entity("Intervu.Domain.Entities.InterviewRoom", b =>
                 {
-                    b.Navigation("GeneratedQuestions");
-
                     b.Navigation("RescheduleRequests");
                 });
 
