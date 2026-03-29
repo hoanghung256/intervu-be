@@ -55,5 +55,11 @@ namespace Intervu.Application.UseCases.InterviewRoom
             _cache.Add(room);
             return room.Id;
         }
+
+        public async Task ExecuteAsync(Domain.Entities.InterviewRoom room)
+        {
+            await _interviewRoomRepo.AddAsync(room);
+            await _interviewRoomRepo.SaveChangesAsync();
+        }
     }
 }
