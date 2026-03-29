@@ -26,9 +26,9 @@ namespace Intervu.Application.UseCases.InterviewRoom
                 throw new ForbiddenException("You are not authorized to view this evaluation");
             }
 
-            if (room.Status != InterviewRoomStatus.Completed)
+            if (room.Status != InterviewRoomStatus.Ongoing && room.Status != InterviewRoomStatus.Completed)
             {
-                throw new ConflictException("Evaluation is only available after the interview is completed");
+                throw new ConflictException("Evaluation is only available while the interview is ongoing or after it is completed");
             }
 
             var results = room.EvaluationResults ?? new List<EvaluationResult>();

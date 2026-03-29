@@ -21,15 +21,18 @@ namespace Intervu.API.Controllers.v1
         private readonly IGetRoomHistory _getRoomHistory;
         private readonly IGetCoachEvaluation _getCoachEvaluation;
         private readonly ISubmitCoachEvaluation _submitCoachEvaluation;
+        private readonly ISaveCoachEvaluationDraft _saveCoachEvaluationDraft;
 
         public InterviewRoomController(
             IGetRoomHistory getRoomHistory,
             IGetCoachEvaluation getCoachEvaluation,
-            ISubmitCoachEvaluation submitCoachEvaluation)
+            ISubmitCoachEvaluation submitCoachEvaluation,
+            ISaveCoachEvaluationDraft saveCoachEvaluationDraft)
         {
             _getRoomHistory = getRoomHistory;
             _getCoachEvaluation = getCoachEvaluation;
             _submitCoachEvaluation = submitCoachEvaluation;
+            _saveCoachEvaluationDraft = saveCoachEvaluationDraft;
         }
 
         /// <summary>
@@ -118,6 +121,38 @@ namespace Intervu.API.Controllers.v1
             {
                 success = true,
                 message = "Evaluation submitted successfully"
+            });
+        }
+
+        /// <summary>
+        /// Save coach evaluation draft for a completed interview
+        /// </summary>
+        [Authorize(Policy = AuthorizationPolicies.Interviewer)]
+        [HttpPatch("{interviewRoomId}/coach-evaluation/draft")]
+        public async Task<IActionResult> SaveCoachEvaluationDraft(
+            [FromRoute] Guid interviewRoomId,
+            [FromBody] SubmitCoachEvaluationRequest request)
+        {
+            bool isGetUserIdSuccess = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
+
+            if (!isGetUserIdSuccess)
+            {
+                return Unauthorized(new
+                {
+                    success = false,
+                    message = "Invalid user credentials"
+                });
+            }
+
+            await _saveCoachEvaluationDraft.ExecuteAsync(
+                interviewRoomId,
+                userId,
+                request?.Results ?? new List<EvaluationResultDto>());
+
+            return Ok(new
+            {
+                success = true,
+                message = "Evaluation draft saved successfully"
             });
         }
 
