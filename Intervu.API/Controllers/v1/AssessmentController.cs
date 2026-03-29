@@ -27,6 +27,21 @@ namespace Intervu.API.Controllers.v1
             var result = await _service.ProcessSurveyResponsesAsync(request);
             return Ok(result);
         }
+
+        [HttpGet("{userId}")]
+        public async Task<IActionResult> GetUserAssessment([FromRoute] Guid userId)
+        {
+            var snapshot = await _service.GetUserSkillAssessmentSnapshotAsync(userId);
+            if (snapshot == null)
+            {
+                return NotFound();
+            }
+            return Ok(new
+            {
+                success = true,
+                data = snapshot
+            });
+        }
     }
 
 }

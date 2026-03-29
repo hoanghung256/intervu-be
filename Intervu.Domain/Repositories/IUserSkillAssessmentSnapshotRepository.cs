@@ -6,7 +6,7 @@ namespace Intervu.Domain.Repositories
 {
     public interface IUserSkillAssessmentSnapshotRepository
     {
-        Task<UserSkillAssessmentSnapshot?> GetByUserIdAsync(Guid userId);
+        Task<UserSkillAssessmentSnapshot?> GetUserSkillAssessmentById(Guid userId);
         Task UpsertSnapshotAsync(UserSkillAssessmentSnapshot snapshot);
     }
 }

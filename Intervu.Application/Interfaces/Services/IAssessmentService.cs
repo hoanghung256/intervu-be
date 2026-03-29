@@ -8,5 +8,6 @@ namespace Intervu.Application.Interfaces.Services
     public interface IAssessmentService
     {
         Task<SurveySummaryResultDto> ProcessSurveyResponsesAsync(SurveyResponsesDto request);
+        Task<UserSkillAssessmentSnapshotDto?> GetUserSkillAssessmentSnapshotAsync(Guid userId);
     }
 }
