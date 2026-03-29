@@ -36,6 +36,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
         public DbSet<InterviewType> InterviewTypes { get; set; }
         public DbSet<InterviewExperience> InterviewExperiences { get; set; }
         public DbSet<Question> Questions { get; set; }
+        public DbSet<GeneratedQuestion> GeneratedQuestions { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<Tag> Tags { get; set; }
         public DbSet<QuestionTag> QuestionTags { get; set; }
@@ -47,6 +48,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
         public DbSet<CoachInterviewService> CoachInterviewServices { get; set; }
         public DbSet<BookingRequest> BookingRequests { get; set; }
         public DbSet<Intervu.Domain.Entities.InterviewRound> InterviewRounds { get; set; }
+        public DbSet<UserAssessmentAnswer> UserAssessmentAnswers { get; set; }
+        public DbSet<UserSkillAssessmentSnapshot> UserSkillAssessments { get; set; }
+        public DbSet<AudioChunk> AudioChunks { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -259,6 +263,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.DurationMinutes);
                 b.Property(x => x.VideoCallRoomUrl).HasMaxLength(1000);
                 b.Property(x => x.Status).IsRequired();
+                b.Property(x => x.Type).HasConversion<int>().IsRequired();
 
                 // JSON converters for complex properties
                 var jsonOptions = new JsonSerializerOptions
@@ -350,6 +355,22 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Ignore(x => x.EvaluationResults);
 
                 b.Property(x => x.IsEvaluationCompleted);
+            });
+
+            // GeneratedQuestion
+            modelBuilder.Entity<GeneratedQuestion>(b =>
+            {
+                b.ToTable("GeneratedQuestions");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Title).HasMaxLength(500).IsRequired();
+                b.Property(x => x.Content).HasColumnType("text").IsRequired();
+                b.Property(x => x.Status).HasConversion<int>().IsRequired();
+
+                b.HasOne(x => x.InterviewRoom)
+                 .WithMany(r => r.GeneratedQuestions)
+                 .HasForeignKey(x => x.InterviewRoomId)
+                 .HasConstraintName("FK_GeneratedQuestions_InterviewRooms_InterviewRoomId")
+                 .OnDelete(DeleteBehavior.Restrict);
             });
 
             // Feedback
@@ -506,6 +527,94 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.HasKey(x => x.Id);
                 b.Property(x => x.Name).HasMaxLength(200).IsRequired();
                 b.Property(x => x.Description).HasColumnType("text");
+            });
+
+            // UserAssessmentAnswer - raw answers store
+            modelBuilder.Entity<UserAssessmentAnswer>(b =>
+            {
+                b.ToTable("UserAssessmentAnswers");
+                b.HasKey(x => x.Id);
+
+                b.Property(x => x.UserId).IsRequired();
+                b.Property(x => x.AssessmentId).IsRequired();
+
+                b.Property(x => x.QuestionId)
+                 .IsRequired()
+                 .HasMaxLength(200);
+
+                b.Property(x => x.Skill)
+                 .IsRequired()
+                 .HasMaxLength(200);
+
+                b.Property(x => x.Answer)
+                 .HasColumnType("text")
+                 .IsRequired(false);
+
+                b.Property(x => x.SelectedLevel)
+                 .IsRequired()
+                 .HasMaxLength(20);
+
+                b.Property(x => x.Type)
+                 .IsRequired()
+                 .HasMaxLength(20);
+
+                b.Property(x => x.SfiaLevel)
+                 .IsRequired();
+
+                b.Property(x => x.CreatedAt)
+                 .IsRequired()
+                 .HasColumnType("timestamp with time zone")
+                 .HasDefaultValueSql("NOW()");
+
+                b.HasIndex(x => x.UserId);
+                b.HasIndex(x => x.AssessmentId);
+                b.HasIndex(x => x.Skill);
+
+                b.HasOne(x => x.User)
+                 .WithMany()
+                 .HasForeignKey(x => x.UserId)
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasCheckConstraint("CK_UserAssessmentAnswers_SelectedLevel", "\"SelectedLevel\" IN ('None','Basic','Intermediate','Advanced')");
+                b.HasCheckConstraint("CK_UserAssessmentAnswers_SfiaLevel", "\"SfiaLevel\" IN (0,2,3,5)");
+            });
+
+            modelBuilder.Entity<UserSkillAssessmentSnapshot>(b =>
+            {
+                b.ToTable("UserSkillAssessmentSnapshots");
+                b.HasKey(x => x.Id);
+
+                b.Property(x => x.UserId).IsRequired();
+
+                b.Property(x => x.TargetJson)
+                 .IsRequired()
+                 .HasColumnType("jsonb");
+
+                b.Property(x => x.CurrentJson)
+                 .IsRequired()
+                 .HasColumnType("jsonb");
+
+                b.Property(x => x.GapJson)
+                 .IsRequired()
+                 .HasColumnType("jsonb");
+
+                b.Property(x => x.CreatedAt)
+                 .IsRequired()
+                 .HasColumnType("timestamp with time zone")
+                 .HasDefaultValueSql("NOW()");
+
+                b.Property(x => x.UpdatedAt)
+                 .IsRequired()
+                 .HasColumnType("timestamp with time zone")
+                 .HasDefaultValueSql("NOW()");
+
+                b.HasIndex(x => x.UserId)
+                 .IsUnique();
+
+                b.HasOne(x => x.User)
+                 .WithMany()
+                 .HasForeignKey(x => x.UserId)
+                 .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<PasswordResetToken>(b =>
@@ -682,6 +791,24 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                  .HasDatabaseName("IX_InterviewRounds_BookingRequestId_RoundNumber");
             });
 
+            // AudioChunk
+            modelBuilder.Entity<AudioChunk>(b =>
+            {
+                b.ToTable("AudioChunks");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.AudioData).IsRequired();
+                b.Property(x => x.CreatedAt).IsRequired().HasDefaultValueSql("NOW()");
+                b.Property(x => x.RecordingSessionId).IsRequired();
+                b.Property(x => x.ChunkSequenceNumber).IsRequired().HasDefaultValue(0);
+                
+                // Index for grouping chunks by recording session
+                b.HasIndex(x => x.RecordingSessionId).HasName("IX_AudioChunks_RecordingSessionId");
+                
+                // Composite index for ordering chunks by session and sequence
+                b.HasIndex(x => new { x.RecordingSessionId, x.ChunkSequenceNumber })
+                    .HasName("IX_AudioChunks_RecordingSession_Sequence");
+            });
+
             /// <summary>
             /// Global query filter for soft delete
             /// When querying any entity that has an "IsDeleted" property.
@@ -711,8 +838,23 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             }
 
             // Seed data
+            var user1Id = Guid.Parse("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11");
+            var user2Id = Guid.Parse("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22");
+            var user3Id = Guid.Parse("2f8c7a6b-6d5e-4e2f-8c7a-9d6e5c4b3a33");
+            var user5Id = Guid.Parse("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44");
+            var user6Id = Guid.Parse("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55");
+
+            var room1Id = Guid.Parse("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a66");
+            var CoachAvail1Id = Guid.Parse("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77");
+            
+            var room2Id = Guid.Parse("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a77");
+
             // Additional test data for reschedule functionality
             var CoachAvail2Id = Guid.Parse("aaaaaaaa-1111-4a1a-8a1a-111111111111"); // For reschedule testing
+
+            var room3Id = Guid.Parse("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a88");
+            var transaction4Id = Guid.Parse("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a00");
+            var CoachAvail3Id = Guid.Parse("aaaaaaaa-1111-4a1a-8a1a-111111111112");
 
             // Users
 
@@ -852,12 +994,21 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                     StartTime = DateTime.SpecifyKind(new DateTime(2026, 3, 15, 14, 0, 0), DateTimeKind.Utc),
                     EndTime = DateTime.SpecifyKind(new DateTime(2026, 3, 15, 17, 0, 0), DateTimeKind.Utc),
                     Status = CoachAvailabilityStatus.Available
+                },
+                new CoachAvailability
+                {
+                    Id = CoachAvail3Id,
+                    CoachId = user2Id,
+                    StartTime = DateTime.SpecifyKind(new DateTime(2026, 4, 1, 10, 0, 0), DateTimeKind.Utc),
+                    EndTime = DateTime.SpecifyKind(new DateTime(2026, 4, 1, 11, 0, 0), DateTimeKind.Utc),
+                    Status = CoachAvailabilityStatus.Available
                 }
             );
 
             // Seed transactions for testing
             var transaction1Id = Guid.Parse("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a88");
             var transaction2Id = Guid.Parse("8f9a0b1c-d2e3-4f5a-9b0c-1d2e3f4a5b99");
+            var transaction3Id = Guid.Parse("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a99");
 
             modelBuilder.Entity<InterviewBookingTransaction>().HasData(
                 new InterviewBookingTransaction
@@ -877,22 +1028,71 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                     Amount = 500,
                     Type = TransactionType.Payout,
                     Status = TransactionStatus.Paid
+                },
+                new InterviewBookingTransaction
+                {
+                    Id = transaction3Id,
+                    UserId = user1Id,
+                    CoachAvailabilityId = CoachAvail2Id,
+                    Amount = 1500,
+                    Type = TransactionType.Payment,
+                    Status = TransactionStatus.Paid
+                },
+                new InterviewBookingTransaction
+                {
+                    Id = transaction4Id,
+                    UserId = user1Id,
+                    CoachAvailabilityId = CoachAvail3Id,
+                    Amount = 2000,
+                    Type = TransactionType.Payment,
+                    Status = TransactionStatus.Paid
                 }
             );
 
-            modelBuilder.Entity<InterviewRoom>().HasData(new InterviewRoom
-            {
-                Id = room1Id,
-                CandidateId = user1Id,
-                CoachId = user2Id,
-                TransactionId = transaction1Id,
-                CurrentAvailabilityId = CoachAvail1Id, // Link to current availability
-                ScheduledTime = DateTime.SpecifyKind(new DateTime(2026, 2, 10, 9, 0, 0), DateTimeKind.Utc),
-                DurationMinutes = 60,
-                VideoCallRoomUrl = "https://meet.example/room1",
-                Status = InterviewRoomStatus.Scheduled,
-                RescheduleAttemptCount = 0
-            });
+            modelBuilder.Entity<InterviewRoom>().HasData(
+                new InterviewRoom
+                {
+                    Id = room1Id,
+                    CandidateId = user1Id,
+                    CoachId = user2Id,
+                    TransactionId = transaction1Id,
+                    CurrentAvailabilityId = CoachAvail1Id, // Link to current availability
+                    ScheduledTime = DateTime.SpecifyKind(new DateTime(2026, 2, 10, 9, 0, 0), DateTimeKind.Utc),
+                    DurationMinutes = 60,
+                    VideoCallRoomUrl = "https://meet.example/room1",
+                    Status = InterviewRoomStatus.Scheduled,
+                    RescheduleAttemptCount = 0,
+                    Type = InterviewRoomType.Normal
+                },
+                new InterviewRoom
+                {
+                    Id = room2Id,
+                    CandidateId = user1Id,
+                    CoachId = null,
+                    TransactionId = transaction3Id,
+                    CurrentAvailabilityId = CoachAvail2Id,
+                    ScheduledTime = DateTime.SpecifyKind(new DateTime(2026, 3, 15, 14, 30, 0), DateTimeKind.Utc),
+                    DurationMinutes = 60,
+                    VideoCallRoomUrl = "https://meet.example/room-ai",
+                    Status = InterviewRoomStatus.Ongoing,
+                    RescheduleAttemptCount = 0,
+                    Type = InterviewRoomType.WithAI
+                },
+                new InterviewRoom
+                {
+                    Id = room3Id,
+                    CandidateId = user1Id,
+                    CoachId = user2Id,
+                    TransactionId = transaction4Id,
+                    CurrentAvailabilityId = CoachAvail3Id,
+                    ScheduledTime = DateTime.SpecifyKind(new DateTime(2026, 4, 1, 10, 0, 0), DateTimeKind.Utc),
+                    DurationMinutes = 60,
+                    VideoCallRoomUrl = "https://meet.example/room3",
+                    Status = InterviewRoomStatus.Ongoing,
+                    RescheduleAttemptCount = 0,
+                    Type = InterviewRoomType.Normal
+                }
+            );
 
             modelBuilder.Entity<Feedback>().HasData(new Feedback
             {

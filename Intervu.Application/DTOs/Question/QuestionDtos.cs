@@ -117,6 +117,12 @@ namespace Intervu.Application.DTOs.Question
         public bool IsSavedByUser { get; set; }
     }
 
+    public class QuestionBankItemDto
+    {
+        public string Title { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
+    }
+
     public class RelatedQuestionDto
     {
         public Guid Id { get; set; }

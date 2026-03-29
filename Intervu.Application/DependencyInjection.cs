@@ -1,6 +1,7 @@
 using Intervu.Application.Mappings;
 using Intervu.Application.Services;
 using Intervu.Application.UseCases.Authentication;
+using Intervu.Application.Interfaces.Services;
 using Intervu.Application.Interfaces.UseCases.Authentication;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Microsoft.Extensions.Configuration;
@@ -18,6 +19,7 @@ using AdminUseCases = Intervu.Application.UseCases.Admin;
 using Intervu.Application.Interfaces.UseCases.Availability;
 using Intervu.Application.UseCases.Availability;
 using Intervu.Application.Interfaces.ExternalServices;
+using System;
 using Intervu.Application.Interfaces.UseCases.Candidate;
 using Intervu.Application.Interfaces.UseCases.CandidateProfile;
 using Intervu.Application.Services.CodeGeneration;
@@ -55,6 +57,13 @@ using CoachServiceInterfaces = Intervu.Application.Interfaces.UseCases.CoachInte
 using CoachServiceUseCases = Intervu.Application.UseCases.CoachInterviewService;
 using Intervu.Application.Interfaces.UseCases.Industry;
 using Intervu.Application.UseCases.Industry;
+using Intervu.Application.Interfaces.UseCases.AudioChunk;
+using AudioChunk = Intervu.Application.UseCases.AudioChunk;
+using Intervu.Application.Interfaces.Services;
+using Intervu.Application.Interfaces.UseCases.SmartSearch;
+using Intervu.Application.UseCases.SmartSearch;
+using Intervu.Application.Interfaces.UseCases.GeneratedQuestion;
+using Intervu.Application.UseCases.GeneratedQuestion;
 
 namespace Intervu.Application
 {
@@ -72,6 +81,18 @@ namespace Intervu.Application
             services.AddSingleton<ICodeGenerationService, CSharpCodeGenerationService>();
             services.AddSingleton<ICodeGenerationService, JavaScriptCodeGenerationService>();
             services.AddSingleton<ICodeGenerationService, JavaCodeGenerationService>();
+            services.AddScoped<IAssessmentService, AssessmentService>();
+            services.AddScoped<IGenerateAssessmentCatalogService, GenerateAssessmentCatalogService>();
+
+            // AI Service HttpClient and registration
+            services.AddHttpClient("AiServiceClient", client =>
+            {
+                client.BaseAddress = new Uri(
+                    configuration["ApiClients:AIService"]
+                    ?? configuration["AiService:BaseUrl"]
+                    ?? "https://api.example.com/");
+            });
+            services.AddScoped<IAiService, AiService>();
 
             // Auth UseCases
             services.AddTransient<ILoginUseCase, LoginUseCase>();
@@ -181,6 +202,12 @@ namespace Intervu.Application
             services.AddScoped<IGetQuestionReports, GetQuestionReports>();
             services.AddScoped<IUpdateQuestionReportStatus, UpdateQuestionReportStatus>();
 
+            // --- Generated Questions ---
+            services.AddScoped<IStoreGeneratedQuestions, StoreGeneratedQuestions>();
+            services.AddScoped<IGetGeneratedQuestionsByRoom, GetGeneratedQuestionsByRoom>();
+            services.AddScoped<IApproveGeneratedQuestion, ApproveGeneratedQuestion>();
+            services.AddScoped<IRejectGeneratedQuestion, RejectGeneratedQuestion>();
+
             // --- Comments ---
             services.AddScoped<IGetComments, GetComments>();
             services.AddScoped<IAddComment, AddComment>();
@@ -212,11 +239,16 @@ namespace Intervu.Application
             services.AddScoped<Interfaces.UseCases.Notification.INotificationUseCase, UseCases.Notification.NotificationUseCase>();
 
             // ----- SmartSearch ----
-            services.AddScoped<Interfaces.UseCases.SmartSearch.ISyncCoachVectors, UseCases.SmartSearch.SyncCoachVectors>();
-            services.AddScoped<Interfaces.UseCases.SmartSearch.ISyncQuestionVectors, UseCases.SmartSearch.SyncQuestionVectors>();
-            services.AddScoped<Interfaces.UseCases.SmartSearch.ISmartSearchCoach, UseCases.SmartSearch.SmartSearchCoach>();
-            services.AddScoped<Interfaces.UseCases.SmartSearch.ISmartSearchExtractDataFromFile, UseCases.SmartSearch.SmartSearchExtractDataFromFile>();
-            services.AddScoped<Interfaces.UseCases.SmartSearch.ISmartSearchQuestion, UseCases.SmartSearch.SmartSearchQuestion>();
+            services.AddScoped<ISyncCoachVectors, SyncCoachVectors>();
+            services.AddScoped<ISyncQuestionVectors, SyncQuestionVectors>();
+            services.AddScoped<ISmartSearchCoach, SmartSearchCoach>();
+            services.AddScoped<ISmartSearchQuestion, SmartSearchQuestion>();
+            services.AddScoped<IGetDuplicateQuestion, GetDuplicateQuestion>();
+
+            // ----- AudioChunk ----
+            services.AddScoped<IStoreAudioChunk, AudioChunk.StoreAudioChunk>();
+            services.AddScoped<IGetAudioChunk, AudioChunk.GetAudioChunk>();
+            services.AddSingleton<IAudioProcessingService, AudioProcessingService>();
 
             return services;
         }
