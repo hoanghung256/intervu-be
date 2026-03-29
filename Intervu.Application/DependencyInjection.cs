@@ -92,7 +92,6 @@ namespace Intervu.Application
                     ?? configuration["AiService:BaseUrl"]
                     ?? "https://api.example.com/");
             });
-            services.AddScoped<IAiService, AiService>();
 
             // Auth UseCases
             services.AddTransient<ILoginUseCase, LoginUseCase>();

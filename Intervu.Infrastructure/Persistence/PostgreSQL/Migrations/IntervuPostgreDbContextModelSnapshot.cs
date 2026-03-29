@@ -879,8 +879,40 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Intervu.Domain.Entities.GeneratedQuestion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("InterviewRoomId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InterviewRoomId");
+
+                    b.ToTable("GeneratedQuestions", (string)null);
+                });
 
             modelBuilder.Entity("Intervu.Domain.Entities.Industry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(120)
@@ -950,32 +982,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             Name = "GameDev",
                             Slug = "gamedev"
                         });
-
-            modelBuilder.Entity("Intervu.Domain.Entities.GeneratedQuestion", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("InterviewRoomId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("InterviewRoomId");
-
-                    b.ToTable("GeneratedQuestions", (string)null);
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.InterviewBookingTransaction", b =>
