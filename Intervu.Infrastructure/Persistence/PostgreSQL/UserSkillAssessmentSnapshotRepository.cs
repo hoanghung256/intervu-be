@@ -16,7 +16,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Repositories
             _context = context;
         }
 
-        public async Task<UserSkillAssessmentSnapshot?> GetByUserIdAsync(Guid userId)
+        public async Task<UserSkillAssessmentSnapshot?> GetUserSkillAssessmentById(Guid userId)
         {
             return await _context.UserSkillAssessments
                 .AsNoTracking()

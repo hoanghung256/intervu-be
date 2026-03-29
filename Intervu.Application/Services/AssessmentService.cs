@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Intervu.Application.DTOs.Assessment;
+using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.Services;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Repositories;
@@ -161,6 +162,21 @@ namespace Intervu.Application.Services
                 UserId = request.UserId,
                 SummaryText = summaryText,
                 SummaryObject = summary
+            };
+        }
+
+        public async Task<UserSkillAssessmentSnapshotDto?> GetUserSkillAssessmentSnapshotAsync(Guid userId)
+        {
+            var userSkillAssessment = await _snapshotRepository.GetUserSkillAssessmentById(userId);
+
+            if (userSkillAssessment == null) return null;
+
+            return new UserSkillAssessmentSnapshotDto
+            {
+                UserId = userSkillAssessment.UserId,
+                Target = JsonSerializer.Serialize(userSkillAssessment.Target),
+                Current = JsonSerializer.Serialize(userSkillAssessment.Current),
+                Gap = JsonSerializer.Serialize(userSkillAssessment.Gap)
             };
         }
     }
