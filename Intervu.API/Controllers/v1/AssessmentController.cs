@@ -42,6 +42,50 @@ namespace Intervu.API.Controllers.v1
                 data = snapshot
             });
         }
-    }
 
+        [HttpPost("roadmap/generate")]
+        public async Task<IActionResult> GenerateRoadmap([FromBody] GenerateRoadmapFromSurveyRequestDto request)
+        {
+            try
+            {
+                var result = await _service.GenerateRoadmapFromSurveyAsync(request.UserId, request.ForceRegenerate);
+
+                if (!string.Equals(result.Status, "success", StringComparison.OrdinalIgnoreCase))
+                {
+                    return BadRequest(result);
+                }
+
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new GenerateRoadmapResultDto
+                {
+                    Status = "failed",
+                    Error = ex.Message
+                });
+            }
+        }
+
+        [HttpGet("roadmap/{userId:guid}")]
+        public async Task<IActionResult> GetRoadmap(Guid userId)
+        {
+            var roadmap = await _service.GetRoadmapByUserIdAsync(userId);
+
+            if (roadmap == null)
+            {
+                return NotFound(new GenerateRoadmapResultDto
+                {
+                    Status = "failed",
+                    Error = "Roadmap not found. Please generate roadmap after finishing survey."
+                });
+            }
+
+            return Ok(new GenerateRoadmapResultDto
+            {
+                Status = "success",
+                Roadmap = roadmap
+            });
+        }
+    }
 }

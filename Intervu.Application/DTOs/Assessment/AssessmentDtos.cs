@@ -26,6 +26,10 @@ namespace Intervu.Application.DTOs.Assessment
         [JsonProperty("Gap")]
         [JsonPropertyName("Gap")]
         public GapDto Gap { get; set; } = new GapDto();
+
+        [JsonProperty("roadmap")]
+        [JsonPropertyName("roadmap")]
+        public SurveyRoadmapDto? Roadmap { get; set; }
     }
 
     public class TargetDto

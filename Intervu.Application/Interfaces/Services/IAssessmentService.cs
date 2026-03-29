@@ -9,5 +9,7 @@ namespace Intervu.Application.Interfaces.Services
     {
         Task<SurveySummaryResultDto> ProcessSurveyResponsesAsync(SurveyResponsesDto request);
         Task<UserSkillAssessmentSnapshotDto?> GetUserSkillAssessmentSnapshotAsync(Guid userId);
+        Task<GenerateRoadmapResultDto> GenerateRoadmapFromSurveyAsync(Guid userId, bool forceRegenerate = false);
+        Task<SurveyRoadmapDto?> GetRoadmapByUserIdAsync(Guid userId);
     }
 }

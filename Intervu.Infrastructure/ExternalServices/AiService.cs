@@ -11,6 +11,8 @@ using Intervu.Application.DTOs.SmartSearch;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using Intervu.Application.DTOs;
+using Intervu.Application.DTOs.Assessment;
+using System.Text.Json.Serialization;
 
 namespace Intervu.Infrastructure.ExternalServices
 {
@@ -338,6 +340,55 @@ namespace Intervu.Infrastructure.ExternalServices
             }
 
             return result;
+        }
+
+        public async Task<AiGenerateRoadmapResponseDto?> GenerateRoadmapAsync(AiGenerateRoadmapRequestDto request)
+        {
+            if (_httpClient.BaseAddress == null)
+            {
+                return null;
+            }
+
+            var response = await _httpClient.PostAsJsonAsync("api/generate-roadmap", request);
+            var rawContent = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new HttpRequestException(
+                    $"AI roadmap request failed with status code {(int)response.StatusCode}: {rawContent}");
+            }
+
+            if (string.IsNullOrWhiteSpace(rawContent))
+            {
+                return new AiGenerateRoadmapResponseDto
+                {
+                    Status = "failed",
+                    Error = "Empty response from AI roadmap service"
+                };
+            }
+
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                ReadCommentHandling = JsonCommentHandling.Skip,
+                AllowTrailingCommas = true,
+                NumberHandling = JsonNumberHandling.AllowReadingFromString
+            };
+
+            try
+            {
+                var result = JsonSerializer.Deserialize<AiGenerateRoadmapResponseDto>(rawContent, options);
+                return result;
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogError(ex, "Failed to deserialize AI roadmap response: {RawContent}", rawContent);
+                return new AiGenerateRoadmapResponseDto
+                {
+                    Status = "failed",
+                    Error = "Invalid roadmap payload format from AI roadmap service"
+                };
+            }
         }
     }
 }

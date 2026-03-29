@@ -598,6 +598,10 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                  .IsRequired()
                  .HasColumnType("jsonb");
 
+                b.Property(x => x.RoadMapJson)
+                 .IsRequired()
+                 .HasColumnType("jsonb");
+
                 b.Property(x => x.CreatedAt)
                  .IsRequired()
                  .HasColumnType("timestamp with time zone")

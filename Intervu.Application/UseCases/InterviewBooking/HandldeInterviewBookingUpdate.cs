@@ -57,12 +57,12 @@ namespace Intervu.Application.UseCases.InterviewBooking
 
                 transaction.Status = TransactionStatus.Paid;
 
-                // --- Flow B/C: BookingRequest payment ---
+                // --- Flow B/C: BookingRequest payment (Multiple rounds) ---
                 if (transaction.BookingRequestId != null)
                 {
                     await HandleBookingRequestPayment(transaction);
                 }
-                // --- Flow A: Normal availability booking ---
+                // --- Flow A: Normal availability booking (1 round) ---
                 else if (transaction.CoachAvailabilityId != null)
                 {
                     await HandleAvailabilityPayment(transaction);
@@ -119,6 +119,13 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 ?? throw new NotFoundException("Transaction is missing BookedStartTime metadata");
             var duration = transaction.BookedDurationMinutes
                 ?? throw new NotFoundException("Transaction is missing BookedDurationMinutes metadata");
+
+            //var bookingRepo = _unitOfWork.GetRepository<IBookingRequestRepository>();
+            //var roomRepo = _unitOfWork.GetRepository<IInterviewRoomRepository>();
+            //var availabilityRepo = _unitOfWork.GetRepository<ICoachAvailabilitiesRepository>();
+
+            //var bookingRequest = await bookingRepo.GetByIdWithDetailsAsync(transaction.BookingRequestId!.Value)
+            //   ?? throw new NotFoundException("Booking request not found");
 
             _backgroundService.Enqueue<ICreateInterviewRoom>(
                 uc => uc.ExecuteAsync(

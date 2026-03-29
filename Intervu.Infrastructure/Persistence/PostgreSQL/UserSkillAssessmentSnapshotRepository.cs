@@ -44,6 +44,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Repositories
                 existing.TargetJson = snapshot.TargetJson;
                 existing.CurrentJson = snapshot.CurrentJson;
                 existing.GapJson = snapshot.GapJson;
+                existing.RoadMapJson = snapshot.RoadMapJson;
                 existing.UpdatedAt = now;
             }
 
