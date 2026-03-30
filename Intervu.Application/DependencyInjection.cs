@@ -245,6 +245,7 @@ namespace Intervu.Application
             services.AddScoped<ISmartSearchCoach, SmartSearchCoach>();
             services.AddScoped<ISmartSearchQuestion, SmartSearchQuestion>();
             services.AddScoped<IGetDuplicateQuestion, GetDuplicateQuestion>();
+            services.AddScoped<ISmartSearchExtractDataFromFile, SmartSearchExtractDataFromFile>();
 
             // ----- AudioChunk ----
             services.AddScoped<IStoreAudioChunk, AudioChunk.StoreAudioChunk>();
