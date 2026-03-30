@@ -137,6 +137,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
                             ScheduledTime = startTime,
                             DurationMinutes = duration,
                             Status = InterviewRoomStatus.Scheduled,
+                            CurrentAvailabilityId = coachAvailabilityId,
                             TransactionId = t.Id,
                             BookingRequestId = null,
                             CoachInterviewServiceId =coachInterviewServiceId,
