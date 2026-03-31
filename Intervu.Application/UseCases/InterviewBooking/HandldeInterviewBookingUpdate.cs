@@ -55,6 +55,14 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 InterviewBookingTransaction transaction = await transactionRepo.Get(orderCode, TransactionType.Payment)
                     ?? throw new NotFoundException("Booking transaction not found");
 
+                if (transaction.Status == TransactionStatus.Paid)
+                {
+                    _logger.LogInformation(
+                        "Payment webhook already handled for booking transaction {TransactionId}",
+                        transaction.Id);
+                    return;
+                }
+
                 transaction.Status = TransactionStatus.Paid;
 
                 // --- Flow B/C: BookingRequest payment (Multiple rounds) ---
@@ -93,6 +101,8 @@ namespace Intervu.Application.UseCases.InterviewBooking
                             "A candidate has booked an interview with you.",
                             "/interview?tab=upcoming",
                             null));
+
+                    // TODO: Send email notification to coach as well
                 }
 
                 await _unitOfWork.SaveChangesAsync();
@@ -103,6 +113,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 await _unitOfWork.RollbackTransactionAsync();
                 throw;
             }
+
         }
 
         /// <summary>

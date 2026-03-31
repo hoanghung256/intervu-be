@@ -156,6 +156,8 @@ namespace Intervu.API.Controllers.v1
         [HttpPost("upload-cv/{userId}")]
         public async Task<IActionResult> UploadCV(Guid userId, IFormFile file)
         {
+            // TODO: if user upload a CV with differ extension as PDF, convert to pdf before upload to file service
+            
             using var stream = file.OpenReadStream();
 
             string objectName = $"cvs/{userId}{Path.GetExtension(file.FileName)}";

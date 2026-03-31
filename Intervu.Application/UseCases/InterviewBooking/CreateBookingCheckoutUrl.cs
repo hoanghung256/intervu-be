@@ -69,7 +69,9 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 var endTime = startTime.AddMinutes(duration);
 
                 // 3. Validate the availability slot exists, belongs to coach, and is Available
-                var availability = await availabilityRepo.GetByIdAsync(coachAvailabilityId)
+                // Lock the selected availability row so concurrent requests for the same slot
+                // cannot both pass the overlap check before one booking is persisted.
+                var availability = await availabilityRepo.GetByIdForUpdateAsync(coachAvailabilityId)
                     ?? throw new NotFoundException("Coach availability not found");
 
                 if (availability.CoachId != coachId)

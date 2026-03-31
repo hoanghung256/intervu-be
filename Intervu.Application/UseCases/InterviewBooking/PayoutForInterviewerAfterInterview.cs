@@ -51,6 +51,9 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     coach.BankAccountNumber
                 );
             }
+            // TODO: Refactor payout logic to use in-app balance instead of payout directly to bank account.
+            // TODO: Implement retry logic and error handling for payment failures, and consider edge cases such as refunds or disputes that may arise after payout.
+            // TODO: Send in-app and email notification to coach about successful payout with details and link to interview history
         }
     }
 }

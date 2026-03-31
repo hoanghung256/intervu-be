@@ -102,5 +102,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                     && a.StartTime <= startTime
                     && a.EndTime >= endTime);
         }
+
+        public Task<CoachAvailability?> GetByIdForUpdateAsync(Guid availabilityId)
+        {
+            return _context.CoachAvailabilities
+                .FromSqlInterpolated($@"SELECT * FROM ""CoachAvailabilities"" WHERE ""Id"" = {availabilityId} FOR UPDATE")
+                .FirstOrDefaultAsync();
+        }
     }
 }
