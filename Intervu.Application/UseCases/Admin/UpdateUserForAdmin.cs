@@ -43,8 +43,9 @@ namespace Intervu.Application.UseCases.Admin
             if (user.Email != dto.Email && await _userRepository.EmailExistsAsync(dto.Email))
                 throw new InvalidOperationException($"Email '{dto.Email}' ?� t?n t?i.");
 
-            user.FullName = dto.FullName;
-            user.Email = dto.Email;
+            if (!string.IsNullOrEmpty(dto.FullName)) user.FullName = dto.FullName;
+            if (!string.IsNullOrEmpty(dto.Email)) user.Email = dto.Email;
+            if (!string.IsNullOrEmpty(dto.Password)) user.Password = PasswordHashHandler.HashPassword(dto.Password);
             user.Role = dto.Role;
             user.ProfilePicture = dto.ProfilePicture;
             user.Status = dto.Status;

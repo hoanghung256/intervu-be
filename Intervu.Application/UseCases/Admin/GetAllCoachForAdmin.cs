@@ -47,7 +47,7 @@ namespace Intervu.Application.UseCases.Admin
                     Id = coach.Id,
                     FullName = user?.FullName ?? "-",
                     Email = user?.Email ?? "-",
-                    Phone = null, // User entity doesn't have PhoneNumber field
+
                     Specialization = specialization,
                     Experience = coach.ExperienceYears ?? 0, // Default to 0 if null
                     Bio = coach.Bio,

@@ -10,6 +10,7 @@ namespace Intervu.Application.DTOs.Admin
         public UserRole Role { get; set; }
         public string? ProfilePicture { get; set; }
         public string? SlugProfileUrl { get; set; }
+
         public UserStatus Status { get; set; }
         public DateTime CreatedAt { get; set; }
     }
