@@ -8,6 +8,10 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 {
     public class TransactionRepository(IntervuPostgreDbContext context) : RepositoryBase<InterviewBookingTransaction>(context), ITransactionRepository
     {
+        // Include a safety window on month boundaries so slots near midnight
+        // are not dropped when clients render in non-UTC time zones.
+        private const int MonthBoundaryTimezoneBufferHours = 14;
+
         public async Task<InterviewBookingTransaction?> Get(int orderCode, TransactionType type)
         {
             return await _context.InterviewBookingTransaction.FirstOrDefaultAsync(t => t.OrderCode == orderCode && t.Type == type);
@@ -109,9 +113,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
             if (month > 0 && year > 0)
             {
-                var startDate = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Utc);
-                var endDate = startDate.AddMonths(1);
-                query = query.Where(t => t.BookedStartTime >= startDate && t.BookedStartTime < endDate);
+                var monthStartUtc = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Utc);
+                var monthEndUtc = monthStartUtc.AddMonths(1);
+                var queryStartUtc = monthStartUtc.AddHours(-MonthBoundaryTimezoneBufferHours);
+                var queryEndUtc = monthEndUtc.AddHours(MonthBoundaryTimezoneBufferHours);
+
+                query = query.Where(t => t.BookedStartTime >= queryStartUtc && t.BookedStartTime < queryEndUtc);
             }
 
             return await query
@@ -132,9 +139,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
             if (month > 0 && year > 0)
             {
-                var startDate = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Utc);
-                var endDate = startDate.AddMonths(1);
-                query = query.Where(t => t.BookedStartTime >= startDate && t.BookedStartTime < endDate);
+                var monthStartUtc = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Utc);
+                var monthEndUtc = monthStartUtc.AddMonths(1);
+                var queryStartUtc = monthStartUtc.AddHours(-MonthBoundaryTimezoneBufferHours);
+                var queryEndUtc = monthEndUtc.AddHours(MonthBoundaryTimezoneBufferHours);
+
+                query = query.Where(t => t.BookedStartTime >= queryStartUtc && t.BookedStartTime < queryEndUtc);
             }
 
             return await query.ToListAsync();
