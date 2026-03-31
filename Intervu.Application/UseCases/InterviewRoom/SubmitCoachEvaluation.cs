@@ -56,6 +56,8 @@ namespace Intervu.Application.UseCases.InterviewRoom
             _roomRepo.UpdateAsync(room);
             await _roomRepo.SaveChangesAsync();
 
+            // TODO: Sent in-app notification to candidate that coach has submitted evaluation, and email notification to both parties with evaluation summary
+
             _logger.LogInformation("Coach {CoachId} submitted evaluation for interview room {RoomId}", coachId, interviewRoomId);
         }
     }

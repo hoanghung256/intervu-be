@@ -101,8 +101,8 @@ namespace Intervu.Application.UseCases.InterviewBooking
                             "A candidate has booked an interview with you.",
                             "/interview?tab=upcoming",
                             null));
-
-                    // TODO: Send email notification to coach as well
+                    // TODO: Send notification to candidate as well
+                    // TODO: Send email notification to candidate, coach as well
                 }
 
                 await _unitOfWork.SaveChangesAsync();

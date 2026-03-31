@@ -149,6 +149,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
                         })
                     );
                     
+                    // TODO: Create notification to candidate and coach about successful booking and upcoming interview
                 }
                 else
                 {

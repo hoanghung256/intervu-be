@@ -21,6 +21,7 @@ namespace Intervu.Application.UseCases.Feedbacks
         public async Task ExecuteAsync(Feedback feedback)
         {
             await _repo.CreateFeedbackAsync(feedback);
+            // TODO: Send in-app notification to admin about new feedback submission, and email notification to admin with feedback details
         }
     }
 }
