@@ -14,6 +14,7 @@ namespace Intervu.API.Controllers.v1.CoachAvailability
         private readonly IGetCoachAvailabilities _getCoachAvailabilities;
         private readonly IGetCoachFreeSlots _getCoachFreeSlots;
         private readonly ICreateCoachAvailability _createCoachAvailability;
+        private readonly IBlockCoachAvailabilityTime _blockCoachAvailabilityTime;
         private readonly IDeleteCoachAvailability _deleteCoachAvailability;
         private readonly IUpdateCoachAvailability _updateCoachAvailability;
 
@@ -21,12 +22,14 @@ namespace Intervu.API.Controllers.v1.CoachAvailability
             IGetCoachAvailabilities getCoachAvailabilities,
             IGetCoachFreeSlots getCoachFreeSlots,
             ICreateCoachAvailability createCoachAvailability,
+            IBlockCoachAvailabilityTime blockCoachAvailabilityTime,
             IDeleteCoachAvailability deleteCoachAvailability,
             IUpdateCoachAvailability updateCoachAvailability)
         {
             _getCoachAvailabilities = getCoachAvailabilities;
             _getCoachFreeSlots = getCoachFreeSlots;
             _createCoachAvailability = createCoachAvailability;
+            _blockCoachAvailabilityTime = blockCoachAvailabilityTime;
             _deleteCoachAvailability = deleteCoachAvailability;
             _updateCoachAvailability = updateCoachAvailability;
         }
@@ -79,6 +82,27 @@ namespace Intervu.API.Controllers.v1.CoachAvailability
             {
                 await _deleteCoachAvailability.ExecuteAsync(availabilityId);
                 return Ok(new { success = true, message = "Deleted" });
+            }
+            catch (System.Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpPost("{availabilityId}/blocked-times")]
+        public async Task<IActionResult> BlockCoachAvailabilityTime(
+            Guid availabilityId,
+            [FromBody] BlockCoachAvailabilityTimeDto request)
+        {
+            try
+            {
+                await _blockCoachAvailabilityTime.ExecuteAsync(
+                    availabilityId,
+                    request.StartTime,
+                    request.EndTime,
+                    request.Reason);
+
+                return Ok(new { success = true, message = "Blocked time added" });
             }
             catch (System.Exception ex)
             {

@@ -143,6 +143,7 @@ namespace Intervu.Application
             services.AddScoped<IGetCoachAvailabilities, GetCoachAvailabilities>();
             services.AddScoped<IGetCoachFreeSlots, GetCoachFreeSlots>();
             services.AddScoped<ICreateCoachAvailability, CreateCoachAvailability>();
+            services.AddScoped<IBlockCoachAvailabilityTime, BlockCoachAvailabilityTime>();
             services.AddScoped<IDeleteCoachAvailability, DeleteCoachAvailability>();
             services.AddScoped<IUpdateAvailabilityStatus, UpdateAvailabilityStatus>();
             services.AddScoped<IUpdateCoachAvailability, UpdateCoachAvailability>();

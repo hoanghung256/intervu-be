@@ -50,7 +50,13 @@ namespace Intervu.Application.UseCases.Availability
             var activeRounds = await _bookingRequestRepo
                 .GetActiveRoundsByCoachAsync(coachId, rangeStart, rangeEnd);
 
-            // Merge both sources into unified (Start, End) intervals
+            // Extract blocked sub-ranges from availability windows
+            var blockedIntervals = availabilities
+                .SelectMany(a => a.BlockedTimes ?? [])
+                .Where(bt => bt.EndTime > bt.StartTime)
+                .Select(bt => (Start: bt.StartTime, End: bt.EndTime));
+
+            // Merge all sources into unified (Start, End) intervals
             var allBookedIntervals = activeTransactions
                 .Where(t => t.BookedStartTime.HasValue && t.BookedDurationMinutes.HasValue)
                 .Select(t => (
@@ -58,6 +64,7 @@ namespace Intervu.Application.UseCases.Availability
                     End: t.BookedStartTime!.Value.AddMinutes(t.BookedDurationMinutes!.Value)
                 ))
                 .Concat(activeRounds)
+                .Concat(blockedIntervals)
                 .ToList();
 
             // 4. Compute free slots using the subtraction algorithm

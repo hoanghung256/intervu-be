@@ -21,6 +21,8 @@ namespace Intervu.Domain.Entities
 
         public CoachAvailabilityStatus Status { get; set; }
 
+        public List<BlockedTime> BlockedTimes { get; set; } = new();
+
         // Navigation
         public CoachProfile? CoachProfile { get; set; }
 

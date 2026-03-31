@@ -247,6 +247,14 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.EndTime).IsRequired();
                 b.Property(x => x.Status).IsRequired();
 
+                b.OwnsMany(x => x.BlockedTimes, blocked =>
+                {
+                    blocked.ToJson();
+                    blocked.Property(x => x.StartTime).IsRequired();
+                    blocked.Property(x => x.EndTime).IsRequired();
+                    blocked.Property(x => x.Reason).HasMaxLength(500);
+                });
+
                 b.HasOne(x => x.CoachProfile)
                 .WithMany()
                 .HasForeignKey(x => x.CoachId)
