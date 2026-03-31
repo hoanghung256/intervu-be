@@ -4,9 +4,10 @@ using Intervu.Application.DTOs.Availability;
 using Intervu.Application.DTOs.BookingRequest;
 using Intervu.Application.DTOs.Candidate;
 using Intervu.Application.DTOs.Coach;
-using Intervu.Application.DTOs.Comment;
 using Intervu.Application.DTOs.CoachInterviewService;
+using Intervu.Application.DTOs.Comment;
 using Intervu.Application.DTOs.Company;
+using Intervu.Application.DTOs.Feedback;
 using Intervu.Application.DTOs.Industry;
 using Intervu.Application.DTOs.InterviewExperience;
 using Intervu.Application.DTOs.InterviewType;
@@ -69,6 +70,14 @@ namespace Intervu.Application.Mappings
             CreateMap<User, DTOs.Admin.AdminUserResponseDto>();
             CreateMap<Company, DTOs.Admin.CompanyDto>();
             CreateMap<Feedback, FeedbackDto>();
+            CreateMap<Feedback, GetFeedbackResponse>()
+                .ForMember(dest => dest.FeedbackId, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.CoachName, opt => opt.MapFrom(src =>
+                    src.CoachProfile != null && src.CoachProfile.User != null ? src.CoachProfile.User.FullName : string.Empty))
+                .ForMember(dest => dest.ScheduledTime, opt => opt.MapFrom(src =>
+                    src.InterviewRoom != null ? src.InterviewRoom.ScheduledTime : (DateTime?)null))
+                .ForMember(dest => dest.DurationMinutes, opt => opt.MapFrom(src =>
+                    src.InterviewRoom != null ? src.InterviewRoom.DurationMinutes : (int?)null));
 
             // Availability mappings
             CreateMap<CoachAvailabilityCreateDto, CoachAvailability>()

@@ -67,6 +67,19 @@ namespace Intervu.API
                     Title = "Intervu API",
                     Version = "v2"
                 });
+
+                // Use fully-qualified type names to avoid schemaId collisions
+                options.CustomSchemaIds(type =>
+                {
+                    if (type == typeof(Intervu.Domain.Entities.InterviewRound))
+                        return "InterviewRoundEntity";
+
+                    if (type == typeof(Intervu.Domain.Entities.Constants.QuestionConstants.InterviewRound))
+                        return "InterviewRoundEnum";
+
+                    return type.Name;
+                });
+
                 options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
                 {
                     Name = "Authorization",
