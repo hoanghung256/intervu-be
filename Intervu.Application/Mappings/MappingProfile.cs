@@ -47,7 +47,8 @@ namespace Intervu.Application.Mappings
             CreateMap<CoachProfile, CoachProfileDto>().ForMember(dest => dest.User, opt => opt.Ignore()).ReverseMap();
             CreateMap<CoachProfile, CoachViewDto>().ForMember(dest => dest.User, opt => opt.Ignore()).ReverseMap();
             CreateMap<CoachCreateDto, CoachProfile>().ReverseMap();
-            CreateMap<CoachUpdateDto, CoachProfile>().ReverseMap();
+            CreateMap<CoachUpdateDto, CoachProfile>().ReverseMap()
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
             CreateMap<User, CoachCreateDto>().ReverseMap();
 

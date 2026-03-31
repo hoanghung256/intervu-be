@@ -1,6 +1,7 @@
 using Intervu.Domain.Abstractions.Entity;
 using Intervu.Domain.Entities.Constants;
 using System;
+using System.Collections.Generic;
 
 namespace Intervu.Domain.Entities
 {
@@ -41,6 +42,6 @@ namespace Intervu.Domain.Entities
         /// </summary>
         public List<QuestionSnapshot>? SavedQuestions { get; set; }
         
-        public ICollection<CoachInterviewService> InterviewServices { get; set; } = [];
+        public ICollection<CoachInterviewService> InterviewServices { get; set; } = new List<CoachInterviewService>();
     }
 }
