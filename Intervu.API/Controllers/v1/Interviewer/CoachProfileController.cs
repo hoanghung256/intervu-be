@@ -110,26 +110,17 @@ namespace Intervu.API.Controllers.v1.Interviewer
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateCoachProfile([FromRoute] Guid id, [FromBody] CoachUpdateDto request)
         {
-            string msg = "Profile update successfully!";
+            string msg = "Profile updated successfully!";
             try
             {
-                CoachProfileDto? profile = await _getCoachProfile.ViewOwnProfileAsync(id);
-                profile = await _updateCoachProfile.ExecuteAsync(id, request);
-                return Ok(new
-                {
-                    success = true,
-                    message = "Profile updated successfully"
-                });
+                await _updateCoachProfile.ExecuteAsync(id, request); 
+                return Ok(new { success = true, message = msg });
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 msg = ex.Message;
             }
-            return Ok(new
-            {
-                success = true,
-                message = msg
-            });
+            return Ok(new { success = false, message = msg });
         }
         
         // [PUT] api/coach-profile/{id}/status

@@ -1,15 +1,16 @@
 ﻿using AutoMapper;
 using Intervu.Application.DTOs.Coach;
 using Intervu.Application.Interfaces.UseCases.CoachProfile;
-using Intervu.Domain.Entities.Constants;
+using Intervu.Application.Utils;
 using Intervu.Domain.Entities;
+using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
+using Org.BouncyCastle.Asn1.Ocsp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Intervu.Application.Utils;
 
 namespace Intervu.Application.UseCases.CoachProfile
 {
@@ -30,47 +31,34 @@ namespace Intervu.Application.UseCases.CoachProfile
             _mapper = mapper;
         }
 
-        public async Task<CoachProfileDto> ExecuteAsync(Guid id, CoachUpdateDto dto)
+        public async Task<CoachProfileDto> ExecuteAsync(Guid id, CoachUpdateDto request)
         {
-            var existing = await _repo.GetProfileByIdAsync(id);
-            if (existing == null)
+            var existingProfile = await _repo.GetProfileByIdAsync(id);
+            if (existingProfile == null)
                 throw new Exception("Coach profile not found.");
 
-            if (existing.User != null)
+            _mapper.Map(request, existingProfile);
+            existingProfile.Id = id; 
+
+            if (request.SkillIds != null)
             {
-                existing.User.SlugProfileUrl = SlugProfileUrlHandler.GenerateProfileSlug(dto.FullName);
+                var skills = await _skillRepository.GetByIdsAsync(request.SkillIds);
+                existingProfile.Skills = skills.ToList();
             }
 
-            if (dto.CompanyIds != null)
+            if (request.CompanyIds != null)
             {
-                var companies = await _companyRepository.GetByIdsAsync(dto.CompanyIds);
-                existing.Companies.Clear();
-                foreach (var c in companies)
-                    existing.Companies.Add(c);
+                var companies = await _companyRepository.GetByIdsAsync(request.CompanyIds);
+                existingProfile.Companies = companies.ToList();
             }
 
-            if (dto.SkillIds != null)
-            {
-                var skills = await _skillRepository.GetByIdsAsync(dto.SkillIds);
-                existing.Skills.Clear();
-                foreach (var s in skills)
-                    existing.Skills.Add(s);
-            }
+            // Update slug from name
+            if (request.FullName != null)
+                existingProfile.User.SlugProfileUrl = SlugProfileUrlHandler.GenerateProfileSlug(request.FullName);
 
-            if (dto.IndustryIds != null)
-            {
-                var industries = await _industryRepository.GetByIdsAsync(dto.IndustryIds);
-                existing.Industries.Clear();
-                foreach (var i in industries)
-                    existing.Industries.Add(i);
-            }
+            await _repo.UpdateCoachProfileAsync(existingProfile);
 
-            _mapper.Map(dto, existing);
-
-            await _repo.UpdateCoachProfileAsync(existing);
-
-            var reloaded = await _repo.GetProfileByIdAsync(id);
-            return _mapper.Map<CoachProfileDto>(reloaded!);
+            return _mapper.Map<CoachProfileDto>(existingProfile);
         }
 
         public async Task<CoachProfileDto> UpdateCoachStatus(Guid id, CoachProfileStatus status)
