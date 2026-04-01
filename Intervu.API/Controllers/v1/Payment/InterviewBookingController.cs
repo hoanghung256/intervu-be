@@ -112,9 +112,9 @@ namespace Intervu.API.Controllers.v1.Payment
         public async Task<IActionResult> CancelInverview([FromRoute] Guid interviewRoomId)
         {
             int refundAmount = await _cancelInterview.ExecuteAsync(interviewRoomId);
-            var message = refundAmount > 0
-                ? $"Interview cancelled successfully. You will be refund {refundAmount} VND after 1 business day"
-                : "Interview cancelled successfully. No refund applied.";
+            // var message = refundAmount > 0
+            //     ? $"Interview cancelled successfully. You will be refund {refundAmount} VND after 1 business day"
+            //     : "Interview cancelled successfully. No refund applied.";
 
             return Ok(new
             {
@@ -123,7 +123,7 @@ namespace Intervu.API.Controllers.v1.Payment
                 {
                     refundAmount
                 },
-                message
+                // message
             });
         }
     }

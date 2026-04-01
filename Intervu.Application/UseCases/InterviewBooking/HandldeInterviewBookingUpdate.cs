@@ -1,4 +1,4 @@
-﻿using Intervu.Application.Exceptions;
+using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
@@ -21,6 +21,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
         private readonly IBackgroundService _backgroundService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICoachInterviewServiceRepository _coachInterviewServiceRepository;
+        private readonly IScheduleInterviewReminders _scheduleReminders;
         private readonly ILogger<HandldeInterviewBookingUpdate> _logger;
 
         public HandldeInterviewBookingUpdate(
@@ -30,6 +31,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
             IBackgroundService backgroundService,
             IUnitOfWork unitOfWork,
             ICoachInterviewServiceRepository coachInterviewServiceRepository,
+            IScheduleInterviewReminders scheduleReminders,
             ILogger<HandldeInterviewBookingUpdate> logger)
         {
             _transactionRepository = transactionRepository;
@@ -38,6 +40,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
             _backgroundService = backgroundService;
             _unitOfWork = unitOfWork;
             _coachInterviewServiceRepository = coachInterviewServiceRepository;
+            _scheduleReminders = scheduleReminders;
             _logger = logger;
         }
 
@@ -80,30 +83,34 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     throw new NotFoundException("Transaction has no associated booking context");
                 }
 
+                var candidateId = transaction.UserId;
+                var coachId = transaction.CoachId;
+
                 // Notify candidate — booking confirmed
                 _backgroundService.Enqueue<INotificationUseCase>(
                     uc => uc.CreateAsync(
-                        transaction.UserId,
-                        NotificationType.PaymentSuccess,
+                        candidateId,
+                        NotificationType.BookingAccepted,
                         "Booking confirmed",
                         "Your interview has been booked successfully.",
                         "/interview?tab=upcoming",
                         null));
 
-                if (transaction.CoachId != null)
+                if (coachId != null)
                 {
+                    var validCoachId = coachId.Value;
                     // Notify coach — new booking
                     _backgroundService.Enqueue<INotificationUseCase>(
                         uc => uc.CreateAsync(
-                            (Guid)transaction.CoachId,
+                            validCoachId,
                             NotificationType.BookingNew,
                             "New interview booking",
                             "A candidate has booked an interview with you.",
                             "/interview?tab=upcoming",
                             null));
-                    // TODO: Send notification to candidate as well
-                    // TODO: Send email notification to candidate, coach as well
                 }
+
+                // TODO: Send email notification to candidate, coach as well
 
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
@@ -138,13 +145,16 @@ namespace Intervu.Application.UseCases.InterviewBooking
             //var bookingRequest = await bookingRepo.GetByIdWithDetailsAsync(transaction.BookingRequestId!.Value)
             //   ?? throw new NotFoundException("Booking request not found");
 
+            var availabilityId = transaction.CoachAvailabilityId!.Value;
+            var transactionId = transaction.Id;
+
             _backgroundService.Enqueue<ICreateInterviewRoom>(
                 uc => uc.ExecuteAsync(
                     candidateId,
-                    coachId,
-                    transaction.CoachAvailabilityId!.Value,
+                    coachId, // local variable
+                    availabilityId, // local variable
                     startTime,
-                    transaction.Id,
+                    transactionId, // local variable
                     duration)
             );
 
@@ -203,6 +213,9 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 };
                 await roomRepo.AddAsync(room);
 
+                // Schedule reminder notifications for Flow B room
+                _scheduleReminders.Schedule(room.Id, startTime);
+
                 _logger.LogInformation(
                     "Created interview room for external BookingRequest {BookingRequestId}",
                     bookingRequest.Id);
@@ -234,6 +247,9 @@ namespace Intervu.Application.UseCases.InterviewBooking
                         IsEvaluationCompleted = false
                     };
                     await roomRepo.AddAsync(room);
+
+                    // Schedule reminder notifications for each round in Flow C
+                    _scheduleReminders.Schedule(room.Id, round.StartTime);
                 }
 
                 _logger.LogInformation(

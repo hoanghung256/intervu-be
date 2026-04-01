@@ -1,6 +1,7 @@
-﻿using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.UseCases.Availability;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
+using Intervu.Application.Interfaces.UseCases.Notification;
 using Intervu.Application.UseCases.Availability;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
@@ -15,14 +16,22 @@ namespace Intervu.Application.UseCases.InterviewBooking
         private readonly ICoachProfileRepository _coachProfileRepository;
         private readonly IGetCoachAvailabilities _getCoachAvailabilities;
         private readonly IPaymentService _paymentService;
+        private readonly IBackgroundService _jobService;
 
-        public PayoutForCoachAfterInterview(IInterviewRoomRepository interviewRoomRepository, ITransactionRepository transactionRepository, ICoachProfileRepository coachProfileRepository, IGetCoachAvailabilities getCoachAvailabilities, IPaymentService paymentService)
+        public PayoutForCoachAfterInterview(
+            IInterviewRoomRepository interviewRoomRepository, 
+            ITransactionRepository transactionRepository, 
+            ICoachProfileRepository coachProfileRepository, 
+            IGetCoachAvailabilities getCoachAvailabilities, 
+            IPaymentService paymentService,
+            IBackgroundService jobService)
         {
             _interviewRoomRepository = interviewRoomRepository;
             _transactionRepository = transactionRepository;
             _coachProfileRepository = coachProfileRepository;
             _getCoachAvailabilities = getCoachAvailabilities;
             _paymentService = paymentService;
+            _jobService = jobService;
         }
 
         public async Task ExecuteAsync(Guid interviewRoomId)
@@ -53,7 +62,17 @@ namespace Intervu.Application.UseCases.InterviewBooking
             }
             // TODO: Refactor payout logic to use in-app balance instead of payout directly to bank account.
             // TODO: Implement retry logic and error handling for payment failures, and consider edge cases such as refunds or disputes that may arise after payout.
-            // TODO: Send in-app and email notification to coach about successful payout with details and link to interview history
+            var amount = t.Amount;
+            _jobService.Enqueue<INotificationUseCase>(uc => uc.CreateAsync(
+                interviewerId,
+                NotificationType.PaymentSuccess,
+                "Payout Processed",
+                $"Your payout of {amount:N0} resources has been processed.",
+                "/dashboard/wallet",
+                null
+            ));
+            
+            // TODO: Send email notification to coach about successful payout with details and link to interview history
         }
     }
 }

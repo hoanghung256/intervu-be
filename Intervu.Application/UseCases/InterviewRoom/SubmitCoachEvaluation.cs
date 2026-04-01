@@ -5,17 +5,21 @@ using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 using Microsoft.Extensions.Logging;
+using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.UseCases.Notification;
 
 namespace Intervu.Application.UseCases.InterviewRoom
 {
     public class SubmitCoachEvaluation : ISubmitCoachEvaluation
     {
         private readonly IInterviewRoomRepository _roomRepo;
+        private readonly IBackgroundService _jobService;
         private readonly ILogger<SubmitCoachEvaluation> _logger;
 
-        public SubmitCoachEvaluation(IInterviewRoomRepository roomRepo, ILogger<SubmitCoachEvaluation> logger)
+        public SubmitCoachEvaluation(IInterviewRoomRepository roomRepo, IBackgroundService jobService, ILogger<SubmitCoachEvaluation> logger)
         {
             _roomRepo = roomRepo;
+            _jobService = jobService;
             _logger = logger;
         }
 
@@ -56,7 +60,19 @@ namespace Intervu.Application.UseCases.InterviewRoom
             _roomRepo.UpdateAsync(room);
             await _roomRepo.SaveChangesAsync();
 
-            // TODO: Sent in-app notification to candidate that coach has submitted evaluation, and email notification to both parties with evaluation summary
+            if (room.CandidateId.HasValue)
+            {
+                _jobService.Enqueue<INotificationUseCase>(uc => uc.CreateAsync(
+                    room.CandidateId.Value,
+                    NotificationType.FeedbackReceived,
+                    "Evaluation Completed",
+                    "Your coach has submitted their evaluation. Check your dashboard for details.",
+                    "/interview?tab=past",
+                    null
+                ));
+            }
+
+            // TODO: Send email notification to both parties with evaluation summary
 
             _logger.LogInformation("Coach {CoachId} submitted evaluation for interview room {RoomId}", coachId, interviewRoomId);
         }
