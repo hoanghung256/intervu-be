@@ -84,7 +84,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     NotificationType.SystemAnnouncement,
                     "Interview Cancelled",
                     $"Your interview has been cancelled and a refund of {refundAmount:N0} resources has been processed.",
-                    "/dashboard",
+                    "/interview",
                     null
                 ));
 
@@ -96,11 +96,11 @@ namespace Intervu.Application.UseCases.InterviewBooking
                         NotificationType.BookingRejected,
                         "Interview Cancelled",
                         "An upcoming interview with a candidate has been cancelled.",
-                        "/dashboard",
+                        "/interview",
                         null
                     ));
                 }
-                
+
                 // TODO: Send email notification to candidate about cancellation and refund
 
                 await _unitOfWork.SaveChangesAsync();
