@@ -22,7 +22,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
         public async Task<(IReadOnlyList<Feedback> Items, int TotalCount)> GetFeedbacksByCandidateIdAsync(Guid candidateId, int page, int pageSize)
         {
-            var query = _context.Feedbacks.Where(f => f.CandidateId == candidateId).AsQueryable();
+            var query = _context.Feedbacks.Include(f => f.CoachProfile).ThenInclude(cp => cp.User).Include(f => f.InterviewRoom).Where(f => f.CandidateId == candidateId).AsQueryable();
 
             var totalItems = await query.CountAsync();
 
@@ -49,7 +49,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
         public async Task<(IReadOnlyList<Feedback> Items, int TotalCount)> GetPagedFeedbacksAsync(int page, int pageSize)
         {
-            var query = _context.Feedbacks.AsQueryable();
+            var query = _context.Feedbacks.Include(f => f.CoachProfile).ThenInclude(cp => cp.User).Include(f => f.InterviewRoom).AsQueryable();
 
             var totalItems = await query.CountAsync();
 

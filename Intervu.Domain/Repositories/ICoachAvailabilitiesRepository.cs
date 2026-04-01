@@ -19,5 +19,11 @@ namespace Intervu.Domain.Repositories
         /// Finds a single Available CoachAvailability whose range fully contains [startTime, endTime].
         /// </summary>
         Task<CoachAvailability?> FindContainingAvailabilityAsync(Guid coachId, DateTime startTime, DateTime endTime);
+
+        /// <summary>
+        /// Loads and locks an availability row for the lifetime of the current transaction.
+        /// Used to serialize concurrent booking attempts on the same slot.
+        /// </summary>
+        Task<CoachAvailability?> GetByIdForUpdateAsync(Guid availabilityId);
     }
 }

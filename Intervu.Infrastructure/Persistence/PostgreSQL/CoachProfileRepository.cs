@@ -173,27 +173,67 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             if (existingProfile == null)
                 throw new Exception("Coach profile not found.");
 
-            existingProfile.PortfolioUrl = updatedProfile.PortfolioUrl;
-            existingProfile.CurrentAmount = updatedProfile.CurrentAmount;
-            existingProfile.ExperienceYears = updatedProfile.ExperienceYears;
-            existingProfile.CurrentJobTitle = updatedProfile.CurrentJobTitle;
-            existingProfile.Bio = updatedProfile.Bio;
-            existingProfile.BankBinNumber = updatedProfile.BankBinNumber;
-            existingProfile.BankAccountNumber = updatedProfile.BankAccountNumber;
+            if (updatedProfile.PortfolioUrl != null) existingProfile.PortfolioUrl = updatedProfile.PortfolioUrl;
+            if (updatedProfile.CurrentAmount != null) existingProfile.CurrentAmount = updatedProfile.CurrentAmount;
+            if (updatedProfile.ExperienceYears != null) existingProfile.ExperienceYears = updatedProfile.ExperienceYears;
+            if (updatedProfile.CurrentJobTitle != null) existingProfile.CurrentJobTitle = updatedProfile.CurrentJobTitle;
+            if (updatedProfile.Bio != null) existingProfile.Bio = updatedProfile.Bio;
+            if (updatedProfile.BankBinNumber != null) existingProfile.BankBinNumber = updatedProfile.BankBinNumber;
+            if (updatedProfile.BankAccountNumber != null) existingProfile.BankAccountNumber = updatedProfile.BankAccountNumber;
 
-            existingProfile.Companies = updatedProfile.Companies ?? new List<Company>();
-            existingProfile.Skills = updatedProfile.Skills ?? new List<Skill>();
-            existingProfile.Industries = updatedProfile.Industries ?? new List<Industry>();
+            if (updatedProfile.Companies != null)
+            {
+                existingProfile.Companies.Clear();
+                var companyIds = updatedProfile.Companies.Select(c => c.Id).ToList();
+                var companies = await _context.Companies.Where(c => companyIds.Contains(c.Id)).ToListAsync();
+                foreach (var company in companies)
+                {
+                    existingProfile.Companies.Add(company);
+                }
+            }
+
+            if (updatedProfile.Skills != null)
+            {
+                existingProfile.Skills.Clear();
+                var skillIds = updatedProfile.Skills.Select(s => s.Id).ToList();
+                var skills = await _context.Skills.Where(s => skillIds.Contains(s.Id)).ToListAsync();
+                foreach (var skill in skills)
+                {
+                    existingProfile.Skills.Add(skill);
+                }
+            }
+
+            if (updatedProfile.Industries != null)
+            {
+                existingProfile.Industries.Clear();
+                var industryIds = updatedProfile.Industries.Select(i => i.Id).ToList();
+                var industries = await _context.Industries.Where(i => industryIds.Contains(i.Id)).ToListAsync();
+                foreach (var industry in industries)
+                {
+                    existingProfile.Industries.Add(industry);
+                }
+            }
 
             if (existingProfile.User != null && updatedProfile.User != null)
             {
-                existingProfile.User.FullName = updatedProfile.User.FullName;
-                existingProfile.User.SlugProfileUrl = updatedProfile.User.SlugProfileUrl;
-                existingProfile.User.Email = updatedProfile.User.Email;
-                existingProfile.User.ProfilePicture = updatedProfile.User.ProfilePicture;
+                if (updatedProfile.User.FullName != null) existingProfile.User.FullName = updatedProfile.User.FullName;
+                if (updatedProfile.User.SlugProfileUrl != null) existingProfile.User.SlugProfileUrl = updatedProfile.User.SlugProfileUrl;
+                if (updatedProfile.User.Email != null) existingProfile.User.Email = updatedProfile.User.Email;
+                if (updatedProfile.User.ProfilePicture != null) existingProfile.User.ProfilePicture = updatedProfile.User.ProfilePicture;
             }
+            existingProfile.CurrentJobTitle ??= string.Empty;
+            existingProfile.Bio ??= string.Empty;
+            existingProfile.BankBinNumber ??= string.Empty;
+            existingProfile.BankAccountNumber ??= string.Empty;
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("An error occurred while saving coach profile changes. " + ex.ToString(), ex);
+            }
         }
 
         public async Task<int> GetTotalCoachCountAsync()

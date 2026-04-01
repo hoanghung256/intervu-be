@@ -8,6 +8,10 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 {
     public class CoachAvailabilitiesRepository(IntervuPostgreDbContext context) : RepositoryBase<CoachAvailability>(context), ICoachAvailabilitiesRepository
     {
+        // Include a safety window on month boundaries so slots near midnight
+        // are not dropped when clients render in non-UTC time zones.
+        private const int MonthBoundaryTimezoneBufferHours = 14;
+
         public async Task<IEnumerable<CoachAvailability>> GetCoachAvailabilitiesByMonthAsync(
             Guid coachId, 
             int month = 0, 
@@ -18,11 +22,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
             if (month > 0 && year > 0)
             {
-                // Use date-range comparison instead of .Month/.Year to avoid
-                // UTC timezone edge cases (e.g. 01:00 AM March 1 UTC+7 = Feb 28 UTC)
-                var startDate = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Utc);
-                var endDate = startDate.AddMonths(1);
-                filtered = filtered.Where(x => x.StartTime >= startDate && x.StartTime < endDate);
+                var monthStartUtc = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Utc);
+                var monthEndUtc = monthStartUtc.AddMonths(1);
+                var queryStartUtc = monthStartUtc.AddHours(-MonthBoundaryTimezoneBufferHours);
+                var queryEndUtc = monthEndUtc.AddHours(MonthBoundaryTimezoneBufferHours);
+
+                filtered = filtered.Where(x => x.StartTime >= queryStartUtc && x.StartTime < queryEndUtc);
             }
             else if (month > 0)
             {
@@ -101,6 +106,13 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                     && a.Status == CoachAvailabilityStatus.Available
                     && a.StartTime <= startTime
                     && a.EndTime >= endTime);
+        }
+
+        public Task<CoachAvailability?> GetByIdForUpdateAsync(Guid availabilityId)
+        {
+            return _context.CoachAvailabilities
+                .FromSqlInterpolated($@"SELECT * FROM ""CoachAvailabilities"" WHERE ""Id"" = {availabilityId} FOR UPDATE")
+                .FirstOrDefaultAsync();
         }
     }
 }

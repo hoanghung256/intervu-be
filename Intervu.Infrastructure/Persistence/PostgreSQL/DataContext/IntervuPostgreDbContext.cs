@@ -384,20 +384,20 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
 
                 b.Property<Guid>("InterviewRoomId").IsRequired();
 
-                b.HasOne<InterviewRoom>()
+                b.HasOne(f => f.InterviewRoom)
                  .WithOne()
-                 .HasForeignKey<Feedback>("InterviewRoomId")
+                 .HasForeignKey<Feedback>(f => f.InterviewRoomId)
                  .OnDelete(DeleteBehavior.Restrict);
 
-                b.HasOne<CoachProfile>()
+                b.HasOne(f => f.CoachProfile)
                  .WithMany()
-                 .HasForeignKey(x => x.CoachId)
+                 .HasForeignKey(f => f.CoachId)
                  .HasConstraintName("FK_Feedbacks_CoachProfiles_CoachId")
                  .OnDelete(DeleteBehavior.Restrict);
 
-                b.HasOne<CandidateProfile>()
+                b.HasOne(f => f.CandidateProfile)
                  .WithMany()
-                 .HasForeignKey(x => x.CandidateId)
+                 .HasForeignKey(f => f.CandidateId)
                  .HasConstraintName("FK_Feedbacks_CandidateProfiles_CandidateId")
                  .OnDelete(DeleteBehavior.Restrict);
             });

@@ -22,5 +22,11 @@ namespace Intervu.Domain.Entities
         /// AIAnalysis stored as JSON string
         /// </summary>
         public string AIAnalysis { get; set; }
+
+        public InterviewRoom InterviewRoom { get; set; }
+
+        public CoachProfile CoachProfile { get; set; }
+
+        public CandidateProfile CandidateProfile { get; set; }
     }
 }

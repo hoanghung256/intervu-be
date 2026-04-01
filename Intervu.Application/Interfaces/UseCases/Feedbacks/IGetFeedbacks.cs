@@ -12,7 +12,7 @@ namespace Intervu.Application.Interfaces.UseCases.Feedbacks
 {
     public interface IGetFeedbacks
     {
-        Task<PagedResult<Feedback>> ExecuteAsync(GetFeedbackRequest request);
+        Task<PagedResult<GetFeedbackResponse>> ExecuteAsync(GetFeedbackRequest request);
         Task<Feedback?> ExecuteAsync(Guid id);
     }
 }

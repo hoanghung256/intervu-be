@@ -40,7 +40,7 @@ namespace Intervu.API.Controllers.v1.Payment
         }
 
         [HttpPost]
-        [Authorize]
+        [Authorize(Policy = AuthorizationPolicies.Candidate)]
         public async Task<IActionResult> CreatePaymentUrl([FromBody] InterviewBookingRequest request)
         {
             _ = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);

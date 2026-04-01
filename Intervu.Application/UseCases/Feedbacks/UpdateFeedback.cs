@@ -29,7 +29,7 @@ namespace Intervu.Application.UseCases.Feedbacks
                     NotificationType.FeedbackReceived,
                     "New feedback received",
                     "A candidate has left feedback for your interview session.",
-                    "/feedback",
+                    $"/interview?roomId={updatedFeedback.InterviewRoomId}&action=view-feedback",
                     updatedFeedback.Id));
         }
     }
