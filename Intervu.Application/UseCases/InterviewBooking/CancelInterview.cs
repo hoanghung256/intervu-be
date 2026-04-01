@@ -74,6 +74,8 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     }
                 }
 
+                // TODO: Send email and in-app notification to candidate about cancellation and refund
+
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
 
