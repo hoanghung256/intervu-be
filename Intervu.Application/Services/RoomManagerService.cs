@@ -45,13 +45,11 @@ namespace Intervu.Application.Services
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly double value;
         private readonly string unit;
-        private readonly InterviewRoomCache _cache;
 
-        public RoomManagerService(IServiceScopeFactory scopeFactory, ILogger<RoomManagerService> logger, InterviewRoomCache cache)
+        public RoomManagerService(IServiceScopeFactory scopeFactory, ILogger<RoomManagerService> logger)
         {
             _scopeFactory = scopeFactory;
             _logger = logger;
-            _cache = cache;
             (value, unit) = _roomExpiryTime switch
             {
                 { Seconds: > 0 } when _roomExpiryTime.Seconds == _roomExpiryTime.TotalSeconds => (_roomExpiryTime.TotalSeconds, "seconds"),
@@ -61,11 +59,8 @@ namespace Intervu.Application.Services
             };
         }
 
-        // Gets the state for a room, creating it if it doesn't exist.
         public async Task<RoomState> GetOrCreateRoomStateAsync(string roomId)
         {
-            // If a timer exists for this room, it means someone is rejoining.
-            // We should cancel the cleanup timer.
             if (_roomTimers.TryRemove(roomId, out var timer))
             {
                 timer.Dispose();
@@ -77,59 +72,61 @@ namespace Intervu.Application.Services
                 _logger.LogInformation("Starting periodic save timer for room '{RoomId}'.", roomId);
                 return new Timer(async state =>
                 {
-                try
-                {
-                    using var scope = _scopeFactory.CreateScope();
-                    var roomRepo = scope.ServiceProvider.GetRequiredService<IInterviewRoomRepository>();
-                    var updateRoom = scope.ServiceProvider.GetRequiredService<IUpdateRoom>();
-                    
-                    if (_roomStates.TryGetValue(roomId, out var roomState))
+                    try
                     {
-                        var roomGuid = Guid.Parse(roomId);
+                        using var scope = _scopeFactory.CreateScope();
+                        var roomRepo = scope.ServiceProvider.GetRequiredService<IInterviewRoomRepository>();
+                        var updateRoom = scope.ServiceProvider.GetRequiredService<IUpdateRoom>();
                         
-                        // Fetch fresh from DB to avoid overwriting unrelated fields (like evaluation) with stale cache data
-                        var room = await roomRepo.GetByIdAsync(roomGuid);
-                        
-                        if (room != null)
+                        if (_roomStates.TryGetValue(roomId, out var roomState))
                         {
-                            room.CurrentLanguage = roomState.CurrentLanguage;
-                            room.LanguageCodes = roomState.LanguageCodes;
-                            room.ProblemDescription = roomState.ProblemDescription;
-                            room.ProblemShortName = roomState.ProblemShortName;
-                            room.TestCases = roomState.TestCases;
+                            var roomGuid = Guid.Parse(roomId);
+                            var room = await roomRepo.GetByIdAsync(roomGuid);
                             
-                            await updateRoom.ExecuteAsync(room);
-                            _logger.LogInformation("Periodically saved data for room '{RoomId}'.", roomId);
+                            if (room != null)
+                            {
+                                room.CurrentLanguage = roomState.CurrentLanguage;
+                                room.LanguageCodes = roomState.LanguageCodes;
+                                room.ProblemDescription = roomState.ProblemDescription;
+                                room.ProblemShortName = roomState.ProblemShortName;
+                                room.TestCases = roomState.TestCases;
+                                
+                                await updateRoom.ExecuteAsync(room);
+                                _logger.LogInformation("Periodically saved data for room '{RoomId}'.", roomId);
+                            }
                         }
                     }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error during periodic save for room '{RoomId}'.", roomId);
-                }
-            }, null, _periodicSaveInterval, _periodicSaveInterval);
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error during periodic save for room '{RoomId}'.", roomId);
+                    }
+                }, null, _periodicSaveInterval, _periodicSaveInterval);
             });
-            //using var scope = _scopeFactory.CreateScope();
 
-            //var getCurrentRoom = scope.ServiceProvider.GetRequiredService<IGetCurrentRoom>();
-            //Domain.Entities.InterviewRoom interviewRoom = await getCurrentRoom.ExecuteAsync(int.Parse(roomId));
-            var roomGuid = Guid.Parse(roomId);
-            InterviewRoom interviewRoom = _cache.Rooms.SingleOrDefault(r => r.Id == roomGuid);
-            return _roomStates.GetOrAdd(roomId, _ =>
+            if (_roomStates.TryGetValue(roomId, out var existingState))
             {
-                _logger.LogInformation("Creating new in-memory state for room '{RoomId}'.", roomId);
-                return new RoomState()
-                {
-                    CurrentLanguage = interviewRoom.CurrentLanguage ?? "java",
-                    LanguageCodes = interviewRoom.LanguageCodes ?? new Dictionary<string, string>(),
-                    ProblemDescription = interviewRoom.ProblemDescription ?? string.Empty,
-                    ProblemShortName = interviewRoom.ProblemShortName ?? string.Empty,
-                    TestCases = interviewRoom.TestCases ?? Array.Empty<object>()
-                };
-            });
+                return existingState;
+            }
+
+            using var scope = _scopeFactory.CreateScope();
+            var getCurrentRoom = scope.ServiceProvider.GetRequiredService<IGetCurrentRoom>();
+            var roomGuid = Guid.Parse(roomId);
+            var interviewRoom = await getCurrentRoom.ExecuteAsync(roomGuid);
+
+            var newState = new RoomState()
+            {
+                CurrentLanguage = interviewRoom.CurrentLanguage ?? "java",
+                LanguageCodes = interviewRoom.LanguageCodes ?? new Dictionary<string, string>(),
+                ProblemDescription = interviewRoom.ProblemDescription ?? string.Empty,
+                ProblemShortName = interviewRoom.ProblemShortName ?? string.Empty,
+                TestCases = interviewRoom.TestCases ?? Array.Empty<object>()
+            };
+
+            _roomStates.TryAdd(roomId, newState);
+            _logger.LogInformation("Creating new in-memory state for room '{RoomId}'.", roomId);
+            return newState;
         }
 
-        // Schedules a room for cleanup if it's empty.
         public void ScheduleRoomCleanup(string roomId)
         {
             if (_periodicSaveTimers.TryRemove(roomId, out var periodicTimer))
@@ -148,13 +145,10 @@ namespace Intervu.Application.Services
                 var createFeedback = scope.ServiceProvider.GetRequiredService<ICreateFeedback>();
                 
                 var roomGuid = Guid.Parse(roomId);
-                
-                // Fetch fresh from DB instead of using cache to prevent overwriting evaluation results
                 var room = await roomRepo.GetByIdAsync(roomGuid);
 
                 if (room != null)
                 {
-                    // Sync in-memory state to room before final persist
                     if (_roomStates.TryGetValue(roomId, out var roomState))
                     {
                         room.CurrentLanguage = roomState.CurrentLanguage;
@@ -168,7 +162,6 @@ namespace Intervu.Application.Services
 
                     await updateRoom.ExecuteAsync(room);
 
-                    //Create feedback
                     GetFeedbackRequest request = new GetFeedbackRequest
                     {
                         StudentId = room.CandidateId,
@@ -181,9 +174,9 @@ namespace Intervu.Application.Services
                             CoachId = room.CoachId.Value,
                             CandidateId = room.CandidateId.Value,
                             InterviewRoomId = room.Id,
-                            Rating = 0, // Default value
-                            Comments = "", // Default value
-                            AIAnalysis = "" // Default value
+                            Rating = 0,
+                            Comments = "",
+                            AIAnalysis = ""
                         };
                         await createFeedback.ExecuteAsync(feedback);
                     }

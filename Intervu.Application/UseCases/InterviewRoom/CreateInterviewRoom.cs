@@ -9,13 +9,11 @@ namespace Intervu.Application.UseCases.InterviewRoom
     public class CreateInterviewRoom : ICreateInterviewRoom
     {
         private readonly IInterviewRoomRepository _interviewRoomRepo;
-        private readonly InterviewRoomCache _cache;
         private readonly ILogger<CreateInterviewRoom> _logger;
 
-        public CreateInterviewRoom(IInterviewRoomRepository interviewRoomRepo, InterviewRoomCache cache, ILogger<CreateInterviewRoom> logger)
+        public CreateInterviewRoom(IInterviewRoomRepository interviewRoomRepo, ILogger<CreateInterviewRoom> logger)
         {
             _interviewRoomRepo = interviewRoomRepo;
-            _cache = cache;
             _logger = logger;
         }
 
@@ -28,8 +26,6 @@ namespace Intervu.Application.UseCases.InterviewRoom
             await _interviewRoomRepo.AddAsync(room);
             await _interviewRoomRepo.SaveChangesAsync();
 
-            //Notify SQL Changes
-            _cache.Add(room);
             return room.Id;
         }
 
@@ -51,8 +47,6 @@ namespace Intervu.Application.UseCases.InterviewRoom
 
             _logger.LogInformation("Created room");
 
-            //Notify SQL Changes
-            _cache.Add(room);
             return room.Id;
         }
 

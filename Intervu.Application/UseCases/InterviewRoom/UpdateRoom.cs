@@ -12,21 +12,16 @@ namespace Intervu.Application.UseCases.InterviewRoom
     public class UpdateRoom : IUpdateRoom
     {
         private readonly IInterviewRoomRepository _repo;
-        private readonly InterviewRoomCache _cache;
 
-        public UpdateRoom(IInterviewRoomRepository repo, InterviewRoomCache cache)
+        public UpdateRoom(IInterviewRoomRepository repo)
         {
             _repo = repo;
-            _cache = cache;
         }
 
         public async Task ExecuteAsync(Domain.Entities.InterviewRoom interviewRoom)
         {
             _repo.UpdateAsync(interviewRoom);
             await _repo.SaveChangesAsync();
-
-            //Notify SQL Changes
-            _cache.Update(interviewRoom);
         }
     }
 }

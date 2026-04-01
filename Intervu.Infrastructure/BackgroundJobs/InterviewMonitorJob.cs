@@ -13,18 +13,18 @@ namespace Intervu.Infrastructure.BackgroundJobs
     public class InterviewMonitorJob : IRecurringJob
     {
         private readonly IntervuPostgreDbContext _db;
-        private readonly InterviewRoomCache _cache;
+        //private readonly InterviewRoomCache _cache;
         private readonly ILogger<InterviewMonitorJob> _logger;
         private readonly IBackgroundService _backgroundService;
 
         public InterviewMonitorJob(
             IntervuPostgreDbContext db,
-            InterviewRoomCache cache,
+            //InterviewRoomCache cache,
             ILogger<InterviewMonitorJob> logger,
             IBackgroundService backgroundService)
         {
             _db = db;
-            _cache = cache;
+            //_cache = cache;
             _logger = logger;
             _backgroundService = backgroundService;
         }
@@ -50,7 +50,7 @@ namespace Intervu.Infrastructure.BackgroundJobs
                 foreach (var room in roomsToUpdate)
                 {
                     room.Status = InterviewRoomStatus.Ongoing;
-                    _cache.Update(room);
+                    //_cache.Update(room);
                 }
 
                 _db.InterviewRooms.UpdateRange(roomsToUpdate);

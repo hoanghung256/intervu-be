@@ -206,7 +206,7 @@ namespace Intervu.Infrastructure
                 }
             });
 
-            services.AddHostedService<InterviewRoomCacheLoader>();
+            // services.AddHostedService<InterviewRoomCacheLoader>(); // Removed InterviewRoomCacheLoader
 
             // --- HANGFIRE JOBS ---
             services.AddScoped<HangfireJobScheduler>();
