@@ -1,4 +1,4 @@
-﻿using Intervu.Application.DTOs.Feedback;
+using Intervu.Application.DTOs.Feedback;
 using Intervu.Application.Interfaces.UseCases.Feedbacks;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
@@ -40,7 +40,7 @@ namespace Intervu.Application.Services
         private readonly ConcurrentDictionary<string, RoomState> _roomStates = new();
         private readonly ConcurrentDictionary<string, Timer> _periodicSaveTimers = new();
         private readonly ConcurrentDictionary<string, Timer> _roomTimers = new();
-        private readonly TimeSpan _roomExpiryTime = TimeSpan.FromSeconds(10);
+        private readonly TimeSpan _roomExpiryTime = TimeSpan.FromHours(1);
         private readonly TimeSpan _periodicSaveInterval = TimeSpan.FromSeconds(30);
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly double value;
@@ -114,17 +114,33 @@ namespace Intervu.Application.Services
             //var getCurrentRoom = scope.ServiceProvider.GetRequiredService<IGetCurrentRoom>();
             //Domain.Entities.InterviewRoom interviewRoom = await getCurrentRoom.ExecuteAsync(int.Parse(roomId));
             var roomGuid = Guid.Parse(roomId);
-            InterviewRoom interviewRoom = _cache.Rooms.SingleOrDefault(r => r.Id == roomGuid);
+            InterviewRoom? interviewRoom = _cache.Rooms.SingleOrDefault(r => r.Id == roomGuid);
+
+            // Fallback to database if not in cache
+            if (interviewRoom == null)
+            {
+                using (var scope = _scopeFactory.CreateScope())
+                {
+                    var roomRepo = scope.ServiceProvider.GetRequiredService<IInterviewRoomRepository>();
+                    interviewRoom = await roomRepo.GetByIdAsync(roomGuid);
+                    if (interviewRoom != null)
+                    {
+                        _cache.Add(interviewRoom);
+                        _logger.LogInformation("Room {RoomId} was missing from cache, loaded from DB.", roomId);
+                    }
+                }
+            }
+
             return _roomStates.GetOrAdd(roomId, _ =>
             {
                 _logger.LogInformation("Creating new in-memory state for room '{RoomId}'.", roomId);
                 return new RoomState()
                 {
-                    CurrentLanguage = interviewRoom.CurrentLanguage ?? "java",
-                    LanguageCodes = interviewRoom.LanguageCodes ?? new Dictionary<string, string>(),
-                    ProblemDescription = interviewRoom.ProblemDescription ?? string.Empty,
-                    ProblemShortName = interviewRoom.ProblemShortName ?? string.Empty,
-                    TestCases = interviewRoom.TestCases ?? Array.Empty<object>()
+                    CurrentLanguage = interviewRoom?.CurrentLanguage ?? "java",
+                    LanguageCodes = interviewRoom?.LanguageCodes ?? new Dictionary<string, string>(),
+                    ProblemDescription = interviewRoom?.ProblemDescription ?? string.Empty,
+                    ProblemShortName = interviewRoom?.ProblemShortName ?? string.Empty,
+                    TestCases = interviewRoom?.TestCases ?? Array.Empty<object>()
                 };
             });
         }

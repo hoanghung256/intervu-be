@@ -1,4 +1,4 @@
-﻿using Intervu.Application.Services;
+using Intervu.Application.Services;
 using Intervu.Infrastructure.ExternalServices;
 using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
@@ -22,8 +22,7 @@ namespace Intervu.API.Hubs
         // A static dictionary to track connections per room
         private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, bool>> _roomConnections = new();
 
-        private static Dictionary<string, string> UserConnectionMap = new();
-        private static Dictionary<string, HashSet<string>> RoomUsers = new();
+        private static readonly ConcurrentDictionary<string, string> UserConnectionMap = new();
 
         public InterviewRoomHub(CodeExecutionService codeExecutionService,
             ILogger<InterviewRoomHub> logger,
@@ -80,29 +79,7 @@ namespace Intervu.API.Hubs
                 }
             }
 
-            // Remove from all rooms
-            foreach (var room in RoomUsers.ToList())
-            {
-                if (room.Value.Contains(Context.ConnectionId))
-                {
-                    room.Value.Remove(Context.ConnectionId);
-                    if (room.Value.Count == 0)
-                    {
-                        RoomUsers.Remove(room.Key);
-                    }
-                }
-            }
-
             await base.OnDisconnectedAsync(exception);
-
-            //var userId = UserConnectionMap.FirstOrDefault(x => x.Value == Context.ConnectionId).Key;
-            //if (userId != null)
-            //{
-            //    UserConnectionMap.Remove(userId);
-            //    Console.WriteLine($"User {userId} disconnected");
-            //}
-
-            //await base.OnDisconnectedAsync(exception);
         }
 
         public async Task JoinRoom(string room)
@@ -120,19 +97,12 @@ namespace Intervu.API.Hubs
             if (await isRoomCompleted(room)) return;
             // Add connection to our tracker
             var roomConnectionIds = _roomConnections.GetOrAdd(room, new ConcurrentDictionary<string, bool>());
-            roomConnectionIds.TryAdd(Context.ConnectionId, true);
-
-            // Track room membership
-            if (!RoomUsers.ContainsKey(room))
-            {
-                RoomUsers[room] = new HashSet<string>();
-            }
-
+            
             // Get existing peers before adding new user
-            var existingPeers = RoomUsers[room].ToList();
+            var existingPeers = roomConnectionIds.Keys.ToList();
 
             // Add new user to room
-            RoomUsers[room].Add(Context.ConnectionId);
+            roomConnectionIds.TryAdd(Context.ConnectionId, true);
 
             // Send existing peers to the new user
             await Clients.Caller.SendAsync("ExistingPeers", existingPeers);
@@ -155,16 +125,6 @@ namespace Intervu.API.Hubs
             }
 
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, room);
-            // Remove from room tracking
-            if (RoomUsers.ContainsKey(room))
-            {
-                RoomUsers[room].Remove(Context.ConnectionId);
-                if (RoomUsers[room].Count == 0)
-                {
-                    RoomUsers.Remove(room);
-                }
-            }
-
             await Clients.Group(room).SendAsync("UserLeft", Context.ConnectionId);
         }
 
