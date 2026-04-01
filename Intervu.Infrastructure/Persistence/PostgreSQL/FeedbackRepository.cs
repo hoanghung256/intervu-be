@@ -73,5 +73,21 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
             return await _context.Feedbacks.AverageAsync(f => f.Rating);
         }
+
+        public async Task<double> GetAverageRatingByCoachIdAsync(Guid coachId)
+        {
+            var average = await _context.Feedbacks.AverageAsync(f => f.Rating);
+            return average;
+        }
+
+        public async Task<double> GetAverageRatingByCandidateIdAsync(Guid candidateId)
+        {
+            var average = await _context.Feedbacks
+                .Where(f => f.CandidateId == candidateId)
+                .Select(f => (double?)f.Rating)
+                .AverageAsync();
+
+            return average ?? 0;
+        }
     }
 }

@@ -3,6 +3,7 @@ using AutoMapper;
 using Intervu.API.Utils.Constant;
 using Intervu.Application.DTOs.Coach;
 using Intervu.Application.Interfaces.UseCases.CoachProfile;
+using Intervu.Application.Interfaces.UseCases.Feedbacks;
 using Intervu.Domain.Entities.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -20,13 +21,15 @@ namespace Intervu.API.Controllers.v1.Interviewer
         private readonly IUpdateCoachProfile _updateCoachProfile;
         private readonly IViewCoachProfile _getCoachProfile;
         private readonly IDeleteCoachProfile _deleteCoachProfile;
+        private readonly IGetCoachRating _getCoachRating;
 
-        public CoachProfileController(ICreateCoachProfile createCoachProfile, IUpdateCoachProfile updateCoachProfile, IViewCoachProfile getCoachProfile, IDeleteCoachProfile deleteCoachProfile)
+        public CoachProfileController(ICreateCoachProfile createCoachProfile, IUpdateCoachProfile updateCoachProfile, IViewCoachProfile getCoachProfile, IDeleteCoachProfile deleteCoachProfile, IGetCoachRating getCoachRating)
         {
             _createCoachProfile = createCoachProfile;
             _updateCoachProfile = updateCoachProfile;
             _getCoachProfile = getCoachProfile;
             _deleteCoachProfile = deleteCoachProfile;
+            _getCoachRating = getCoachRating;
         }
 
         //[GET] api/coach-profile/{id}
@@ -45,7 +48,7 @@ namespace Intervu.API.Controllers.v1.Interviewer
                     data = profile
                 });
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 msg = ex.Message;
             }
@@ -88,7 +91,7 @@ namespace Intervu.API.Controllers.v1.Interviewer
         [HttpPost]
         public async Task<IActionResult> CreateInterviewerProfile([FromBody] CoachCreateDto request)
         {
-            
+
             string msg = "Profile created successfully";
             try
             {
@@ -113,7 +116,7 @@ namespace Intervu.API.Controllers.v1.Interviewer
             string msg = "Profile updated successfully!";
             try
             {
-                await _updateCoachProfile.ExecuteAsync(id, request); 
+                await _updateCoachProfile.ExecuteAsync(id, request);
                 return Ok(new { success = true, message = msg });
             }
             catch (Exception ex)
@@ -122,7 +125,7 @@ namespace Intervu.API.Controllers.v1.Interviewer
             }
             return Ok(new { success = false, message = msg });
         }
-        
+
         // [PUT] api/coach-profile/{id}/status
         [Authorize(Policy = AuthorizationPolicies.Admin)]
         [HttpPut("{id}/status")]
@@ -138,7 +141,7 @@ namespace Intervu.API.Controllers.v1.Interviewer
                     message = "Status updated successfully"
                 });
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 msg = ex.Message;
             }
@@ -158,7 +161,8 @@ namespace Intervu.API.Controllers.v1.Interviewer
             try
             {
                 await _deleteCoachProfile.ExecuteAsync(id);
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 msg = ex.Message;
             }
@@ -167,6 +171,34 @@ namespace Intervu.API.Controllers.v1.Interviewer
                 success = true,
                 message = msg
             });
+        }
+
+        //[GET] api/coach-profile/{id}/rating
+        [HttpGet("{id}/rating")]
+        public async Task<IActionResult> GetCoachRating([FromRoute] Guid id)
+        {
+            try
+            {
+                var rating = await _getCoachRating.ExecuteAsync(id);
+                return Ok(new
+                {
+                    success = true,
+                    message = "Coach rating retrieved successfully",
+                    data = new
+                    {
+                        coachId = id,
+                        rating
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
+            }
         }
     }
 }

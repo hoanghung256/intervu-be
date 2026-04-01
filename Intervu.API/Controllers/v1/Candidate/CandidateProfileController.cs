@@ -1,13 +1,14 @@
 ﻿using Asp.Versioning;
 using AutoMapper;
 using Intervu.API.Utils.Constant;
+using Intervu.Application.DTOs.Candidate;
 using Intervu.Application.Interfaces.UseCases.CandidateProfile;
+using Intervu.Application.Interfaces.UseCases.Feedbacks;
 using Intervu.Domain.Entities.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
-using Intervu.Application.DTOs.Candidate;
 
 namespace Intervu.API.Controllers.v1.Candidate
 {
@@ -20,13 +21,15 @@ namespace Intervu.API.Controllers.v1.Candidate
         private readonly IUpdateCandidateProfile _updateCandidateProfile;
         private readonly IViewCandidateProfile _getCandidateProfile;
         private readonly IDeleteCandidateProfile _deleteCandidateProfile;
+        private readonly IGetCandidateRating _getCandidateRating;
 
-        public CandidateProfileController(ICreateCandidateProfile createCandidateProfile, IUpdateCandidateProfile updateCandidateProfile, IViewCandidateProfile getCandidateProfile, IDeleteCandidateProfile deleteCandidateProfile)
+        public CandidateProfileController(ICreateCandidateProfile createCandidateProfile, IUpdateCandidateProfile updateCandidateProfile, IViewCandidateProfile getCandidateProfile, IDeleteCandidateProfile deleteCandidateProfile, IGetCandidateRating getCandidateRating)
         {
             _createCandidateProfile = createCandidateProfile;
             _updateCandidateProfile = updateCandidateProfile;
             _getCandidateProfile = getCandidateProfile;
             _deleteCandidateProfile = deleteCandidateProfile;
+            _getCandidateRating = getCandidateRating;
         }
 
         //[GET] api/Candidate-profile/{id}
@@ -54,6 +57,34 @@ namespace Intervu.API.Controllers.v1.Candidate
                 success = true,
                 message = msg,
             });
+        }
+
+        [Authorize(Policy = AuthorizationPolicies.Candidate)]
+        [HttpGet("{id}/rating")]
+        public async Task<IActionResult> GetCandidateRating([FromRoute] Guid id)
+        {
+            try
+            {
+                var rating = await _getCandidateRating.ExecuteAsync(id);
+                return Ok(new
+                {
+                    success = true,
+                    message = "Candidate rating retrieved successfully",
+                    data = new
+                    {
+                        candidateId = id,
+                        rating
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
+            }
         }
 
         //[GET] api/Candidateprofile/candidate/{id}/profile
