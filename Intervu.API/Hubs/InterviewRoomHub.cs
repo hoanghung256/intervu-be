@@ -41,11 +41,12 @@ namespace Intervu.API.Hubs
 
         public override async Task OnConnectedAsync()
         {
-            var userId = Context.GetHttpContext()?.Request.Query["userId"];
+            var userId = Context.GetHttpContext()?.Request.Query["userId"].ToString();
             if (!string.IsNullOrEmpty(userId))
             {
+                // Overwrite any stale entry from a previous session
                 UserConnectionMap[userId] = Context.ConnectionId;
-                Console.WriteLine($"User {userId} connected with {Context.ConnectionId}");
+                _logger.LogInformation("User {UserId} connected with connectionId {ConnectionId}", userId, Context.ConnectionId);
             }
 
             await base.OnConnectedAsync();
@@ -53,6 +54,16 @@ namespace Intervu.API.Hubs
 
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
+            // Remove stale entry from the userId → connectionId map
+            var userId = Context.GetHttpContext()?.Request.Query["userId"].ToString();
+            if (!string.IsNullOrEmpty(userId))
+            {
+                // Only remove if this specific connectionId is still the registered one
+                // (a fast reconnect could have already registered a new connectionId)
+                UserConnectionMap.TryRemove(
+                    new KeyValuePair<string, string>(userId, Context.ConnectionId));
+            }
+
             // Find which room the disconnected client belonged to
             string? roomToRemoveFrom = null;
             foreach (var room in _roomConnections)
@@ -67,13 +78,13 @@ namespace Intervu.API.Hubs
             if (roomToRemoveFrom != null)
             {
                 await Groups.RemoveFromGroupAsync(Context.ConnectionId, roomToRemoveFrom);
+                // Notify only the remaining participants, not the disconnecting client
                 await Clients.Group(roomToRemoveFrom).SendAsync("UserLeft", Context.ConnectionId);
                 _logger.LogInformation("Client {ConnectionId} disconnected from room {RoomId}", Context.ConnectionId, roomToRemoveFrom);
 
                 // If the room is now empty, schedule it for cleanup
                 if (_roomConnections.TryGetValue(roomToRemoveFrom, out var connections) && connections.IsEmpty)
                 {
-                    // Also remove the room key from the top-level dictionary to keep it clean
                     _roomConnections.TryRemove(roomToRemoveFrom, out _);
                     _roomManager.ScheduleRoomCleanup(roomToRemoveFrom);
                 }
@@ -84,27 +95,30 @@ namespace Intervu.API.Hubs
 
         public async Task JoinRoom(string room)
         {
-            // Get the current state for the room
+            // Get the current state for the room (creates it if it doesn't exist)
             var roomState = await _roomManager.GetOrCreateRoomStateAsync(room);
 
-            // Send the entire state to the newly joined user. This is correct.
+            // Send the full state (code, language, camera states) to the late-joiner only
             await Clients.Caller.SendAsync("ReceiveFullState", roomState);
 
             await Groups.AddToGroupAsync(Context.ConnectionId, room);
 
-            await Clients.Group(room).SendAsync("UserJoined", Context.ConnectionId);
-
             if (await isRoomCompleted(room)) return;
+
             // Add connection to our tracker
             var roomConnectionIds = _roomConnections.GetOrAdd(room, new ConcurrentDictionary<string, bool>());
-            
-            // Get existing peers before adding new user
+
+            // Capture existing peers BEFORE adding the new user so we can send the
+            // correct list to the caller and notify only the existing participants.
             var existingPeers = roomConnectionIds.Keys.ToList();
 
-            // Add new user to room
+            // Add the new user
             roomConnectionIds.TryAdd(Context.ConnectionId, true);
 
-            // Send existing peers to the new user
+            // Tell EXISTING participants that a new peer has arrived (not the new user itself)
+            await Clients.OthersInGroup(room).SendAsync("UserJoined", Context.ConnectionId);
+
+            // Tell the new user who is already in the room
             await Clients.Caller.SendAsync("ExistingPeers", existingPeers);
 
             _logger.LogInformation("Client {ConnectionId} joined room {RoomId}", Context.ConnectionId, room);
@@ -320,6 +334,30 @@ namespace Intervu.API.Hubs
                     await Clients.Group(roomId).SendAsync("ReceiveCode", generatedCode);
                 }
             }
+        }
+
+        /// <summary>
+        /// Called by a client when its camera is toggled on or off.
+        /// Persists the state in RoomState (for late-joiners) and broadcasts
+        /// to all other participants in the room.
+        /// </summary>
+        public async Task SendCameraState(string roomId, bool isOn)
+        {
+            var roomState = await _roomManager.GetOrCreateRoomStateAsync(roomId);
+            roomState.PeerCameraStates[Context.ConnectionId] = isOn;
+            await Clients.OthersInGroup(roomId).SendAsync("ReceiveCameraState", Context.ConnectionId, isOn);
+        }
+
+        /// <summary>
+        /// Called by a client when its microphone is toggled on or off.
+        /// Persists the state in RoomState (for late-joiners) and broadcasts
+        /// to all other participants in the room.
+        /// </summary>
+        public async Task SendMicState(string roomId, bool isOn)
+        {
+            var roomState = await _roomManager.GetOrCreateRoomStateAsync(roomId);
+            roomState.PeerMicStates[Context.ConnectionId] = isOn;
+            await Clients.OthersInGroup(roomId).SendAsync("ReceiveMicState", Context.ConnectionId, isOn);
         }
 
         public async Task<bool> isRoomCompleted(string roomId)

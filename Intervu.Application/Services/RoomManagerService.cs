@@ -24,6 +24,19 @@ namespace Intervu.Application.Services
         public string ProblemShortName { get; set; }
         public object[] TestCases { get; set; }
 
+        /// <summary>
+        /// Maps SignalR connectionId → camera-on state.
+        /// Sent to late-joiners via ReceiveFullState so they know which peers
+        /// currently have their camera on.
+        /// </summary>
+        public Dictionary<string, bool> PeerCameraStates { get; set; }
+
+        /// <summary>
+        /// Maps SignalR connectionId → mic-on state.
+        /// Sent to late-joiners via ReceiveFullState.
+        /// </summary>
+        public Dictionary<string, bool> PeerMicStates { get; set; }
+
         public RoomState()
         {
             CurrentLanguage = "javascript";
@@ -31,6 +44,8 @@ namespace Intervu.Application.Services
             LanguageCodes = new Dictionary<string, string>();
             ProblemShortName = string.Empty;
             TestCases = Array.Empty<object>();
+            PeerCameraStates = new Dictionary<string, bool>();
+            PeerMicStates = new Dictionary<string, bool>();
         }
     }
 
