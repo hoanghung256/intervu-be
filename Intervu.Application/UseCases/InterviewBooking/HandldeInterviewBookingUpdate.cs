@@ -183,7 +183,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 var startTime = bookingRequest.RequestedStartTime!.Value;
                 var endTime = startTime.AddMinutes(durationMinutes);
 
-                await SplitAvailabilityForBooking(availabilityRepo, bookingRequest.CoachId, startTime, endTime);
+                var currentAvailabilityId = await SplitAvailabilityForBooking(availabilityRepo, bookingRequest.CoachId, startTime, endTime);
 
                 // Create a single interview room
                 var room = new Domain.Entities.InterviewRoom
@@ -192,6 +192,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     CoachId = bookingRequest.CoachId,
                     ScheduledTime = bookingRequest.RequestedStartTime,
                     DurationMinutes = durationMinutes,
+                    CurrentAvailabilityId = currentAvailabilityId,
                     Status = InterviewRoomStatus.Scheduled,
                     TransactionId = transaction.Id,
                     BookingRequestId = bookingRequest.Id,
@@ -214,7 +215,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     var roundDuration = round.CoachInterviewService?.DurationMinutes ?? 60;
                     var roundEnd = round.StartTime.AddMinutes(roundDuration);
 
-                    await SplitAvailabilityForBooking(availabilityRepo, bookingRequest.CoachId, round.StartTime, roundEnd);
+                    var currentAvailabilityId = await SplitAvailabilityForBooking(availabilityRepo, bookingRequest.CoachId, round.StartTime, roundEnd);
 
                     var room = new Domain.Entities.InterviewRoom
                     {
@@ -222,6 +223,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
                         CoachId = bookingRequest.CoachId,
                         ScheduledTime = round.StartTime,
                         DurationMinutes = roundDuration,
+                        CurrentAvailabilityId = currentAvailabilityId,
                         Status = InterviewRoomStatus.Scheduled,
                         TransactionId = transaction.Id,
                         BookingRequestId = bookingRequest.Id,
@@ -263,7 +265,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
         /// Finds the containing availability range and splits it around the booked time,
         /// applying a 15-minute buffer after the booking.
         /// </summary>
-        private async Task SplitAvailabilityForBooking(
+        private async Task<Guid?> SplitAvailabilityForBooking(
             ICoachAvailabilitiesRepository availabilityRepo,
             Guid coachId,
             DateTime bookingStart,
@@ -276,15 +278,18 @@ namespace Intervu.Application.UseCases.InterviewBooking
             {
                 _logger.LogWarning(
                     "No containing availability found for coach {CoachId} time range {Start} - {End}. " +
-                    "Skipping availability split (booking may be outside coach hours).",
+                    "Skipping availability reservation (booking may be outside coach hours).",
                     coachId, bookingStart, bookingEnd);
-                return;
+                return null;
             }
 
             var (before, after) = AvailabilitySplitService.Split(containingAvailability, bookingStart, bookingEnd);
 
-            // Remove the original availability
-            //availabilityRepo.DeleteAsync(containingAvailability);
+            // Keep the original row as the reserved slot and link InterviewRoom.CurrentAvailabilityId to it.
+            containingAvailability.StartTime = bookingStart;
+            containingAvailability.EndTime = bookingEnd;
+            containingAvailability.Status = CoachAvailabilityStatus.Unavailable;
+            availabilityRepo.UpdateAsync(containingAvailability);
 
             // Insert the split ranges
             if (before != null)
@@ -293,10 +298,12 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 await availabilityRepo.AddAsync(after);
 
             _logger.LogInformation(
-                "Split availability {AvailabilityId} for booking {Start} - {End}. " +
-                "Created {RangeCount} new range(s).",
+                "Reserved availability {AvailabilityId} for booking {Start} - {End}. " +
+                "Created {RangeCount} remaining available range(s).",
                 containingAvailability.Id, bookingStart, bookingEnd,
                 (before != null ? 1 : 0) + (after != null ? 1 : 0));
+
+            return containingAvailability.Id;
         }
     }
 }
