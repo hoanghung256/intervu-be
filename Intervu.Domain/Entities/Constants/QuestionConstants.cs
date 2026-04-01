@@ -42,12 +42,17 @@ namespace Intervu.Domain.Entities.Constants.QuestionConstants
         Technical = 2,
         SystemDesign = 3,
         CaseStudy = 4,
-        Testing = 5,
-        Leadership = 6,
-        ProductThinking = 7,
-        Architecture = 8,
-        Coding = 9,
-        Debugging = 10
+        Other = 5,
+        Coding = 6,
+        Database = 7,
+        Networking = 8,
+        OOP = 9,
+        Algorithms = 10,
+        DataStructures = 11,
+        Concurrency = 12,
+        DistributedSystems = 13,
+        Cloud = 14,
+        DevOps = 15
     }
 
     public enum ExperienceLevel

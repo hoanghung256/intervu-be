@@ -221,8 +221,7 @@ namespace Intervu.API
             builder.Services.AddSignalR(options =>
             {
                 // Enable this to see the specific exception message on the frontend in dev and test env
-                options.EnableDetailedErrors = builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing");
-
+                options.EnableDetailedErrors = true;
                 // Changing the default behavior of injected services
                 options.DisableImplicitFromServicesParameters = true;
             });

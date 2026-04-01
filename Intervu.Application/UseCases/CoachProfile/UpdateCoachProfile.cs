@@ -30,42 +30,47 @@ namespace Intervu.Application.UseCases.CoachProfile
             _mapper = mapper;
         }
 
-        public async Task<CoachProfileDto> ExecuteAsync(Guid id, CoachUpdateDto coachUpdateDto)
+        public async Task<CoachProfileDto> ExecuteAsync(Guid id, CoachUpdateDto dto)
         {
-            var existing = await _repo.GetByIdAsync(id);
+            var existing = await _repo.GetProfileByIdAsync(id);
             if (existing == null)
                 throw new Exception("Coach profile not found.");
 
-            existing.User.SlugProfileUrl = SlugProfileUrlHandler.GenerateProfileSlug(coachUpdateDto.FullName);
-
-            // Map Companies by IDs (DTO provides List<Guid> Companies)
-            if (coachUpdateDto.CompanyIds != null)
+            if (existing.User != null)
             {
-                var companies = await _companyRepository.GetByIdsAsync(coachUpdateDto.CompanyIds);
-                existing.Companies = companies.ToList();
+                existing.User.SlugProfileUrl = SlugProfileUrlHandler.GenerateProfileSlug(dto.FullName);
             }
 
-            // Map Skills by IDs (DTO provides List<Guid> Skills)
-            if (coachUpdateDto.SkillIds != null)
+            if (dto.CompanyIds != null)
             {
-                var skills = await _skillRepository.GetByIdsAsync(coachUpdateDto.SkillIds);
-                existing.Skills = skills.ToList();
+                var companies = await _companyRepository.GetByIdsAsync(dto.CompanyIds);
+                existing.Companies.Clear();
+                foreach (var c in companies)
+                    existing.Companies.Add(c);
             }
 
-            if (coachUpdateDto.IndustryIds != null)
+            if (dto.SkillIds != null)
             {
-                var industries = await _industryRepository.GetByIdsAsync(coachUpdateDto.IndustryIds);
-                existing.Industries = industries.ToList();
+                var skills = await _skillRepository.GetByIdsAsync(dto.SkillIds);
+                existing.Skills.Clear();
+                foreach (var s in skills)
+                    existing.Skills.Add(s);
             }
 
-            // Map simple properties from DTO to existing entity
-            _mapper.Map(coachUpdateDto, existing);
+            if (dto.IndustryIds != null)
+            {
+                var industries = await _industryRepository.GetByIdsAsync(dto.IndustryIds);
+                existing.Industries.Clear();
+                foreach (var i in industries)
+                    existing.Industries.Add(i);
+            }
+
+            _mapper.Map(dto, existing);
 
             await _repo.UpdateCoachProfileAsync(existing);
 
-            await _repo.SaveChangesAsync();
-
-            return _mapper.Map<CoachProfileDto>(existing);
+            var reloaded = await _repo.GetProfileByIdAsync(id);
+            return _mapper.Map<CoachProfileDto>(reloaded!);
         }
 
         public async Task<CoachProfileDto> UpdateCoachStatus(Guid id, CoachProfileStatus status)
