@@ -77,6 +77,9 @@ namespace Intervu.API.Hubs
 
             if (roomToRemoveFrom != null)
             {
+                // Clean up stale media states for the departing peer
+                await _roomManager.RemovePeerMediaState(roomToRemoveFrom, Context.ConnectionId);
+
                 await Groups.RemoveFromGroupAsync(Context.ConnectionId, roomToRemoveFrom);
                 // Notify only the remaining participants, not the disconnecting client
                 await Clients.Group(roomToRemoveFrom).SendAsync("UserLeft", Context.ConnectionId);
@@ -127,6 +130,10 @@ namespace Intervu.API.Hubs
         public async Task LeaveRoom(string room)
         {
             _logger.LogInformation("Client {ConnectionId} leave room {RoomId}", Context.ConnectionId, room);
+
+            // Clean up stale media states for the departing peer
+            await _roomManager.RemovePeerMediaState(room, Context.ConnectionId);
+
             if (_roomConnections.TryGetValue(room, out var connections))
             {
                 connections.TryRemove(Context.ConnectionId, out _);
@@ -330,8 +337,8 @@ namespace Intervu.API.Hubs
                 {
                     // Update the code in the room state as well
                     roomState.LanguageCodes[roomState.CurrentLanguage] = generatedCode;
-                    // Send the new code to all clients in the room
-                    await Clients.Group(roomId).SendAsync("ReceiveCode", generatedCode);
+                    // Send the new code to all clients in the room (include language so the frontend applies it to the correct slot)
+                    await Clients.Group(roomId).SendAsync("ReceiveCode", generatedCode, roomState.CurrentLanguage);
                 }
             }
         }

@@ -160,6 +160,20 @@ namespace Intervu.Application.Services
             });
         }
 
+        /// <summary>
+        /// Removes a peer's camera/mic state entries from the in-memory RoomState
+        /// so late-joiners don't receive ghost entries for departed connections.
+        /// </summary>
+        public Task RemovePeerMediaState(string roomId, string connectionId)
+        {
+            if (_roomStates.TryGetValue(roomId, out var roomState))
+            {
+                roomState.PeerCameraStates.Remove(connectionId);
+                roomState.PeerMicStates.Remove(connectionId);
+            }
+            return Task.CompletedTask;
+        }
+
         // Schedules a room for cleanup if it's empty.
         public void ScheduleRoomCleanup(string roomId)
         {
