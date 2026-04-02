@@ -86,6 +86,7 @@ namespace Intervu.Application.UseCases.InterviewRoom
                 var room = item.Room;
                 var hasPendingReschedule = await _rescheduleRepo.HasPendingRequestAsync(room.Id);
                 var canReschedule = room.IsAvailableForReschedule() && !hasPendingReschedule;
+                var canCancel = room.IsAvailableForCancel();
 
                 dtos.Add(new InterviewRoomDto
                 {
@@ -112,6 +113,7 @@ namespace Intervu.Application.UseCases.InterviewRoom
                     RoundNumber = room.RoundNumber,
                     HasPendingReschedule = hasPendingReschedule,
                     CanReschedule = canReschedule,
+                    CanCancel = canCancel,
                     Type = room.Type
                 });
             }

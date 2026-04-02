@@ -37,6 +37,9 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 Domain.Entities.InterviewRoom room = await interviewRoomRepo.GetByIdAsync(interviewRoomId)
                     ?? throw new NotFoundException("Interview room not found");
 
+                if (!room.IsAvailableForCancel())
+                    throw new BadRequestException("This interview can no longer be cancelled (scheduled time has passed or it is not in a scheduled state).");
+
                 if (room.CurrentAvailabilityId == null)
                     throw new NotFoundException("No coach availability linked to this interview room");
 
