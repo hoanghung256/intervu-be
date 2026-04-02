@@ -1,4 +1,5 @@
 using Intervu.Domain.Entities;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -9,6 +10,8 @@ namespace Intervu.Domain.Repositories
         Task<(IReadOnlyList<Feedback> Items, int TotalCount)> GetPagedFeedbacksAsync(int page, int pageSize);
         Task<int> GetTotalFeedbacksCountAsync();
         Task<double> GetAverageRatingAsync();
+        Task<double> GetAverageRatingByCoachIdAsync(Guid coachId);
+        Task<double> GetAverageRatingByCandidateIdAsync(Guid candidateId);
         Task<(IReadOnlyList<Feedback> Items, int TotalCount)> GetFeedbacksByCandidateIdAsync(Guid candidateId, int page, int pageSize);
         Task<Feedback?> GetFeedbackByIdAsync(Guid id);
         Task<List<Feedback>> GetFeedbacksByInterviewRoomIdAsync(Guid interviewRoomId);

@@ -21,8 +21,10 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 await _context.Users.AddAsync(user);
                 await _context.SaveChangesAsync();
             }
+
             profile.User.Id = user.Id;
             profile.User = user;
+            profile.Id = user.Id;
 
             await _context.CoachProfiles.AddAsync(profile);
             await _context.SaveChangesAsync();
@@ -183,7 +185,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
             if (updatedProfile.Companies != null)
             {
-                existingProfile.Companies.Clear();
                 var companyIds = updatedProfile.Companies.Select(c => c.Id).ToList();
                 var companies = await _context.Companies.Where(c => companyIds.Contains(c.Id)).ToListAsync();
                 foreach (var company in companies)
@@ -194,7 +195,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
             if (updatedProfile.Skills != null)
             {
-                existingProfile.Skills.Clear();
                 var skillIds = updatedProfile.Skills.Select(s => s.Id).ToList();
                 var skills = await _context.Skills.Where(s => skillIds.Contains(s.Id)).ToListAsync();
                 foreach (var skill in skills)
