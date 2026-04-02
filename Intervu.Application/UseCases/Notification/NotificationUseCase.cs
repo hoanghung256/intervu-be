@@ -227,7 +227,9 @@ namespace Intervu.Application.UseCases.Notification
         public async Task SendInterviewReminderAsync(Guid roomId)
         {
             var room = await _roomRepo.GetByIdAsync(roomId);
-            if (room == null || room.Status != InterviewRoomStatus.Scheduled)
+            if (room == null
+                || room.Status == InterviewRoomStatus.Cancelled
+                || room.Status != InterviewRoomStatus.Scheduled)
                 return;
 
             var scheduledTime = room.ScheduledTime?.ToString("dd/MM/yyyy HH:mm") ?? "N/A";

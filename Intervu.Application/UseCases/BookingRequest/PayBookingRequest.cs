@@ -43,7 +43,7 @@ namespace Intervu.Application.UseCases.BookingRequest
                     ?? throw new BadRequestException("RequestedStartTime is required for external booking request");
                 var endTime = startTime.AddMinutes(durationMinutes);
 
-                await SplitAvailabilityForBookingAsync(availabilityRepo, bookingRequest.CoachId, startTime, endTime);
+                var currentAvailabilityId = await SplitAvailabilityForBookingAsync(availabilityRepo, bookingRequest.CoachId, startTime, endTime);
 
                 var room = new Domain.Entities.InterviewRoom
                 {
@@ -51,6 +51,7 @@ namespace Intervu.Application.UseCases.BookingRequest
                     CoachId = bookingRequest.CoachId,
                     ScheduledTime = startTime,
                     DurationMinutes = durationMinutes,
+                    CurrentAvailabilityId = currentAvailabilityId,
                     Status = InterviewRoomStatus.Scheduled,
                     TransactionId = paymentTx.Id,
                     BookingRequestId = bookingRequest.Id,
@@ -69,7 +70,7 @@ namespace Intervu.Application.UseCases.BookingRequest
                     var roundDuration = round.CoachInterviewService?.DurationMinutes ?? 60;
                     var roundEnd = round.StartTime.AddMinutes(roundDuration);
 
-                    await SplitAvailabilityForBookingAsync(availabilityRepo, bookingRequest.CoachId, round.StartTime, roundEnd);
+                    var currentAvailabilityId = await SplitAvailabilityForBookingAsync(availabilityRepo, bookingRequest.CoachId, round.StartTime, roundEnd);
 
                     var room = new Domain.Entities.InterviewRoom
                     {
@@ -77,6 +78,7 @@ namespace Intervu.Application.UseCases.BookingRequest
                         CoachId = bookingRequest.CoachId,
                         ScheduledTime = round.StartTime,
                         DurationMinutes = roundDuration,
+                        CurrentAvailabilityId = currentAvailabilityId,
                         Status = InterviewRoomStatus.Scheduled,
                         TransactionId = paymentTx.Id,
                         BookingRequestId = bookingRequest.Id,
@@ -113,7 +115,7 @@ namespace Intervu.Application.UseCases.BookingRequest
             })];
         }
 
-        private static async Task SplitAvailabilityForBookingAsync(
+        private static async Task<Guid?> SplitAvailabilityForBookingAsync(
             ICoachAvailabilitiesRepository availabilityRepo,
             Guid coachId,
             DateTime bookingStart,
@@ -124,15 +126,23 @@ namespace Intervu.Application.UseCases.BookingRequest
 
             if (containingAvailability == null)
             {
-                return;
+                return null;
             }
 
             var (before, after) = AvailabilitySplitService.Split(containingAvailability, bookingStart, bookingEnd);
+
+            // Keep original row as reserved slot for the created InterviewRoom.
+            containingAvailability.StartTime = bookingStart;
+            containingAvailability.EndTime = bookingEnd;
+            containingAvailability.Status = CoachAvailabilityStatus.Unavailable;
+            availabilityRepo.UpdateAsync(containingAvailability);
 
             if (before != null)
                 await availabilityRepo.AddAsync(before);
             if (after != null)
                 await availabilityRepo.AddAsync(after);
+
+            return containingAvailability.Id;
         }
 
         public async Task<string?> ExecuteAsync(Guid candidateId, Guid bookingRequestId, string returnUrl)

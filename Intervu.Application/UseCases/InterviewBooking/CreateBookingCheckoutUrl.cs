@@ -1,7 +1,8 @@
-﻿using Intervu.Application.Exceptions;
+using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
+using Intervu.Application.Interfaces.UseCases.Notification;
 using Intervu.Application.Utils;
 using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Intervu.Domain.Entities;
@@ -142,14 +143,33 @@ namespace Intervu.Application.UseCases.InterviewBooking
                             CurrentAvailabilityId = coachAvailabilityId,
                             TransactionId = t.Id,
                             BookingRequestId = null,
-                            CoachInterviewServiceId =coachInterviewServiceId,
+                            CoachInterviewServiceId = coachInterviewServiceId,
                             AimLevel = null,
                             EvaluationResults = evaluation,
                             IsEvaluationCompleted = false
                         })
                     );
+
+                    // Notify Candidate and Coach about successful booking (Free interview)
+                    _jobService.Enqueue<INotificationUseCase>(uc => uc.CreateAsync(
+                        candidateId,
+                        NotificationType.BookingAccepted,
+                        "Booking confirmed",
+                        "Your interview has been booked successfully.",
+                        "/interview?tab=upcoming",
+                        null
+                    ));
+
+                    _jobService.Enqueue<INotificationUseCase>(uc => uc.CreateAsync(
+                        coachId,
+                        NotificationType.BookingNew,
+                        "New interview scheduled",
+                        "A candidate has booked an interview with you.",
+                        "/interview?tab=upcoming",
+                        null
+                    ));
                     
-                    // TODO: Create notification to candidate and coach about successful booking and upcoming interview
+                    // TODO: Send email notification to candidate and coach about successful booking and upcoming interview
                 }
                 else
                 {

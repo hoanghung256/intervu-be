@@ -1,4 +1,4 @@
-﻿using Intervu.Application.Interfaces.UseCases.InterviewRoom;
+using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Intervu.Application.Services;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Repositories;
@@ -11,12 +11,18 @@ namespace Intervu.Application.UseCases.InterviewRoom
         private readonly IInterviewRoomRepository _interviewRoomRepo;
         private readonly InterviewRoomCache _cache;
         private readonly ILogger<CreateInterviewRoom> _logger;
+        private readonly IScheduleInterviewReminders _scheduleReminders;
 
-        public CreateInterviewRoom(IInterviewRoomRepository interviewRoomRepo, InterviewRoomCache cache, ILogger<CreateInterviewRoom> logger)
+        public CreateInterviewRoom(
+            IInterviewRoomRepository interviewRoomRepo,
+            InterviewRoomCache cache,
+            ILogger<CreateInterviewRoom> logger,
+            IScheduleInterviewReminders scheduleReminders)
         {
             _interviewRoomRepo = interviewRoomRepo;
             _cache = cache;
             _logger = logger;
+            _scheduleReminders = scheduleReminders;
         }
 
         public async Task<Guid> ExecuteAsync(Guid candidateId)
@@ -50,6 +56,9 @@ namespace Intervu.Application.UseCases.InterviewRoom
             await _interviewRoomRepo.SaveChangesAsync();
 
             _logger.LogInformation("Created room");
+
+            // Schedule reminder notifications at 1 day, 12h, 1h, and 5min before
+            _scheduleReminders.Schedule(room.Id, startTime);
 
             //Notify SQL Changes
             _cache.Add(room);

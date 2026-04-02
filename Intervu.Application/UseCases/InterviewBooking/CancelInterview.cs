@@ -1,5 +1,7 @@
 using Intervu.Application.Exceptions;
+using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
+using Intervu.Application.Interfaces.UseCases.Notification;
 using Intervu.Application.Utils;
 using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Intervu.Domain.Abstractions.Policies.Interfaces;
@@ -13,11 +15,13 @@ namespace Intervu.Application.UseCases.InterviewBooking
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IRefundPolicy _refundPolicy;
+        private readonly IBackgroundService _jobService;
 
-        public CancelInterview(IUnitOfWork unitOfWork, IRefundPolicy refundPolicy)
+        public CancelInterview(IUnitOfWork unitOfWork, IRefundPolicy refundPolicy, IBackgroundService jobService)
         {
             _unitOfWork = unitOfWork;
             _refundPolicy = refundPolicy;
+            _jobService = jobService;
         }
 
         public async Task<int> ExecuteAsync(Guid interviewRoomId)
@@ -74,7 +78,30 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     }
                 }
 
-                // TODO: Send email and in-app notification to candidate about cancellation and refund
+                var candidateId = room.CandidateId.Value;
+                _jobService.Enqueue<INotificationUseCase>(uc => uc.CreateAsync(
+                    candidateId,
+                    NotificationType.SystemAnnouncement,
+                    "Interview Cancelled",
+                    $"Your interview has been cancelled and a refund of {refundAmount:N0} resources has been processed.",
+                    "/interview",
+                    null
+                ));
+
+                if (room.CoachId.HasValue)
+                {
+                    var coachId = room.CoachId.Value;
+                    _jobService.Enqueue<INotificationUseCase>(uc => uc.CreateAsync(
+                        coachId,
+                        NotificationType.BookingRejected,
+                        "Interview Cancelled",
+                        "An upcoming interview with a candidate has been cancelled.",
+                        "/interview",
+                        null
+                    ));
+                }
+
+                // TODO: Send email notification to candidate about cancellation and refund
 
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
