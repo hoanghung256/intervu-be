@@ -101,15 +101,34 @@ namespace Intervu.Domain.Entities
 
         public bool IsAvailableForReschedule()
         {
+            if (Status != InterviewRoomStatus.Scheduled) return false;
             if (ScheduledTime == null) return false;
 
             var timeUntilInterview = ScheduledTime.Value - DateTime.UtcNow;
+            if (timeUntilInterview <= TimeSpan.Zero)
+            {
+                return false;
+            }
             if (timeUntilInterview < TimeSpan.FromHours(12))
             {
                 return false;
             }
             // Limit 1 reschedule attempt per interview
             if (RescheduleAttemptCount >= 1)
+            {
+                return false;
+            }
+            return true;
+        }
+
+        public bool IsAvailableForCancel()
+        {
+            if (Status != InterviewRoomStatus.Scheduled) return false;
+            if (ScheduledTime == null) return false;
+
+            var timeUntilInterview = ScheduledTime.Value - DateTime.UtcNow;
+            // Cannot cancel if the scheduled time has already passed
+            if (timeUntilInterview <= TimeSpan.Zero)
             {
                 return false;
             }

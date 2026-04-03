@@ -52,5 +52,10 @@ namespace Intervu.Application.DTOs.InterviewRoom
         /// Indicates if this interview can be rescheduled (based on time and attempt count)
         /// </summary>
         public bool CanReschedule { get; set; }
+
+        /// <summary>
+        /// Indicates if this interview can be cancelled (scheduled time not yet passed)
+        /// </summary>
+        public bool CanCancel { get; set; }
     }
 }

@@ -7,5 +7,8 @@ namespace Intervu.Application.Interfaces.Services
     {
         AudioProcessingResult MergeLatestTakeAsMp3(List<AudioChunk> chunks);
         AudioProcessingResult MergeAllTakesAsMp3(List<AudioChunk> chunks);
+
+        AudioProcessingResult MergeLatestTakeAsWav(List<AudioChunk> chunks);
+        AudioProcessingResult MergeAllTakesAsWav(List<AudioChunk> chunks);
     }
 }
