@@ -6,6 +6,7 @@ using Intervu.Application.Interfaces.Services;
 using Intervu.Application.Interfaces.UseCases.AudioChunk;
 using Intervu.Application.Interfaces.UseCases.GeneratedQuestion;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
+using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -88,7 +89,7 @@ namespace Intervu.API.Controllers.v1
             });
         }
 
-        [Authorize(Policy = AuthorizationPolicies.Interviewer)]
+        [Authorize(Policy = AuthorizationPolicies.AllRoles)]
         [HttpPost("store-audio-chunk")]
         public async Task<IActionResult> StoreAudioChunk([FromBody] StoreAudioChunkRequest request)
         {
@@ -108,6 +109,9 @@ namespace Intervu.API.Controllers.v1
             {
                 return BadRequest(new { success = false, message = "Room is not active" });
             }
+
+            _logger.LogInformation("Storing audio chunk for session ID: {SessionId}, Sequence: {Sequence}, Size: {Size}",
+                request.RecordingSessionId, request.SequenceNumber, request.AudioData.Length);
 
             var id = await _storeAudioChunk.ExecuteAsync(request.AudioData, request.RecordingSessionId, request.SequenceNumber);
 
@@ -190,7 +194,7 @@ namespace Intervu.API.Controllers.v1
                 return NotFound(new { success = false, message = "Audio chunk not found" });
             }
 
-            return File(audioChunk.AudioData, "audio/wav", $"audio-{id}.wav");
+            return File(audioChunk.AudioData, "audio/webm", $"audio-{id}.webm");
         }
     }
 }

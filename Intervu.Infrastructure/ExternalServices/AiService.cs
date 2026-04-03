@@ -136,8 +136,8 @@ namespace Intervu.Infrastructure.ExternalServices
             var endpoint = $"api/transcript?id={roomId}";
             using var form = new MultipartFormDataContent();
             var fileContent = new ByteArrayContent(audioData);
-            fileContent.Headers.ContentType = new MediaTypeHeaderValue("audio/wav");
-            form.Add(fileContent, "file", "audio.wav");
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue("audio/mpeg");
+            form.Add(fileContent, "file", "audio.mp3");
 
             try
             {

@@ -13,6 +13,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Intervu.Domain.Repositories;
+using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.Services;
+using Intervu.Application.Interfaces.UseCases.AudioChunk;
+using Intervu.Application.Interfaces.UseCases.GeneratedQuestion;
 
 namespace Intervu.Application.Services
 {
@@ -55,7 +59,7 @@ namespace Intervu.Application.Services
         private readonly ConcurrentDictionary<string, RoomState> _roomStates = new();
         private readonly ConcurrentDictionary<string, Timer> _periodicSaveTimers = new();
         private readonly ConcurrentDictionary<string, Timer> _roomTimers = new();
-        private readonly TimeSpan _roomExpiryTime = TimeSpan.FromHours(1);
+        private readonly TimeSpan _roomExpiryTime = TimeSpan.FromSeconds(60);
         private readonly TimeSpan _periodicSaveInterval = TimeSpan.FromSeconds(30);
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly double value;
@@ -124,9 +128,9 @@ namespace Intervu.Application.Services
                 }
             }, null, _periodicSaveInterval, _periodicSaveInterval);
             });
-            //using var scope = _scopeFactory.CreateScope();
+            using var scope = _scopeFactory.CreateScope();
 
-            //var getCurrentRoom = scope.ServiceProvider.GetRequiredService<IGetCurrentRoom>();
+            var getCurrentRoom = scope.ServiceProvider.GetRequiredService<IGetCurrentRoom>();
             //Domain.Entities.InterviewRoom interviewRoom = await getCurrentRoom.ExecuteAsync(int.Parse(roomId));
             var roomGuid = Guid.Parse(roomId);
             InterviewRoom? interviewRoom = _cache.Rooms.SingleOrDefault(r => r.Id == roomGuid);
@@ -134,15 +138,11 @@ namespace Intervu.Application.Services
             // Fallback to database if not in cache
             if (interviewRoom == null)
             {
-                using (var scope = _scopeFactory.CreateScope())
+                var roomRepo = scope.ServiceProvider.GetRequiredService<IInterviewRoomRepository>();
+                interviewRoom = await roomRepo.GetByIdAsync(roomGuid);
+                if (interviewRoom != null)
                 {
-                    var roomRepo = scope.ServiceProvider.GetRequiredService<IInterviewRoomRepository>();
-                    interviewRoom = await roomRepo.GetByIdAsync(roomGuid);
-                    if (interviewRoom != null)
-                    {
-                        _cache.Add(interviewRoom);
-                        _logger.LogInformation("Room {RoomId} was missing from cache, loaded from DB.", roomId);
-                    }
+                    _logger.LogInformation("Room {RoomId} was missing from cache, loaded from DB.", roomId);
                 }
             }
 
@@ -191,9 +191,13 @@ namespace Intervu.Application.Services
                 var updateRoom = scope.ServiceProvider.GetRequiredService<IUpdateRoom>();
                 var getFeedbacks = scope.ServiceProvider.GetRequiredService<IGetFeedbacks>();
                 var createFeedback = scope.ServiceProvider.GetRequiredService<ICreateFeedback>();
-                
+                var getAudioChunk = scope.ServiceProvider.GetRequiredService<IGetAudioChunk>();
+                var audioProcessingService = scope.ServiceProvider.GetRequiredService<IAudioProcessingService>();
+                var aiService = scope.ServiceProvider.GetRequiredService<IAiService>();
+                var storeGeneratedQuestions = scope.ServiceProvider.GetRequiredService<IStoreGeneratedQuestions>();
+
                 var roomGuid = Guid.Parse(roomId);
-                
+
                 // Fetch fresh from DB instead of using cache to prevent overwriting evaluation results
                 var room = await roomRepo.GetByIdAsync(roomGuid);
 
@@ -209,7 +213,7 @@ namespace Intervu.Application.Services
                         room.TestCases = roomState.TestCases;
                     }
                     room.Status = InterviewRoomStatus.Completed;
-                    _logger.LogInformation("Saved data for room '{RoomId}'.", roomId);                    
+                    _logger.LogInformation("Saved data for room '{RoomId}'.", roomId);
 
                     await updateRoom.ExecuteAsync(room);
 
@@ -231,6 +235,41 @@ namespace Intervu.Application.Services
                             AIAnalysis = "" // Default value
                         };
                         await createFeedback.ExecuteAsync(feedback);
+                    }
+
+                    // Automatically extract questions from the interview audio
+                    try
+                    {
+                        var audioChunks = await getAudioChunk.ExecuteAllByRecordingSessionAsync(roomGuid);
+                        if (audioChunks != null && audioChunks.Count > 0)
+                        {
+                            var mergeResult = audioProcessingService.MergeAllTakesAsMp3(audioChunks);
+                            if (mergeResult.Success && mergeResult.Data.Length > 0)
+                            {
+                                var extractionResult = await aiService.GetNewQuestionsFromTranscriptAsync(mergeResult.Data, roomGuid);
+                                if (extractionResult.Status != "failed" && extractionResult.QuestionList?.Count > 0)
+                                {
+                                    await storeGeneratedQuestions.ExecuteAsync(roomGuid, extractionResult.QuestionList);
+                                    _logger.LogInformation("Auto-extracted {Count} questions from audio for room '{RoomId}'.", extractionResult.QuestionList.Count, roomId);
+                                }
+                                else
+                                {
+                                    _logger.LogWarning("Auto question extraction yielded no results for room '{RoomId}': {Error}", roomId, extractionResult.Error);
+                                }
+                            }
+                            else
+                            {
+                                _logger.LogWarning("Audio merge failed or produced empty data for room '{RoomId}': {Error}", roomId, mergeResult.Error);
+                            }
+                        }
+                        else
+                        {
+                            _logger.LogInformation("No audio chunks found for room '{RoomId}', skipping question extraction.", roomId);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Auto question extraction failed for room '{RoomId}'.", roomId);
                     }
                 }
 
