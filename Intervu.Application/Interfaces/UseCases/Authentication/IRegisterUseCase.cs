@@ -9,6 +9,6 @@ namespace Intervu.Application.Interfaces.UseCases.Authentication
 {
     public interface IRegisterUseCase
     {
-        Task<bool> ExecuteAsync(RegisterRequest request);
+        Task<Intervu.Application.DTOs.User.RegisterResult> ExecuteAsync(RegisterRequest request);
     }
 }

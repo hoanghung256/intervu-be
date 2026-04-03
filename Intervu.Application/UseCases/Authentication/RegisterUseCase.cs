@@ -22,27 +22,32 @@ namespace Intervu.Application.UseCases.Authentication
             _mapper = mapper;
         }
 
-        public async Task<bool> ExecuteAsync(RegisterRequest request)
+        public async Task<Intervu.Application.DTOs.User.RegisterResult> ExecuteAsync(RegisterRequest request)
         {
-            if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
+            if (string.IsNullOrWhiteSpace(request.Email))
             {
-                return false;
+                return new Intervu.Application.DTOs.User.RegisterResult { Success = false, Message = "Email is required" };
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Password))
+            {
+                return new Intervu.Application.DTOs.User.RegisterResult { Success = false, Message = "Password is required" };
             }
 
             if (!IsValidEmail(request.Email))
             {
-                return false;
+                return new Intervu.Application.DTOs.User.RegisterResult { Success = false, Message = "Invalid email format" };
             }
 
             if (request.Password.Length < 8)
             {
-                return false;
+                return new Intervu.Application.DTOs.User.RegisterResult { Success = false, Message = "Password must be at least 8 characters" };
             }
 
             var emailExists = await _userRepository.EmailExistsAsync(request.Email);
             if (emailExists)
             {
-                return false;
+                return new Intervu.Application.DTOs.User.RegisterResult { Success = false, Message = "Email already exists" };
             }
 
             var user = _mapper.Map<User>(request);
@@ -85,7 +90,7 @@ namespace Intervu.Application.UseCases.Authentication
                 await _candidateProfileRepository.SaveChangesAsync();
             }
 
-            return true;
+            return new Intervu.Application.DTOs.User.RegisterResult { Success = true, Message = "Registration successful" };
         }
 
         private static bool IsValidEmail(string email)

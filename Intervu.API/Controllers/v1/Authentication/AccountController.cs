@@ -56,21 +56,21 @@ namespace Intervu.API.Controllers.v1.Authentication
         [HttpPost("register")]  
         public async Task<IActionResult> Register([FromBody] RegisterRequest registerRequest)
         {
-            var success = await _registerUseCase.ExecuteAsync(registerRequest);
-            
-            if (!success)
+            var result = await _registerUseCase.ExecuteAsync(registerRequest);
+
+            if (!result.Success)
             {
                 return BadRequest(new 
                 {
-                    success = success,
-                    message = "Registration failed. Email may already exist." 
+                    success = false,
+                    message = result.Message
                 });
             }
-            
+
             return Ok(new 
             {
-                success = success,
-                message = "Registration successful" 
+                success = true,
+                message = result.Message
             });
         }
         [AllowAnonymous]
