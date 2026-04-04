@@ -99,7 +99,8 @@ namespace Intervu.API.Hubs
                     RoomId = roomToRemoveFrom,
                     Role = role,
                     ConnectionId = Context.ConnectionId,
-                    Reason = "Disconnected"
+                    Reason = "Disconnected",
+                    LeaveTime = DateTime.UtcNow
                 });
 
                 await _addAuditLogEntry.ExecuteAsync(new AuditLog
@@ -149,7 +150,8 @@ namespace Intervu.API.Hubs
                 RoomId = room,
                 UserName = userName,
                 Role = role.ToString(),
-                ConnectionId = Context.ConnectionId
+                ConnectionId = Context.ConnectionId,
+                JoinTime = DateTime.UtcNow
             });
 
             await _addAuditLogEntry.ExecuteAsync(new AuditLog
@@ -192,7 +194,8 @@ namespace Intervu.API.Hubs
                 UserName = userName,
                 Role = role.ToString(),
                 ConnectionId = Context.ConnectionId,
-                Reason = "Explicitly Left"
+                Reason = "Explicitly Left",
+                LeaveTime = DateTime.UtcNow
             });
 
             await _addAuditLogEntry.ExecuteAsync(new AuditLog
