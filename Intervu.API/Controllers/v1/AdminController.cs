@@ -1,8 +1,12 @@
 using Asp.Versioning;
-using Intervu.Application.Interfaces.UseCases.Admin;
+using Intervu.API.Utils.Constant;
 using Intervu.Application.DTOs.Admin;
+using Intervu.Application.Interfaces.UseCases.Admin;
+using Intervu.Application.Interfaces.UseCases.Audit;
 using Intervu.Domain.Entities.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Threading.Tasks;
 
 namespace Intervu.API.Controllers.v1
@@ -24,6 +28,7 @@ namespace Intervu.API.Controllers.v1
         private readonly IUpdateUserForAdmin _updateUserForAdmin;
         private readonly IDeleteUserForAdmin _deleteUserForAdmin;
         private readonly IActivateUserForAdmin _activateUserForAdmin;
+        private readonly IGetAuditLogs _getAuditLogs;
 
         public AdminController(
             IGetDashboardStats getDashboardStats,
@@ -37,7 +42,8 @@ namespace Intervu.API.Controllers.v1
             IGetUserByIdForAdmin getUserByIdForAdmin,
             IUpdateUserForAdmin updateUserForAdmin,
             IDeleteUserForAdmin deleteUserForAdmin,
-            IActivateUserForAdmin activateUserForAdmin)
+            IActivateUserForAdmin activateUserForAdmin,
+            IGetAuditLogs getAuditLogs)
         {
             _getDashboardStats = getDashboardStats;
             _getAllUsers = getAllUsers;
@@ -51,6 +57,7 @@ namespace Intervu.API.Controllers.v1
             _updateUserForAdmin = updateUserForAdmin;
             _deleteUserForAdmin = deleteUserForAdmin;
             _activateUserForAdmin = activateUserForAdmin;
+            _getAuditLogs = getAuditLogs;
         }
 
         /// <summary>
@@ -425,6 +432,34 @@ namespace Intervu.API.Controllers.v1
                         userId = id,
                         status = "Active"
                     }
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = ex.Message,
+                    data = (object?)null
+                });
+            }
+        }
+
+        /// <summary>
+        /// Get audit logs with pagination
+        /// </summary>
+        [HttpGet("audit-log")]
+        [Authorize(Policy = AuthorizationPolicies.Admin)]
+        public async Task<IActionResult> GetAuditLogs([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                var logs = await _getAuditLogs.ExecutePagedAsync(page, pageSize);
+                return Ok(new
+                {
+                    success = true,
+                    message = "Success",
+                    data = logs
                 });
             }
             catch (Exception ex)

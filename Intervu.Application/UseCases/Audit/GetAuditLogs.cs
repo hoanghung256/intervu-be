@@ -1,0 +1,31 @@
+using Intervu.Application.DTOs.Common;
+using Intervu.Application.Interfaces.UseCases.Audit;
+using Intervu.Domain.Entities;
+using Intervu.Domain.Repositories;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace Intervu.Application.UseCases.Audit
+{
+    public class GetAuditLogs : IGetAuditLogs
+    {
+        private readonly IAuditLogRepository _auditLogRepository;
+
+        public GetAuditLogs(IAuditLogRepository auditLogRepository)
+        {
+            _auditLogRepository = auditLogRepository;
+        }
+
+        public async Task<IEnumerable<AuditLog>> ExecuteAsync()
+        {
+            return await _auditLogRepository.GetAllAsync();
+        }
+
+        public async Task<PagedResult<AuditLog>> ExecutePagedAsync(int pageNumber, int pageSize)
+        {
+            var (items, totalCount) = await _auditLogRepository.GetPagedAsync(pageNumber, pageSize);
+            return new PagedResult<AuditLog>(items.ToList(), totalCount, pageSize, pageNumber);
+        }
+    }
+}

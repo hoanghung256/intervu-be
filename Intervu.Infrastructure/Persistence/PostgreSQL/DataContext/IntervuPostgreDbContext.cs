@@ -51,6 +51,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
         public DbSet<UserAssessmentAnswer> UserAssessmentAnswers { get; set; }
         public DbSet<UserSkillAssessmentSnapshot> UserSkillAssessments { get; set; }
         public DbSet<AudioChunk> AudioChunks { get; set; }
+        public DbSet<AuditLog> AuditLogs { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -811,6 +812,21 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 // Composite index for ordering chunks by session and sequence
                 b.HasIndex(x => new { x.RecordingSessionId, x.ChunkSequenceNumber })
                     .HasName("IX_AudioChunks_RecordingSession_Sequence");
+            });
+
+            // AuditLog
+            modelBuilder.Entity<AuditLog>(b =>
+            {
+                b.ToTable("AuditLogs");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.EventType).IsRequired();
+                b.Property(x => x.Timestamp).IsRequired();
+                b.Property(x => x.Content).IsRequired();
+                b.Property(x => x.MetaData).HasColumnType("jsonb");
+
+                b.HasIndex(x => x.UserId);
+                b.HasIndex(x => x.EventType);
+                b.HasIndex(x => x.Timestamp);
             });
 
             /// <summary>
