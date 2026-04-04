@@ -59,7 +59,7 @@ namespace Intervu.API.Controllers.v1.Candidate
             });
         }
 
-        [Authorize(Policy = AuthorizationPolicies.Candidate)]
+        [Authorize(Policy = AuthorizationPolicies.CandidateOrInterviewer)]
         [HttpGet("{id}/rating")]
         public async Task<IActionResult> GetCandidateRating([FromRoute] Guid id)
         {
