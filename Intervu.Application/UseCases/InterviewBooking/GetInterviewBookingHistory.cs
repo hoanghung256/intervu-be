@@ -31,10 +31,17 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 Id = t.Id,
                 OrderCode = t.OrderCode,
                 UserId = t.UserId,
-                CoachAvailabilityId = (Guid)t.CoachAvailabilityId,
-                CoachId = t.CoachAvailability?.CoachId,
-                StartTime = t.CoachAvailability?.StartTime,
-                EndTime = t.CoachAvailability?.EndTime,
+                CoachAvailabilityId = t.CoachAvailabilityId,
+                CoachId = t.CoachId ?? t.CoachAvailability?.CoachId ?? t.BookingRequest?.CoachId,
+                StartTime = t.BookedStartTime 
+                    ?? t.CoachAvailability?.StartTime 
+                    ?? t.BookingRequest?.RequestedStartTime 
+                    ?? t.BookingRequest?.Rounds.OrderBy(r => r.RoundNumber).FirstOrDefault()?.StartTime,
+                EndTime = t.BookedStartTime.HasValue && t.BookedDurationMinutes.HasValue 
+                    ? t.BookedStartTime.Value.AddMinutes(t.BookedDurationMinutes.Value)
+                    : (t.CoachAvailability?.EndTime 
+                        ?? t.BookingRequest?.RequestedStartTime 
+                        ?? t.BookingRequest?.Rounds.OrderByDescending(r => r.RoundNumber).FirstOrDefault()?.StartTime),
                 Amount = t.Amount,
                 Type = t.Type,
                 Status = t.Status
