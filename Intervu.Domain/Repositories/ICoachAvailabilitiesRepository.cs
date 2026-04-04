@@ -25,5 +25,15 @@ namespace Intervu.Domain.Repositories
         /// Used to serialize concurrent booking attempts on the same slot.
         /// </summary>
         Task<CoachAvailability?> GetByIdForUpdateAsync(Guid availabilityId);
+
+        /// <summary>
+        /// Returns all blocks for a coach within a time range, regardless of status.
+        /// </summary>
+        Task<List<CoachAvailability>> GetBlocksInRangeAsync(Guid coachId, DateTime startTime, DateTime endTime);
+
+        /// <summary>
+        /// Deletes multiple availability blocks by their IDs in a single operation.
+        /// </summary>
+        Task<int> DeleteMultipleAsync(List<Guid> ids);
     }
 }

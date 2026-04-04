@@ -15,60 +15,66 @@ namespace Intervu.Application.UseCases.Availability
     {
         private readonly ICoachAvailabilitiesRepository _repo;
         private readonly ICoachProfileRepository _coachProfileRepo;
-        private readonly IMapper _mapper;
 
-        public CreateCoachAvailability(ICoachAvailabilitiesRepository repo, ICoachProfileRepository coachProfileRepo, IMapper mapper)
+        public CreateCoachAvailability(ICoachAvailabilitiesRepository repo, ICoachProfileRepository coachProfileRepo)
         {
             _repo = repo;
             _coachProfileRepo = coachProfileRepo;
-            _mapper = mapper;
         }
 
-        public async Task<Guid> ExecuteAsync(CoachAvailabilityCreateDto dto)
+        public async Task<List<Guid>> ExecuteAsync(CoachAvailabilityCreateDto dto)
         {
-            // basic validation
             if (dto == null) throw new ArgumentNullException(nameof(dto));
 
-            // Verify coach exists
             var coachProfile = await _coachProfileRepo.GetProfileByIdAsync(dto.CoachId);
             if (coachProfile == null)
                 throw new ArgumentException($"Coach with ID {dto.CoachId} does not exist");
 
             var utcNow = DateTimeOffset.UtcNow;
-            var startTimeUtc = dto.StartTime.UtcDateTime;
-            var endTimeUtc = dto.EndTime.UtcDateTime;
+            var rangeStart = dto.RangeStartTime.UtcDateTime;
+            var rangeEnd = dto.RangeEndTime.UtcDateTime;
 
-            if (startTimeUtc <= utcNow.UtcDateTime || endTimeUtc <= utcNow.UtcDateTime)
+            if (rangeStart <= utcNow.UtcDateTime || rangeEnd <= utcNow.UtcDateTime)
                 throw new ArgumentException("Cannot create availability in the past");
 
-            if (dto.EndTime <= dto.StartTime)
-                throw new ArgumentException("EndTime must be greater than StartTime");
+            if (rangeEnd <= rangeStart)
+                throw new ArgumentException("RangeEndTime must be greater than RangeStartTime");
 
-            var duration = endTimeUtc - startTimeUtc;
+            var duration = rangeEnd - rangeStart;
             if (duration < TimeSpan.FromMinutes(30))
-                throw new ArgumentException("Availability must be at least 30 minutes");
+                throw new ArgumentException("Availability range must be at least 30 minutes");
 
-            // Check overlap with minimum 15-minute gap
-            var minGap = TimeSpan.FromMinutes(15);
-            var startOffset = new DateTimeOffset(startTimeUtc, TimeSpan.Zero);
-            var endOffset = new DateTimeOffset(endTimeUtc, TimeSpan.Zero);
-            var bufferStart = startOffset.Add(-minGap);
-            var bufferEnd = endOffset.Add(minGap);
+            if (duration.TotalMinutes % 30 != 0)
+                throw new ArgumentException("Availability range must be a multiple of 30 minutes");
 
-            bool isAvailable = await _repo.IsCoachAvailableAsync(dto.CoachId, bufferStart, bufferEnd);
+            // Check overlap with ANY existing block in this range
+            bool isAvailable = await _repo.IsCoachAvailableAsync(
+                dto.CoachId,
+                new DateTimeOffset(rangeStart, TimeSpan.Zero),
+                new DateTimeOffset(rangeEnd, TimeSpan.Zero));
+
             if (!isAvailable)
-                throw new ArgumentException($"Time range overlaps or is within {minGap.TotalMinutes} minutes of an existing availability");
+                throw new ArgumentException("Time range overlaps with an existing availability block");
 
-            var availability = new CoachAvailability
+            // Split range into 30-minute blocks
+            var blocks = new List<CoachAvailability>();
+            var blockStart = rangeStart;
+
+            while (blockStart < rangeEnd)
             {
-                CoachId = dto.CoachId,
-                StartTime = startTimeUtc,
-                EndTime = endTimeUtc,
-                Status = CoachAvailabilityStatus.Available
-            };
+                var blockEnd = blockStart.AddMinutes(30);
+                blocks.Add(new CoachAvailability
+                {
+                    CoachId = dto.CoachId,
+                    StartTime = blockStart,
+                    EndTime = blockEnd,
+                    Status = CoachAvailabilityStatus.Available
+                });
+                blockStart = blockEnd;
+            }
 
-            var id = await _repo.CreateCoachAvailabilityAsync(availability);
-            return id;
+            await _repo.CreateMultipleCoachAvailabilitiesAsync(blocks);
+            return blocks.Select(b => b.Id).ToList();
         }
     }
 }
