@@ -97,6 +97,7 @@ namespace Intervu.Infrastructure
             services.AddScoped<IInterviewRoundRepository, InterviewRoundRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
             services.AddScoped<IAudioChunkRepository, AudioChunkRepository>();
+            services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 
             return services;
         }

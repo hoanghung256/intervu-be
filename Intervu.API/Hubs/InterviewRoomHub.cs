@@ -8,6 +8,9 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.API.Utils;
+using Intervu.Domain.Entities;
+using Intervu.Application.Interfaces.UseCases.Audit;
+using Intervu.Domain.Entities.Constants;
 
 namespace Intervu.API.Hubs
 {
@@ -18,6 +21,7 @@ namespace Intervu.API.Hubs
         private readonly RoomManagerService _roomManager;
         private readonly IReadOnlyDictionary<string, ICodeGenerationService> _codeGenerationServices;
         private readonly InterviewRoomCache _cache;
+        private readonly IAddAuditLogEntry _addAuditLogEntry;
 
         // A static dictionary to track connections per room
         private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, bool>> _roomConnections = new();
@@ -28,34 +32,45 @@ namespace Intervu.API.Hubs
             ILogger<InterviewRoomHub> logger,
             RoomManagerService roomManager,
             IEnumerable<ICodeGenerationService> codeGenerationServices,
-            InterviewRoomCache cache)
+            InterviewRoomCache cache,
+            IAddAuditLogEntry addAuditLogEntry)
         {
             _codeExecutionService = codeExecutionService;
             _logger = logger;
             _roomManager = roomManager;
             _codeGenerationServices = codeGenerationServices.ToDictionary(s => s.Language, StringComparer.OrdinalIgnoreCase);
             _cache = cache;
+            _addAuditLogEntry = addAuditLogEntry;
         }
 
 
 
         public override async Task OnConnectedAsync()
         {
-            var userId = Context.GetHttpContext()?.Request.Query["userId"].ToString();
-            if (!string.IsNullOrEmpty(userId))
+            try
             {
-                // Overwrite any stale entry from a previous session
-                UserConnectionMap[userId] = Context.ConnectionId;
-                _logger.LogInformation("User {UserId} connected with connectionId {ConnectionId}", userId, Context.ConnectionId);
-            }
+                var userId = Context.GetHttpContext()?.Request.Query["userId"].ToString();
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    // Overwrite any stale entry from a previous session
+                    UserConnectionMap[userId] = Context.ConnectionId;
+                    _logger.LogInformation("User {UserId} connected with connectionId {ConnectionId}", userId, Context.ConnectionId);
+                }
 
-            await base.OnConnectedAsync();
+                await base.OnConnectedAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in OnConnectedAsync");
+            }
         }
 
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            // Remove stale entry from the userId → connectionId map
             var userId = Context.GetHttpContext()?.Request.Query["userId"].ToString();
+            UserRole role = (UserRole) int.Parse(Context.GetHttpContext()?.Request.Query["role"].ToString());
+
+            // Remove stale entry from the userId → connectionId map
             if (!string.IsNullOrEmpty(userId))
             {
                 // Only remove if this specific connectionId is still the registered one
@@ -77,6 +92,25 @@ namespace Intervu.API.Hubs
 
             if (roomToRemoveFrom != null)
             {
+                // Log leave event directly to DB
+                Guid? userGuid = Guid.TryParse(userId, out var u) ? u : null;
+                var metaData = JsonSerializer.Serialize(new
+                {
+                    RoomId = roomToRemoveFrom,
+                    Role = role,
+                    ConnectionId = Context.ConnectionId,
+                    Reason = "Disconnected"
+                });
+
+                await _addAuditLogEntry.ExecuteAsync(new AuditLog
+                {
+                    UserId = userGuid,
+                    Content = $"User {userId} ({role}) disconnected from room {roomToRemoveFrom}",
+                    MetaData = metaData,
+                    EventType = AuditLogEventType.RoomDisconnect,
+                    Timestamp = DateTime.UtcNow
+                });
+
                 // Clean up stale media states for the departing peer
                 await _roomManager.RemovePeerMediaState(roomToRemoveFrom, Context.ConnectionId);
 
@@ -96,7 +130,7 @@ namespace Intervu.API.Hubs
             await base.OnDisconnectedAsync(exception);
         }
 
-        public async Task JoinRoom(string room)
+        public async Task JoinRoom(string room, string userId, UserRole role, string userName)
         {
             // Get the current state for the room (creates it if it doesn't exist)
             var roomState = await _roomManager.GetOrCreateRoomStateAsync(room);
@@ -107,6 +141,25 @@ namespace Intervu.API.Hubs
             await Groups.AddToGroupAsync(Context.ConnectionId, room);
 
             if (await isRoomCompleted(room)) return;
+
+            // Log join event directly to DB
+            Guid? userGuid = Guid.TryParse(userId, out var u) ? u : null;
+            var metaData = JsonSerializer.Serialize(new
+            {
+                RoomId = room,
+                UserName = userName,
+                Role = role.ToString(),
+                ConnectionId = Context.ConnectionId
+            });
+
+            await _addAuditLogEntry.ExecuteAsync(new AuditLog
+            {
+                UserId = userGuid,
+                Content = $"User {userName} (ID: {userId}, Role: {role.ToString()}) joined room {room}",
+                MetaData = metaData,
+                EventType = AuditLogEventType.RoomJoin,
+                Timestamp = DateTime.UtcNow
+            });
 
             // Add connection to our tracker
             var roomConnectionIds = _roomConnections.GetOrAdd(room, new ConcurrentDictionary<string, bool>());
@@ -127,9 +180,29 @@ namespace Intervu.API.Hubs
             _logger.LogInformation("Client {ConnectionId} joined room {RoomId}", Context.ConnectionId, room);
         }
 
-        public async Task LeaveRoom(string room)
+        public async Task LeaveRoom(string room, string userId, UserRole role, string userName)
         {
             _logger.LogInformation("Client {ConnectionId} leave room {RoomId}", Context.ConnectionId, room);
+
+            // Log leave event directly to DB
+            Guid? userGuid = Guid.TryParse(userId, out var u) ? u : null;
+            var metaData = JsonSerializer.Serialize(new
+            {
+                RoomId = room,
+                UserName = userName,
+                Role = role.ToString(),
+                ConnectionId = Context.ConnectionId,
+                Reason = "Explicitly Left"
+            });
+
+            await _addAuditLogEntry.ExecuteAsync(new AuditLog
+            {
+                UserId = userGuid,
+                Content = $"User {userName} (ID: {userId}, Role: {role.ToString()}) left room {room}",
+                MetaData = metaData,
+                EventType = AuditLogEventType.RoomLeave,
+                Timestamp = DateTime.UtcNow
+            });
 
             // Clean up stale media states for the departing peer
             await _roomManager.RemovePeerMediaState(room, Context.ConnectionId);

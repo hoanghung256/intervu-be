@@ -64,6 +64,8 @@ using Intervu.Application.Interfaces.UseCases.SmartSearch;
 using Intervu.Application.UseCases.SmartSearch;
 using Intervu.Application.Interfaces.UseCases.GeneratedQuestion;
 using Intervu.Application.UseCases.GeneratedQuestion;
+using Intervu.Application.Interfaces.UseCases.Audit;
+using Intervu.Application.UseCases.Audit;
 
 namespace Intervu.Application
 {
@@ -254,6 +256,10 @@ namespace Intervu.Application
             services.AddScoped<IStoreAudioChunk, AudioChunk.StoreAudioChunk>();
             services.AddScoped<IGetAudioChunk, AudioChunk.GetAudioChunk>();
             services.AddSingleton<IAudioProcessingService, AudioProcessingService>();
+
+            // ----- Audit Log ----
+            services.AddScoped<IAddAuditLogEntry, AddAuditLogEntry>();
+            services.AddScoped<IGetAuditLogs, GetAuditLogs>();
 
             return services;
         }
