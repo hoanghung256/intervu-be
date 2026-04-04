@@ -10,7 +10,7 @@ namespace Intervu.Application.DTOs.InterviewBooking
 
         public Guid UserId { get; set; }
 
-        public Guid CoachAvailabilityId { get; set; }
+        public Guid? CoachAvailabilityId { get; set; }
 
         public Guid? CoachId { get; set; }
 

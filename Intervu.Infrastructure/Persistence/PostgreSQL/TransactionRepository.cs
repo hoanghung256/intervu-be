@@ -1,4 +1,4 @@
-﻿using Intervu.Domain.Entities;
+using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
@@ -38,6 +38,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             var query = _context.InterviewBookingTransaction
                 .AsNoTracking()
                 .Include(t => t.CoachAvailability)
+                .Include(t => t.BookingRequest)
+                    .ThenInclude(br => br.Rounds)
                 .Where(t => t.UserId == userId);
 
             if (type.HasValue)

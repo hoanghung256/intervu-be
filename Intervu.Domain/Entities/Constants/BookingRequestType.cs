@@ -6,6 +6,8 @@ namespace Intervu.Domain.Entities.Constants
         // Legacy
         External,
         // Flow C — multi-round JD-based
-        JDInterview
+        JDInterview,
+        // Flow A — direct availability booking
+        Direct
     }
 }
