@@ -6,6 +6,7 @@ using Intervu.Application.Interfaces.UseCases.Audit;
 using Intervu.Domain.Entities.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Threading.Tasks;
 
 namespace Intervu.API.Controllers.v1
@@ -444,12 +445,32 @@ namespace Intervu.API.Controllers.v1
             }
         }
 
+        /// <summary>
+        /// Get audit logs with pagination
+        /// </summary>
         [HttpGet("audit-log")]
         [Authorize(Policy = AuthorizationPolicies.Admin)]
-        public async Task<IActionResult> GetAuditLogs()
+        public async Task<IActionResult> GetAuditLogs([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            var logs = await _getAuditLogs.ExecuteAsync();
-            return Ok(logs);
+            try
+            {
+                var logs = await _getAuditLogs.ExecutePagedAsync(page, pageSize);
+                return Ok(new
+                {
+                    success = true,
+                    message = "Success",
+                    data = logs
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = ex.Message,
+                    data = (object?)null
+                });
+            }
         }
     }
 }

@@ -1,7 +1,9 @@
+using Intervu.Application.DTOs.Common;
 using Intervu.Application.Interfaces.UseCases.Audit;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Repositories;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Intervu.Application.UseCases.Audit
@@ -18,6 +20,12 @@ namespace Intervu.Application.UseCases.Audit
         public async Task<IEnumerable<AuditLog>> ExecuteAsync()
         {
             return await _auditLogRepository.GetAllAsync();
+        }
+
+        public async Task<PagedResult<AuditLog>> ExecutePagedAsync(int pageNumber, int pageSize)
+        {
+            var (items, totalCount) = await _auditLogRepository.GetPagedAsync(pageNumber, pageSize);
+            return new PagedResult<AuditLog>(items.ToList(), totalCount, pageSize, pageNumber);
         }
     }
 }
