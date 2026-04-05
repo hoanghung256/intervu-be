@@ -92,6 +92,7 @@ namespace Intervu.Application.UseCases.BookingRequest
                     };
 
                     await roomRepo.AddAsync(room);
+                    round.InterviewRoom = room;
                 }
             }
         }

@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Intervu.Application.DTOs.Admin;
 using Intervu.Application.DTOs.Availability;
 using Intervu.Application.DTOs.BookingRequest;
@@ -154,6 +154,9 @@ namespace Intervu.Application.Mappings
 
             // InterviewRound mappings
             CreateMap<Domain.Entities.InterviewRound, InterviewRoundDto>()
+                .ForMember(dest => dest.InterviewRoomId, opt => opt.MapFrom(src => src.InterviewRoomId))
+                .ForMember(dest => dest.InterviewRoomStatus, opt => opt.MapFrom(src => 
+                    src.InterviewRoom != null ? src.InterviewRoom.Status.ToString() : null))
                 .ForMember(dest => dest.InterviewTypeName, opt => opt.MapFrom(src =>
                     src.CoachInterviewService.InterviewType.Name))
                 .ForMember(dest => dest.IsCoding, opt => opt.MapFrom(src =>

@@ -363,6 +363,25 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Ignore(x => x.EvaluationResults);
 
                 b.Property(x => x.IsEvaluationCompleted);
+
+                // Configure Transcript
+                b.Property(x => x.Transcript)
+                    .HasColumnType("text");
+
+                // Configure QuestionList (JSONB)
+                var questionListComparer = new Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer<List<QuestionItem>>(
+                    (c1, c2) => JsonSerializer.Serialize(c1, jsonOptions) == JsonSerializer.Serialize(c2, jsonOptions),
+                    c => c == null ? 0 : JsonSerializer.Serialize(c, jsonOptions).GetHashCode(),
+                    c => JsonSerializer.Deserialize<List<QuestionItem>>(JsonSerializer.Serialize(c, jsonOptions), jsonOptions)!);
+
+                b.Property(x => x.QuestionList)
+                    .HasColumnName("QuestionList")
+                    .HasColumnType("jsonb")
+                    .HasConversion(
+                        v => v == null ? null : JsonSerializer.Serialize(v, jsonOptions),
+                        v => v == null ? null : JsonSerializer.Deserialize<List<QuestionItem>>(v, jsonOptions))
+                    .IsRequired(false)
+                    .Metadata.SetValueComparer(questionListComparer);
             });
 
             // GeneratedQuestion
