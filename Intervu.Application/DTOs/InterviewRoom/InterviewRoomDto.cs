@@ -18,6 +18,7 @@ namespace Intervu.Application.DTOs.InterviewRoom
         public InterviewRoomStatus Status { get; set; }
         public bool IsEvaluationCompleted { get; set; }
         public double? Score { get; set; }
+        public double? Rating { get; set; }
         public int RescheduleAttemptCount { get; set; }
         public InterviewRoomType Type { get; set; }
 

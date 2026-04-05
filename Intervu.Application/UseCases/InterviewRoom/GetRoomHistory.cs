@@ -10,11 +10,16 @@ namespace Intervu.Application.UseCases.InterviewRoom
     {
         private readonly IInterviewRoomRepository _repo;
         private readonly IRescheduleRequestRepository _rescheduleRepo;
+        private readonly IFeedbackRepository _feedbackRepo;
 
-        public GetRoomHistory(IInterviewRoomRepository repo, IRescheduleRequestRepository rescheduleRepo)
+        public GetRoomHistory(
+            IInterviewRoomRepository repo, 
+            IRescheduleRequestRepository rescheduleRepo,
+            IFeedbackRepository feedbackRepo)
         {
             _repo = repo;
             _rescheduleRepo = rescheduleRepo;
+            _feedbackRepo = feedbackRepo;
         }
 
         public async Task<IEnumerable<Domain.Entities.InterviewRoom>> ExecuteAsync(UserRole role, Guid userId)
@@ -114,7 +119,9 @@ namespace Intervu.Application.UseCases.InterviewRoom
                     HasPendingReschedule = hasPendingReschedule,
                     CanReschedule = canReschedule,
                     CanCancel = canCancel,
-                    Type = room.Type
+                    Type = room.Type,
+                    Rating = (await _feedbackRepo.GetFeedbacksByInterviewRoomIdAsync(room.Id))
+                             .FirstOrDefault()?.Rating
                 });
             }
 

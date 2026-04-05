@@ -27,6 +27,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Include(br => br.Rounds.OrderBy(r => r.RoundNumber))
                     .ThenInclude(r => r.CoachInterviewService)
                         .ThenInclude(s => s.InterviewType)
+                .Include(br => br.Rounds)
+                    .ThenInclude(r => r.InterviewRoom)
                 .Include(br => br.Transactions)
                 .FirstOrDefaultAsync(br => br.Id == id);
         }
@@ -40,6 +42,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Include(br => br.CoachInterviewService)
                     .ThenInclude(s => s!.InterviewType)
                 .Include(br => br.Rounds.OrderBy(r => r.RoundNumber))
+                    .ThenInclude(r => r.InterviewRoom)
                 .Where(br => br.CandidateId == candidateId);
 
             if (type.HasValue)
@@ -67,6 +70,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Include(br => br.CoachInterviewService)
                     .ThenInclude(s => s!.InterviewType)
                 .Include(br => br.Rounds.OrderBy(r => r.RoundNumber))
+                    .ThenInclude(r => r.InterviewRoom)
                 .Where(br => br.CoachId == coachId);
 
             if (type.HasValue)
