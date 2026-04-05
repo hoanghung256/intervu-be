@@ -42,6 +42,11 @@ namespace Intervu.Application.DTOs.BookingRequest
         // Audit
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
+
+        /// For Flow B: the single session ID and its status
+        /// </summary>
+        public Guid? InterviewRoomId { get; set; }
+        public string? InterviewRoomStatus { get; set; }
     }
 
     /// <summary>
@@ -58,5 +63,6 @@ namespace Intervu.Application.DTOs.BookingRequest
         public DateTime EndTime { get; set; }
         public int Price { get; set; }
         public Guid? InterviewRoomId { get; set; }
+        public string? InterviewRoomStatus { get; set; }
     }
 }

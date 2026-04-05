@@ -3,6 +3,10 @@ using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Intervu.Infrastructure.Persistence.PostgreSQL
 {
@@ -104,6 +108,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                     r.ScheduledTime.Value.AddMinutes(r.DurationMinutes ?? 60) > startTime)
                 .ToListAsync();
         }
+
         public async Task<InterviewRoom?> GetByIdWithDetailsAsync(Guid id)
         {
             return await _context.InterviewRooms

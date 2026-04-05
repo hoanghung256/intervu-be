@@ -14,11 +14,15 @@ using System.Threading.Tasks;
 
 namespace Intervu.Application.UseCases.GeneratedQuestion
 {
-    public class StoreGeneratedQuestions(IGeneratedQuestionRepository generatedQuestionRepository, IBackgroundService backgroundService, IGetCurrentRoom getCurrentRoom) : IStoreGeneratedQuestions
+    public class StoreGeneratedQuestions(
+        IGeneratedQuestionRepository generatedQuestionRepository,
+        IInterviewRoomRepository interviewRoomRepository,
+        IBackgroundService backgroundService) : IStoreGeneratedQuestions
     {
-        public async Task<int> ExecuteAsync(Guid interviewRoomId, IEnumerable<AiQuestionDto> questions)
+        public async Task<int> ExecuteAsync(Guid interviewRoomId, IEnumerable<AiQuestionDto> questions, string? transcript = null)
         {
-            var items = questions
+            var questionList = questions.ToList();
+            var items = questionList
                 .Where(q => !string.IsNullOrWhiteSpace(q.Title) || !string.IsNullOrWhiteSpace(q.Content))
                 .Select(q => new Domain.Entities.GeneratedQuestion
                 {
@@ -40,16 +44,30 @@ namespace Intervu.Application.UseCases.GeneratedQuestion
                 await generatedQuestionRepository.SaveChangesAsync();
             }
 
-            var room = await getCurrentRoom.ExecuteAsync(interviewRoomId);
+            var room = await interviewRoomRepository.GetByIdAsync(interviewRoomId);
+            if (room != null)
+            {
+                room.Transcript = transcript;
+                room.QuestionList = questionList.Select(q => new QuestionItem
+                {
+                    Title = q.Title?.Trim() ?? string.Empty,
+                    Content = q.Content?.Trim() ?? string.Empty
+                }).ToList();
+                interviewRoomRepository.UpdateAsync(room);
+                await interviewRoomRepository.SaveChangesAsync();
+            }
 
-            backgroundService.Enqueue<INotificationUseCase>(
-                    uc => uc.CreateAsync(
-                        room.CoachId.Value,
-                        NotificationType.AiAnalysisCompleted,
-                        "Extract successful",
-                        "Your interview session questions has been extracted successfully.",
-                        $"/interview?roomId={interviewRoomId}&action=review-questions",
-                        null));
+            if (room?.CoachId != null)
+            {
+                backgroundService.Enqueue<INotificationUseCase>(
+                        uc => uc.CreateAsync(
+                            room.CoachId.Value,
+                            NotificationType.AiAnalysisCompleted,
+                            "Extract successful",
+                            "Your interview session questions has been extracted successfully.",
+                            $"/interview?roomId={interviewRoomId}&action=review-questions",
+                            null));
+            }
 
             return items.Count;
         }

@@ -261,6 +261,9 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     };
                     await roomRepo.AddAsync(room);
 
+                    // Link room back to the round so EF Core tracks and assigns the proper ID for multiple rounds
+                    round.InterviewRoom = room;
+
                     // Schedule reminder notifications for each round in Flow C
                     _scheduleReminders.Schedule(room.Id, round.StartTime);
                 }
