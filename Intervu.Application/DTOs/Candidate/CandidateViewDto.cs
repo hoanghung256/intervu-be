@@ -1,3 +1,4 @@
+using Intervu.Application.DTOs.Industry;
 using Intervu.Application.DTOs.Skill;
 using Intervu.Application.DTOs.User;
 
@@ -9,6 +10,9 @@ namespace Intervu.Application.DTOs.Candidate
         public UserDto User { get; set; } = null!;
         public string? PortfolioUrl { get; set; }
         public ICollection<SkillDto> Skills { get; set; } = new List<SkillDto>();
+        public ICollection<IndustryDto> Industries { get; set; } = new List<IndustryDto>();
+        public List<string>? CertificationLinks { get; set; }
+        public ICollection<CandidateWorkExperienceDto> WorkExperiences { get; set; } = new List<CandidateWorkExperienceDto>();
         public string? Bio { get; set; }
     }
 }

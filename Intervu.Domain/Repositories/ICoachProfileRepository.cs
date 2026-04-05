@@ -24,6 +24,7 @@ namespace Intervu.Domain.Repositories
             int? minPrice = null,
             int? maxPrice = null);
         Task UpdateCoachProfileAsync(CoachProfile updatedProfile);
+        Task ReplaceWorkExperiencesAsync(Guid coachId, IEnumerable<CoachWorkExperience> workExperiences);
         void DeleteCoachProfile(Guid id);
         Task<int> GetTotalCoachCountAsync();
     }

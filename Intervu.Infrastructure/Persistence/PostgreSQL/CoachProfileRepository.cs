@@ -51,6 +51,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Include(p => p.Companies)
                 .Include(p => p.Skills)
                 .Include(p => p.Industries)
+                .Include(p => p.WorkExperiences)
                 .Include(p => p.User)
                 .FirstOrDefaultAsync();
 
@@ -64,6 +65,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Include(p => p.Companies)
                 .Include(p => p.Skills)
                 .Include(p => p.Industries)
+                .Include(p => p.WorkExperiences)
                 .Include(p => p.User)
                 .FirstOrDefaultAsync();
 
@@ -88,6 +90,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Include(i => i.Companies)
                 .Include(i => i.Skills)
                 .Include(i => i.Industries)
+                .Include(i => i.WorkExperiences)
                 .Include(i => i.User)
                 .AsQueryable();
 
@@ -169,6 +172,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Include(p => p.Companies)
                 .Include(p => p.Skills)
                 .Include(p => p.Industries)
+                .Include(p => p.WorkExperiences)
                 .Include(p => p.User)
                 .FirstOrDefaultAsync(p => p.Id == updatedProfile.Id);
 
@@ -185,6 +189,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
             if (updatedProfile.Companies != null)
             {
+                existingProfile.Companies.Clear();
                 var companyIds = updatedProfile.Companies.Select(c => c.Id).ToList();
                 var companies = await _context.Companies.Where(c => companyIds.Contains(c.Id)).ToListAsync();
                 foreach (var company in companies)
@@ -195,6 +200,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
             if (updatedProfile.Skills != null)
             {
+                existingProfile.Skills.Clear();
                 var skillIds = updatedProfile.Skills.Select(s => s.Id).ToList();
                 var skills = await _context.Skills.Where(s => skillIds.Contains(s.Id)).ToListAsync();
                 foreach (var skill in skills)
@@ -212,6 +218,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 {
                     existingProfile.Industries.Add(industry);
                 }
+            }
+
+            if (updatedProfile.CertificationLinks != null)
+            {
+                existingProfile.CertificationLinks = updatedProfile.CertificationLinks;
             }
 
             if (existingProfile.User != null && updatedProfile.User != null)
@@ -234,6 +245,27 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             {
                 throw new Exception("An error occurred while saving coach profile changes. " + ex.ToString(), ex);
             }
+        }
+
+        public async Task ReplaceWorkExperiencesAsync(Guid coachId, IEnumerable<CoachWorkExperience> workExperiences)
+        {
+            var existingProfile = await _context.CoachProfiles
+                .Include(p => p.WorkExperiences)
+                .FirstOrDefaultAsync(p => p.Id == coachId);
+
+            if (existingProfile == null)
+                throw new Exception("Coach profile not found.");
+
+            _context.Set<CoachWorkExperience>().RemoveRange(existingProfile.WorkExperiences);
+
+            var items = workExperiences?.ToList() ?? new List<CoachWorkExperience>();
+            foreach (var item in items)
+            {
+                item.CoachProfileId = coachId;
+            }
+
+            await _context.Set<CoachWorkExperience>().AddRangeAsync(items);
+            await _context.SaveChangesAsync();
         }
 
         public async Task<int> GetTotalCoachCountAsync()

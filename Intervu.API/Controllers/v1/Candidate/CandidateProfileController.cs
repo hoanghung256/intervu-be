@@ -209,5 +209,39 @@ namespace Intervu.API.Controllers.v1.Candidate
             });
         }
 
+        // [PUT] api/Candidate-profile/{id}/work-experiences
+        [Authorize(Policy = AuthorizationPolicies.Candidate)]
+        [HttpPut("{id}/work-experiences")]
+        public async Task<IActionResult> UpdateCandidateWorkExperiences([FromRoute] Guid id, [FromBody] UpdateCandidateWorkExperiencesRequest request)
+        {
+            if (request == null)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Request body is required"
+                });
+            }
+
+            try
+            {
+                var profile = await _updateCandidateProfile.UpdateCandidateWorkExperiencesAsync(id, request.WorkExperiences);
+                return Ok(new
+                {
+                    success = true,
+                    message = "Work experiences updated successfully",
+                    data = profile
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
+            }
+        }
+
     }
 }

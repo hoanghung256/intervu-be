@@ -20,8 +20,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             if (user == null)
                 throw new InvalidOperationException("Registered user not found. Please register the account first.");
 
-            //profile.User = user;
-
             await _context.SaveChangesAsync();
         }
 
@@ -31,6 +29,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Where(p => p.User.SlugProfileUrl == slug)
                 .Include(p => p.User)
                 .Include(p => p.Skills)
+                .Include(p => p.Industries)
+                .Include(p => p.WorkExperiences)
                 .FirstOrDefaultAsync();
         }
 
@@ -40,6 +40,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Where(p => p.Id == id)
                 .Include(p => p.User)
                 .Include(p => p.Skills)
+                .Include(p => p.Industries)
+                .Include(p => p.WorkExperiences)
                 .FirstOrDefaultAsync();
         }
 
@@ -48,24 +50,76 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             var existingProfile = await _context.CandidateProfiles
                 .Include(p => p.User)
                 .Include(p => p.Skills)
+                .Include(p => p.Industries)
+                .Include(p => p.WorkExperiences)
                 .FirstOrDefaultAsync(p => p.Id == updatedProfile.Id);
 
             if (existingProfile == null)
                 throw new Exception("Candidate profile not found.");
 
-            existingProfile.CVUrl = updatedProfile.CVUrl;
-            existingProfile.PortfolioUrl = updatedProfile.PortfolioUrl;
-            existingProfile.Skills = updatedProfile.Skills;
-            existingProfile.Bio = updatedProfile.Bio;
+            if (updatedProfile.CVUrl != null) existingProfile.CVUrl = updatedProfile.CVUrl;
+            if (updatedProfile.PortfolioUrl != null) existingProfile.PortfolioUrl = updatedProfile.PortfolioUrl;
+            if (updatedProfile.Bio != null) existingProfile.Bio = updatedProfile.Bio;
             existingProfile.CurrentAmount = updatedProfile.CurrentAmount;
+
+            if (updatedProfile.Skills != null)
+            {
+                existingProfile.Skills.Clear();
+                var skillIds = updatedProfile.Skills.Select(s => s.Id).ToList();
+                var skills = await _context.Skills.Where(s => skillIds.Contains(s.Id)).ToListAsync();
+                foreach (var skill in skills)
+                {
+                    existingProfile.Skills.Add(skill);
+                }
+            }
+
+            if (updatedProfile.Industries != null)
+            {
+                existingProfile.Industries.Clear();
+                var industryIds = updatedProfile.Industries.Select(i => i.Id).ToList();
+                var industries = await _context.Industries.Where(i => industryIds.Contains(i.Id)).ToListAsync();
+                foreach (var industry in industries)
+                {
+                    existingProfile.Industries.Add(industry);
+                }
+            }
+
+            if (updatedProfile.CertificationLinks != null)
+            {
+                existingProfile.CertificationLinks = updatedProfile.CertificationLinks;
+            }
 
             if (existingProfile.User != null && updatedProfile.User != null)
             {
-                existingProfile.User.FullName = updatedProfile.User.FullName;
-                existingProfile.User.Email = updatedProfile.User.Email;
-                existingProfile.User.ProfilePicture = updatedProfile.User.ProfilePicture;
+                if (!string.IsNullOrWhiteSpace(updatedProfile.User.FullName))
+                    existingProfile.User.FullName = updatedProfile.User.FullName;
+                if (!string.IsNullOrWhiteSpace(updatedProfile.User.Email))
+                    existingProfile.User.Email = updatedProfile.User.Email;
+                if (!string.IsNullOrWhiteSpace(updatedProfile.User.ProfilePicture))
+                    existingProfile.User.ProfilePicture = updatedProfile.User.ProfilePicture;
             }
 
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task ReplaceWorkExperiencesAsync(Guid candidateId, IEnumerable<CandidateWorkExperience> workExperiences)
+        {
+            var existingProfile = await _context.CandidateProfiles
+                .Include(p => p.WorkExperiences)
+                .FirstOrDefaultAsync(p => p.Id == candidateId);
+
+            if (existingProfile == null)
+                throw new Exception("Candidate profile not found.");
+
+            _context.Set<CandidateWorkExperience>().RemoveRange(existingProfile.WorkExperiences);
+
+            var items = workExperiences?.ToList() ?? new List<CandidateWorkExperience>();
+            foreach (var item in items)
+            {
+                item.CandidateProfileId = candidateId;
+            }
+
+            await _context.Set<CandidateWorkExperience>().AddRangeAsync(items);
             await _context.SaveChangesAsync();
         }
 

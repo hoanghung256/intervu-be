@@ -5,11 +5,9 @@ using Intervu.Application.Utils;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
-using Org.BouncyCastle.Asn1.Ocsp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Intervu.Application.UseCases.CoachProfile
@@ -38,7 +36,7 @@ namespace Intervu.Application.UseCases.CoachProfile
                 throw new Exception("Coach profile not found.");
 
             _mapper.Map(request, existingProfile);
-            existingProfile.Id = id; 
+            existingProfile.Id = id;
 
             if (request.SkillIds != null)
             {
@@ -52,8 +50,19 @@ namespace Intervu.Application.UseCases.CoachProfile
                 existingProfile.Companies = companies.ToList();
             }
 
+            if (request.IndustryIds != null)
+            {
+                var industries = await _industryRepository.GetByIdsAsync(request.IndustryIds);
+                existingProfile.Industries = industries.ToList();
+            }
+
+            if (request.CertificationLinks != null)
+            {
+                existingProfile.CertificationLinks = request.CertificationLinks;
+            }
+
             // Update name and slug from name
-            if (request.FullName != null)
+            if (!string.IsNullOrWhiteSpace(request.FullName) && existingProfile.User != null)
             {
                 existingProfile.User.FullName = request.FullName;
                 existingProfile.User.SlugProfileUrl = SlugProfileUrlHandler.GenerateProfileSlug(request.FullName);
@@ -61,7 +70,35 @@ namespace Intervu.Application.UseCases.CoachProfile
 
             await _repo.UpdateCoachProfileAsync(existingProfile);
 
-            return _mapper.Map<CoachProfileDto>(existingProfile);
+            var reloaded = await _repo.GetProfileByIdAsync(id);
+            return _mapper.Map<CoachProfileDto>(reloaded!);
+        }
+
+        public async Task<CoachProfileDto> UpdateCoachWorkExperiencesAsync(Guid id, List<CoachWorkExperienceDto> workExperiences)
+        {
+            var existingProfile = await _repo.GetProfileByIdAsync(id);
+            if (existingProfile == null)
+                throw new Exception("Coach profile not found.");
+
+            var entities = (workExperiences ?? new List<CoachWorkExperienceDto>())
+                .Select(x => new CoachWorkExperience
+                {
+                    Id = x.Id == Guid.Empty ? Guid.NewGuid() : x.Id,
+                    CoachProfileId = id,
+                    CompanyName = x.CompanyName,
+                    StartDate = x.StartDate,
+                    EndDate = x.EndDate,
+                    IsCurrentWorking = x.IsCurrentWorking,
+                    IsEnded = x.IsEnded,
+                    Description = x.Description,
+                    SkillIds = x.SkillIds ?? new List<Guid>()
+                })
+                .ToList();
+
+            await _repo.ReplaceWorkExperiencesAsync(id, entities);
+
+            var reloaded = await _repo.GetProfileByIdAsync(id);
+            return _mapper.Map<CoachProfileDto>(reloaded!);
         }
 
         public async Task<CoachProfileDto> UpdateCoachStatus(Guid id, CoachProfileStatus status)

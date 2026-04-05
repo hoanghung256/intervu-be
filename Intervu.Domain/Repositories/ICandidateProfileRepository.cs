@@ -8,6 +8,7 @@ namespace Intervu.Domain.Repositories
         Task<CandidateProfile?> GetProfileByIdAsync(Guid id);
         Task CreateCandidateProfileAsync(CandidateProfile profile);
         Task UpdateCandidateProfileAsync(CandidateProfile updatedProfile);
+        Task ReplaceWorkExperiencesAsync(Guid candidateId, IEnumerable<CandidateWorkExperience> workExperiences);
         void DeleteCandidateProfile(Guid id);
     }
 }

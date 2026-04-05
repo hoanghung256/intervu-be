@@ -1,7 +1,5 @@
 using Intervu.Application.DTOs.Candidate;
 using Intervu.Domain.Entities.Constants;
-// ﻿using Intervu.Application.DTOs.Interviewer;
-
 
 namespace Intervu.Application.Interfaces.UseCases.CandidateProfile
 {
@@ -10,6 +8,6 @@ namespace Intervu.Application.Interfaces.UseCases.CandidateProfile
         Task<CandidateProfileDto> UpdateCandidateProfileAsync(Guid id, CandidateUpdateDto updateDto);
         Task<CandidateViewDto> UpdateCandidateStatusAsync(Guid id, UserStatus status);
         Task<Domain.Entities.CandidateProfile> UpdateCandidateCVProfile(Guid id, string cvUrl);
-
+        Task<CandidateProfileDto> UpdateCandidateWorkExperiencesAsync(Guid id, List<CandidateWorkExperienceDto> workExperiences);
     }
 }

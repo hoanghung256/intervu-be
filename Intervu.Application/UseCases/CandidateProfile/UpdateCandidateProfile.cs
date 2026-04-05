@@ -2,6 +2,7 @@ using AutoMapper;
 using Intervu.Application.DTOs.Candidate;
 using Intervu.Application.Interfaces.UseCases.CandidateProfile;
 using Intervu.Application.Utils;
+using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 
@@ -12,40 +13,81 @@ namespace Intervu.Application.UseCases.CandidateProfile
         private readonly ICandidateProfileRepository _repo;
         private readonly IMapper _mapper;
         private readonly ISkillRepository _skillRepository;
+        private readonly IIndustryRepository _industryRepository;
 
-        public UpdateCandidateProfile(ICandidateProfileRepository repo, ISkillRepository skillRepository, IMapper mapper)
+        public UpdateCandidateProfile(
+            ICandidateProfileRepository repo,
+            ISkillRepository skillRepository,
+            IIndustryRepository industryRepository,
+            IMapper mapper)
         {
             _repo = repo;
             _skillRepository = skillRepository;
+            _industryRepository = industryRepository;
             _mapper = mapper;
         }
 
         public async Task<CandidateProfileDto> UpdateCandidateProfileAsync(Guid id, CandidateUpdateDto updateDto)
         {
-            var existing = await _repo.GetByIdAsync(id);
+            var existing = await _repo.GetProfileByIdAsync(id);
             if (existing == null)
                 throw new Exception("Candidate profile not found.");
 
-            // Map Skills by IDs
+            if (existing.User != null && !string.IsNullOrWhiteSpace(updateDto.FullName))
+            {
+                existing.User.SlugProfileUrl = SlugProfileUrlHandler.GenerateProfileSlug(updateDto.FullName);
+            }
+
             if (updateDto.SkillIds != null)
             {
                 var skills = await _skillRepository.GetByIdsAsync(updateDto.SkillIds);
                 existing.Skills = skills.ToList();
             }
 
-            // Map simple properties from DTO to existing entity (ignore nested User)
-            _mapper.Map(updateDto, existing);
-
-            if (!string.IsNullOrWhiteSpace(updateDto.FullName))
+            if (updateDto.IndustryIds != null)
             {
-                existing.User.FullName = updateDto.FullName;
-                existing.User.SlugProfileUrl = SlugProfileUrlHandler.GenerateProfileSlug(updateDto.FullName);
+                var industries = await _industryRepository.GetByIdsAsync(updateDto.IndustryIds);
+                existing.Industries = industries.ToList();
             }
 
-            await _repo.UpdateCandidateProfileAsync(existing);
-            await _repo.SaveChangesAsync();
+            if (updateDto.CertificationLinks != null)
+            {
+                existing.CertificationLinks = updateDto.CertificationLinks;
+            }
 
-            return _mapper.Map<CandidateProfileDto>(existing);
+            _mapper.Map(updateDto, existing);
+
+            await _repo.UpdateCandidateProfileAsync(existing);
+
+            var reloaded = await _repo.GetProfileByIdAsync(id);
+            return _mapper.Map<CandidateProfileDto>(reloaded!);
+        }
+
+        public async Task<CandidateProfileDto> UpdateCandidateWorkExperiencesAsync(Guid id, List<CandidateWorkExperienceDto> workExperiences)
+        {
+            var existing = await _repo.GetProfileByIdAsync(id);
+            if (existing == null)
+                throw new Exception("Candidate profile not found.");
+
+            var entities = (workExperiences ?? new List<CandidateWorkExperienceDto>())
+                .Select(x => new CandidateWorkExperience
+                {
+                    Id = x.Id == Guid.Empty ? Guid.NewGuid() : x.Id,
+                    CandidateProfileId = id,
+                    CompanyName = x.CompanyName,
+                    StartDate = x.StartDate,
+                    EndDate = x.EndDate,
+                    IsCurrentWorking = x.IsCurrentWorking,
+                    IsEnded = x.IsEnded,
+                    Description = x.Description,
+                    SkillIds = x.SkillIds ?? new List<Guid>()
+                })
+                .ToList();
+
+            await _repo.ReplaceWorkExperiencesAsync(id, entities);
+
+            var reloaded = await _repo.GetProfileByIdAsync(id);
+            return _mapper.Map<CandidateProfileDto>(reloaded!);
         }
 
         public async Task<CandidateViewDto> UpdateCandidateStatusAsync(Guid id, UserStatus status)

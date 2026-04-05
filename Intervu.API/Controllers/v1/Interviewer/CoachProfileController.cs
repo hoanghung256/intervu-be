@@ -126,6 +126,40 @@ namespace Intervu.API.Controllers.v1.Interviewer
             return Ok(new { success = false, message = msg });
         }
 
+        // [PUT] api/coach-profile/{id}/work-experiences
+        [Authorize(Policy = AuthorizationPolicies.Interviewer)]
+        [HttpPut("{id}/work-experiences")]
+        public async Task<IActionResult> UpdateCoachWorkExperiences([FromRoute] Guid id, [FromBody] UpdateCoachWorkExperiencesRequest request)
+        {
+            if (request == null)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Request body is required"
+                });
+            }
+
+            try
+            {
+                var profile = await _updateCoachProfile.UpdateCoachWorkExperiencesAsync(id, request.WorkExperiences);
+                return Ok(new
+                {
+                    success = true,
+                    message = "Work experiences updated successfully",
+                    data = profile
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
+            }
+        }
+
         // [PUT] api/coach-profile/{id}/status
         [Authorize(Policy = AuthorizationPolicies.Admin)]
         [HttpPut("{id}/status")]
