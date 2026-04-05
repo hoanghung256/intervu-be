@@ -132,9 +132,15 @@ namespace Intervu.Infrastructure.ExternalServices
             {
                 return new AiQuestionExtractionResponse { Status = "failed", Error = "AI service not configured" };
             }
+
+            if (audioData == null || audioData.Length == 0)
+            {
+                return new AiQuestionExtractionResponse { Status = "failed", Error = "Audio data is empty" };
+            }
             
             var endpoint = $"api/transcript?id={roomId}";
             using var form = new MultipartFormDataContent();
+
             var fileContent = new ByteArrayContent(audioData);
             fileContent.Headers.ContentType = new MediaTypeHeaderValue("audio/mpeg");
             form.Add(fileContent, "file", "audio.mp3");

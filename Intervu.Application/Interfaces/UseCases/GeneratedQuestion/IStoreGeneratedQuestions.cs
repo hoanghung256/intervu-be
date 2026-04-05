@@ -7,6 +7,6 @@ namespace Intervu.Application.Interfaces.UseCases.GeneratedQuestion
 {
     public interface IStoreGeneratedQuestions
     {
-        Task<int> ExecuteAsync(Guid interviewRoomId, IEnumerable<AiQuestionDto> questions);
+        Task<int> ExecuteAsync(Guid interviewRoomId, IEnumerable<AiQuestionDto> questions, string? transcript = null);
     }
 }
