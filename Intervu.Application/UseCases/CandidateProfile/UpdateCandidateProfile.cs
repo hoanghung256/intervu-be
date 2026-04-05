@@ -26,8 +26,6 @@ namespace Intervu.Application.UseCases.CandidateProfile
             if (existing == null)
                 throw new Exception("Candidate profile not found.");
 
-            existing.User.SlugProfileUrl = SlugProfileUrlHandler.GenerateProfileSlug(updateDto.FullName);
-
             // Map Skills by IDs
             if (updateDto.SkillIds != null)
             {
@@ -35,8 +33,14 @@ namespace Intervu.Application.UseCases.CandidateProfile
                 existing.Skills = skills.ToList();
             }
 
-            // Map simple properties from DTO to existing entity
+            // Map simple properties from DTO to existing entity (ignore nested User)
             _mapper.Map(updateDto, existing);
+
+            if (!string.IsNullOrWhiteSpace(updateDto.FullName))
+            {
+                existing.User.FullName = updateDto.FullName;
+                existing.User.SlugProfileUrl = SlugProfileUrlHandler.GenerateProfileSlug(updateDto.FullName);
+            }
 
             await _repo.UpdateCandidateProfileAsync(existing);
             await _repo.SaveChangesAsync();
