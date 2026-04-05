@@ -137,17 +137,39 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     BookedDurationMinutes = duration,
                 };
 
+                // 7. Create BookingRequest for Flow A (Direct)
+                // This ensures it shows up in "Booking Requests" list for both candidate and coach.
+                // Status is "Accepted" because it's a direct booking from an available slot (auto-approved).
+                Domain.Entities.BookingRequest br = new()
+                {
+                    CandidateId = candidateId,
+                    CoachId = coachId,
+                    Type = BookingRequestType.Direct,
+                    Status = (paymentAmount == 0) ? BookingRequestStatus.Paid : BookingRequestStatus.Accepted,
+                    CoachInterviewServiceId = coachInterviewServiceId,
+                    RequestedStartTime = startTime,
+                    TotalAmount = paymentAmount,
+                    ExpiresAt = DateTime.UtcNow.AddHours(24) // Auto-expire if not paid
+                };
+                br.CreatedAt = DateTime.UtcNow;
+
+                var brRepo = _unitOfWork.GetRepository<IBookingRequestRepository>();
+                await brRepo.AddAsync(br);
+
+                // Link transactions to this BookingRequest
+                t.BookingRequestId = br.Id;
+                t2.BookingRequestId = br.Id;
+
                 await transactionRepo.AddAsync(t);
                 await transactionRepo.AddAsync(t2);
 
-                // 7. Payment gateway or immediate finalization
+                // 8. Payment gateway or immediate finalization
                 string? checkoutUrl = null;
                 if (t.Amount == 0)
                 {
                     t.Status = TransactionStatus.Paid;
                     t2.Status = TransactionStatus.Paid;
 
-                    //uc => uc.Ad(candidateId, coachId, coachAvailabilityId, startTime, t.Id, duration);
                     var evaluation = await CreateEvaluationResultsFromInterviewService(coachInterviewServiceId);
 
                     _jobService.Enqueue<ICreateInterviewRoom>(
@@ -160,7 +182,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
                             Status = InterviewRoomStatus.Scheduled,
                             CurrentAvailabilityId = coachAvailabilityId,
                             TransactionId = t.Id,
-                            BookingRequestId = null,
+                            BookingRequestId = br.Id,
                             CoachInterviewServiceId = coachInterviewServiceId,
                             AimLevel = null,
                             EvaluationResults = evaluation,

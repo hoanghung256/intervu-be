@@ -1,4 +1,4 @@
-﻿using Intervu.Domain.Entities;
+using Intervu.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +10,7 @@ namespace Intervu.Application.Interfaces.UseCases.InterviewRoom
     public interface ICreateInterviewRoom
     {
         Task<Guid> ExecuteAsync(Guid interveweeId);
-        Task<Guid> ExecuteAsync(Guid interveweeId, Guid interviewerId, Guid availabilityId, DateTime startTime, Guid transactionId, int duration);
+        Task<Guid> ExecuteAsync(Guid interveweeId, Guid interviewerId, Guid availabilityId, DateTime startTime, Guid transactionId, int duration, Guid? bookingRequestId = null);
 
         Task ExecuteAsync(Domain.Entities.InterviewRoom room);
     }

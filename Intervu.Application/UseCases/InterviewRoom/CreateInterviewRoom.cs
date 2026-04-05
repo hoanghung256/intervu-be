@@ -39,7 +39,7 @@ namespace Intervu.Application.UseCases.InterviewRoom
             return room.Id;
         }
 
-        public async Task<Guid> ExecuteAsync(Guid candidateId, Guid coachId, Guid availabilityId, DateTime startTime, Guid transactionId, int duration)
+        public async Task<Guid> ExecuteAsync(Guid candidateId, Guid coachId, Guid availabilityId, DateTime startTime, Guid transactionId, int duration, Guid? bookingRequestId)
         {
             // TODO: interveweeId and interviewerId are valid and exists
             Domain.Entities.InterviewRoom room = new()
@@ -50,7 +50,8 @@ namespace Intervu.Application.UseCases.InterviewRoom
                 Status = Domain.Entities.Constants.InterviewRoomStatus.Scheduled,
                 DurationMinutes = duration,
                 CurrentAvailabilityId = availabilityId,
-                TransactionId = transactionId
+                TransactionId = transactionId,
+                BookingRequestId = bookingRequestId
             };
             await _interviewRoomRepo.AddAsync(room);
             await _interviewRoomRepo.SaveChangesAsync();

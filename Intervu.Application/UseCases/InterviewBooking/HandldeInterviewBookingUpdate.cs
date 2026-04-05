@@ -10,6 +10,7 @@ using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
+using System;
 
 namespace Intervu.Application.UseCases.InterviewBooking
 {
@@ -125,7 +126,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
         /// The availability was already split at checkout creation time.
         /// Here we just create the interview room using stored metadata.
         /// </summary>
-        private Task HandleAvailabilityPayment(InterviewBookingTransaction transaction)
+        private async Task HandleAvailabilityPayment(InterviewBookingTransaction transaction)
         {
             var candidateId = transaction.UserId;
             var coachId = transaction.CoachId
@@ -135,12 +136,18 @@ namespace Intervu.Application.UseCases.InterviewBooking
             var duration = transaction.BookedDurationMinutes
                 ?? throw new NotFoundException("Transaction is missing BookedDurationMinutes metadata");
 
-            //var bookingRepo = _unitOfWork.GetRepository<IBookingRequestRepository>();
-            //var roomRepo = _unitOfWork.GetRepository<IInterviewRoomRepository>();
-            //var availabilityRepo = _unitOfWork.GetRepository<ICoachAvailabilitiesRepository>();
-
-            //var bookingRequest = await bookingRepo.GetByIdWithDetailsAsync(transaction.BookingRequestId!.Value)
-            //   ?? throw new NotFoundException("Booking request not found");
+            // Updated for IC-127: Mark the associated BookingRequest as Paid
+            if (transaction.BookingRequestId != null)
+            {
+                var brRepo = _unitOfWork.GetRepository<IBookingRequestRepository>();
+                var br = await brRepo.GetByIdAsync(transaction.BookingRequestId.Value);
+                if (br != null)
+                {
+                    br.Status = BookingRequestStatus.Paid;
+                    br.UpdatedAt = DateTime.UtcNow;
+                    brRepo.UpdateAsync(br);
+                }
+            }
 
             var availabilityId = transaction.CoachAvailabilityId!.Value;
             var transactionId = transaction.Id;
@@ -153,14 +160,13 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 Status = InterviewRoomStatus.Scheduled,
                 DurationMinutes = duration,
                 CurrentAvailabilityId = availabilityId,
-                TransactionId = transactionId
+                TransactionId = transactionId,
+                BookingRequestId = transaction.BookingRequestId
             };
 
             _backgroundService.Enqueue<ICreateInterviewRoom>(
                 uc => uc.ExecuteAsync(room)
             );
-
-            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -186,6 +192,13 @@ namespace Intervu.Application.UseCases.InterviewBooking
             bookingRequest.Status = BookingRequestStatus.Paid;
             bookingRequest.UpdatedAt = DateTime.UtcNow;
             bookingRepo.UpdateAsync(bookingRequest);
+
+            if (bookingRequest.Type == BookingRequestType.Direct)
+            {
+                // Flow A: Direct booking via availability slot
+                await HandleAvailabilityPayment(transaction);
+                return;
+            }
 
             if (bookingRequest.Type == BookingRequestType.External)
             {

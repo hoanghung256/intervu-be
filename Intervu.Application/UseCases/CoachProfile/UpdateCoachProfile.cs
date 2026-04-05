@@ -52,9 +52,12 @@ namespace Intervu.Application.UseCases.CoachProfile
                 existingProfile.Companies = companies.ToList();
             }
 
-            // Update slug from name
+            // Update name and slug from name
             if (request.FullName != null)
+            {
+                existingProfile.User.FullName = request.FullName;
                 existingProfile.User.SlugProfileUrl = SlugProfileUrlHandler.GenerateProfileSlug(request.FullName);
+            }
 
             await _repo.UpdateCoachProfileAsync(existingProfile);
 

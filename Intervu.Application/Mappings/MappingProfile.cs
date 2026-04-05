@@ -71,6 +71,9 @@ namespace Intervu.Application.Mappings
                 .ForMember(dest => dest.Skills, opt => opt.Ignore());
             CreateMap<CandidateProfile, CandidateCreateDto>();
             CreateMap<CandidateProfile, CandidateUpdateDto>().ReverseMap();
+            CreateMap<CandidateUpdateDto, CandidateProfile>()
+                .ForMember(dest => dest.User, opt => opt.Ignore())
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
             // Admin mappings
             CreateMap<User, DTOs.Admin.UserDto>();
