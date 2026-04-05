@@ -39,12 +39,13 @@ namespace Intervu.Application.DTOs.BookingRequest
         /// - Each round must reference a valid CoachInterviewService belonging to the coach
         /// </summary>
         [Required]
-        [MinLength(2, ErrorMessage = "At least 2 rounds are required for JD multi-round interviews")]
+        [MinLength(1, ErrorMessage = "At least 1 round is required")]
         public List<CreateInterviewRoundDto> Rounds { get; set; } = [];
     }
 
     /// <summary>
-    /// A single round in the JD multi-round booking request
+    /// A single round in the JD multi-round booking request.
+    /// Each round references consecutive 30-min CoachAvailability blocks.
     /// </summary>
     public class CreateInterviewRoundDto
     {
@@ -55,9 +56,12 @@ namespace Intervu.Application.DTOs.BookingRequest
         public Guid CoachInterviewServiceId { get; set; }
 
         /// <summary>
-        /// Scheduled start time for this round
+        /// The IDs of consecutive 30-min CoachAvailability blocks for this round.
+        /// The number of blocks must match Service.DurationMinutes / 30.
+        /// Blocks must be strictly consecutive (Block[n].EndTime == Block[n+1].StartTime).
         /// </summary>
         [Required]
-        public DateTime StartTime { get; set; }
+        [MinLength(1, ErrorMessage = "At least one availability block is required per round")]
+        public List<Guid> AvailabilityIds { get; set; } = [];
     }
 }

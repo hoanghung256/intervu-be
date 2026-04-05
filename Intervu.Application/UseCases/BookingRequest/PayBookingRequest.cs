@@ -65,12 +65,14 @@ namespace Intervu.Application.UseCases.BookingRequest
             }
             else if (bookingRequest.Type == BookingRequestType.JDInterview)
             {
+                // With block-based model, CoachAvailability blocks are already marked Booked
+                // during booking creation. No splitting needed.
                 foreach (var round in bookingRequest.Rounds.OrderBy(r => r.RoundNumber))
                 {
                     var roundDuration = round.CoachInterviewService?.DurationMinutes ?? 60;
-                    var roundEnd = round.StartTime.AddMinutes(roundDuration);
 
-                    var currentAvailabilityId = await SplitAvailabilityForBookingAsync(availabilityRepo, bookingRequest.CoachId, round.StartTime, roundEnd);
+                    // Use the first availability block of this round as the reference
+                    var firstBlockId = round.AvailabilityBlocks?.OrderBy(b => b.StartTime).FirstOrDefault()?.Id;
 
                     var room = new Domain.Entities.InterviewRoom
                     {
@@ -78,7 +80,7 @@ namespace Intervu.Application.UseCases.BookingRequest
                         CoachId = bookingRequest.CoachId,
                         ScheduledTime = round.StartTime,
                         DurationMinutes = roundDuration,
-                        CurrentAvailabilityId = currentAvailabilityId,
+                        CurrentAvailabilityId = firstBlockId,
                         Status = InterviewRoomStatus.Scheduled,
                         TransactionId = paymentTx.Id,
                         BookingRequestId = bookingRequest.Id,
