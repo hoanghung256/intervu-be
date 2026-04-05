@@ -69,7 +69,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 int duration = service.DurationMinutes;
                 var endTime = startTime.AddMinutes(duration);
 
-                // 3. Validate the availability slot exists, belongs to coach, and is Available
+                // 3. Validate the starting availability slot exists, belongs to coach, and is Available
                 // Lock the selected availability row so concurrent requests for the same slot
                 // cannot both pass the overlap check before one booking is persisted.
                 var availability = await availabilityRepo.GetByIdForUpdateAsync(coachAvailabilityId)
@@ -81,11 +81,31 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 if (availability.Status != CoachAvailabilityStatus.Available)
                     throw new CoachAvailabilityNotAvailableException("Availability is not available for booking");
 
-                // 4. Bounds check: [startTime, endTime] must fit within the availability window
-                if (startTime < availability.StartTime || endTime > availability.EndTime)
+                // 4. Bounds check: all 30-min blocks covering [startTime, endTime) must exist and be Available.
+                //    A single availability block may be only 30 min while the service requires 60+ min,
+                //    so we need to verify coverage across multiple consecutive blocks.
+                // Lock all blocks in the requested range so overlap checks and transaction creation
+                // serialize against concurrent requests targeting the same time window.
+                var coveringBlocks = await availabilityRepo.GetBlocksInRangeForUpdateAsync(coachId, startTime, endTime);
+                var availableBlocks = coveringBlocks
+                    .Where(b => b.Status == CoachAvailabilityStatus.Available)
+                    .OrderBy(b => b.StartTime)
+                    .ToList();
+
+                // Verify the blocks fully cover [startTime, endTime) with no gaps
+                var cursor = startTime;
+                foreach (var block in availableBlocks)
+                {
+                    if (block.StartTime > cursor)
+                        break; // gap detected
+                    if (block.EndTime > cursor)
+                        cursor = block.EndTime;
+                }
+
+                if (cursor < endTime)
                     throw new BadRequestException(
                         $"The requested time range ({startTime:g} - {endTime:g}) " +
-                        $"does not fit within the availability slot ({availability.StartTime:g} - {availability.EndTime:g})");
+                        $"is not fully covered by available slots for this coach");
 
                 // 5. Overlap check: no existing active booking may collide with the requested range
                 var hasOverlap = await transactionRepo.HasOverlappingBookingAsync(coachId, startTime, endTime);

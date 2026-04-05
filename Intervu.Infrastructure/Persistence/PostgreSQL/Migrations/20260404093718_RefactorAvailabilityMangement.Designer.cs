@@ -3,6 +3,7 @@ using System;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 {
     [DbContext(typeof(IntervuPostgreDbContext))]
-    partial class IntervuPostgreDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260404093718_RefactorAvailabilityMangement")]
+    partial class RefactorAvailabilityMangement
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -433,9 +436,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<DateTime>("EndTime")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid?>("InterviewRoundId")
-                        .HasColumnType("uuid");
-
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("timestamp with time zone");
 
@@ -445,8 +445,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CoachId");
-
-                    b.HasIndex("InterviewRoundId");
 
                     b.ToTable("CoachAvailabilities", (string)null);
 
@@ -1317,10 +1315,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("ProblemShortName");
 
-                    b.Property<string>("QuestionList")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("QuestionList");
-
                     b.Property<int>("RescheduleAttemptCount")
                         .HasColumnType("integer");
 
@@ -1339,9 +1333,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 
                     b.Property<Guid?>("TransactionId")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("Transcript")
-                        .HasColumnType("text");
 
                     b.Property<int>("Type")
                         .HasColumnType("integer");
@@ -2546,15 +2537,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_CoachAvailabilities_CoachProfiles_CoachId");
 
-                    b.HasOne("Intervu.Domain.Entities.InterviewRound", "InterviewRound")
-                        .WithMany("AvailabilityBlocks")
-                        .HasForeignKey("InterviewRoundId")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .HasConstraintName("FK_CoachAvailabilities_InterviewRounds_InterviewRoundId");
-
                     b.Navigation("CoachProfile");
-
-                    b.Navigation("InterviewRound");
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.CoachInterviewService", b =>
@@ -3028,11 +3011,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Navigation("GeneratedQuestions");
 
                     b.Navigation("RescheduleRequests");
-                });
-
-            modelBuilder.Entity("Intervu.Domain.Entities.InterviewRound", b =>
-                {
-                    b.Navigation("AvailabilityBlocks");
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.Question", b =>

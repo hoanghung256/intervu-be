@@ -114,5 +114,38 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .FromSqlInterpolated($@"SELECT * FROM ""CoachAvailabilities"" WHERE ""Id"" = {availabilityId} FOR UPDATE")
                 .FirstOrDefaultAsync();
         }
+
+        public async Task<List<CoachAvailability>> GetBlocksInRangeAsync(Guid coachId, DateTime startTime, DateTime endTime)
+        {
+            return await _context.CoachAvailabilities
+                .Where(x => x.CoachId == coachId
+                    && x.StartTime >= startTime
+                    && x.EndTime <= endTime)
+                .OrderBy(x => x.StartTime)
+                .ToListAsync();
+        }
+
+        public Task<List<CoachAvailability>> GetBlocksInRangeForUpdateAsync(Guid coachId, DateTime startTime, DateTime endTime)
+        {
+            return _context.CoachAvailabilities
+                .FromSqlInterpolated($@"SELECT * FROM ""CoachAvailabilities""
+                    WHERE ""CoachId"" = {coachId}
+                      AND ""StartTime"" >= {startTime}
+                      AND ""EndTime"" <= {endTime}
+                    ORDER BY ""StartTime""
+                    FOR UPDATE")
+                .ToListAsync();
+        }
+
+        public async Task<int> DeleteMultipleAsync(List<Guid> ids)
+        {
+            var blocks = await _context.CoachAvailabilities
+                .Where(x => ids.Contains(x.Id))
+                .ToListAsync();
+
+            _context.CoachAvailabilities.RemoveRange(blocks);
+            await _context.SaveChangesAsync();
+            return blocks.Count;
+        }
     }
 }

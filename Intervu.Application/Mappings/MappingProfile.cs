@@ -91,10 +91,9 @@ namespace Intervu.Application.Mappings
 
             // Availability mappings
             CreateMap<CoachAvailabilityCreateDto, CoachAvailability>()
-                .ForMember(dest => dest.Id, opt => opt.Ignore());
-
-            CreateMap<CoachAvailabilityUpdateDto, CoachAvailability>()
-                .ForMember(dest => dest.CoachId, opt => opt.Ignore());
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.StartTime, opt => opt.MapFrom(src => src.RangeStartTime.UtcDateTime))
+                .ForMember(dest => dest.EndTime, opt => opt.MapFrom(src => src.RangeEndTime.UtcDateTime));
 
             CreateMap<InterviewType, InterviewTypeDto>().ReverseMap();
 

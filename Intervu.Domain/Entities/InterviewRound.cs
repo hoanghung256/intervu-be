@@ -43,5 +43,10 @@ namespace Intervu.Domain.Entities
         public BookingRequest BookingRequest { get; set; } = null!;
         public CoachInterviewService CoachInterviewService { get; set; } = null!;
         public InterviewRoom? InterviewRoom { get; set; }
+
+        /// <summary>
+        /// The consecutive 30-min CoachAvailability blocks assigned to this round.
+        /// </summary>
+        public ICollection<CoachAvailability> AvailabilityBlocks { get; set; } = [];
     }
 }

@@ -5,6 +5,6 @@ namespace Intervu.Application.Interfaces.UseCases.Availability
 {
     public interface ICreateCoachAvailability
     {
-        Task<Guid> ExecuteAsync(CoachAvailabilityCreateDto dto);
+        Task<List<Guid>> ExecuteAsync(CoachAvailabilityCreateDto dto);
     }
 }

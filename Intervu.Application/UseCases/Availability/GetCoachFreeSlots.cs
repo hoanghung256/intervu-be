@@ -1,16 +1,15 @@
 using Intervu.Application.DTOs.Availability;
 using Intervu.Application.Interfaces.UseCases.Availability;
 using Intervu.Application.Services;
+using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 
 namespace Intervu.Application.UseCases.Availability
 {
     /// <summary>
-    /// Subtraction-pattern query: fetches coach availabilities for a month,
-    /// fetches active bookings (transactions + booking-request rounds) in the same range,
-    /// then uses <see cref="AvailabilityCalculatorService"/> to compute the actual free slots.
-    /// Returns <see cref="FreeSlotDto"/> objects shaped like CoachAvailability
-    /// so the frontend can consume them without changes.
+    /// Returns computed free time slots for a coach by subtracting active bookings
+    /// (both direct and JD flows) from available blocks.
+    /// The frontend receives these to display bookable time slots.
     /// </summary>
     public class GetCoachFreeSlots : IGetCoachFreeSlots
     {
@@ -30,60 +29,43 @@ namespace Intervu.Application.UseCases.Availability
 
         public async Task<List<FreeSlotDto>> ExecuteAsync(Guid coachId, int month = 0, int year = 0)
         {
-            // 1. Get raw availability windows for the requested period
+            // 1. Get all availability blocks for the coach
             var availabilities = (await _availabilityRepo
                 .GetCoachAvailabilitiesByMonthAsync(coachId, month, year))
+                .Where(a => a.Status == CoachAvailabilityStatus.Available)
                 .ToList();
 
-            if (availabilities.Count == 0)
-                return [];
+            // 2. Get confirmed bookings from both direct booking and JD booking flows
+            var directBookings = await _transactionRepo.GetConfirmedBookingEntitiesForCoachAsync(coachId, month, year);
+            var jdBookings = await _bookingRequestRepo.GetConfirmedBookingEntitiesForCoachAsync(coachId, month, year);
 
-            // 2. Determine the date range covered by these availabilities
-            var rangeStart = availabilities.Min(a => a.StartTime);
-            var rangeEnd = availabilities.Max(a => a.EndTime);
-
-            // 3. Fetch active bookings from BOTH sources:
-            //    a) Flow A transactions (direct bookings with payment)
-            var activeTransactions = await _transactionRepo
-                .GetActiveBookingsByCoachAsync(coachId, rangeStart, rangeEnd);
-            //    b) Flow C booking-request rounds (Pending/Accepted/Paid)
-            var activeRounds = await _bookingRequestRepo
-                .GetActiveRoundsByCoachAsync(coachId, rangeStart, rangeEnd);
-
-            // Merge both sources into unified (Start, End) intervals
-            var allBookedIntervals = activeTransactions
-                .Where(t => t.BookedStartTime.HasValue && t.BookedDurationMinutes.HasValue)
-                .Select(t => (
-                    Start: t.BookedStartTime!.Value,
-                    End: t.BookedStartTime!.Value.AddMinutes(t.BookedDurationMinutes!.Value)
-                ))
-                .Concat(activeRounds)
+            var allBookedIntervals = directBookings
+                .Select(b => (b.BookedStartTime!.Value, b.BookedStartTime!.Value.AddMinutes(b.BookedDurationMinutes!.Value)))
+                .Concat(jdBookings.Select(b => (b.StartTime, b.EndTime)))
                 .ToList();
 
-            // 4. Compute free slots using the subtraction algorithm
-            var freeSlots = AvailabilityCalculatorService
-                .CalculateFreeSlots(availabilities, allBookedIntervals);
+            // 3. Calculate free slots by subtracting bookings from availabilities
+            var freeTimeSlots = AvailabilityCalculatorService.CalculateFreeSlots(availabilities, allBookedIntervals);
 
-            // 5. Map each free TimeSlot back to the original CoachAvailability it belongs to,
-            //    so the frontend gets a valid coachAvailabilityId to send when booking.
+            // 4. Split free ranges back into 30-min blocks (the frontend expects individual blocks)
+            const int blockMinutes = 30;
             var result = new List<FreeSlotDto>();
-
-            foreach (var slot in freeSlots)
+            foreach (var slot in freeTimeSlots)
             {
-                // Find the availability window that contains this free slot
-                var parent = availabilities.FirstOrDefault(a =>
-                    a.StartTime <= slot.Start && a.EndTime >= slot.End);
-
-                if (parent == null) continue; // safety — should not happen
-
-                result.Add(new FreeSlotDto
+                var blockStart = slot.Start;
+                while (blockStart.AddMinutes(blockMinutes) <= slot.End)
                 {
-                    Id = parent.Id,
-                    CoachId = parent.CoachId,
-                    StartTime = slot.Start,
-                    EndTime = slot.End,
-                    Status = 0, // Available
-                });
+                    var blockEnd = blockStart.AddMinutes(blockMinutes);
+                    var parentAvailability = availabilities.FirstOrDefault(a => blockStart >= a.StartTime && blockEnd <= a.EndTime);
+                    result.Add(new FreeSlotDto
+                    {
+                        Id = parentAvailability?.Id ?? Guid.Empty,
+                        CoachId = coachId,
+                        StartTime = blockStart,
+                        EndTime = blockEnd
+                    });
+                    blockStart = blockEnd;
+                }
             }
 
             return result;

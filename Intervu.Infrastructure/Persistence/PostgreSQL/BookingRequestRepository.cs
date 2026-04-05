@@ -27,9 +27,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Include(br => br.Rounds.OrderBy(r => r.RoundNumber))
                     .ThenInclude(r => r.CoachInterviewService)
                         .ThenInclude(s => s.InterviewType)
-                .Include(br => br.Rounds)
+                .Include(br => br.Rounds.OrderBy(r => r.RoundNumber))
                     .ThenInclude(r => r.InterviewRoom)
+                .Include(br => br.Rounds.OrderBy(r => r.RoundNumber))
+                    .ThenInclude(r => r.AvailabilityBlocks)
                 .Include(br => br.Transactions)
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(br => br.Id == id);
         }
 

@@ -70,6 +70,14 @@ namespace Intervu.Application.UseCases.InterviewRoom
         {
             await _interviewRoomRepo.AddAsync(room);
             await _interviewRoomRepo.SaveChangesAsync();
+
+            if (room.ScheduledTime.HasValue)
+            {
+                // Schedule after persistence so room Id is available.
+                _scheduleReminders.Schedule(room.Id, room.ScheduledTime.Value);
+            }
+
+            _cache.Add(room);
         }
     }
 }

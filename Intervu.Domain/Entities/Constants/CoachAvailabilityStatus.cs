@@ -9,6 +9,7 @@ namespace Intervu.Domain.Entities.Constants
     public enum CoachAvailabilityStatus
     {
         Available,
-        Unavailable
+        Unavailable,
+        Booked
     }
 }

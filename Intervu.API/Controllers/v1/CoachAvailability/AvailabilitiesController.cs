@@ -1,4 +1,4 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
 using Intervu.Application.DTOs.Availability;
 using Intervu.Application.Interfaces.UseCases.Availability;
 using Microsoft.AspNetCore.Mvc;
@@ -30,8 +30,9 @@ namespace Intervu.API.Controllers.v1.CoachAvailability
             _deleteCoachAvailability = deleteCoachAvailability;
             _updateCoachAvailability = updateCoachAvailability;
         }
+
         [HttpGet("{coachId}")]
-        public async Task<IActionResult> GetCoachAvailabilities([FromRoute]Guid coachId, [FromQuery] int month = 0, [FromQuery] int year = 0)
+        public async Task<IActionResult> GetCoachAvailabilities([FromRoute] Guid coachId, [FromQuery] int month = 0, [FromQuery] int year = 0)
         {
             var data = await _getCoachAvailabilities.ExecuteAsync(coachId, month, year);
             return Ok(new
@@ -42,10 +43,6 @@ namespace Intervu.API.Controllers.v1.CoachAvailability
             });
         }
 
-        /// <summary>
-        /// Returns computed free time slots (availability minus active bookings).
-        /// Used by candidates to see bookable times on the calendar.
-        /// </summary>
         [HttpGet("{coachId}/free-slots")]
         public async Task<IActionResult> GetCoachFreeSlots([FromRoute] Guid coachId, [FromQuery] int month = 0, [FromQuery] int year = 0)
         {
@@ -61,44 +58,29 @@ namespace Intervu.API.Controllers.v1.CoachAvailability
         [HttpPost]
         public async Task<IActionResult> CreateCoachAvailability([FromBody] CoachAvailabilityCreateDto request)
         {
-            try
-            {
-                var id = await _createCoachAvailability.ExecuteAsync(request);
-                return Ok(new { success = true, message = "Created", data = new { id } });
-            }
-            catch (System.Exception ex)
-            {
-                return BadRequest(new { success = false, message = ex.Message });
-            }
+            var ids = await _createCoachAvailability.ExecuteAsync(request);
+            return Ok(new { success = true, message = "Created", data = new { ids, blockCount = ids.Count } });
+        }
+
+        [HttpPut]
+        public async Task<IActionResult> UpdateCoachAvailability([FromBody] CoachAvailabilityUpdateDto request)
+        {
+            await _updateCoachAvailability.ExecuteAsync(request);
+            return Ok(new { success = true, message = "Updated" });
         }
 
         [HttpDelete("{availabilityId}")]
         public async Task<IActionResult> DeleteCoachAvailability(Guid availabilityId)
         {
-            try
-            {
-                await _deleteCoachAvailability.ExecuteAsync(availabilityId);
-                return Ok(new { success = true, message = "Deleted" });
-            }
-            catch (System.Exception ex)
-            {
-                return BadRequest(new { success = false, message = ex.Message });
-            }
+            await _deleteCoachAvailability.ExecuteAsync(availabilityId);
+            return Ok(new { success = true, message = "Deleted" });
         }
 
-        [HttpPut("{availabilityId}")]
-        public async Task<IActionResult> UpdateCoachAvailability(Guid availabilityId, [FromBody] CoachAvailabilityUpdateDto request)
+        [HttpDelete("range")]
+        public async Task<IActionResult> DeleteCoachAvailabilityRange([FromBody] CoachAvailabilityDeleteDto request)
         {
-            try
-            {
-                await _updateCoachAvailability.ExecuteAsync(availabilityId, request);
-                return Ok(new { success = true, message = "Updated" });
-            }
-            catch (System.Exception ex)
-            {
-                return BadRequest(new { success = false, message = ex.Message });
-            }
+            await _deleteCoachAvailability.ExecuteRangeAsync(request);
+            return Ok(new { success = true, message = "Range deleted" });
         }
     }
 }
-

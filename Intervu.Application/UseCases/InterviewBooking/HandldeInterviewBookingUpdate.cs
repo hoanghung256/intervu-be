@@ -22,7 +22,6 @@ namespace Intervu.Application.UseCases.InterviewBooking
         private readonly IBackgroundService _backgroundService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICoachInterviewServiceRepository _coachInterviewServiceRepository;
-        private readonly IScheduleInterviewReminders _scheduleReminders;
         private readonly ILogger<HandldeInterviewBookingUpdate> _logger;
 
         public HandldeInterviewBookingUpdate(
@@ -32,7 +31,6 @@ namespace Intervu.Application.UseCases.InterviewBooking
             IBackgroundService backgroundService,
             IUnitOfWork unitOfWork,
             ICoachInterviewServiceRepository coachInterviewServiceRepository,
-            IScheduleInterviewReminders scheduleReminders,
             ILogger<HandldeInterviewBookingUpdate> logger)
         {
             _transactionRepository = transactionRepository;
@@ -41,7 +39,6 @@ namespace Intervu.Application.UseCases.InterviewBooking
             _backgroundService = backgroundService;
             _unitOfWork = unitOfWork;
             _coachInterviewServiceRepository = coachInterviewServiceRepository;
-            _scheduleReminders = scheduleReminders;
             _logger = logger;
         }
 
@@ -155,15 +152,20 @@ namespace Intervu.Application.UseCases.InterviewBooking
             var availabilityId = transaction.CoachAvailabilityId!.Value;
             var transactionId = transaction.Id;
 
+            var room = new Domain.Entities.InterviewRoom
+            {
+                CandidateId = candidateId,
+                CoachId = coachId,
+                ScheduledTime = startTime,
+                Status = InterviewRoomStatus.Scheduled,
+                DurationMinutes = duration,
+                CurrentAvailabilityId = availabilityId,
+                TransactionId = transactionId,
+                BookingRequestId = transaction.BookingRequestId
+            };
+
             _backgroundService.Enqueue<ICreateInterviewRoom>(
-                uc => uc.ExecuteAsync(
-                    candidateId,
-                    coachId, // local variable
-                    availabilityId, // local variable
-                    startTime,
-                    transactionId, // local variable
-                    duration,
-                    transaction.BookingRequestId) // Added for IC-127
+                uc => uc.ExecuteAsync(room)
             );
         }
 
@@ -173,7 +175,6 @@ namespace Intervu.Application.UseCases.InterviewBooking
         private async Task HandleBookingRequestPayment(InterviewBookingTransaction transaction)
         {
             var bookingRepo = _unitOfWork.GetRepository<IBookingRequestRepository>();
-            var roomRepo = _unitOfWork.GetRepository<IInterviewRoomRepository>();
             var availabilityRepo = _unitOfWork.GetRepository<ICoachAvailabilitiesRepository>();
 
             var bookingRequest = await bookingRepo.GetByIdWithDetailsAsync(transaction.BookingRequestId!.Value)
@@ -224,13 +225,10 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     EvaluationResults = await CreateEvaluationResultsFromInterviewService(bookingRequest.CoachInterviewServiceId),
                     IsEvaluationCompleted = false
                 };
-                await roomRepo.AddAsync(room);
-
-                // Schedule reminder notifications for Flow B room
-                _scheduleReminders.Schedule(room.Id, startTime);
+                _backgroundService.Enqueue<ICreateInterviewRoom>(uc => uc.ExecuteAsync(room));
 
                 _logger.LogInformation(
-                    "Created interview room for external BookingRequest {BookingRequestId}",
+                    "Queued interview room creation for external BookingRequest {BookingRequestId}",
                     bookingRequest.Id);
             }
             else if (bookingRequest.Type == BookingRequestType.JDInterview)
@@ -259,17 +257,11 @@ namespace Intervu.Application.UseCases.InterviewBooking
                         EvaluationResults = await CreateEvaluationResultsFromInterviewService(round.CoachInterviewServiceId),
                         IsEvaluationCompleted = false
                     };
-                    await roomRepo.AddAsync(room);
-
-                    // Link room back to the round so EF Core tracks and assigns the proper ID for multiple rounds
-                    round.InterviewRoom = room;
-
-                    // Schedule reminder notifications for each round in Flow C
-                    _scheduleReminders.Schedule(room.Id, round.StartTime);
+                    _backgroundService.Enqueue<ICreateInterviewRoom>(uc => uc.ExecuteAsync(room));
                 }
 
                 _logger.LogInformation(
-                    "Created {RoundCount} interview rooms for JD BookingRequest {BookingRequestId}",
+                    "Queued {RoundCount} interview rooms for JD BookingRequest {BookingRequestId}",
                     bookingRequest.Rounds.Count, bookingRequest.Id);
             }
         }

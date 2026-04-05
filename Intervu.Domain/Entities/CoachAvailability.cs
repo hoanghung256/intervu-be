@@ -21,8 +21,15 @@ namespace Intervu.Domain.Entities
 
         public CoachAvailabilityStatus Status { get; set; }
 
+        /// <summary>
+        /// FK to the InterviewRound this block is assigned to (null if unbooked).
+        /// Set when the block's status transitions to Booked as part of a booking.
+        /// </summary>
+        public Guid? InterviewRoundId { get; set; }
+
         // Navigation
         public CoachProfile? CoachProfile { get; set; }
+        public InterviewRound? InterviewRound { get; set; }
 
         public ICollection<InterviewBookingTransaction> InterviewBookingTransactions { get; set; } = [];
     }

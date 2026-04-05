@@ -2,7 +2,7 @@ using System;
 
 namespace Intervu.Application.DTOs.Availability
 {
-    public class CoachAvailabilityCreateDto
+    public class CoachAvailabilityDeleteDto
     {
         public Guid CoachId { get; set; }
         public DateTimeOffset RangeStartTime { get; set; }

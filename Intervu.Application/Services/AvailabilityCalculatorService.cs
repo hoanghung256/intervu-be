@@ -17,7 +17,6 @@ namespace Intervu.Application.Services
     /// </summary>
     public static class AvailabilityCalculatorService
     {
-        private static readonly TimeSpan BufferTime = TimeSpan.FromMinutes(15);
 
         /// <summary>
         /// Given a coach's availability windows and all booking transactions,
@@ -67,10 +66,6 @@ namespace Intervu.Application.Services
                 return [];
 
             var activeBookings = (bookedIntervals ?? [])
-                .Select(b => (
-                    Start: b.Start, 
-                    End: b.End.Add(BufferTime)
-                ))
                 .OrderBy(b => b.Start)
                 .ToList();
 
