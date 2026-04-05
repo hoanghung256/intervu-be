@@ -51,6 +51,7 @@ namespace Intervu.Application.Mappings
 
             CreateMap<CoachProfile, CoachViewDto>()
                 .ForMember(dest => dest.User, opt => opt.Ignore())
+                .ForMember(dest => dest.Certificates, opt => opt.MapFrom(src => src.Certificates != null ? src.Certificates.Select(c => c.Link).ToList() : null))
                 .ReverseMap();
 
             CreateMap<CoachCreateDto, CoachProfile>().ReverseMap();
@@ -67,7 +68,10 @@ namespace Intervu.Application.Mappings
 
             // Candidate mappings
             CreateMap<CandidateProfile, CandidateProfileDto>().ForMember(dest => dest.User, opt => opt.Ignore()).ReverseMap();
-            CreateMap<CandidateProfile, CandidateViewDto>().ForMember(dest => dest.User, opt => opt.Ignore()).ReverseMap();
+            CreateMap<CandidateProfile, CandidateViewDto>()
+                .ForMember(dest => dest.User, opt => opt.Ignore())
+                .ForMember(dest => dest.CertificationLinks, opt => opt.MapFrom(src => src.Certificates))
+                .ReverseMap();
             CreateMap<CandidateCreateDto, CandidateProfile>()
                 .ForMember(dest => dest.User, opt => opt.Ignore())
                 .ForMember(dest => dest.Skills, opt => opt.Ignore());
@@ -77,6 +81,8 @@ namespace Intervu.Application.Mappings
                 .ForMember(dest => dest.User, opt => opt.Ignore())
                 .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
             CreateMap<CandidateWorkExperience, CandidateWorkExperienceDto>().ReverseMap();
+            CreateMap<CandidateCertificate, CandidateCertificateDto>().ReverseMap();
+            CreateMap<CoachCertificate, CoachCertificateDto>().ReverseMap();
 
             // Admin mappings
             CreateMap<User, DTOs.Admin.UserDto>();

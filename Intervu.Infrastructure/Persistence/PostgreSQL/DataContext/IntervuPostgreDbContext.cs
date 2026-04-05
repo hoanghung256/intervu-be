@@ -24,6 +24,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
         public DbSet<CandidateWorkExperience> CandidateWorkExperiences { get; set; }
         public DbSet<CoachProfile> CoachProfiles { get; set; }
         public DbSet<CoachWorkExperience> CoachWorkExperiences { get; set; }
+        public DbSet<CandidateCertificate> CandidateCertificates { get; set; }
+        public DbSet<CoachCertificate> CoachCertificates { get; set; }
         public DbSet<CoachAvailability> CoachAvailabilities { get; set; }
         public DbSet<InterviewRoom> InterviewRooms { get; set; }
         public DbSet<Feedback> Feedbacks { get; set; }
@@ -141,14 +143,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                  .IsRequired(false)
                  .Metadata.SetValueComparer(savedQuestionComparer);
 
-                b.Property(x => x.CertificationLinks)
-                 .HasColumnName("CertificationLinks")
-                 .HasColumnType("jsonb")
-                 .HasConversion(
-                     v => v == null ? null : System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
-                     v => v == null ? null : System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<string>>(v, (System.Text.Json.JsonSerializerOptions?)null))
-                 .IsRequired(false)
-                 .Metadata.SetValueComparer(stringListComparer);
+                // Candidate certificates are stored as a separate table
+                b.HasMany(x => x.WorkExperiences)
+                 .WithOne(x => x.CandidateProfile)
+                 .HasForeignKey(x => x.CandidateProfileId)
+                 .OnDelete(DeleteBehavior.Cascade);
 
                 // Explicitly map navigation to User (like CoachProfile)
                 b.HasOne(x => x.User)
@@ -253,14 +252,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                  .IsRequired(false)
                  .Metadata.SetValueComparer(savedQuestionComparer);
 
-                b.Property(x => x.CertificationLinks)
-                 .HasColumnName("CertificationLinks")
-                 .HasColumnType("jsonb")
-                 .HasConversion(
-                     v => v == null ? null : System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
-                     v => v == null ? null : System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<string>>(v, (System.Text.Json.JsonSerializerOptions?)null))
-                 .IsRequired(false)
-                 .Metadata.SetValueComparer(coachStringListComparer);
+                // Coach certificates are stored as a separate table
+                b.HasMany(x => x.WorkExperiences)
+                 .WithOne(x => x.CoachProfile)
+                 .HasForeignKey(x => x.CoachProfileId)
+                 .OnDelete(DeleteBehavior.Cascade);
 
                 b.HasMany(x => x.Companies)
                  .WithMany(c => c.CoachProfiles)
@@ -273,6 +269,38 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                          j.HasKey("CoachProfilesId", "CompaniesId");
                          j.ToTable("CoachCompanies");
                      });
+
+            modelBuilder.Entity<CandidateCertificate>(b =>
+            {
+                b.ToTable("CandidateCertificates");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Name).HasMaxLength(300).IsRequired();
+                b.Property(x => x.Issuer).HasMaxLength(200);
+                b.Property(x => x.IssuedAt);
+                b.Property(x => x.ExpiryAt);
+                b.Property(x => x.Link).HasMaxLength(1000);
+
+                b.HasOne(x => x.CandidateProfile)
+                 .WithMany(p => p.Certificates)
+                 .HasForeignKey(x => x.CandidateProfileId)
+                 .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<CoachCertificate>(b =>
+            {
+                b.ToTable("CoachCertificates");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Name).HasMaxLength(300).IsRequired();
+                b.Property(x => x.Issuer).HasMaxLength(200);
+                b.Property(x => x.IssuedAt);
+                b.Property(x => x.ExpiryAt);
+                b.Property(x => x.Link).HasMaxLength(1000);
+
+                b.HasOne(x => x.CoachProfile)
+                 .WithMany(p => p.Certificates)
+                 .HasForeignKey(x => x.CoachProfileId)
+                 .OnDelete(DeleteBehavior.Cascade);
+            });
 
                 b.HasMany(x => x.Skills)
                  .WithMany(s => s.CoachProfiles)

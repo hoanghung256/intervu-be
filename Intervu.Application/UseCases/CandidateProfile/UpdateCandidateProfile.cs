@@ -33,9 +33,24 @@ namespace Intervu.Application.UseCases.CandidateProfile
             if (existing == null)
                 throw new Exception("Candidate profile not found.");
 
-            if (existing.User != null && !string.IsNullOrWhiteSpace(updateDto.FullName))
+            _mapper.Map(updateDto, existing);
+
+            // Always keep profile id from route to avoid accidental Guid.Empty from payload
+            existing.Id = id;
+
+            if (existing.User != null)
             {
-                existing.User.SlugProfileUrl = SlugProfileUrlHandler.GenerateProfileSlug(updateDto.FullName);
+                if (!string.IsNullOrWhiteSpace(updateDto.FullName))
+                {
+                    existing.User.FullName = updateDto.FullName;
+                    existing.User.SlugProfileUrl = SlugProfileUrlHandler.GenerateProfileSlug(updateDto.FullName);
+                }
+
+                if (!string.IsNullOrWhiteSpace(updateDto.Email))
+                    existing.User.Email = updateDto.Email;
+
+                if (updateDto.ProfilePicture != null)
+                    existing.User.ProfilePicture = updateDto.ProfilePicture;
             }
 
             if (updateDto.SkillIds != null)
@@ -49,13 +64,6 @@ namespace Intervu.Application.UseCases.CandidateProfile
                 var industries = await _industryRepository.GetByIdsAsync(updateDto.IndustryIds);
                 existing.Industries = industries.ToList();
             }
-
-            if (updateDto.CertificationLinks != null)
-            {
-                existing.CertificationLinks = updateDto.CertificationLinks;
-            }
-
-            _mapper.Map(updateDto, existing);
 
             await _repo.UpdateCandidateProfileAsync(existing);
 
@@ -72,7 +80,7 @@ namespace Intervu.Application.UseCases.CandidateProfile
             var entities = (workExperiences ?? new List<CandidateWorkExperienceDto>())
                 .Select(x => new CandidateWorkExperience
                 {
-                    Id = x.Id == Guid.Empty ? Guid.NewGuid() : x.Id,
+                    Id = Guid.NewGuid(),
                     CandidateProfileId = id,
                     CompanyName = x.CompanyName,
                     StartDate = x.StartDate,

@@ -8,10 +8,11 @@ namespace Intervu.Application.DTOs.Candidate
     {
         public Guid Id { get; set; }
         public UserDto User { get; set; } = null!;
+        public string? CVUrl { get; set; }
         public string? PortfolioUrl { get; set; }
         public ICollection<SkillDto> Skills { get; set; } = new List<SkillDto>();
         public ICollection<IndustryDto> Industries { get; set; } = new List<IndustryDto>();
-        public List<string>? CertificationLinks { get; set; }
+        public ICollection<CandidateCertificateDto>? CertificationLinks { get; set; }
         public ICollection<CandidateWorkExperienceDto> WorkExperiences { get; set; } = new List<CandidateWorkExperienceDto>();
         public string? Bio { get; set; }
     }

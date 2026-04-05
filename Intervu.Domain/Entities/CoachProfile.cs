@@ -36,7 +36,7 @@ namespace Intervu.Domain.Entities
 
         public ICollection<Industry> Industries { get; set; } = new List<Industry>();
 
-        public List<string>? CertificationLinks { get; set; }
+        public ICollection<CoachCertificate> Certificates { get; set; } = new List<CoachCertificate>();
 
         public ICollection<CoachWorkExperience> WorkExperiences { get; set; } = new List<CoachWorkExperience>();
 

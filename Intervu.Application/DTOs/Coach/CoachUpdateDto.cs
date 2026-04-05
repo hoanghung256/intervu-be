@@ -33,6 +33,6 @@ namespace Intervu.Application.DTOs.Coach
 
         public List<Guid>? IndustryIds { get; set; }
 
-        public List<string>? CertificationLinks { get; set; }
+        public List<CoachCertificateDto>? Certificates { get; set; }
     }
 }

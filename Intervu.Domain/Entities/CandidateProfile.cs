@@ -24,7 +24,7 @@ namespace Intervu.Domain.Entities
 
         public int CurrentAmount { get; set; }
 
-        public List<string>? CertificationLinks { get; set; }
+        public ICollection<CandidateCertificate> Certificates { get; set; } = new List<CandidateCertificate>();
 
         public ICollection<CandidateWorkExperience> WorkExperiences { get; set; } = new List<CandidateWorkExperience>();
 

@@ -12,7 +12,7 @@ namespace Intervu.Application.DTOs.Candidate
         public string? PortfolioUrl { get; set; }
         public ICollection<SkillDto> Skills { get; set; } = new List<SkillDto>();
         public ICollection<IndustryDto> Industries { get; set; } = new List<IndustryDto>();
-        public List<string>? CertificationLinks { get; set; }
+        public ICollection<CandidateCertificateDto> Certificates { get; set; } = new List<CandidateCertificateDto>();
         public ICollection<CandidateWorkExperienceDto> WorkExperiences { get; set; } = new List<CandidateWorkExperienceDto>();
         public string? Bio { get; set; }
         public int CurrentAmount { get; set; }

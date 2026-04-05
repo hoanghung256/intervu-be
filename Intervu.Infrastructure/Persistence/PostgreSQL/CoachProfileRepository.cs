@@ -44,7 +44,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             }
         }
 
-        public async Task<CoachProfile?> GetProfileBySlugAsync(string slug)
+        public async Task<CoachProfile?> GetProfileBySlugAsync(String slug)
         {
             CoachProfile? profile = await _context.CoachProfiles
                 .Where(p => p.User.SlugProfileUrl == slug)
@@ -52,6 +52,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Include(p => p.Skills)
                 .Include(p => p.Industries)
                 .Include(p => p.WorkExperiences)
+                .Include(p => p.Certificates)
                 .Include(p => p.User)
                 .FirstOrDefaultAsync();
 
@@ -65,6 +66,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Include(p => p.Companies)
                 .Include(p => p.Skills)
                 .Include(p => p.Industries)
+                .Include(p => p.Certificates)
                 .Include(p => p.WorkExperiences)
                 .Include(p => p.User)
                 .FirstOrDefaultAsync();
@@ -90,6 +92,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Include(i => i.Companies)
                 .Include(i => i.Skills)
                 .Include(i => i.Industries)
+                .Include(i => i.Certificates)
                 .Include(i => i.WorkExperiences)
                 .Include(i => i.User)
                 .AsQueryable();
@@ -189,7 +192,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
             if (updatedProfile.Companies != null)
             {
-                existingProfile.Companies.Clear();
                 var companyIds = updatedProfile.Companies.Select(c => c.Id).ToList();
                 var companies = await _context.Companies.Where(c => companyIds.Contains(c.Id)).ToListAsync();
                 foreach (var company in companies)
@@ -200,7 +202,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
             if (updatedProfile.Skills != null)
             {
-                existingProfile.Skills.Clear();
                 var skillIds = updatedProfile.Skills.Select(s => s.Id).ToList();
                 var skills = await _context.Skills.Where(s => skillIds.Contains(s.Id)).ToListAsync();
                 foreach (var skill in skills)
@@ -211,7 +212,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
             if (updatedProfile.Industries != null)
             {
-                existingProfile.Industries.Clear();
                 var industryIds = updatedProfile.Industries.Select(i => i.Id).ToList();
                 var industries = await _context.Industries.Where(i => industryIds.Contains(i.Id)).ToListAsync();
                 foreach (var industry in industries)
@@ -220,10 +220,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 }
             }
 
-            if (updatedProfile.CertificationLinks != null)
-            {
-                existingProfile.CertificationLinks = updatedProfile.CertificationLinks;
-            }
+            // Certificates are stored in separate table and handled via ReplaceCertificatesAsync/Add/Update/Delete
 
             if (existingProfile.User != null && updatedProfile.User != null)
             {
@@ -266,6 +263,103 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
             await _context.Set<CoachWorkExperience>().AddRangeAsync(items);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task ReplaceCertificatesAsync(Guid coachId, IEnumerable<CoachCertificate> certificates)
+        {
+            var existingProfile = await _context.CoachProfiles
+                .Include(p => p.Certificates)
+                .FirstOrDefaultAsync(p => p.Id == coachId);
+
+            if (existingProfile == null)
+                throw new Exception("Coach profile not found.");
+
+            _context.Set<CoachCertificate>().RemoveRange(existingProfile.Certificates);
+
+            var items = certificates?.ToList() ?? new List<CoachCertificate>();
+            foreach (var item in items)
+            {
+                item.CoachProfileId = coachId;
+            }
+
+            await _context.Set<CoachCertificate>().AddRangeAsync(items);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<CoachCertificate> AddCoachCertificateAsync(CoachCertificate certificate)
+        {
+            await _context.Set<CoachCertificate>().AddAsync(certificate);
+            await _context.SaveChangesAsync();
+            return certificate;
+        }
+
+        public async Task UpdateCoachCertificateAsync(CoachCertificate certificate)
+        {
+            var existing = await _context.Set<CoachCertificate>()
+                .FirstOrDefaultAsync(x => x.Id == certificate.Id);
+
+            if (existing == null)
+                throw new Exception("Certificate not found.");
+
+            existing.CoachProfileId = certificate.CoachProfileId;
+            existing.Name = certificate.Name;
+            existing.Issuer = certificate.Issuer;
+            existing.IssuedAt = certificate.IssuedAt;
+            existing.ExpiryAt = certificate.ExpiryAt;
+            existing.Link = certificate.Link;
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteCoachCertificateAsync(Guid certificateId)
+        {
+            var cert = await _context.Set<CoachCertificate>().FindAsync(certificateId);
+            if (cert != null)
+            {
+                _context.Set<CoachCertificate>().Remove(cert);
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task<CoachWorkExperience> AddWorkExperienceAsync(CoachWorkExperience workExperience)
+        {
+            await _context.Set<CoachWorkExperience>().AddAsync(workExperience);
+            await _context.SaveChangesAsync();
+            return workExperience;
+        }
+
+        public async Task UpdateWorkExperienceAsync(CoachWorkExperience workExperience)
+        {
+            var existing = await _context.Set<CoachWorkExperience>()
+                .FirstOrDefaultAsync(x => x.Id == workExperience.Id);
+
+            if (existing == null)
+                throw new Exception("Work experience not found.");
+
+            existing.CoachProfileId = workExperience.CoachProfileId;
+            existing.CompanyName = workExperience.CompanyName;
+            existing.PositionTitle = workExperience.PositionTitle;
+            existing.JobType = workExperience.JobType;
+            existing.Location = workExperience.Location;
+            existing.LocationType = workExperience.LocationType;
+            existing.StartDate = workExperience.StartDate;
+            existing.EndDate = workExperience.EndDate;
+            existing.IsCurrentWorking = workExperience.IsCurrentWorking;
+            existing.IsEnded = workExperience.IsEnded;
+            existing.Description = workExperience.Description;
+            existing.SkillIds = workExperience.SkillIds ?? new List<Guid>();
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteWorkExperienceAsync(Guid workExperienceId)
+        {
+            var exp = await _context.Set<CoachWorkExperience>().FindAsync(workExperienceId);
+            if (exp != null)
+            {
+                _context.Set<CoachWorkExperience>().Remove(exp);
+                await _context.SaveChangesAsync();
+            }
         }
 
         public async Task<int> GetTotalCoachCountAsync()

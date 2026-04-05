@@ -56,16 +56,19 @@ namespace Intervu.Application.UseCases.CoachProfile
                 existingProfile.Industries = industries.ToList();
             }
 
-            if (request.CertificationLinks != null)
+            if (existingProfile.User != null)
             {
-                existingProfile.CertificationLinks = request.CertificationLinks;
-            }
+                if (!string.IsNullOrWhiteSpace(request.FullName))
+                {
+                    existingProfile.User.FullName = request.FullName;
+                    existingProfile.User.SlugProfileUrl = SlugProfileUrlHandler.GenerateProfileSlug(request.FullName);
+                }
 
-            // Update name and slug from name
-            if (!string.IsNullOrWhiteSpace(request.FullName) && existingProfile.User != null)
-            {
-                existingProfile.User.FullName = request.FullName;
-                existingProfile.User.SlugProfileUrl = SlugProfileUrlHandler.GenerateProfileSlug(request.FullName);
+                if (!string.IsNullOrWhiteSpace(request.Email))
+                    existingProfile.User.Email = request.Email;
+
+                if (request.ProfilePicture != null)
+                    existingProfile.User.ProfilePicture = request.ProfilePicture;
             }
 
             await _repo.UpdateCoachProfileAsync(existingProfile);
@@ -83,7 +86,7 @@ namespace Intervu.Application.UseCases.CoachProfile
             var entities = (workExperiences ?? new List<CoachWorkExperienceDto>())
                 .Select(x => new CoachWorkExperience
                 {
-                    Id = x.Id == Guid.Empty ? Guid.NewGuid() : x.Id,
+                    Id = Guid.NewGuid(),
                     CoachProfileId = id,
                     CompanyName = x.CompanyName,
                     StartDate = x.StartDate,
