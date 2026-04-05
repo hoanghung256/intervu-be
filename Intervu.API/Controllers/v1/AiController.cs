@@ -61,7 +61,7 @@ namespace Intervu.API.Controllers.v1
                 return NotFound(new { success = false, message = "No audio chunks found for this recording session" });
             }
 
-            var mergeResult = _audioProcessingService.MergeAllTakesAsMp3(audioChunks);
+            var mergeResult = _audioProcessingService.MergeAllTakesAsWav(audioChunks);
             if (!mergeResult.Success)
             {
                 return Conflict(new { success = false, message = mergeResult.Error });
@@ -155,13 +155,13 @@ namespace Intervu.API.Controllers.v1
                 return NotFound(new { success = false, message = "No audio chunks found for this recording session" });
             }
 
-            var mergeResult = _audioProcessingService.MergeAllTakesAsMp3(audioChunks);
+            var mergeResult = _audioProcessingService.MergeAllTakesAsWav(audioChunks);
             if (!mergeResult.Success)
             {
                 return Conflict(new { success = false, message = mergeResult.Error });
             }
 
-            return File(mergeResult.Data, "audio/mpeg", $"recording-{recordingSessionId}.mp3");
+            return File(mergeResult.Data, "audio/wav", $"recording-{recordingSessionId}.wav");
         }
 
         [Authorize(Policy = AuthorizationPolicies.AllRoles)]
@@ -175,13 +175,13 @@ namespace Intervu.API.Controllers.v1
                 return NotFound(new { success = false, message = "No audio chunks found for this recording session" });
             }
 
-            var mergeResult = _audioProcessingService.MergeLatestTakeAsMp3(audioChunks);
+            var mergeResult = _audioProcessingService.MergeLatestTakeAsWav(audioChunks);
             if (!mergeResult.Success)
             {
                 return Conflict(new { success = false, message = mergeResult.Error });
             }
 
-            return File(mergeResult.Data, "audio/mpeg", $"recording-latest-{recordingSessionId}.mp3");
+            return File(mergeResult.Data, "audio/wav", $"recording-latest-{recordingSessionId}.wav");
         }
 
         [Authorize(Policy = AuthorizationPolicies.AllRoles)]
