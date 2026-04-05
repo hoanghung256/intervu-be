@@ -86,6 +86,10 @@ namespace Intervu.Domain.Entities
 
         public bool IsEvaluationCompleted { get; set; } = false;
 
+        public string? Transcript { get; set; }
+
+        public List<QuestionItem>? QuestionList { get; set; }
+
         // Navigation Properties
         public InterviewBookingTransaction? Transaction { get; set; }
         

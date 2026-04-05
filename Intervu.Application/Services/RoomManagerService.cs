@@ -249,7 +249,7 @@ namespace Intervu.Application.Services
                                 var extractionResult = await aiService.GetNewQuestionsFromTranscriptAsync(mergeResult.Data, roomGuid);
                                 if (extractionResult.Status != "failed" && extractionResult.QuestionList?.Count > 0)
                                 {
-                                    await storeGeneratedQuestions.ExecuteAsync(roomGuid, extractionResult.QuestionList);
+                                    await storeGeneratedQuestions.ExecuteAsync(roomGuid, extractionResult.QuestionList, extractionResult.Transcript);
                                     _logger.LogInformation("Auto-extracted {Count} questions from audio for room '{RoomId}'.", extractionResult.QuestionList.Count, roomId);
                                 }
                                 else

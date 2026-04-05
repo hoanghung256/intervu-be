@@ -79,7 +79,7 @@ namespace Intervu.API.Controllers.v1
                 return BadRequest(new { success = false, message = errorMsg });
             }
             
-            var storedCount = await _storeGeneratedQuestions.ExecuteAsync(request.RecordingSessionId, result.QuestionList);
+            var storedCount = await _storeGeneratedQuestions.ExecuteAsync(request.RecordingSessionId, result.QuestionList, result.Transcript);
 
             return Ok(new
             {

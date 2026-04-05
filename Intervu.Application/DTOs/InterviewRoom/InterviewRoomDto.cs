@@ -1,4 +1,5 @@
 using Intervu.Domain.Entities.Constants;
+using System;
 
 namespace Intervu.Application.DTOs.InterviewRoom
 {

@@ -5,7 +5,6 @@ using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Intervu.Domain.Entities.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using System;
@@ -19,17 +18,20 @@ namespace Intervu.API.Controllers.v1
     public class InterviewRoomController : Controller
     {
         private readonly IGetRoomHistory _getRoomHistory;
+        private readonly IGetCurrentRoom _getCurrentRoom;
         private readonly IGetCoachEvaluation _getCoachEvaluation;
         private readonly ISubmitCoachEvaluation _submitCoachEvaluation;
         private readonly ISaveCoachEvaluationDraft _saveCoachEvaluationDraft;
 
         public InterviewRoomController(
             IGetRoomHistory getRoomHistory,
+            IGetCurrentRoom getCurrentRoom,
             IGetCoachEvaluation getCoachEvaluation,
             ISubmitCoachEvaluation submitCoachEvaluation,
             ISaveCoachEvaluationDraft saveCoachEvaluationDraft)
         {
             _getRoomHistory = getRoomHistory;
+            _getCurrentRoom = getCurrentRoom;
             _getCoachEvaluation = getCoachEvaluation;
             _submitCoachEvaluation = submitCoachEvaluation;
             _saveCoachEvaluationDraft = saveCoachEvaluationDraft;
@@ -60,7 +62,33 @@ namespace Intervu.API.Controllers.v1
             {
                 success = true,
                 message = "Success",
-                data = result.Items
+                data = result
+            });
+        }
+
+        /// <summary>
+        /// Get a single interview room by ID
+        /// </summary>
+        [Authorize(Policy = AuthorizationPolicies.CandidateOrInterviewer)]
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById([FromRoute] Guid id)
+        {
+            var room = await _getCurrentRoom.ExecuteAsync(id);
+
+            if (room == null)
+            {
+                return NotFound(new
+                {
+                    success = false,
+                    message = "Interview room not found"
+                });
+            }
+
+            return Ok(new
+            {
+                success = true,
+                message = "Success",
+                data = room
             });
         }
 
@@ -155,26 +183,5 @@ namespace Intervu.API.Controllers.v1
                 message = "Evaluation draft saved successfully"
             });
         }
-
-        //[HttpPost]
-        //public async Task<IActionResult> CreateRoom([FromBody] CreateInterviewRoomDto createRoomDto)
-        //{
-        //    Guid roomId = createRoomDto.CoachId == null 
-        //        ? await _createRoom.ExecuteAsync(createRoomDto.CandidateId) 
-        //        : await _createRoom.ExecuteAsync(
-        //            createRoomDto.CandidateId, 
-        //            createRoomDto.CoachId.Value, 
-        //            createRoomDto.ScheduledTime ?? DateTime.UtcNow.AddDays(1));
-
-        //    return Ok(new
-        //    {
-        //        success = true,
-        //        message = "Interview room created successfully",
-        //        data = new
-        //        {
-        //            roomId = roomId
-        //        }
-        //    });
-        //}
     }
 }
