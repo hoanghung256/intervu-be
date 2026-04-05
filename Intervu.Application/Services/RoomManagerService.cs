@@ -243,7 +243,7 @@ namespace Intervu.Application.Services
                         var audioChunks = await getAudioChunk.ExecuteAllByRecordingSessionAsync(roomGuid);
                         if (audioChunks != null && audioChunks.Count > 0)
                         {
-                            var mergeResult = audioProcessingService.MergeAllTakesAsMp3(audioChunks);
+                            var mergeResult = audioProcessingService.MergeAllTakesAsWav(audioChunks);
                             if (mergeResult.Success && mergeResult.Data.Length > 0)
                             {
                                 var extractionResult = await aiService.GetNewQuestionsFromTranscriptAsync(mergeResult.Data, roomGuid);
