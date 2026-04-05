@@ -32,6 +32,12 @@ namespace Intervu.Domain.Repositories
         Task<List<CoachAvailability>> GetBlocksInRangeAsync(Guid coachId, DateTime startTime, DateTime endTime);
 
         /// <summary>
+        /// Returns and locks all blocks for a coach within a time range for the lifetime
+        /// of the current transaction.
+        /// </summary>
+        Task<List<CoachAvailability>> GetBlocksInRangeForUpdateAsync(Guid coachId, DateTime startTime, DateTime endTime);
+
+        /// <summary>
         /// Deletes multiple availability blocks by their IDs in a single operation.
         /// </summary>
         Task<int> DeleteMultipleAsync(List<Guid> ids);

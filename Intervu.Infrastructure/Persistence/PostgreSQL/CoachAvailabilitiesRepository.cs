@@ -125,6 +125,18 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .ToListAsync();
         }
 
+        public Task<List<CoachAvailability>> GetBlocksInRangeForUpdateAsync(Guid coachId, DateTime startTime, DateTime endTime)
+        {
+            return _context.CoachAvailabilities
+                .FromSqlInterpolated($@"SELECT * FROM ""CoachAvailabilities""
+                    WHERE ""CoachId"" = {coachId}
+                      AND ""StartTime"" >= {startTime}
+                      AND ""EndTime"" <= {endTime}
+                    ORDER BY ""StartTime""
+                    FOR UPDATE")
+                .ToListAsync();
+        }
+
         public async Task<int> DeleteMultipleAsync(List<Guid> ids)
         {
             var blocks = await _context.CoachAvailabilities

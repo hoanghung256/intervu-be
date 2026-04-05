@@ -58,57 +58,29 @@ namespace Intervu.API.Controllers.v1.CoachAvailability
         [HttpPost]
         public async Task<IActionResult> CreateCoachAvailability([FromBody] CoachAvailabilityCreateDto request)
         {
-            try
-            {
-                var ids = await _createCoachAvailability.ExecuteAsync(request);
-                return Ok(new { success = true, message = "Created", data = new { ids, blockCount = ids.Count } });
-            }
-            catch (System.Exception ex)
-            {
-                return BadRequest(new { success = false, message = ex.Message });
-            }
+            var ids = await _createCoachAvailability.ExecuteAsync(request);
+            return Ok(new { success = true, message = "Created", data = new { ids, blockCount = ids.Count } });
         }
 
         [HttpPut]
         public async Task<IActionResult> UpdateCoachAvailability([FromBody] CoachAvailabilityUpdateDto request)
         {
-            try
-            {
-                await _updateCoachAvailability.ExecuteAsync(request);
-                return Ok(new { success = true, message = "Updated" });
-            }
-            catch (System.Exception ex)
-            {
-                return BadRequest(new { success = false, message = ex.Message });
-            }
+            await _updateCoachAvailability.ExecuteAsync(request);
+            return Ok(new { success = true, message = "Updated" });
         }
 
         [HttpDelete("{availabilityId}")]
         public async Task<IActionResult> DeleteCoachAvailability(Guid availabilityId)
         {
-            try
-            {
-                await _deleteCoachAvailability.ExecuteAsync(availabilityId);
-                return Ok(new { success = true, message = "Deleted" });
-            }
-            catch (System.Exception ex)
-            {
-                return BadRequest(new { success = false, message = ex.Message });
-            }
+            await _deleteCoachAvailability.ExecuteAsync(availabilityId);
+            return Ok(new { success = true, message = "Deleted" });
         }
 
         [HttpDelete("range")]
         public async Task<IActionResult> DeleteCoachAvailabilityRange([FromBody] CoachAvailabilityDeleteDto request)
         {
-            try
-            {
-                await _deleteCoachAvailability.ExecuteRangeAsync(request);
-                return Ok(new { success = true, message = "Range deleted" });
-            }
-            catch (System.Exception ex)
-            {
-                return BadRequest(new { success = false, message = ex.Message });
-            }
+            await _deleteCoachAvailability.ExecuteRangeAsync(request);
+            return Ok(new { success = true, message = "Range deleted" });
         }
     }
 }

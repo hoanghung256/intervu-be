@@ -57,7 +57,7 @@ namespace Intervu.Application.DTOs.BookingRequest
 
         /// <summary>
         /// The IDs of consecutive 30-min CoachAvailability blocks for this round.
-        /// The number of blocks must match Service.DurationMinutes / 30.
+        /// The number of blocks must match ceil(Service.DurationMinutes / 30).
         /// Blocks must be strictly consecutive (Block[n].EndTime == Block[n+1].StartTime).
         /// </summary>
         [Required]

@@ -7,12 +7,14 @@ namespace Intervu.Application.Validators
 {
     public static class MultiRoundBookingValidator
     {
+        private const int AvailabilityBlockMinutes = 30;
+
         /// <summary>
         /// Validates a JD booking request against the block-based availability model.
         /// For each round:
         ///   1. Consecutive check: blocks must be strictly consecutive (Block[n].EndTime == Block[n+1].StartTime)
         ///   2. Status check: all blocks must be Available
-        ///   3. Service alignment: block count must match Service.DurationPerRound / 30
+        ///   3. Service alignment: block count must match ceil(Service.DurationPerRound / 30)
         /// </summary>
         public static void ValidateMultiRoundBooking(
             CreateJDBookingRequestDto request,
@@ -45,12 +47,12 @@ namespace Intervu.Application.Validators
                     throw new BadRequestException(
                         $"{roundLabel}: block {bookedBlock.Id} ({bookedBlock.StartTime:HH:mm}-{bookedBlock.EndTime:HH:mm}) is not available (status: {bookedBlock.Status})");
 
-                // Service alignment check: block count must match duration / 30
+                // Service alignment check: block count must match ceil(duration / 30)
                 if (!serviceDurations.TryGetValue(roundDto.CoachInterviewServiceId, out var durationMinutes))
                     throw new BadRequestException(
                         $"{roundLabel}: service {roundDto.CoachInterviewServiceId} not found");
 
-                var expectedBlockCount = durationMinutes / 30;
+                var expectedBlockCount = (durationMinutes + (AvailabilityBlockMinutes - 1)) / AvailabilityBlockMinutes;
                 if (blocks.Count != expectedBlockCount)
                     throw new BadRequestException(
                         $"{roundLabel}: expected {expectedBlockCount} blocks for {durationMinutes}-minute service, but got {blocks.Count}");

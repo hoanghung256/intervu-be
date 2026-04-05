@@ -12,6 +12,8 @@ namespace Intervu.Application.UseCases.BookingRequest
 {
     internal class CreateJDBookingRequest : ICreateJDBookingRequest
     {
+        private const int AvailabilityBlockMinutes = 30;
+
         private readonly IBookingRequestRepository _bookingRepo;
         private readonly ICoachInterviewServiceRepository _serviceRepo;
         private readonly ICoachProfileRepository _coachRepo;
@@ -57,26 +59,27 @@ namespace Intervu.Application.UseCases.BookingRequest
             var serviceMap = services.ToDictionary(s => s.Id);
             var serviceDurations = services.ToDictionary(s => s.Id, s => s.DurationMinutes);
 
-            // Collect all referenced availability block IDs across all rounds
-            var allBlockIds = dto.Rounds.SelectMany(r => r.AvailabilityIds).Distinct().ToList();
-
-            // Load all blocks in a single query
-            var blockEntities = new Dictionary<Guid, CoachAvailability>();
-            foreach (var blockId in allBlockIds)
-            {
-                var block = await _availabilityRepo.GetByIdAsync(blockId);
-                if (block == null)
-                    throw new BadRequestException($"Availability block {blockId} not found");
-                blockEntities[blockId] = block;
-            }
-
-            // Validate via the block-based validator
-            MultiRoundBookingValidator.ValidateMultiRoundBooking(dto, blockEntities, serviceDurations);
-
             // Begin atomic transaction
             await _unitOfWork.BeginTransactionAsync();
             try
             {
+                // Collect all referenced availability block IDs across all rounds
+                var allBlockIds = dto.Rounds.SelectMany(r => r.AvailabilityIds).Distinct().ToList();
+
+                // Load and lock all blocks in the current transaction to prevent race conditions.
+                var blockEntities = new Dictionary<Guid, CoachAvailability>();
+                foreach (var blockId in allBlockIds)
+                {
+                    var block = await _availabilityRepo.GetByIdForUpdateAsync(blockId);
+                    if (block == null)
+                        throw new BadRequestException($"Availability block {blockId} not found");
+
+                    blockEntities[blockId] = block;
+                }
+
+                // Validate while holding row locks so booking checks are transactionally consistent.
+                MultiRoundBookingValidator.ValidateMultiRoundBooking(dto, blockEntities, serviceDurations);
+
                 // Calculate total price and build rounds
                 var totalAmount = 0;
                 var rounds = new List<InterviewRound>();
@@ -85,20 +88,29 @@ namespace Intervu.Application.UseCases.BookingRequest
                 {
                     var roundDto = dto.Rounds[i];
                     var service = serviceMap[roundDto.CoachInterviewServiceId];
+                    var requiredBlockCount = (service.DurationMinutes + (AvailabilityBlockMinutes - 1)) / AvailabilityBlockMinutes;
 
                     // Resolve blocks for this round, sorted by StartTime
                     var roundBlocks = roundDto.AvailabilityIds
                         .Select(id => blockEntities[id])
                         .OrderBy(b => b.StartTime)
+                        .Take(requiredBlockCount)
                         .ToList();
+
+                    if (roundBlocks.Count != requiredBlockCount)
+                        throw new BadRequestException(
+                            $"Round {i + 1}: expected {requiredBlockCount} blocks for {service.DurationMinutes}-minute service, but got {roundBlocks.Count}");
+
+                    var roundStartTime = roundBlocks.First().StartTime;
+                    var roundEndTime = roundStartTime.AddMinutes(service.DurationMinutes);
 
                     var round = new InterviewRound
                     {
                         Id = Guid.NewGuid(),
                         CoachInterviewServiceId = roundDto.CoachInterviewServiceId,
                         RoundNumber = i + 1,
-                        StartTime = roundBlocks.First().StartTime,
-                        EndTime = roundBlocks.Last().EndTime,
+                        StartTime = roundStartTime,
+                        EndTime = roundEndTime,
                         Price = service.Price
                     };
 

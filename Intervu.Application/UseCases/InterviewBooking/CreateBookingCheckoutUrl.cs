@@ -84,7 +84,9 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 // 4. Bounds check: all 30-min blocks covering [startTime, endTime) must exist and be Available.
                 //    A single availability block may be only 30 min while the service requires 60+ min,
                 //    so we need to verify coverage across multiple consecutive blocks.
-                var coveringBlocks = await availabilityRepo.GetBlocksInRangeAsync(coachId, startTime, endTime);
+                // Lock all blocks in the requested range so overlap checks and transaction creation
+                // serialize against concurrent requests targeting the same time window.
+                var coveringBlocks = await availabilityRepo.GetBlocksInRangeForUpdateAsync(coachId, startTime, endTime);
                 var availableBlocks = coveringBlocks
                     .Where(b => b.Status == CoachAvailabilityStatus.Available)
                     .OrderBy(b => b.StartTime)
