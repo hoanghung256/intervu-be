@@ -12,55 +12,85 @@ namespace Intervu.Infrastructure.ExternalServices.EmailServices
     public class EmailTemplateService : IEmailTemplateService
     {
         private readonly string _templatesPath;
+        private const string TemplatesFolderName = "EmailTemplates";
 
         public EmailTemplateService(IConfiguration configuration)
         {
-            // Strategy 1: Check for configured path (production deployment)
-            var configPath = configuration["EmailSettings:TemplatesPath"];
-            if (!string.IsNullOrEmpty(configPath) && Directory.Exists(configPath))
-            {
-                _templatesPath = configPath;
-                return;
-            }
-
-            // Strategy 2: Look in base directory for EmailTemplates folder (production deployment - templates copied to output)
             var baseDirectory = AppContext.BaseDirectory;
-            var localTemplatesPath = Path.Combine(baseDirectory, "ExternalServices", "EmailServices", "Templates");
-            if (Directory.Exists(localTemplatesPath))
+            var searchedPaths = new List<string>();
+
+            // Strategy 1: Check configured path (absolute or relative to base directory)
+            var configPath = configuration["EmailSettings:TemplatesPath"];
+            if (!string.IsNullOrWhiteSpace(configPath))
             {
-                _templatesPath = localTemplatesPath;
-                return;
+                var configCandidates = new List<string> { configPath };
+
+                if (!Path.IsPathRooted(configPath))
+                {
+                    configCandidates.Add(Path.Combine(baseDirectory, configPath));
+                }
+
+                foreach (var configCandidate in configCandidates.Distinct(StringComparer.OrdinalIgnoreCase))
+                {
+                    searchedPaths.Add(configCandidate);
+                    if (Directory.Exists(configCandidate))
+                    {
+                        _templatesPath = configCandidate;
+                        return;
+                    }
+                }
             }
 
-            // Strategy 3: Navigate up from bin folder to find Infrastructure project (development)
-            // Development structure: bin/Debug/net8.0 -> bin -> Debug -> Intervu.API -> SolutionRoot
-            var currentDir = new DirectoryInfo(baseDirectory);
-            for (int i = 0; i < 5; i++)
+            // Strategy 2: Look in publish output directories
+            var publishCandidates = new[]
             {
-                currentDir = currentDir.Parent;
-                if (currentDir == null) break;
+                Path.Combine(baseDirectory, "ExternalServices", "EmailServices", TemplatesFolderName),
+                Path.Combine(baseDirectory, "ExternalServices", "EmailServices", "Templates"), // backward compatibility
+                Path.Combine(baseDirectory, TemplatesFolderName)
+            };
 
-                var infrastructurePath = Path.Combine(
-                    currentDir.FullName,
-                    "Intervu.Infrastructure",
-                    "ExternalServices",
-                    "EmailServices",
-                    "EmailTemplates"
-                );
-
-                if (Directory.Exists(infrastructurePath))
+            foreach (var publishCandidate in publishCandidates.Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                searchedPaths.Add(publishCandidate);
+                if (Directory.Exists(publishCandidate))
                 {
-                    _templatesPath = infrastructurePath;
+                    _templatesPath = publishCandidate;
                     return;
                 }
             }
 
-            // If all strategies fail, throw exception
+            // Strategy 3: Navigate up from bin folder to find source directory (development)
+            var currentDir = new DirectoryInfo(baseDirectory);
+            for (int i = 0; i < 8 && currentDir != null; i++)
+            {
+                var developmentCandidates = new[]
+                {
+                    Path.Combine(currentDir.FullName, "Intervu.Infrastructure", "ExternalServices", "EmailServices", TemplatesFolderName),
+                    Path.Combine(currentDir.FullName, "ExternalServices", "EmailServices", TemplatesFolderName)
+                };
+
+                foreach (var developmentCandidate in developmentCandidates.Distinct(StringComparer.OrdinalIgnoreCase))
+                {
+                    searchedPaths.Add(developmentCandidate);
+                    if (Directory.Exists(developmentCandidate))
+                    {
+                        _templatesPath = developmentCandidate;
+                        return;
+                    }
+                }
+
+                currentDir = currentDir.Parent;
+            }
+
+            var formattedSearchLocations = string.Join(
+                Environment.NewLine,
+                searchedPaths
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .Select((path, index) => $"{index + 1}. {path}"));
+
             throw new DirectoryNotFoundException(
-                $"Email templates directory not found. Searched locations:\n" +
-                $"1. Config path: {configPath ?? "(not configured)"}\n" +
-                $"2. Base directory: {localTemplatesPath}\n" +
-                $"3. Infrastructure project path (from base: {baseDirectory})"
+                $"Email templates directory not found. Base directory: {baseDirectory}{Environment.NewLine}" +
+                $"Searched locations:{Environment.NewLine}{formattedSearchLocations}"
             );
         }
         public async Task<string> LoadTemplateAsync(string templateName, Dictionary<string, string> placeholders)
