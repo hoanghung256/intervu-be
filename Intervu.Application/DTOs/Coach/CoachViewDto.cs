@@ -26,5 +26,9 @@ namespace Intervu.Application.DTOs.Coach
         public ICollection<SkillDto> Skills { get; set; } = new List<SkillDto>();
 
         public ICollection<IndustryDto> Industries { get; set; } = new List<IndustryDto>();
+
+        public ICollection<CoachCertificateDto> Certificates { get; set; } = new List<CoachCertificateDto>();
+
+        public ICollection<CoachWorkExperienceDto> WorkExperiences { get; set; } = new List<CoachWorkExperienceDto>();
     }
 }

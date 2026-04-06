@@ -24,6 +24,14 @@ namespace Intervu.Domain.Repositories
             int? minPrice = null,
             int? maxPrice = null);
         Task UpdateCoachProfileAsync(CoachProfile updatedProfile);
+        Task ReplaceWorkExperiencesAsync(Guid coachId, IEnumerable<CoachWorkExperience> workExperiences);
+        Task ReplaceCertificatesAsync(Guid coachId, IEnumerable<CoachCertificate> certificates);
+        Task<CoachCertificate> AddCoachCertificateAsync(CoachCertificate certificate);
+        Task UpdateCoachCertificateAsync(CoachCertificate certificate);
+        Task DeleteCoachCertificateAsync(Guid certificateId);
+        Task<CoachWorkExperience> AddWorkExperienceAsync(CoachWorkExperience workExperience);
+        Task UpdateWorkExperienceAsync(CoachWorkExperience workExperience);
+        Task DeleteWorkExperienceAsync(Guid workExperienceId);
         void DeleteCoachProfile(Guid id);
         Task<int> GetTotalCoachCountAsync();
     }

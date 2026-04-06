@@ -21,7 +21,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
 
         public DbSet<User> Users { get; set; }
         public DbSet<CandidateProfile> CandidateProfiles { get; set; }
+        public DbSet<CandidateWorkExperience> CandidateWorkExperiences { get; set; }
         public DbSet<CoachProfile> CoachProfiles { get; set; }
+        public DbSet<CoachWorkExperience> CoachWorkExperiences { get; set; }
+        public DbSet<CandidateCertificate> CandidateCertificates { get; set; }
+        public DbSet<CoachCertificate> CoachCertificates { get; set; }
         public DbSet<CoachAvailability> CoachAvailabilities { get; set; }
         public DbSet<InterviewRoom> InterviewRooms { get; set; }
         public DbSet<Feedback> Feedbacks { get; set; }
@@ -124,6 +128,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                     c => c == null ? 0 : System.Text.Json.JsonSerializer.Serialize(c, (System.Text.Json.JsonSerializerOptions?)null).GetHashCode(),
                     c => System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<Intervu.Domain.Entities.QuestionSnapshot>>(System.Text.Json.JsonSerializer.Serialize(c, (System.Text.Json.JsonSerializerOptions?)null), (System.Text.Json.JsonSerializerOptions?)null)!);
 
+                var stringListComparer = new Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer<System.Collections.Generic.List<string>>(
+                    (c1, c2) => System.Text.Json.JsonSerializer.Serialize(c1, (System.Text.Json.JsonSerializerOptions?)null) == System.Text.Json.JsonSerializer.Serialize(c2, (System.Text.Json.JsonSerializerOptions?)null),
+                    c => c == null ? 0 : System.Text.Json.JsonSerializer.Serialize(c, (System.Text.Json.JsonSerializerOptions?)null).GetHashCode(),
+                    c => c == null ? new System.Collections.Generic.List<string>() : System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<string>>(System.Text.Json.JsonSerializer.Serialize(c, (System.Text.Json.JsonSerializerOptions?)null), (System.Text.Json.JsonSerializerOptions?)null)!);
+
                 // Saved questions stored as JSONB (nullable)
                 b.Property(x => x.SavedQuestions)
                  .HasColumnName("SavedQuestions")
@@ -133,6 +142,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                      v => v == null ? null : System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<Intervu.Domain.Entities.QuestionSnapshot>>(v, (System.Text.Json.JsonSerializerOptions?)null))
                  .IsRequired(false)
                  .Metadata.SetValueComparer(savedQuestionComparer);
+
+                // Candidate certificates are stored as a separate table
+                b.HasMany(x => x.WorkExperiences)
+                 .WithOne(x => x.CandidateProfile)
+                 .HasForeignKey(x => x.CandidateProfileId)
+                 .OnDelete(DeleteBehavior.Cascade);
 
                 // Explicitly map navigation to User (like CoachProfile)
                 b.HasOne(x => x.User)
@@ -152,6 +167,49 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                          j.HasKey("CandidateProfilesId", "SkillsId");
                          j.ToTable("CandidateSkills");
                      });
+
+                // Many-to-many: CandidateProfile <-> Industry (Domain)
+                b.HasMany(x => x.Industries)
+                 .WithMany()
+                 .UsingEntity<Dictionary<string, object>>(
+                     "CandidateIndustries",
+                     l => l.HasOne<Industry>().WithMany().HasForeignKey("IndustriesId").OnDelete(DeleteBehavior.Cascade),
+                     r => r.HasOne<CandidateProfile>().WithMany().HasForeignKey("CandidateProfilesId").OnDelete(DeleteBehavior.Cascade),
+                     j =>
+                     {
+                         j.HasKey("CandidateProfilesId", "IndustriesId");
+                         j.ToTable("CandidateIndustries");
+                     });
+
+                b.HasMany(x => x.WorkExperiences)
+                 .WithOne(x => x.CandidateProfile)
+                 .HasForeignKey(x => x.CandidateProfileId)
+                 .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<CandidateWorkExperience>(b =>
+            {
+                b.ToTable("CandidateWorkExperiences");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.CompanyName).HasMaxLength(200).IsRequired();
+                b.Property(x => x.StartDate).IsRequired();
+                b.Property(x => x.EndDate);
+                b.Property(x => x.Description).HasColumnType("text");
+                b.Property(x => x.IsCurrentWorking).IsRequired();
+                b.Property(x => x.IsEnded).IsRequired();
+
+                var guidListComparer = new Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer<System.Collections.Generic.List<System.Guid>>(
+                    (c1, c2) => System.Text.Json.JsonSerializer.Serialize(c1, (System.Text.Json.JsonSerializerOptions?)null) == System.Text.Json.JsonSerializer.Serialize(c2, (System.Text.Json.JsonSerializerOptions?)null),
+                    c => c == null ? 0 : System.Text.Json.JsonSerializer.Serialize(c, (System.Text.Json.JsonSerializerOptions?)null).GetHashCode(),
+                    c => c == null ? new System.Collections.Generic.List<System.Guid>() : System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<System.Guid>>(System.Text.Json.JsonSerializer.Serialize(c, (System.Text.Json.JsonSerializerOptions?)null), (System.Text.Json.JsonSerializerOptions?)null)!);
+
+                b.Property(x => x.SkillIds)
+                 .HasColumnName("SkillIds")
+                 .HasColumnType("jsonb")
+                 .HasConversion(
+                     v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
+                     v => System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<System.Guid>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new System.Collections.Generic.List<System.Guid>())
+                 .Metadata.SetValueComparer(guidListComparer);
             });
 
 
@@ -179,6 +237,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                     c => c == null ? 0 : System.Text.Json.JsonSerializer.Serialize(c, (System.Text.Json.JsonSerializerOptions?)null).GetHashCode(),
                     c => System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<Intervu.Domain.Entities.QuestionSnapshot>>(System.Text.Json.JsonSerializer.Serialize(c, (System.Text.Json.JsonSerializerOptions?)null), (System.Text.Json.JsonSerializerOptions?)null)!);
 
+                var coachStringListComparer = new Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer<System.Collections.Generic.List<string>>(
+                    (c1, c2) => System.Text.Json.JsonSerializer.Serialize(c1, (System.Text.Json.JsonSerializerOptions?)null) == System.Text.Json.JsonSerializer.Serialize(c2, (System.Text.Json.JsonSerializerOptions?)null),
+                    c => c == null ? 0 : System.Text.Json.JsonSerializer.Serialize(c, (System.Text.Json.JsonSerializerOptions?)null).GetHashCode(),
+                    c => c == null ? new System.Collections.Generic.List<string>() : System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<string>>(System.Text.Json.JsonSerializer.Serialize(c, (System.Text.Json.JsonSerializerOptions?)null), (System.Text.Json.JsonSerializerOptions?)null)!);
+
                 // Saved questions stored as JSONB (nullable)
                 b.Property(x => x.SavedQuestions)
                  .HasColumnName("SavedQuestions")
@@ -188,6 +251,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                      v => v == null ? null : System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<Intervu.Domain.Entities.QuestionSnapshot>>(v, (System.Text.Json.JsonSerializerOptions?)null))
                  .IsRequired(false)
                  .Metadata.SetValueComparer(savedQuestionComparer);
+
+                // Coach certificates are stored as a separate table
+                b.HasMany(x => x.WorkExperiences)
+                 .WithOne(x => x.CoachProfile)
+                 .HasForeignKey(x => x.CoachProfileId)
+                 .OnDelete(DeleteBehavior.Cascade);
 
                 b.HasMany(x => x.Companies)
                  .WithMany(c => c.CoachProfiles)
@@ -200,6 +269,38 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                          j.HasKey("CoachProfilesId", "CompaniesId");
                          j.ToTable("CoachCompanies");
                      });
+
+            modelBuilder.Entity<CandidateCertificate>(b =>
+            {
+                b.ToTable("CandidateCertificates");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Name).HasMaxLength(300).IsRequired();
+                b.Property(x => x.Issuer).HasMaxLength(200);
+                b.Property(x => x.IssuedAt);
+                b.Property(x => x.ExpiryAt);
+                b.Property(x => x.Link).HasMaxLength(1000);
+
+                b.HasOne(x => x.CandidateProfile)
+                 .WithMany(p => p.Certificates)
+                 .HasForeignKey(x => x.CandidateProfileId)
+                 .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<CoachCertificate>(b =>
+            {
+                b.ToTable("CoachCertificates");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Name).HasMaxLength(300).IsRequired();
+                b.Property(x => x.Issuer).HasMaxLength(200);
+                b.Property(x => x.IssuedAt);
+                b.Property(x => x.ExpiryAt);
+                b.Property(x => x.Link).HasMaxLength(1000);
+
+                b.HasOne(x => x.CoachProfile)
+                 .WithMany(p => p.Certificates)
+                 .HasForeignKey(x => x.CoachProfileId)
+                 .OnDelete(DeleteBehavior.Cascade);
+            });
 
                 b.HasMany(x => x.Skills)
                  .WithMany(s => s.CoachProfiles)
@@ -226,7 +327,37 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
 
 
                      });
+                b.HasMany(x => x.WorkExperiences)
+                 .WithOne(x => x.CoachProfile)
+                 .HasForeignKey(x => x.CoachProfileId)
+                 .OnDelete(DeleteBehavior.Cascade);
             });
+
+            modelBuilder.Entity<CoachWorkExperience>(b =>
+            {
+                b.ToTable("CoachWorkExperiences");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.CompanyName).HasMaxLength(200).IsRequired();
+                b.Property(x => x.StartDate).IsRequired();
+                b.Property(x => x.EndDate);
+                b.Property(x => x.Description).HasColumnType("text");
+                b.Property(x => x.IsCurrentWorking).IsRequired();
+                b.Property(x => x.IsEnded).IsRequired();
+
+                var coachGuidListComparer = new Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer<System.Collections.Generic.List<System.Guid>>(
+                    (c1, c2) => System.Text.Json.JsonSerializer.Serialize(c1, (System.Text.Json.JsonSerializerOptions?)null) == System.Text.Json.JsonSerializer.Serialize(c2, (System.Text.Json.JsonSerializerOptions?)null),
+                    c => c == null ? 0 : System.Text.Json.JsonSerializer.Serialize(c, (System.Text.Json.JsonSerializerOptions?)null).GetHashCode(),
+                    c => c == null ? new System.Collections.Generic.List<System.Guid>() : System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<System.Guid>>(System.Text.Json.JsonSerializer.Serialize(c, (System.Text.Json.JsonSerializerOptions?)null), (System.Text.Json.JsonSerializerOptions?)null)!);
+
+                b.Property(x => x.SkillIds)
+                 .HasColumnName("SkillIds")
+                 .HasColumnType("jsonb")
+                 .HasConversion(
+                     v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
+                     v => System.Text.Json.JsonSerializer.Deserialize<System.Collections.Generic.List<System.Guid>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new System.Collections.Generic.List<System.Guid>())
+                 .Metadata.SetValueComparer(coachGuidListComparer);
+            });
+
 
             modelBuilder.Entity<Industry>(b =>
             {
@@ -1715,7 +1846,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 },
                 new CoachInterviewService
                 {
-                    Id = Guid.Parse("019d1467-d415-7224-8808-39aa3e3b6377"),
+                    Id = Guid.Parse("019d1467-d415-79f8-9bdc-5bb25a0b25cf"),
                     CoachId = user2Id,
                     InterviewTypeId = Guid.Parse("5c9e2a14-73bb-4b61-b7e2-91a8f42d3c6e"),
                     Price = 2000,
@@ -1723,7 +1854,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 },
                 new CoachInterviewService
                 {
-                    Id = Guid.Parse("019d1467-d415-79f8-9bdc-5bb25a0b25cf"),
+                    Id = Guid.Parse("019d1467-d415-79f8-9bdc-5bb25a0b25cd"),
                     CoachId = user2Id,
                     InterviewTypeId = Guid.Parse("f14a7c6d-88b2-4d55-a9fd-2b4e73c91a08"),
                     Price = 2000,

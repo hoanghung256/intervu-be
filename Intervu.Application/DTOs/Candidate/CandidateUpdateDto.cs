@@ -9,6 +9,8 @@ namespace Intervu.Application.DTOs.Candidate
         public string? CVUrl { get; set; }
         public string? PortfolioUrl { get; set; }
         public List<Guid>? SkillIds { get; set; }
+        public List<Guid>? IndustryIds { get; set; }
+        public List<CandidateCertificateDto>? Certificates { get; set; }
         public string? Bio { get; set; }
         public int CurrentAmount { get; set; }
         //public UserStatus UserStatus { get; set; }

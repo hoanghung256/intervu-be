@@ -3,6 +3,7 @@ using System;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 {
     [DbContext(typeof(IntervuPostgreDbContext))]
-    partial class IntervuPostgreDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260405075537_AddProfileCertification")]
+    partial class AddProfileCertification
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -407,6 +410,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<Guid>("CandidateProfileId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("CandidateProfileId1")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime?>("ExpiryAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -429,6 +435,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CandidateProfileId");
+
+                    b.HasIndex("CandidateProfileId1");
 
                     b.ToTable("CandidateCertificates", (string)null);
                 });
@@ -537,9 +545,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<DateTime>("EndTime")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid?>("InterviewRoundId")
-                        .HasColumnType("uuid");
-
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("timestamp with time zone");
 
@@ -549,8 +554,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CoachId");
-
-                    b.HasIndex("InterviewRoundId");
 
                     b.ToTable("CoachAvailabilities", (string)null);
 
@@ -590,6 +593,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<Guid>("CoachProfileId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("CoachProfileId1")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime?>("ExpiryAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -612,6 +618,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CoachProfileId");
+
+                    b.HasIndex("CoachProfileId1");
 
                     b.ToTable("CoachCertificates", (string)null);
                 });
@@ -2737,10 +2745,14 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
             modelBuilder.Entity("Intervu.Domain.Entities.CandidateCertificate", b =>
                 {
                     b.HasOne("Intervu.Domain.Entities.CandidateProfile", "CandidateProfile")
-                        .WithMany("Certificates")
+                        .WithMany()
                         .HasForeignKey("CandidateProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Intervu.Domain.Entities.CandidateProfile", null)
+                        .WithMany("Certificates")
+                        .HasForeignKey("CandidateProfileId1");
 
                     b.Navigation("CandidateProfile");
                 });
@@ -2776,24 +2788,20 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_CoachAvailabilities_CoachProfiles_CoachId");
 
-                    b.HasOne("Intervu.Domain.Entities.InterviewRound", "InterviewRound")
-                        .WithMany("AvailabilityBlocks")
-                        .HasForeignKey("InterviewRoundId")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .HasConstraintName("FK_CoachAvailabilities_InterviewRounds_InterviewRoundId");
-
                     b.Navigation("CoachProfile");
-
-                    b.Navigation("InterviewRound");
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.CoachCertificate", b =>
                 {
                     b.HasOne("Intervu.Domain.Entities.CoachProfile", "CoachProfile")
-                        .WithMany("Certificates")
+                        .WithMany()
                         .HasForeignKey("CoachProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Intervu.Domain.Entities.CoachProfile", null)
+                        .WithMany("Certificates")
+                        .HasForeignKey("CoachProfileId1");
 
                     b.Navigation("CoachProfile");
                 });
@@ -3291,11 +3299,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Navigation("GeneratedQuestions");
 
                     b.Navigation("RescheduleRequests");
-                });
-
-            modelBuilder.Entity("Intervu.Domain.Entities.InterviewRound", b =>
-                {
-                    b.Navigation("AvailabilityBlocks");
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.Question", b =>

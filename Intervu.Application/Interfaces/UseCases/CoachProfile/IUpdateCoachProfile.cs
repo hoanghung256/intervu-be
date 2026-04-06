@@ -12,5 +12,6 @@ namespace Intervu.Application.Interfaces.UseCases.CoachProfile
     {
         Task<CoachProfileDto> ExecuteAsync(Guid id, CoachUpdateDto coachUpdateDto);
         Task<CoachProfileDto> UpdateCoachStatus(Guid id, CoachProfileStatus status);
+        Task<CoachProfileDto> UpdateCoachWorkExperiencesAsync(Guid id, List<CoachWorkExperienceDto> workExperiences);
     }
 }
