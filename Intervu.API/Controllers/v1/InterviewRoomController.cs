@@ -22,19 +22,25 @@ namespace Intervu.API.Controllers.v1
         private readonly IGetCoachEvaluation _getCoachEvaluation;
         private readonly ISubmitCoachEvaluation _submitCoachEvaluation;
         private readonly ISaveCoachEvaluationDraft _saveCoachEvaluationDraft;
+        private readonly IReportInterviewProblem _reportInterviewProblem;
+        private readonly IGetInterviewReports _getInterviewReports;
 
         public InterviewRoomController(
             IGetRoomHistory getRoomHistory,
             IGetCurrentRoom getCurrentRoom,
             IGetCoachEvaluation getCoachEvaluation,
             ISubmitCoachEvaluation submitCoachEvaluation,
-            ISaveCoachEvaluationDraft saveCoachEvaluationDraft)
+            ISaveCoachEvaluationDraft saveCoachEvaluationDraft,
+            IReportInterviewProblem reportInterviewProblem,
+            IGetInterviewReports getInterviewReports)
         {
             _getRoomHistory = getRoomHistory;
             _getCurrentRoom = getCurrentRoom;
             _getCoachEvaluation = getCoachEvaluation;
             _submitCoachEvaluation = submitCoachEvaluation;
             _saveCoachEvaluationDraft = saveCoachEvaluationDraft;
+            _reportInterviewProblem = reportInterviewProblem;
+            _getInterviewReports = getInterviewReports;
         }
 
         /// <summary>
@@ -70,7 +76,7 @@ namespace Intervu.API.Controllers.v1
         /// Get a single interview room by ID
         /// </summary>
         [Authorize(Policy = AuthorizationPolicies.CandidateOrInterviewer)]
-        [HttpGet("{id}")]
+        [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetById([FromRoute] Guid id)
         {
             var room = await _getCurrentRoom.ExecuteAsync(id);
@@ -183,5 +189,112 @@ namespace Intervu.API.Controllers.v1
                 message = "Evaluation draft saved successfully"
             });
         }
+
+        /// <summary>
+        /// Candidate reports interview problems in a room.
+        /// </summary>
+        [Authorize(Policy = AuthorizationPolicies.Candidate)]
+        [HttpPost("{interviewRoomId:guid}/report")]
+        public async Task<IActionResult> ReportInterviewProblem(
+            [FromRoute] Guid interviewRoomId,
+            [FromBody] CreateRoomReportRequest request)
+        {
+            bool isGetUserIdSuccess = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
+
+            if (!isGetUserIdSuccess)
+            {
+                return Unauthorized(new
+                {
+                    success = false,
+                    message = "Invalid user credentials"
+                });
+            }
+
+            var result = await _reportInterviewProblem.ExecuteAsync(interviewRoomId, request, userId);
+
+            return Ok(new
+            {
+                success = true,
+                message = "Interview problem reported successfully",
+                data = result
+            });
+        }
+
+        /// <summary>
+        /// Backward-compatible endpoint for existing FE:
+        /// POST /interviewroom/report with { interviewRoomId, reason, details }
+        /// </summary>
+        [Authorize(Policy = AuthorizationPolicies.Candidate)]
+        [HttpPost("report")]
+        public async Task<IActionResult> ReportInterviewProblemLegacy([FromBody] CreateRoomReportLegacyRequest request)
+        {
+            bool isGetUserIdSuccess = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
+
+            if (!isGetUserIdSuccess)
+            {
+                return Unauthorized(new
+                {
+                    success = false,
+                    message = "Invalid user credentials"
+                });
+            }
+
+            var mappedRequest = new CreateRoomReportRequest
+            {
+                Reason = request?.Reason ?? string.Empty,
+                Details = request?.Details
+            };
+
+            var result = await _reportInterviewProblem.ExecuteAsync(request.InterviewRoomId, mappedRequest, userId);
+
+            return Ok(new
+            {
+                success = true,
+                message = "Interview problem reported successfully",
+                data = result
+            });
+        }
+
+        /// <summary>
+        /// Admin gets interview reports for report management.
+        /// </summary>
+        [Authorize(Policy = AuthorizationPolicies.Admin)]
+        [HttpGet("reports")]
+        public async Task<IActionResult> GetInterviewReports([FromQuery] InterviewReportFilterRequest filter)
+        {
+            var result = await _getInterviewReports.ExecuteAsync(filter);
+
+            return Ok(new
+            {
+                success = true,
+                message = "Success",
+                data = result
+            });
+        }
+        
+        /// <summary>
+        /// Candidate gets their own interview reports.
+        /// </summary>
+        [Authorize(Policy = AuthorizationPolicies.Candidate)]
+        [HttpGet("my-reports")]
+        public async Task<IActionResult> GetMyReports([FromQuery] InterviewReportFilterRequest filter)
+        {
+            bool isGetUserIdSuccess = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
+            if (!isGetUserIdSuccess)
+            {
+                return Unauthorized(new { success = false, message = "Invalid user credentials" });
+            }
+
+            filter.ReporterId = userId;
+            var result = await _getInterviewReports.ExecuteAsync(filter);
+
+            return Ok(new
+            {
+                success = true,
+                message = "Success",
+                data = result
+            });
+        }
+
     }
 }

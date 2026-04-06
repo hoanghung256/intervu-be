@@ -1,4 +1,4 @@
-﻿using Intervu.Application.Services;
+using Intervu.Application.Services;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Microsoft.Extensions.DependencyInjection;
