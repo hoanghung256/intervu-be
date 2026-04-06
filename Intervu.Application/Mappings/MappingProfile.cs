@@ -47,11 +47,12 @@ namespace Intervu.Application.Mappings
             // Coach mappings
             CreateMap<CoachProfile, CoachProfileDto>()
                 .ForMember(dest => dest.User, opt => opt.Ignore())
+                .ForMember(dest => dest.Certifications, opt => opt.MapFrom(src => src.Certificates))
                 .ReverseMap();
 
             CreateMap<CoachProfile, CoachViewDto>()
                 .ForMember(dest => dest.User, opt => opt.Ignore())
-                .ForMember(dest => dest.Certificates, opt => opt.MapFrom(src => src.Certificates != null ? src.Certificates.Select(c => c.Link).ToList() : null))
+                .ForMember(dest => dest.Certifications, opt => opt.MapFrom(src => src.Certificates))
                 .ReverseMap();
 
             CreateMap<CoachCreateDto, CoachProfile>().ReverseMap();
@@ -59,12 +60,12 @@ namespace Intervu.Application.Mappings
             CreateMap<CoachUpdateDto, CoachProfile>();
             CreateMap<CoachProfile, CoachUpdateDto>();
             CreateMap<CoachWorkExperience, CoachWorkExperienceDto>().ReverseMap();
-
             CreateMap<User, CoachCreateDto>().ReverseMap();
-
             CreateMap<Company, DTOs.Company.CompanyDto>().ReverseMap();
             CreateMap<Skill, SkillDto>().ReverseMap();
             CreateMap<Industry, IndustryDto>().ReverseMap();
+            CreateMap<CoachCertificate, CoachCertificateDto>().ReverseMap();
+
 
             // Candidate mappings
             CreateMap<CandidateProfile, CandidateProfileDto>().ForMember(dest => dest.User, opt => opt.Ignore()).ReverseMap();
@@ -82,7 +83,6 @@ namespace Intervu.Application.Mappings
                 .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
             CreateMap<CandidateWorkExperience, CandidateWorkExperienceDto>().ReverseMap();
             CreateMap<CandidateCertificate, CandidateCertificateDto>().ReverseMap();
-            CreateMap<CoachCertificate, CoachCertificateDto>().ReverseMap();
 
             // Admin mappings
             CreateMap<User, DTOs.Admin.UserDto>();
