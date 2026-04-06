@@ -63,13 +63,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
         {
             CoachProfile? profile = await _context.CoachProfiles
                 .Where(p => p.Id == id)
-                .Include(p => p.Companies)
-                .Include(p => p.Skills)
-                .Include(p => p.Industries)
-                .Include(p => p.Certificates)
-                .Include(p => p.WorkExperiences)
-                .Include(p => p.User)
-                .FirstOrDefaultAsync();
+                    .Include(p => p.Companies)
+                    .Include(p => p.Skills)
+                    .Include(p => p.Industries)
+                    .Include(p => p.WorkExperiences)
+                    .Include(p => p.Certificates)
+                    .FirstOrDefaultAsync();
 
             return profile;
         }
