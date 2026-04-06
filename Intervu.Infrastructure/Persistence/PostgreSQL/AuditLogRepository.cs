@@ -33,5 +33,28 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
             return (items, totalCount);
         }
+
+        public async Task<(IEnumerable<AuditLog> Items, int TotalCount)> GetPagedByRoomIdAsync(Guid roomId, int pageNumber, int pageSize)
+        {
+            var roomIdText = roomId.ToString();
+            string searchPattern = $"%{roomIdText}%";
+
+            // Use FromSqlInterpolated to cast jsonb columns to text for ILIKE support in PostgreSQL
+            var query = _context.AuditLogs
+                .FromSqlInterpolated($@"
+                    SELECT * FROM ""AuditLogs"" 
+                    WHERE ""Content""::text ILIKE {searchPattern} 
+                       OR (""MetaData"" IS NOT NULL AND ""MetaData""::text ILIKE {searchPattern})")
+                .AsNoTracking();
+
+            var totalCount = await query.CountAsync();
+            var items = await query
+                .OrderByDescending(x => x.Timestamp)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (items, totalCount);
+        }
     }
 }

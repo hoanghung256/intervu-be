@@ -39,6 +39,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<InterviewType> InterviewTypes { get; set; }
         public DbSet<InterviewExperience> InterviewExperiences { get; set; }
+        public DbSet<InterviewReport> InterviewReports { get; set; }
         public DbSet<Question> Questions { get; set; }
         public DbSet<GeneratedQuestion> GeneratedQuestions { get; set; }
         public DbSet<Comment> Comments { get; set; }
@@ -513,6 +514,42 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                         v => v == null ? null : JsonSerializer.Deserialize<List<QuestionItem>>(v, jsonOptions))
                     .IsRequired(false)
                     .Metadata.SetValueComparer(questionListComparer);
+            });
+
+            modelBuilder.Entity<InterviewReport>(b =>
+            {
+                b.ToTable("InterviewRoomReports");
+                b.HasKey(x => x.Id);
+
+                b.Property(x => x.InterviewRoomId).IsRequired();
+                b.Property(x => x.ReportedBy).IsRequired();
+                b.Property(x => x.ReporterId).IsRequired(false);
+                b.Property(x => x.Reason).HasColumnType("text").IsRequired();
+                b.Property(x => x.Details).HasColumnType("text").IsRequired(false);
+                b.Property(x => x.Status)
+                    .HasConversion<int>()
+                    .IsRequired()
+                    .ValueGeneratedNever();
+                b.Property(x => x.AdminNote).HasColumnType("text").IsRequired(false);
+                b.Property(x => x.ResolvedAt).IsRequired(false);
+                b.Property(x => x.CreatedAt).IsRequired();
+                b.Property(x => x.UpdatedAt).IsRequired();
+
+                b.HasOne(x => x.InterviewRoom)
+                 .WithMany()
+                 .HasForeignKey(x => x.InterviewRoomId)
+                 .HasConstraintName("FK_InterviewRoomReports_InterviewRooms_InterviewRoomId")
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasOne(x => x.Reporter)
+                 .WithMany()
+                 .HasForeignKey(x => x.ReportedBy)
+                 .HasConstraintName("FK_InterviewRoomReports_Users_ReportedBy")
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasIndex(x => x.InterviewRoomId);
+                b.HasIndex(x => x.ReportedBy);
+                b.HasIndex(x => x.Status);
             });
 
             // GeneratedQuestion
