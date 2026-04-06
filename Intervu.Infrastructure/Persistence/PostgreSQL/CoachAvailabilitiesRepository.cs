@@ -98,16 +98,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .FirstOrDefaultAsync(a => a.CoachId == coachId && a.StartTime == startTime);
         }
 
-        public Task<CoachAvailability?> FindContainingAvailabilityAsync(Guid coachId, DateTime startTime, DateTime endTime)
-        {
-            return _context.CoachAvailabilities
-                .FirstOrDefaultAsync(a =>
-                    a.CoachId == coachId
-                    && a.Status == CoachAvailabilityStatus.Available
-                    && a.StartTime <= startTime
-                    && a.EndTime >= endTime);
-        }
-
         public Task<CoachAvailability?> GetByIdForUpdateAsync(Guid availabilityId)
         {
             return _context.CoachAvailabilities

@@ -26,25 +26,28 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 request.Type,
                 request.Status);
 
-            var result = items.Select(t => new InterviewBookingTransactionHistoryDto
+            var result = items.Select(t =>
             {
-                Id = t.Id,
-                OrderCode = t.OrderCode,
-                UserId = t.UserId,
-                CoachAvailabilityId = t.CoachAvailabilityId,
-                CoachId = t.CoachId ?? t.CoachAvailability?.CoachId ?? t.BookingRequest?.CoachId,
-                StartTime = t.BookedStartTime 
-                    ?? t.CoachAvailability?.StartTime 
-                    ?? t.BookingRequest?.RequestedStartTime 
-                    ?? t.BookingRequest?.Rounds.OrderBy(r => r.RoundNumber).FirstOrDefault()?.StartTime,
-                EndTime = t.BookedStartTime.HasValue && t.BookedDurationMinutes.HasValue 
-                    ? t.BookedStartTime.Value.AddMinutes(t.BookedDurationMinutes.Value)
-                    : (t.CoachAvailability?.EndTime 
-                        ?? t.BookingRequest?.RequestedStartTime 
-                        ?? t.BookingRequest?.Rounds.OrderByDescending(r => r.RoundNumber).FirstOrDefault()?.StartTime),
-                Amount = t.Amount,
-                Type = t.Type,
-                Status = t.Status
+                var firstRound = t.BookingRequest?.Rounds?.OrderBy(r => r.RoundNumber).FirstOrDefault();
+                var lastRound = t.BookingRequest?.Rounds?.OrderByDescending(r => r.RoundNumber).FirstOrDefault();
+
+                return new InterviewBookingTransactionHistoryDto
+                {
+                    Id = t.Id,
+                    OrderCode = t.OrderCode,
+                    UserId = t.UserId,
+                    CoachId = t.BookingRequest?.CoachId,
+                    StartTime = firstRound?.StartTime
+                        ?? t.BookingRequest?.RequestedStartTime,
+                    EndTime = lastRound?.EndTime
+                        ?? (t.BookingRequest?.RequestedStartTime.HasValue == true
+                            ? t.BookingRequest.RequestedStartTime.Value.AddMinutes(
+                                t.BookingRequest.CoachInterviewService?.DurationMinutes ?? 60)
+                            : null),
+                    Amount = t.Amount,
+                    Type = t.Type,
+                    Status = t.Status
+                };
             }).ToList();
 
             return new PagedResult<InterviewBookingTransactionHistoryDto>(result, total, pageSize, page);

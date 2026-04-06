@@ -15,10 +15,10 @@ namespace Intervu.Application.UseCases.Transaction
 
         public async Task ExecuteAsync(Guid userId, Guid avaiabilityId, int amount, TransactionType type)
         {
+            // Legacy method — transactions are now created through booking request flows.
             await _transactionRepository.AddAsync(new Domain.Entities.InterviewBookingTransaction
             {
                 UserId = userId,
-                CoachAvailabilityId = avaiabilityId,
                 Amount = amount,
                 Type = type,
                 Status = TransactionStatus.Created

@@ -1,8 +1,3 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Intervu.Application.Interfaces.UseCases.Availability;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Repositories;
@@ -14,16 +9,13 @@ namespace Intervu.Application.UseCases.Availability
     public class GetCoachAvailabilities : IGetCoachAvailabilities
     {
         private readonly ICoachAvailabilitiesRepository _coachAvailabilitiesRepository;
-        private readonly ITransactionRepository _transactionRepository;
         private readonly IBookingRequestRepository _bookingRequestRepository;
 
         public GetCoachAvailabilities(
             ICoachAvailabilitiesRepository coachAvailabilitiesRepository,
-            ITransactionRepository transactionRepository,
             IBookingRequestRepository bookingRequestRepository)
         {
             _coachAvailabilitiesRepository = coachAvailabilitiesRepository;
-            _transactionRepository = transactionRepository;
             _bookingRequestRepository = bookingRequestRepository;
         }
 
@@ -33,14 +25,9 @@ namespace Intervu.Application.UseCases.Availability
             var availabilities = await _coachAvailabilitiesRepository.GetCoachAvailabilitiesByMonthAsync(coachId, month, year);
             var availabilityList = availabilities.ToList();
 
-            // 2. Get all confirmed bookings (from both direct booking and JD booking flows)
-            var directBookings = await _transactionRepository.GetConfirmedBookingEntitiesForCoachAsync(coachId, month, year);
-            var jdBookings = await _bookingRequestRepository.GetConfirmedBookingEntitiesForCoachAsync(coachId, month, year);
-
-            var allBookedIntervals = directBookings
-                .Select(b => (b.BookedStartTime!.Value, b.BookedStartTime!.Value.AddMinutes(b.BookedDurationMinutes!.Value)))
-                .Concat(jdBookings.Select(b => (b.StartTime, b.EndTime)))
-                .ToList();
+            // 2. Get all confirmed bookings (unified through rounds)
+            var allBookedIntervals = await _bookingRequestRepository.GetConfirmedBookingsForCoachAsync(coachId, month, year);
+            var bookingEntities = await _bookingRequestRepository.GetConfirmedBookingEntitiesForCoachAsync(coachId, month, year);
 
             // 3. Calculate the actual free slots by subtracting bookings from availabilities
             var freeTimeSlots = AvailabilityCalculatorService.CalculateFreeSlots(availabilityList, allBookedIntervals);
@@ -59,27 +46,18 @@ namespace Intervu.Application.UseCases.Availability
             }).ToList();
 
             // 5. Map the booking entities to BookedSlotDto
-            var bookedSlotDtos = new List<BookedSlotDto>();
-            bookedSlotDtos.AddRange(directBookings.Select(b => new BookedSlotDto
+            var bookedSlotDtos = bookingEntities.Select(round => new BookedSlotDto
             {
-                BookingId = b.Id,
-                StartTime = b.BookedStartTime!.Value,
-                EndTime = b.BookedStartTime!.Value.AddMinutes(b.BookedDurationMinutes!.Value),
-                CandidateName = b.User?.FullName ?? string.Empty,
-                InterviewType = "Direct Booking", 
-                Status = b.Status.ToString()
-            }));
-
-            bookedSlotDtos.AddRange(jdBookings.Select(b => new BookedSlotDto
-            {
-                // Link back to original booking request or room id depending on UI
-                BookingId = b.BookingRequestId,
-                StartTime = b.StartTime,
-                EndTime = b.EndTime,
-                CandidateName = b.BookingRequest.Candidate.User.FullName,
-                InterviewType = b.BookingRequest.CoachInterviewService?.InterviewType?.Name ?? "JD Multi-Round Interview",
-                Status = b.BookingRequest.Status.ToString()
-            }));
+                BookingId = round.BookingRequestId,
+                StartTime = round.StartTime,
+                EndTime = round.EndTime,
+                CandidateName = round.BookingRequest?.Candidate?.User?.FullName ?? string.Empty,
+                InterviewType = round.CoachInterviewService?.InterviewType?.Name
+                    ?? (round.BookingRequest?.Type == Domain.Entities.Constants.BookingRequestType.Direct
+                        ? "Direct Booking"
+                        : "Interview"),
+                Status = round.BookingRequest?.Status.ToString() ?? string.Empty
+            }).ToList();
 
             // 6. Combine into the final DTO
             var schedule = new CoachScheduleDto

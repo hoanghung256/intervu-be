@@ -17,46 +17,9 @@ namespace Intervu.Application.Services
     /// </summary>
     public static class AvailabilityCalculatorService
     {
-
         /// <summary>
-        /// Given a coach's availability windows and all booking transactions,
-        /// returns a flattened, chronologically sorted list of <see cref="TimeSlot"/>
-        /// representing time that is still available for new bookings.
-        /// </summary>
-        /// <remarks>
-        /// Algorithm per availability window:
-        ///   1. Collect bookings whose [BookedStart, BookedEnd) overlaps the window.
-        ///   2. Sort bookings by start time.
-        ///   3. Walk a cursor from window start → window end, emitting free gaps.
-        ///
-        /// Edge cases handled:
-        ///   • Canceled bookings are ignored (only Created + Paid count).
-        ///   • Bookings with null BookedStartTime / BookedDurationMinutes are skipped.
-        ///   • Overlapping or adjacent bookings are merged before gap detection.
-        ///   • Zero-duration or negative-duration gaps are discarded.
-        /// </remarks>
-        /// <summary>
-        /// Legacy overload that accepts raw transaction entities and extracts time intervals.
-        /// </summary>
-        public static List<TimeSlot> CalculateFreeSlots(
-            List<CoachAvailability> availabilities,
-            List<InterviewBookingTransaction> confirmedBookings)
-        {
-            var intervals = (confirmedBookings ?? [])
-                .Where(b => b.Type == TransactionType.Payment)
-                .Where(b => b.Status is TransactionStatus.Created or TransactionStatus.Paid)
-                .Where(b => b.BookedStartTime.HasValue && b.BookedDurationMinutes.HasValue)
-                .Select(b => (
-                    Start: b.BookedStartTime!.Value,
-                    End: b.BookedStartTime!.Value.AddMinutes(b.BookedDurationMinutes!.Value)
-                ))
-                .ToList();
-
-            return CalculateFreeSlots(availabilities, intervals);
-        }
-
-        /// <summary>
-        /// Core overload: subtracts a list of booked (Start, End) intervals from availability windows.
+        /// Subtracts a list of booked (Start, End) intervals from availability windows,
+        /// returning the remaining free time slots.
         /// </summary>
         public static List<TimeSlot> CalculateFreeSlots(
             List<CoachAvailability> availabilities,
