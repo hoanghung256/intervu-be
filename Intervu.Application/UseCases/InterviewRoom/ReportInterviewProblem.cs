@@ -5,6 +5,7 @@ using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.UseCases.Notification;
 using Intervu.Domain.Repositories;
 
 namespace Intervu.Application.UseCases.InterviewRoom
@@ -83,6 +84,16 @@ namespace Intervu.Application.UseCases.InterviewRoom
 
             await reportRepository.AddAsync(report);
             await unitOfWork.SaveChangesAsync();
+
+            // Send notification to candidate
+            jobService.Enqueue<INotificationUseCase>(uc => uc.CreateAsync(
+                userId,
+                NotificationType.SystemAnnouncement,
+                "Report Submitted",
+                $"Your report for interview room {interviewRoomId.ToString().Substring(0, 8)} has been submitted successfully and is being reviewed by our team.",
+                "/history",
+                null
+            ));
 
             // TODO: Send email to candidate confirming report receipt
 
