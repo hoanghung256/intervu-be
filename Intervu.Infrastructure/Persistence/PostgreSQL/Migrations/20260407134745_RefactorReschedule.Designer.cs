@@ -3,6 +3,7 @@ using System;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 {
     [DbContext(typeof(IntervuPostgreDbContext))]
-    partial class IntervuPostgreDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260407134745_RefactorReschedule")]
+    partial class RefactorReschedule
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1196,7 +1199,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("CurrentAvailabilityId")
+                    b.Property<Guid>("CurrentAvailabilityId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("ExpiresAt")
@@ -1205,7 +1208,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<Guid>("InterviewRoomId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("ProposedAvailabilityId")
+                    b.Property<Guid>("ProposedAvailabilityId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("ProposedEndTime")
@@ -2674,6 +2677,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .WithMany()
                         .HasForeignKey("CurrentAvailabilityId")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
                         .HasConstraintName("FK_InterviewRescheduleRequests_CoachAvailabilities_CurrentAvailabilityId");
 
                     b.HasOne("Intervu.Domain.Entities.InterviewRoom", "InterviewRoom")
@@ -2687,6 +2691,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .WithMany()
                         .HasForeignKey("ProposedAvailabilityId")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
                         .HasConstraintName("FK_InterviewRescheduleRequests_CoachAvailabilities_ProposedAvailabilityId");
 
                     b.HasOne("Intervu.Domain.Entities.User", "Requester")

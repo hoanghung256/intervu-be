@@ -460,8 +460,10 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.HasKey(x => x.Id);
 
                 b.Property(x => x.InterviewRoomId).IsRequired();
-                b.Property(x => x.CurrentAvailabilityId).IsRequired();
-                b.Property(x => x.ProposedAvailabilityId).IsRequired();
+                b.Property(x => x.CurrentAvailabilityId).IsRequired(false);
+                b.Property(x => x.ProposedAvailabilityId).IsRequired(false);
+                b.Property(x => x.ProposedStartTime).IsRequired();
+                b.Property(x => x.ProposedEndTime).IsRequired();
                 b.Property(x => x.RequestedBy).IsRequired();
                 b.Property(x => x.Status).IsRequired();
                 b.Property(x => x.ExpiresAt).IsRequired();
@@ -478,12 +480,14 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.HasOne(x => x.CurrentAvailability)
                  .WithMany()
                  .HasForeignKey(x => x.CurrentAvailabilityId)
+                 .IsRequired(false)
                  .HasConstraintName("FK_InterviewRescheduleRequests_CoachAvailabilities_CurrentAvailabilityId")
                  .OnDelete(DeleteBehavior.Restrict);
 
                 b.HasOne(x => x.ProposedAvailability)
                  .WithMany()
                  .HasForeignKey(x => x.ProposedAvailabilityId)
+                 .IsRequired(false)
                  .HasConstraintName("FK_InterviewRescheduleRequests_CoachAvailabilities_ProposedAvailabilityId")
                  .OnDelete(DeleteBehavior.Restrict);
 

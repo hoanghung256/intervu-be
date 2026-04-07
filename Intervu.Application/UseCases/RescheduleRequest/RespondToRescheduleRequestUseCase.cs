@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Intervu.Application.UseCases.RescheduleRequest
 {
+    // TODO: Re-enable when approval flow is implemented — currently reschedule requests are auto-approved
     internal class RespondToRescheduleRequestUseCase : IRespondToRescheduleRequestUseCase
     {
         private readonly ILogger<RespondToRescheduleRequestUseCase> _logger;
@@ -78,55 +79,12 @@ namespace Intervu.Application.UseCases.RescheduleRequest
             {
                 request.Status = RescheduleRequestStatus.Approved;
 
-                // Room already loaded above
-                if (room == null)
-                {
-                    _logger.LogWarning("Interview room with ID {RoomId} not found.", request.InterviewRoomId);
-                    throw new NotFoundException("Interview room not found");
-                }
-
-                // Update room scheduled time based on proposed availability
-                var proposedAvailability = await _coachAvailabilitiesRepository.GetByIdAsync(request.ProposedAvailabilityId);
-                if (proposedAvailability == null)
-                {
-                    _logger.LogWarning("Proposed availability with ID {ProposedAvailabilityId} not found.", request.ProposedAvailabilityId);
-                    throw new NotFoundException("Proposed availability not found");
-                }
-
-                // Update CurrentAvailabilityId
-                room.CurrentAvailabilityId = request.ProposedAvailabilityId;
-
-                // Keep ScheduledTime in sync for backward compatibility (will be removed in future)
-                room.ScheduledTime = proposedAvailability.StartTime;
-
-                // Increment reschedule attempt count
+                // Update room scheduled time based on proposed start time
+                room.ScheduledTime = request.ProposedStartTime;
                 room.RescheduleAttemptCount++;
 
                 _interviewRoomRepository.UpdateAsync(room);
                 await _interviewRoomRepository.SaveChangesAsync();
-
-                // Update transaction to point to new availability
-                if (room.Transaction != null)
-                {
-                    room.Transaction.CoachAvailabilityId = request.ProposedAvailabilityId;
-                    await _interviewRoomRepository.SaveChangesAsync();
-                    _logger.LogInformation("Updated transaction {TransactionId} to new availability {AvailabilityId}",
-                        room.TransactionId, request.ProposedAvailabilityId);
-                }
-                
-                // Mark proposed availability as unavailable (booked)
-                proposedAvailability.Status = CoachAvailabilityStatus.Unavailable;
-                await _coachAvailabilitiesRepository.SaveChangesAsync();
-
-                // Release current availability (mark as available again)
-                var currentAvailability = await _coachAvailabilitiesRepository.GetByIdAsync(request.CurrentAvailabilityId);
-                if (currentAvailability == null)
-                {
-                    _logger.LogWarning("Current availability with ID {CurrentAvailabilityId} not found.", request.CurrentAvailabilityId);
-                    throw new NotFoundException("Current availability not found");
-                }
-                currentAvailability.Status = CoachAvailabilityStatus.Available;
-                await _coachAvailabilitiesRepository.SaveChangesAsync();
 
                 request.RespondedAt = DateTime.UtcNow;
                 request.RespondedBy = respondedBy;
