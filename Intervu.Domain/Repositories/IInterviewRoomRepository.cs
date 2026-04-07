@@ -14,14 +14,28 @@ namespace Intervu.Domain.Repositories
         Task<InterviewRoom?> GetByIdWithDetailsAsync(Guid id);
         
         /// <summary>
-        /// Get rooms with participant names for a candidate
+        /// Get rooms with participant summary fields for a candidate.
         /// </summary>
-        Task<IEnumerable<(InterviewRoom Room, string? CandidateName, string? CoachName)>> GetListWithNamesByCandidateIdAsync(Guid candidateId);
+        Task<IEnumerable<(
+            InterviewRoom Room,
+            string? CandidateName,
+            string? CandidateProfilePicture,
+            string? CandidateSlugProfileUrl,
+            string? CoachName,
+            string? CoachProfilePicture,
+            string? CoachSlugProfileUrl)>> GetListWithNamesByCandidateIdAsync(Guid candidateId);
         
         /// <summary>
-        /// Get rooms with participant names for a coach
+        /// Get rooms with participant summary fields for a coach.
         /// </summary>
-        Task<IEnumerable<(InterviewRoom Room, string? CandidateName, string? CoachName)>> GetListWithNamesByCoachIdAsync(Guid coachId);
+        Task<IEnumerable<(
+            InterviewRoom Room,
+            string? CandidateName,
+            string? CandidateProfilePicture,
+            string? CandidateSlugProfileUrl,
+            string? CoachName,
+            string? CoachProfilePicture,
+            string? CoachSlugProfileUrl)>> GetListWithNamesByCoachIdAsync(Guid coachId);
 
         /// <summary>
         /// Get interview rooms linked to a booking request

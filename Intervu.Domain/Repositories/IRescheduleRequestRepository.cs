@@ -16,5 +16,6 @@ namespace Intervu.Domain.Repositories
         Task<IEnumerable<InterviewRescheduleRequest>>   GetRescheduleRequestsByUserIdAsync(Guid userId);
         Task<IEnumerable<InterviewRescheduleRequest>> GetPendingRequestsForResponderAsync(Guid responderId);
         Task<bool> HasPendingRequestAsync(Guid roomId);
+        Task<HashSet<Guid>> GetPendingRequestRoomIdsAsync(IEnumerable<Guid> roomIds);
     }
 }

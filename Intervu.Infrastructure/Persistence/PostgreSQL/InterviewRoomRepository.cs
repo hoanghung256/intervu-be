@@ -27,7 +27,14 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             return await _context.InterviewRooms.ToListAsync();
         }
 
-        public async Task<IEnumerable<(InterviewRoom Room, string? CandidateName, string? CoachName)>> GetListWithNamesByCandidateIdAsync(Guid candidateId)
+        public async Task<IEnumerable<(
+            InterviewRoom Room,
+            string? CandidateName,
+            string? CandidateProfilePicture,
+            string? CandidateSlugProfileUrl,
+            string? CoachName,
+            string? CoachProfilePicture,
+            string? CoachSlugProfileUrl)>> GetListWithNamesByCandidateIdAsync(Guid candidateId)
         {
             var rooms = await _context.InterviewRooms
                 .Include(r => r.CurrentAvailability)
@@ -36,32 +43,17 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Where(r => r.CandidateId == candidateId)
                 .ToListAsync();
 
-            var result = new List<(InterviewRoom, string?, string?)>();
-            
-            foreach (var room in rooms)
-            {
-                string? candidateName = null;
-                string? coachName = null;
-
-                if (room.CandidateId.HasValue)
-                {
-                    var candidateUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == room.CandidateId.Value);
-                    candidateName = candidateUser?.FullName;
-                }
-
-                if (room.CoachId.HasValue)
-                {
-                    var coachUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == room.CoachId.Value);
-                    coachName = coachUser?.FullName;
-                }
-
-                result.Add((room, candidateName, coachName));
-            }
-
-            return result;
+            return await BuildRoomTuplesWithParticipantSummaryAsync(rooms);
         }
 
-        public async Task<IEnumerable<(InterviewRoom Room, string? CandidateName, string? CoachName)>> GetListWithNamesByCoachIdAsync(Guid coachId)
+        public async Task<IEnumerable<(
+            InterviewRoom Room,
+            string? CandidateName,
+            string? CandidateProfilePicture,
+            string? CandidateSlugProfileUrl,
+            string? CoachName,
+            string? CoachProfilePicture,
+            string? CoachSlugProfileUrl)>> GetListWithNamesByCoachIdAsync(Guid coachId)
         {
             var rooms = await _context.InterviewRooms
                 .Include(r => r.CurrentAvailability)
@@ -70,26 +62,58 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Where(r => r.CoachId == coachId)
                 .ToListAsync();
 
-            var result = new List<(InterviewRoom, string?, string?)>();
-            
+            return await BuildRoomTuplesWithParticipantSummaryAsync(rooms);
+        }
+
+        private async Task<IEnumerable<(
+            InterviewRoom Room,
+            string? CandidateName,
+            string? CandidateProfilePicture,
+            string? CandidateSlugProfileUrl,
+            string? CoachName,
+            string? CoachProfilePicture,
+            string? CoachSlugProfileUrl)>> BuildRoomTuplesWithParticipantSummaryAsync(List<InterviewRoom> rooms)
+        {
+            var userIds = rooms
+                .SelectMany(r => new Guid?[] { r.CandidateId, r.CoachId })
+                .Where(id => id.HasValue)
+                .Select(id => id!.Value)
+                .Distinct()
+                .ToList();
+
+            var usersById = await _context.Users
+                .Where(u => userIds.Contains(u.Id))
+                .Select(u => new
+                {
+                    u.Id,
+                    u.FullName,
+                    u.ProfilePicture,
+                    u.SlugProfileUrl,
+                })
+                .ToDictionaryAsync(u => u.Id);
+
+            var result = new List<(
+                InterviewRoom Room,
+                string? CandidateName,
+                string? CandidateProfilePicture,
+                string? CandidateSlugProfileUrl,
+                string? CoachName,
+                string? CoachProfilePicture,
+                string? CoachSlugProfileUrl)>();
+
             foreach (var room in rooms)
             {
-                string? candidateName = null;
-                string? coachName = null;
+                usersById.TryGetValue(room.CandidateId ?? Guid.Empty, out var candidateUser);
+                usersById.TryGetValue(room.CoachId ?? Guid.Empty, out var coachUser);
 
-                if (room.CandidateId.HasValue)
-                {
-                    var candidateUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == room.CandidateId.Value);
-                    candidateName = candidateUser?.FullName;
-                }
-
-                if (room.CoachId.HasValue)
-                {
-                    var coachUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == room.CoachId.Value);
-                    coachName = coachUser?.FullName;
-                }
-
-                result.Add((room, candidateName, coachName));
+                result.Add((
+                    room,
+                    candidateUser?.FullName,
+                    candidateUser?.ProfilePicture,
+                    candidateUser?.SlugProfileUrl,
+                    coachUser?.FullName,
+                    coachUser?.ProfilePicture,
+                    coachUser?.SlugProfileUrl));
             }
 
             return result;
