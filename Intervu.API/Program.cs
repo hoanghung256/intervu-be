@@ -106,7 +106,7 @@ namespace Intervu.API
             builder.Services.AddDomainBusinessRules();
             builder.Services.AddUseCases(builder.Configuration);
             builder.Services.AddPersistenceSqlServer(builder.Configuration, builder.Environment);
-            builder.Services.AddInfrastructureExternalServices(builder.Configuration);
+            builder.Services.AddInfrastructureExternalServices(builder.Configuration, builder.Environment);
 
             // Notification real-time push
             builder.Services.AddScoped<Intervu.Application.Interfaces.ExternalServices.INotificationPusher, Intervu.API.Services.SignalRNotificationPusher>();
@@ -273,10 +273,13 @@ namespace Intervu.API
                 });
             }
 
-            app.UseHangfireDashboard("/hangfire", new DashboardOptions
+            if (!app.Environment.IsEnvironment("Testing"))
             {
-                Authorization = new[] { new AllowAllDashboardAuthorizationFilter() }
-            });
+                app.UseHangfireDashboard("/hangfire", new DashboardOptions
+                {
+                    Authorization = new[] { new AllowAllDashboardAuthorizationFilter() }
+                });
+            }
 
             app.UseAuthentication();
             app.UseAuthorization();
@@ -286,8 +289,9 @@ namespace Intervu.API
             app.MapHub<NotificationHub>("/api/v1/hubs/notification");
 
             // --- REGISTER RECURRING JOBS ---
-            using (var scope = app.Services.CreateScope())
+            if (!app.Environment.IsEnvironment("Testing"))
             {
+                using var scope = app.Services.CreateScope();
                 var jobScheduler = scope.ServiceProvider.GetRequiredService<HangfireJobScheduler>();
                 jobScheduler.RegisterRecurringJobs();
             }
