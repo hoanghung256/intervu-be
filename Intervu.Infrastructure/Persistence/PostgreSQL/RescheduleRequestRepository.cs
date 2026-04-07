@@ -73,6 +73,23 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                     r.Status == RescheduleRequestStatus.Pending);
         }
 
+        public async Task<HashSet<Guid>> GetPendingRequestRoomIdsAsync(IEnumerable<Guid> roomIds)
+        {
+            var ids = roomIds.Distinct().ToList();
+            if (ids.Count == 0)
+            {
+                return new HashSet<Guid>();
+            }
+
+            var pendingIds = await _context.InterviewRescheduleRequests
+                .Where(r => ids.Contains(r.InterviewRoomId) && r.Status == RescheduleRequestStatus.Pending)
+                .Select(r => r.InterviewRoomId)
+                .Distinct()
+                .ToListAsync();
+
+            return pendingIds.ToHashSet();
+        }
+
         public async Task<IEnumerable<InterviewRescheduleRequest>> GetRescheduleRequestsByUserIdAsync(Guid userId)
         {
             // Get all requests where:

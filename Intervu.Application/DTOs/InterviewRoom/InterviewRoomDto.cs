@@ -8,8 +8,12 @@ namespace Intervu.Application.DTOs.InterviewRoom
         public Guid Id { get; set; }
         public Guid? CandidateId { get; set; }
         public string? CandidateName { get; set; }
+        public string? CandidateProfilePicture { get; set; }
+        public string? CandidateSlugProfileUrl { get; set; }
         public Guid? CoachId { get; set; }
         public string? CoachName { get; set; }
+        public string? CoachProfilePicture { get; set; }
+        public string? CoachSlugProfileUrl { get; set; }
         public DateTime? ScheduledTime { get; set; }
         public int? DurationMinutes { get; set; }
         public string? VideoCallRoomUrl { get; set; }

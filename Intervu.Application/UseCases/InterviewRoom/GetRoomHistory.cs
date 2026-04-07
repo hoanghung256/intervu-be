@@ -49,7 +49,14 @@ namespace Intervu.Application.UseCases.InterviewRoom
             GetInterviewRoomsRequestDto request)
         {
             // Get all rooms for the user with names
-            IEnumerable<(Domain.Entities.InterviewRoom Room, string? CandidateName, string? CoachName)> roomsWithNames;
+            IEnumerable<(
+                Domain.Entities.InterviewRoom Room,
+                string? CandidateName,
+                string? CandidateProfilePicture,
+                string? CandidateSlugProfileUrl,
+                string? CoachName,
+                string? CoachProfilePicture,
+                string? CoachSlugProfileUrl)> roomsWithNames;
             if (role == UserRole.Candidate)
             {
                 roomsWithNames = await _repo.GetListWithNamesByCandidateIdAsync(userId);
@@ -88,22 +95,31 @@ namespace Intervu.Application.UseCases.InterviewRoom
                 .Take(request.PageSize)
                 .ToList();
 
+            var roomIds = pagedRooms.Select(r => r.Room.Id).ToList();
+            var pendingRoomIds = await _rescheduleRepo.GetPendingRequestRoomIdsAsync(roomIds);
+            var ratingByRoomId = await _feedbackRepo.GetRatingsByInterviewRoomIdsAsync(roomIds);
+
             // Map to DTOs with reschedule status
             var dtos = new List<InterviewRoomDto>();
             foreach (var item in pagedRooms)
             {
                 var room = item.Room;
-                var hasPendingReschedule = await _rescheduleRepo.HasPendingRequestAsync(room.Id);
+                var hasPendingReschedule = pendingRoomIds.Contains(room.Id);
                 var canReschedule = room.IsAvailableForReschedule() && !hasPendingReschedule;
                 var canCancel = room.IsAvailableForCancel();
+                ratingByRoomId.TryGetValue(room.Id, out var roomRating);
 
                 dtos.Add(new InterviewRoomDto
                 {
                     Id = room.Id,
                     CandidateId = room.CandidateId,
                     CandidateName = item.CandidateName,
+                    CandidateProfilePicture = item.CandidateProfilePicture,
+                    CandidateSlugProfileUrl = item.CandidateSlugProfileUrl,
                     CoachId = room.CoachId,
                     CoachName = item.CoachName,
+                    CoachProfilePicture = item.CoachProfilePicture,
+                    CoachSlugProfileUrl = item.CoachSlugProfileUrl,
                     ScheduledTime = room.ScheduledTime,
                     DurationMinutes = room.DurationMinutes,
                     VideoCallRoomUrl = room.VideoCallRoomUrl,
@@ -124,8 +140,7 @@ namespace Intervu.Application.UseCases.InterviewRoom
                     CanReschedule = canReschedule,
                     CanCancel = canCancel,
                     Type = room.Type,
-                    Rating = (await _feedbackRepo.GetFeedbacksByInterviewRoomIdAsync(room.Id))
-                             .FirstOrDefault()?.Rating
+                    Rating = roomRating,
                 });
             }
 

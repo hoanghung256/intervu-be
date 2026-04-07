@@ -47,6 +47,24 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .ToListAsync();
         }
 
+        public async Task<Dictionary<Guid, double?>> GetRatingsByInterviewRoomIdsAsync(IEnumerable<Guid> interviewRoomIds)
+        {
+            var ids = interviewRoomIds.Distinct().ToList();
+            if (ids.Count == 0)
+            {
+                return new Dictionary<Guid, double?>();
+            }
+
+            var ratings = await _context.Feedbacks
+                .Where(f => ids.Contains(f.InterviewRoomId))
+                .Select(f => new { f.InterviewRoomId, f.Rating })
+                .ToListAsync();
+
+            return ratings
+                .GroupBy(x => x.InterviewRoomId)
+                .ToDictionary(g => g.Key, g => (double?)g.First().Rating);
+        }
+
         public async Task<(IReadOnlyList<Feedback> Items, int TotalCount)> GetPagedFeedbacksAsync(int page, int pageSize)
         {
             var query = _context.Feedbacks.Include(f => f.CoachProfile).ThenInclude(cp => cp.User).Include(f => f.InterviewRoom).AsQueryable();
