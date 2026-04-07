@@ -256,23 +256,6 @@ namespace Intervu.API.Controllers.v1
         }
 
         /// <summary>
-        /// Admin gets interview reports for report management.
-        /// </summary>
-        [Authorize(Policy = AuthorizationPolicies.Admin)]
-        [HttpGet("reports")]
-        public async Task<IActionResult> GetInterviewReports([FromQuery] InterviewReportFilterRequest filter)
-        {
-            var result = await _getInterviewReports.ExecuteAsync(filter);
-
-            return Ok(new
-            {
-                success = true,
-                message = "Success",
-                data = result
-            });
-        }
-        
-        /// <summary>
         /// Candidate gets their own interview reports.
         /// </summary>
         [Authorize(Policy = AuthorizationPolicies.Candidate)]
@@ -295,6 +278,5 @@ namespace Intervu.API.Controllers.v1
                 data = result
             });
         }
-
     }
 }

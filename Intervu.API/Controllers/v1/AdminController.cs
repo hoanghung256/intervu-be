@@ -512,25 +512,15 @@ namespace Intervu.API.Controllers.v1
         }
 
         /// <summary>
-        /// Backward-compatible room reports endpoint for existing FE admin page.
+        /// Admin gets interview room reports for management.
         /// </summary>
         [HttpGet("room-reports")]
         [Authorize(Policy = AuthorizationPolicies.Admin)]
-        public async Task<IActionResult> GetRoomReports(
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 20,
-            [FromQuery] InterviewReportStatus? status = null,
-            [FromQuery] string? search = null)
+        public async Task<IActionResult> GetRoomReports([FromQuery] InterviewReportFilterRequest filter)
         {
             try
             {
-                var reports = await _getInterviewReports.ExecuteAsync(new InterviewReportFilterRequest
-                {
-                    Page = page,
-                    PageSize = pageSize,
-                    Status = status,
-                    SearchTerm = search
-                });
+                var reports = await _getInterviewReports.ExecuteAsync(filter);
 
                 var items = reports.Items.Select(r => new
                 {
@@ -544,7 +534,7 @@ namespace Intervu.API.Controllers.v1
                     reason = r.Reason,
                     details = r.Details,
                     content = r.Details,
-                    reportType = r.Reason, // Use reason as type for mapping in FE
+                    reportType = r.Reason, // Mapping for FE compatibility
                     status = (int)r.Status,
                     createdAt = r.CreatedAt,
                     updatedAt = r.UpdatedAt

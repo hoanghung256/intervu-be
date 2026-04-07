@@ -1,4 +1,5 @@
 using Intervu.Domain.Entities;
+using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Microsoft.EntityFrameworkCore;
@@ -48,6 +49,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
         {
             CoachProfile? profile = await _context.CoachProfiles
                 .Where(p => p.User.SlugProfileUrl == slug)
+                .Where(p => p.Status == CoachProfileStatus.Enable)
+                .Where(p => p.User != null && p.User.Status == UserStatus.Active)
                 .Include(p => p.Companies)
                 .Include(p => p.Skills)
                 .Include(p => p.Industries)
@@ -95,6 +98,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Include(i => i.WorkExperiences)
                 .Include(i => i.User)
                 .AsQueryable();
+
+            // Public coach discovery should only expose enabled profiles owned by active users.
+            query = query.Where(i => i.Status == CoachProfileStatus.Enable && i.User != null && i.User.Status == UserStatus.Active);
 
             if (!string.IsNullOrEmpty(search))
             {
