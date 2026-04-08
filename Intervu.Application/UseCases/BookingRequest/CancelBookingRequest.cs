@@ -1,6 +1,8 @@
 using AutoMapper;
 using Intervu.Application.DTOs.BookingRequest;
 using Intervu.Application.Exceptions;
+using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.ExternalServices.Email;
 using Intervu.Application.Interfaces.UseCases.BookingRequest;
 using Intervu.Domain.Abstractions.Policies.Interfaces;
 using Intervu.Domain.Entities.Constants;
@@ -16,6 +18,8 @@ namespace Intervu.Application.UseCases.BookingRequest
         private readonly ICoachAvailabilitiesRepository _availabilityRepo;
         private readonly IRefundPolicy _refundPolicy;
         private readonly IMapper _mapper;
+        private readonly IBackgroundService _backgroundService;
+        private readonly IUserRepository _userRepository;
 
         public CancelBookingRequest(
             IBookingRequestRepository bookingRepo,
@@ -23,7 +27,9 @@ namespace Intervu.Application.UseCases.BookingRequest
             ITransactionRepository transactionRepo,
             ICoachAvailabilitiesRepository availabilityRepo,
             IRefundPolicy refundPolicy,
-            IMapper mapper)
+            IMapper mapper,
+            IBackgroundService backgroundService,
+            IUserRepository userRepository)
         {
             _bookingRepo = bookingRepo;
             _roomRepo = roomRepo;
@@ -31,6 +37,8 @@ namespace Intervu.Application.UseCases.BookingRequest
             _availabilityRepo = availabilityRepo;
             _refundPolicy = refundPolicy;
             _mapper = mapper;
+            _backgroundService = backgroundService;
+            _userRepository = userRepository;
         }
 
         public async Task<BookingRequestDto> ExecuteAsync(Guid candidateId, Guid bookingRequestId)
@@ -58,6 +66,7 @@ namespace Intervu.Application.UseCases.BookingRequest
 
             // Load related interview rooms (if any)
             var rooms = await _roomRepo.GetByBookingRequestIdAsync(bookingRequestId);
+            var totalRefundAmount = 0;
 
             foreach (var room in rooms)
             {
@@ -112,6 +121,8 @@ namespace Intervu.Application.UseCases.BookingRequest
                                 Type = Domain.Entities.Constants.TransactionType.Refund,
                                 Status = Domain.Entities.Constants.TransactionStatus.Created
                             });
+
+                            totalRefundAmount += refundAmount;
                         }
                     }
                 }
@@ -122,6 +133,39 @@ namespace Intervu.Application.UseCases.BookingRequest
 
             _bookingRepo.UpdateAsync(bookingRequest);
             await _bookingRepo.SaveChangesAsync();
+
+            var candidate = await _userRepository.GetByIdAsync(bookingRequest.CandidateId);
+            var coach = await _userRepository.GetByIdAsync(bookingRequest.CoachId);
+
+            if (candidate != null)
+            {
+                var candidatePlaceholders = new Dictionary<string, string>
+                {
+                    ["RecipientName"] = candidate.FullName,
+                    ["OtherPartyName"] = coach?.FullName ?? "Coach",
+                    ["RefundAmount"] = totalRefundAmount.ToString("N0")
+                };
+
+                _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                    candidate.Email,
+                    "BookingRequestCancelled",
+                    candidatePlaceholders));
+            }
+
+            if (coach != null)
+            {
+                var coachPlaceholders = new Dictionary<string, string>
+                {
+                    ["RecipientName"] = coach.FullName,
+                    ["OtherPartyName"] = candidate?.FullName ?? "Candidate",
+                    ["RefundAmount"] = totalRefundAmount.ToString("N0")
+                };
+
+                _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                    coach.Email,
+                    "BookingRequestCancelled",
+                    coachPlaceholders));
+            }
 
             var result = _mapper.Map<BookingRequestDto>(bookingRequest);
             result.CandidateName = bookingRequest.Candidate?.User?.FullName;

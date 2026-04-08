@@ -9,8 +9,6 @@ using Intervu.Application.Interfaces.ExternalServices.Email;
 using Intervu.Application.Interfaces.UseCases.PasswordReset;
 using Intervu.Domain.Repositories;
 using Microsoft.Extensions.Configuration;
-using Org.BouncyCastle.Security;
-using Org.BouncyCastle.Utilities;
 
 namespace Intervu.Application.UseCases.PasswordReset
 {
@@ -57,15 +55,17 @@ namespace Intervu.Application.UseCases.PasswordReset
             var frontEndUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:5173";
             var resetLink = $"{frontEndUrl}/reset-password?token={token}";
 
-            //Send email
+            var placeholders = new Dictionary<string, string>
+            {
+                ["FullName"] = user.FullName,
+                ["ResetLink"] = resetLink,
+                ["ExpiryHours"] = "24"
+            };
+
+            // Send email synchronously so user gets immediate feedback if sending fails
             try
             {
-                await _emailService.SendEmailAsync(
-                    to: user.Email,
-                    subject: "Password Reset Request",
-                    body: BuildEmailBody(user.FullName, resetLink, expiresAt),
-                    isHtml: true
-                );
+                await _emailService.SendEmailWithTemplateAsync(user.Email, "ForgotPassword", placeholders);
             }
             catch (Exception)
             {
@@ -101,25 +101,5 @@ namespace Intervu.Application.UseCases.PasswordReset
                 .Replace("=", "");
         }
 
-        private string BuildEmailBody(string userName, string resetLink, DateTime expiresAt)
-        {
-            var expiryHours = (expiresAt - DateTime.UtcNow).TotalHours;
-
-            return $@"
-                <html>
-                <body>
-                    <h2>Password Reset Request</h2>
-                    <p>Hi {userName},</p>
-                    <p>You requested to reset your password. Click the link below to reset your password:</p>
-                    <p><a href='{resetLink}' style='background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>Reset Password</a></p>
-                    <p>Or copy and paste this link into your browser:</p>
-                    <p>{resetLink}</p>
-                    <p><strong>This link will expire in {expiryHours:F0} hours.</strong></p>
-                    <p>If you didn't request this, please ignore this email.</p>
-                    <p>Best regards,<br/>Intervu Team</p>
-                </body>
-                </html>
-            ";
-        }
     }
 }

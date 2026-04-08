@@ -1,6 +1,7 @@
 using Intervu.Application.DTOs.InterviewRoom;
 using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.ExternalServices.Email;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Intervu.Application.Interfaces.UseCases.Notification;
 using Intervu.Application.Utils;
@@ -13,7 +14,8 @@ namespace Intervu.Application.UseCases.InterviewRoom
 {
     public class ResolveInterviewReport(
         IUnitOfWork unitOfWork,
-        IBackgroundService jobService) : IResolveInterviewReport
+        IBackgroundService jobService,
+        IUserRepository userRepository) : IResolveInterviewReport
     {
         public async Task ExecuteAsync(ResolveRoomReportRequest request, Guid adminId)
         {
@@ -40,6 +42,7 @@ namespace Intervu.Application.UseCases.InterviewRoom
                 reportRepo.UpdateAsync(report);
 
                 string notificationDetail = "";
+                string refundInfo = "No refund was issued for this report.";
 
                 // Handle Resolve Logic (Refund etc.)
                 if (request.Status == InterviewReportStatus.Resolved)
@@ -64,11 +67,13 @@ namespace Intervu.Application.UseCases.InterviewRoom
                             });
 
                             notificationDetail = $"Your report has been reviewed and resolved. We have issued a {request.RefundOption}% refund ({refundAmount:N0} resources) to your account. Thank you for your feedback.";
+                            refundInfo = $"A {request.RefundOption}% refund ({refundAmount:N0} resources) has been issued to your account.";
                         }
                     }
                     else
                     {
                          notificationDetail = "Your report has been resolved. However, this case does not qualify for a refund based on our review.";
+                         refundInfo = "This report was resolved without refund.";
                     }
 
                     // Always Cancel the Payout if Resolved (meaning the coach might be at fault or session was bad)
@@ -102,11 +107,26 @@ namespace Intervu.Application.UseCases.InterviewRoom
                     null
                 ));
 
-                // TODO: Send email to candidate with resolution details
-                
-
                 await unitOfWork.SaveChangesAsync();
                 await unitOfWork.CommitTransactionAsync();
+
+                var reporter = await userRepository.GetByIdAsync(reporterId);
+                if (reporter != null)
+                {
+                    var placeholders = new Dictionary<string, string>
+                    {
+                        ["RecipientName"] = reporter.FullName,
+                        ["RoomId"] = room.Id.ToString()[..8].ToUpperInvariant(),
+                        ["Status"] = request.Status.ToString(),
+                        ["AdminNote"] = request.AdminNote ?? "No additional notes.",
+                        ["RefundInfo"] = refundInfo
+                    };
+
+                    jobService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                        reporter.Email,
+                        "ReportResolution",
+                        placeholders));
+                }
             }
             catch (Exception)
             {

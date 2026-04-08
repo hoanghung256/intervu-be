@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Intervu.Application.DTOs.PasswordReset;
+using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.ExternalServices.Email;
 using Intervu.Application.Interfaces.UseCases.PasswordReset;
 using Intervu.Application.Utils;
 using Intervu.Domain.Repositories;
@@ -15,13 +17,16 @@ namespace Intervu.Application.UseCases.PasswordReset
     {
         private readonly IUserRepository _userRepository;
         private readonly IPasswordResetTokenRepository _tokenRepository;
+        private readonly IBackgroundService _backgroundService;
 
         public ResetPasswordUseCase(
             IUserRepository userRepository,
-            IPasswordResetTokenRepository tokenRepository)
+            IPasswordResetTokenRepository tokenRepository,
+            IBackgroundService backgroundService)
         {
             _userRepository = userRepository;
             _tokenRepository = tokenRepository;
+            _backgroundService = backgroundService;
         }
         public async Task<PasswordResetResponse> ExecuteAsync(ResetPasswordRequest request)
         {
@@ -83,6 +88,16 @@ namespace Intervu.Application.UseCases.PasswordReset
             await _tokenRepository.MarkAsUsedAsync(token.Id);
 
             await _tokenRepository.InvalidateAllUserTokensAsync(user.Id);
+
+            var placeholders = new Dictionary<string, string>
+            {
+                ["FullName"] = user.FullName
+            };
+
+            _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                user.Email,
+                "PasswordChanged",
+                placeholders));
 
             return new PasswordResetResponse
             {

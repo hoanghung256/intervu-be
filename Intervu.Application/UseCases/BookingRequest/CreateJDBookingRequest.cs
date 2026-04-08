@@ -1,12 +1,15 @@
 using AutoMapper;
 using Intervu.Application.DTOs.BookingRequest;
 using Intervu.Application.Exceptions;
+using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.ExternalServices.Email;
 using Intervu.Application.Interfaces.UseCases.BookingRequest;
 using Intervu.Application.Validators;
 using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
+using Microsoft.Extensions.Configuration;
 
 namespace Intervu.Application.UseCases.BookingRequest
 {
@@ -20,6 +23,9 @@ namespace Intervu.Application.UseCases.BookingRequest
         private readonly ICoachAvailabilitiesRepository _availabilityRepo;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IBackgroundService _backgroundService;
+        private readonly IUserRepository _userRepository;
+        private readonly IConfiguration _configuration;
 
         private static readonly TimeSpan DefaultExpiration = TimeSpan.FromHours(48);
 
@@ -29,7 +35,10 @@ namespace Intervu.Application.UseCases.BookingRequest
             ICoachProfileRepository coachRepo,
             ICoachAvailabilitiesRepository availabilityRepo,
             IUnitOfWork unitOfWork,
-            IMapper mapper)
+            IMapper mapper,
+            IBackgroundService backgroundService,
+            IUserRepository userRepository,
+            IConfiguration configuration)
         {
             _bookingRepo = bookingRepo;
             _serviceRepo = serviceRepo;
@@ -37,6 +46,9 @@ namespace Intervu.Application.UseCases.BookingRequest
             _availabilityRepo = availabilityRepo;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _backgroundService = backgroundService;
+            _userRepository = userRepository;
+            _configuration = configuration;
         }
 
         public async Task<BookingRequestDto> ExecuteAsync(Guid candidateId, CreateJDBookingRequestDto dto)
@@ -151,6 +163,26 @@ namespace Intervu.Application.UseCases.BookingRequest
                 await _bookingRepo.AddAsync(bookingRequest);
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
+
+                var candidateUser = await _userRepository.GetByIdAsync(candidateId);
+                var coachUser = await _userRepository.GetByIdAsync(dto.CoachId);
+                if (coachUser != null)
+                {
+                    var frontendUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:5173";
+                    var placeholders = new Dictionary<string, string>
+                    {
+                        ["CoachName"] = coachUser.FullName,
+                        ["CandidateName"] = candidateUser?.FullName ?? "Candidate",
+                        ["TotalAmount"] = totalAmount.ToString("N0"),
+                        ["RoundCount"] = rounds.Count.ToString(),
+                        ["DashboardLink"] = $"{frontendUrl.TrimEnd('/')}/dashboard/booking-requests"
+                    };
+
+                    _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                        coachUser.Email,
+                        "NewBookingRequest",
+                        placeholders));
+                }
 
                 // Reload with navigation properties
                 var created = await _bookingRepo.GetByIdWithDetailsAsync(bookingRequest.Id)

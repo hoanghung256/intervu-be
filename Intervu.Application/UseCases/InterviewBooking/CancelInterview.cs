@@ -1,5 +1,6 @@
 using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.ExternalServices.Email;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
 using Intervu.Application.Interfaces.UseCases.Notification;
 using Intervu.Application.Utils;
@@ -16,12 +17,18 @@ namespace Intervu.Application.UseCases.InterviewBooking
         private readonly IUnitOfWork _unitOfWork;
         private readonly IRefundPolicy _refundPolicy;
         private readonly IBackgroundService _jobService;
+        private readonly IUserRepository _userRepository;
 
-        public CancelInterview(IUnitOfWork unitOfWork, IRefundPolicy refundPolicy, IBackgroundService jobService)
+        public CancelInterview(
+            IUnitOfWork unitOfWork,
+            IRefundPolicy refundPolicy,
+            IBackgroundService jobService,
+            IUserRepository userRepository)
         {
             _unitOfWork = unitOfWork;
             _refundPolicy = refundPolicy;
             _jobService = jobService;
+            _userRepository = userRepository;
         }
 
         public async Task<int> ExecuteAsync(Guid interviewRoomId)
@@ -104,10 +111,49 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     ));
                 }
 
-                // TODO: Send email notification to candidate about cancellation and refund
-
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
+
+                var candidate = await _userRepository.GetByIdAsync(candidateId);
+                var coach = room.CoachId.HasValue
+                    ? await _userRepository.GetByIdAsync(room.CoachId.Value)
+                    : null;
+
+                var interviewDate = availability.StartTime.ToString("dd MMM yyyy HH:mm");
+
+                if (candidate != null)
+                {
+                    var candidatePlaceholders = new Dictionary<string, string>
+                    {
+                        ["RecipientName"] = candidate.FullName,
+                        ["OtherPartyName"] = coach?.FullName ?? "Coach",
+                        ["InterviewDate"] = interviewDate,
+                        ["RefundAmount"] = refundAmount.ToString("N0"),
+                        ["RefundNote"] = $"A refund of {refundAmount:N0} resources has been processed to your account."
+                    };
+
+                    _jobService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                        candidate.Email,
+                        "InterviewCancellation",
+                        candidatePlaceholders));
+                }
+
+                if (coach != null)
+                {
+                    var coachPlaceholders = new Dictionary<string, string>
+                    {
+                        ["RecipientName"] = coach.FullName,
+                        ["OtherPartyName"] = candidate?.FullName ?? "Candidate",
+                        ["InterviewDate"] = interviewDate,
+                        ["RefundAmount"] = "0",
+                        ["RefundNote"] = "This cancellation was initiated by the candidate. No payout will be processed for this session."
+                    };
+
+                    _jobService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                        coach.Email,
+                        "InterviewCancellation",
+                        coachPlaceholders));
+                }
 
                 return refundAmount;
             }

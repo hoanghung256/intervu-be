@@ -1,11 +1,13 @@
 using Intervu.Application.DTOs.BookingRequest;
 using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.ExternalServices.Email;
 using Intervu.Application.Interfaces.UseCases.BookingRequest;
 using Intervu.Application.Interfaces.UseCases.Notification;
 using Intervu.Application.Services;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Intervu.Application.UseCases.BookingRequest
@@ -21,6 +23,8 @@ namespace Intervu.Application.UseCases.BookingRequest
         private readonly ICoachAvailabilitiesRepository _availabilityRepo;
         private readonly ITransactionRepository _transactionRepo;
         private readonly IBackgroundService _backgroundService;
+        private readonly IUserRepository _userRepository;
+        private readonly IConfiguration _configuration;
 
         public RescheduleJDBookingRequest(
             ILogger<RescheduleJDBookingRequest> logger,
@@ -29,7 +33,9 @@ namespace Intervu.Application.UseCases.BookingRequest
             IRescheduleRequestRepository rescheduleRequestRepo,
             ICoachAvailabilitiesRepository availabilityRepo,
             ITransactionRepository transactionRepo,
-            IBackgroundService backgroundService)
+            IBackgroundService backgroundService,
+            IUserRepository userRepository,
+            IConfiguration configuration)
         {
             _logger = logger;
             _bookingRepo = bookingRepo;
@@ -38,6 +44,8 @@ namespace Intervu.Application.UseCases.BookingRequest
             _availabilityRepo = availabilityRepo;
             _transactionRepo = transactionRepo;
             _backgroundService = backgroundService;
+            _userRepository = userRepository;
+            _configuration = configuration;
         }
 
         public async Task ExecuteAsync(Guid candidateId, Guid bookingRequestId, RescheduleJDBookingRequestDto dto)
@@ -233,6 +241,42 @@ namespace Intervu.Application.UseCases.BookingRequest
                         : $"{candidateName} has rescheduled {rescheduledCount} interview rounds.",
                     "/interview?tab=upcoming",
                     bookingRequestId));
+
+            var candidate = await _userRepository.GetByIdAsync(candidateId);
+            var coach = await _userRepository.GetByIdAsync(bookingRequest.CoachId);
+            var frontendUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:5173";
+
+            if (candidate != null)
+            {
+                var candidatePlaceholders = new Dictionary<string, string>
+                {
+                    ["RecipientName"] = candidate.FullName,
+                    ["OtherPartyName"] = coach?.FullName ?? "Coach",
+                    ["RoundCount"] = rescheduledCount.ToString(),
+                    ["DashboardLink"] = $"{frontendUrl.TrimEnd('/')}/interview?tab=upcoming"
+                };
+
+                _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                    candidate.Email,
+                    "JDRescheduleNotification",
+                    candidatePlaceholders));
+            }
+
+            if (coach != null)
+            {
+                var coachPlaceholders = new Dictionary<string, string>
+                {
+                    ["RecipientName"] = coach.FullName,
+                    ["OtherPartyName"] = candidate?.FullName ?? "Candidate",
+                    ["RoundCount"] = rescheduledCount.ToString(),
+                    ["DashboardLink"] = $"{frontendUrl.TrimEnd('/')}/interview?tab=upcoming"
+                };
+
+                _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                    coach.Email,
+                    "JDRescheduleNotification",
+                    coachPlaceholders));
+            }
 
             _logger.LogInformation(
                 "Candidate {CandidateId} rescheduled {Count} round(s) for JD booking {BookingRequestId}",

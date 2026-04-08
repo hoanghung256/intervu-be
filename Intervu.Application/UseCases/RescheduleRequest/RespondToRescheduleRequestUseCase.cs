@@ -1,5 +1,6 @@
 using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.ExternalServices.Email;
 using Intervu.Application.Interfaces.UseCases.Notification;
 using Intervu.Application.Interfaces.UseCases.RescheduleRequest;
 using Intervu.Domain.Entities;
@@ -16,18 +17,21 @@ namespace Intervu.Application.UseCases.RescheduleRequest
         private readonly IInterviewRoomRepository _interviewRoomRepository;
         private readonly ICoachAvailabilitiesRepository _coachAvailabilitiesRepository;
         private readonly IBackgroundService _backgroundService;
+        private readonly IUserRepository _userRepository;
         public RespondToRescheduleRequestUseCase(
             ILogger<RespondToRescheduleRequestUseCase> logger,
             IRescheduleRequestRepository rescheduleRequestRepository,
             IInterviewRoomRepository interviewRoomRepository,
             ICoachAvailabilitiesRepository coachAvailabilitiesRepository,
-            IBackgroundService backgroundService)
+            IBackgroundService backgroundService,
+            IUserRepository userRepository)
         {
             _logger = logger;
             _rescheduleRequestRepository = rescheduleRequestRepository;
             _interviewRoomRepository = interviewRoomRepository;
             _coachAvailabilitiesRepository = coachAvailabilitiesRepository;
             _backgroundService = backgroundService;
+            _userRepository = userRepository;
         }
 
         public async Task ExecuteAsync(Guid requestId, Guid respondedBy, bool isApproved, string? rejectionReason)
@@ -76,6 +80,7 @@ namespace Intervu.Application.UseCases.RescheduleRequest
 
             if (isApproved)
             {
+                var approvedTime = string.Empty;
                 request.Status = RescheduleRequestStatus.Approved;
 
                 // Room already loaded above
@@ -98,6 +103,7 @@ namespace Intervu.Application.UseCases.RescheduleRequest
 
                 // Keep ScheduledTime in sync for backward compatibility (will be removed in future)
                 room.ScheduledTime = proposedAvailability.StartTime;
+                approvedTime = proposedAvailability.StartTime.ToString("dd MMM yyyy HH:mm");
 
                 // Increment reschedule attempt count
                 room.RescheduleAttemptCount++;
@@ -141,6 +147,23 @@ namespace Intervu.Application.UseCases.RescheduleRequest
                         "Your reschedule request has been approved.",
                         "/interview?tab=upcoming",
                         requestId));
+
+                var requester = await _userRepository.GetByIdAsync(request.RequestedBy);
+                if (requester != null)
+                {
+                    var placeholders = new Dictionary<string, string>
+                    {
+                        ["RecipientName"] = requester.FullName,
+                        ["Status"] = "Approved",
+                        ["RejectionReason"] = string.Empty,
+                        ["NewTime"] = approvedTime
+                    };
+
+                    _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                        requester.Email,
+                        "RescheduleResponse",
+                        placeholders));
+                }
             }
 
             if (!isApproved)
@@ -160,6 +183,23 @@ namespace Intervu.Application.UseCases.RescheduleRequest
                         rejectionReason ?? "Your reschedule request has been rejected.",
                         "/interview?tab=upcoming",
                         requestId));
+
+                var requester = await _userRepository.GetByIdAsync(request.RequestedBy);
+                if (requester != null)
+                {
+                    var placeholders = new Dictionary<string, string>
+                    {
+                        ["RecipientName"] = requester.FullName,
+                        ["Status"] = "Rejected",
+                        ["RejectionReason"] = rejectionReason ?? "No reason provided",
+                        ["NewTime"] = "-"
+                    };
+
+                    _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                        requester.Email,
+                        "RescheduleResponse",
+                        placeholders));
+                }
             }
         }
     }

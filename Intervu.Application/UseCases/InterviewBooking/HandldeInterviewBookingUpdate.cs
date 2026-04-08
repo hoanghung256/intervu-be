@@ -1,5 +1,6 @@
 using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.ExternalServices.Email;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Intervu.Application.Services;
@@ -8,6 +9,7 @@ using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using System;
@@ -22,6 +24,8 @@ namespace Intervu.Application.UseCases.InterviewBooking
         private readonly IBackgroundService _backgroundService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICoachInterviewServiceRepository _coachInterviewServiceRepository;
+        private readonly IUserRepository _userRepository;
+        private readonly IConfiguration _configuration;
         private readonly ILogger<HandldeInterviewBookingUpdate> _logger;
 
         public HandldeInterviewBookingUpdate(
@@ -31,6 +35,8 @@ namespace Intervu.Application.UseCases.InterviewBooking
             IBackgroundService backgroundService,
             IUnitOfWork unitOfWork,
             ICoachInterviewServiceRepository coachInterviewServiceRepository,
+            IUserRepository userRepository,
+            IConfiguration configuration,
             ILogger<HandldeInterviewBookingUpdate> logger)
         {
             _transactionRepository = transactionRepository;
@@ -39,6 +45,8 @@ namespace Intervu.Application.UseCases.InterviewBooking
             _backgroundService = backgroundService;
             _unitOfWork = unitOfWork;
             _coachInterviewServiceRepository = coachInterviewServiceRepository;
+            _userRepository = userRepository;
+            _configuration = configuration;
             _logger = logger;
         }
 
@@ -83,6 +91,21 @@ namespace Intervu.Application.UseCases.InterviewBooking
 
                 var candidateId = transaction.UserId;
                 var coachId = transaction.CoachId;
+                var frontendUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:5173";
+
+                DateTime? scheduledAt = transaction.BookedStartTime;
+                int? durationMinutes = transaction.BookedDurationMinutes;
+                if (transaction.BookingRequestId.HasValue)
+                {
+                    var bookingRequestRepo = _unitOfWork.GetRepository<IBookingRequestRepository>();
+                    var bookingRequest = await bookingRequestRepo.GetByIdWithDetailsAsync(transaction.BookingRequestId.Value);
+                    if (bookingRequest != null)
+                    {
+                        scheduledAt ??= bookingRequest.RequestedStartTime ?? bookingRequest.Rounds.OrderBy(r => r.RoundNumber).FirstOrDefault()?.StartTime;
+                        durationMinutes ??= bookingRequest.CoachInterviewService?.DurationMinutes
+                            ?? (bookingRequest.Rounds.Count > 0 ? (int)(bookingRequest.Rounds.First().EndTime - bookingRequest.Rounds.First().StartTime).TotalMinutes : null);
+                    }
+                }
 
                 // Notify candidate — booking confirmed
                 _backgroundService.Enqueue<INotificationUseCase>(
@@ -108,10 +131,52 @@ namespace Intervu.Application.UseCases.InterviewBooking
                             null));
                 }
 
-                // TODO: Send email notification to candidate, coach as well
-
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
+
+                var candidate = await _userRepository.GetByIdAsync(candidateId);
+                if (candidate != null)
+                {
+                    var receiptPlaceholders = new Dictionary<string, string>
+                    {
+                        ["CandidateName"] = candidate.FullName,
+                        ["CoachName"] = "Coach",
+                        ["Amount"] = transaction.Amount.ToString("N0"),
+                        ["OrderCode"] = transaction.OrderCode.ToString(),
+                        ["InterviewDate"] = (scheduledAt ?? DateTime.UtcNow).ToString("dd MMM yyyy"),
+                        ["InterviewTime"] = (scheduledAt ?? DateTime.UtcNow).ToString("HH:mm"),
+                        ["Duration"] = (durationMinutes ?? 60).ToString()
+                    };
+
+                    if (coachId.HasValue)
+                    {
+                        var coachUser = await _userRepository.GetByIdAsync(coachId.Value);
+                        receiptPlaceholders["CoachName"] = coachUser?.FullName ?? "Coach";
+
+                        if (coachUser != null)
+                        {
+                            var coachPlaceholders = new Dictionary<string, string>
+                            {
+                                ["CoachName"] = coachUser.FullName,
+                                ["CandidateName"] = candidate.FullName,
+                                ["InterviewDate"] = (scheduledAt ?? DateTime.UtcNow).ToString("dd MMM yyyy"),
+                                ["InterviewTime"] = (scheduledAt ?? DateTime.UtcNow).ToString("HH:mm"),
+                                ["Duration"] = (durationMinutes ?? 60).ToString(),
+                                ["DashboardLink"] = $"{frontendUrl.TrimEnd('/')}/dashboard/interviews"
+                            };
+
+                            _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                                coachUser.Email,
+                                "BookingConfirmationCoach",
+                                coachPlaceholders));
+                        }
+                    }
+
+                    _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                        candidate.Email,
+                        "PaymentReceipt",
+                        receiptPlaceholders));
+                }
             }
             catch
             {
