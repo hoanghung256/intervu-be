@@ -18,7 +18,6 @@ namespace Intervu.API.Test.Utils
         public ApiHelper(HttpClient client)
         {
             _client = client;
-            // Get the current test instance for logging purposes, similar to BaseControl
             _test = BaseTest.Current.Value!;
         }
 
@@ -28,11 +27,7 @@ namespace Intervu.API.Test.Utils
             {
                 return await _test.LogStepAsync(stepName, action);
             }
-            else
-            {
-                // Fallback if not run in a test context
-                return await action();
-            }
+            return await action();
         }
 
         public async Task<HttpResponseMessage> GetAsync(string requestUri, string jwtToken = "", bool logBody = false)
@@ -40,7 +35,9 @@ namespace Intervu.API.Test.Utils
             return await LogApiActionAsync($"GET {requestUri}", async () =>
             {
                 var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
+                if (!string.IsNullOrEmpty(jwtToken))
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
+
                 var response = await _client.SendAsync(request);
                 await LogResponseDetails(response, logBody);
                 return response;
@@ -52,20 +49,19 @@ namespace Intervu.API.Test.Utils
             return await LogApiActionAsync($"POST {requestUri}", async () =>
             {
                 var request = new HttpRequestMessage(HttpMethod.Post, requestUri);
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
+                if (!string.IsNullOrEmpty(jwtToken))
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
 
                 if (headers != null)
                 {
                     foreach (var header in headers)
-                    {
                         request.Headers.TryAddWithoutValidation(header.Key, header.Value);
-                    }
                 }
 
                 if (payload != null)
                 {
                     var jsonPayload = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
-                    _test.LogInfo($"Request Body:\n{jsonPayload}");
+                    _test.LogInfo($"Request Body:<br/><pre>{jsonPayload}</pre>");
                     request.Content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
                 }
 
@@ -80,15 +76,13 @@ namespace Intervu.API.Test.Utils
             return await LogApiActionAsync($"POST (Multipart) {requestUri}", async () =>
             {
                 var request = new HttpRequestMessage(HttpMethod.Post, requestUri);
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
+                if (!string.IsNullOrEmpty(jwtToken))
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
 
                 var multipartContent = new MultipartFormDataContent();
-
                 var byteArrayContent = new ByteArrayContent(fileContent);
                 byteArrayContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
-
                 multipartContent.Add(byteArrayContent, formName, fileName);
-
                 request.Content = multipartContent;
 
                 var response = await _client.SendAsync(request);
@@ -102,9 +96,11 @@ namespace Intervu.API.Test.Utils
             return await LogApiActionAsync($"PUT {requestUri}", async () =>
             {
                 var request = new HttpRequestMessage(HttpMethod.Put, requestUri);
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
+                if (!string.IsNullOrEmpty(jwtToken))
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
+
                 var jsonPayload = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
-                _test.LogInfo($"Request Body:\n{jsonPayload}");
+                _test.LogInfo($"Request Body:<br/><pre>{jsonPayload}</pre>");
                 request.Content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
                 var response = await _client.SendAsync(request);
@@ -118,20 +114,27 @@ namespace Intervu.API.Test.Utils
             return await LogApiActionAsync($"DELETE {requestUri}", async () =>
             {
                 var request = new HttpRequestMessage(HttpMethod.Delete, requestUri);
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
+                if (!string.IsNullOrEmpty(jwtToken))
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
+
                 var response = await _client.SendAsync(request);
                 await LogResponseDetails(response, logBody);
                 return response;
             });
         }
 
-        public async Task<HttpResponseMessage> PatchAsync(string requestUri, string jwtToken = "", bool logBody = false)
+        public async Task<HttpResponseMessage> PatchAsync<T>(string requestUri, T payload, string jwtToken = "", bool logBody = false)
         {
             return await LogApiActionAsync($"PATCH {requestUri}", async () =>
             {
                 var request = new HttpRequestMessage(HttpMethod.Patch, requestUri);
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
-                request.Content = new StringContent("{}", Encoding.UTF8, "application/json");
+                if (!string.IsNullOrEmpty(jwtToken))
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
+
+                var jsonPayload = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
+                _test.LogInfo($"Request Body:<br/><pre>{jsonPayload}</pre>");
+                request.Content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
                 var response = await _client.SendAsync(request);
                 await LogResponseDetails(response, logBody);
                 return response;
@@ -140,33 +143,36 @@ namespace Intervu.API.Test.Utils
 
         private async Task LogResponseDetails(HttpResponseMessage response, bool logBody = false)
         {
-            var responseBody = await response.Content.ReadAsStringAsync();
-            _test.LogInfo($"Received {response.RequestMessage?.Method} Response: {(int)response.StatusCode} {response.ReasonPhrase}");
+            _test.LogInfo($"Response: <b>{(int)response.StatusCode} {response.ReasonPhrase}</b>");
 
-            if (!string.IsNullOrWhiteSpace(responseBody) && logBody)
+            if (logBody)
             {
-                _test.LogInfo($"\nResponse Body:\n{TruncateLog(responseBody)}");
+                var responseBody = await response.Content.ReadAsStringAsync();
+                if (!string.IsNullOrWhiteSpace(responseBody))
+                {
+                    _test.LogInfo($"Response Body:<br/><pre>{TruncateLog(responseBody)}</pre>");
+                }
             }
         }
 
         public async Task<ApiResponse<T>> LogDeserializeJson<T>(HttpResponseMessage response, bool logBody = false)
         {
             var content = await response.Content.ReadAsStringAsync();
-            _test.LogInfo($"Deserializing content to {typeof(ApiResponse<T>).Name} ...");
             try
             {
                 var json = TestUtils.DeserializeJson<ApiResponse<T>>(content);
                 if (json == null) throw new Exception("Deserialization returned null.");
-                await _test.LogPass($"Deserializing content to {typeof(ApiResponse<T>).Name} successful");
+
                 if (logBody && !string.IsNullOrWhiteSpace(content))
                 {
-                    _test.LogInfo($"\nResponse Body:\n{TruncateLog(content)}");
+                    _test.LogInfo($"Deserialized Response Body:<br/><pre>{TruncateLog(content)}</pre>");
                 }
+
                 return json;
             }
             catch (Exception ex)
             {
-                var errorMsg = $"Failed to deserialize response to {typeof(ApiResponse<T>).Name}.\nError: {ex.Message}\nResponse Body: {content}";
+                var errorMsg = $"Failed to deserialize response to {typeof(ApiResponse<T>).Name}.<br/>Error: {ex.Message}<br/>Response Body: <pre>{content}</pre>";
                 await _test.LogFail(errorMsg);
                 throw new Exception(errorMsg, ex);
             }
@@ -174,9 +180,9 @@ namespace Intervu.API.Test.Utils
 
         private string TruncateLog(string content)
         {
-            const int MaxLength = 5000; // Limit log size to 5KB to prevent OOM
+            const int MaxLength = 10000;
             if (string.IsNullOrEmpty(content) || content.Length <= MaxLength) return content;
-            return content.Substring(0, MaxLength) + $"\n... [Truncated {content.Length - MaxLength} chars to prevent OOM]";
+            return content.Substring(0, MaxLength) + $"\n... [Truncated {content.Length - MaxLength} chars]";
         }
 
         public class ApiResponse<T>

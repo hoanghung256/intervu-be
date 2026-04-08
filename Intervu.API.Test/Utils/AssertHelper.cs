@@ -114,6 +114,21 @@ namespace Intervu.API.Test.Utils
             }
         }
 
+        public static async Task AssertNotEqual<T>(T expected, T actual, string userMessage)
+        {
+            var test = BaseTest.Current.Value;
+            try
+            {
+                Assert.NotEqual(expected, actual);
+                if (test != null) await test.LogPass($"Assertion passed: {userMessage}");
+            }
+            catch (Exception ex)
+            {
+                if (test != null) await test.LogFail($"Assertion failed: {userMessage}", ex);
+                throw;
+            }
+        }
+
         public static async Task AssertToastMessageAsync(Toast toast, string expectedMessage, string userMessage)
         {
             var test = BaseTest.Current.Value;

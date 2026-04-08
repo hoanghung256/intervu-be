@@ -19,15 +19,15 @@ namespace Intervu.API.Test.ApiTests.Interviewer
         // Seeded Data
         private readonly Guid _bobId = Guid.Parse("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22");
         private readonly string _bobEmail = "bob@example.com";
-        private readonly string _bobSlug = "bob-coach";
+        private readonly string _bobSlug = "bob-Coach_1719000000002";
 
         private readonly Guid _johnId = Guid.Parse("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"); // Another coach for Admin tests
-        
+
         private readonly string _adminEmail = "admin@example.com";
 
         private async Task<(string token, Guid userId)> LoginSeededUserAsync(string email)
         {
-            var password = ACCOUNT_PASSWORD;
+            var password = DEFAULT_PASSWORD;
 
             var loginResponse = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = email, Password = password });
             var loginData = await _api.LogDeserializeJson<LoginResponse>(loginResponse);
@@ -85,11 +85,11 @@ namespace Intervu.API.Test.ApiTests.Interviewer
         {
             // Arrange
             var (token, userId) = await LoginSeededUserAsync(_bobEmail);
-            
+
             var updateDto = new CoachUpdateDto
             {
                 // Id = userId,
-                FullName = "Updated Bob", 
+                FullName = "Updated Bob",
                 Email = "updated@example.com",
                 Bio = "Updated Bio for testing purposes.",
                 ExperienceYears = 9,
@@ -105,7 +105,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
             var apiResponse = await _api.LogDeserializeJson<object>(response);
             await AssertHelper.AssertTrue(apiResponse.Success, "Update was successful");
-            await AssertHelper.AssertEqual("Profile updated successfully", apiResponse.Message, "Message matches");
+            await AssertHelper.AssertEqual("Profile updated successfully!", apiResponse.Message, "Message matches");
         }
 
         [Fact]
@@ -120,7 +120,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
 
             // Act
             LogInfo($"Admin updating status for coach {targetCoachId} to {newStatus}.");
-            // Note: The controller expects [FromBody] CoachProfileStatus. 
+            // Note: The controller expects [FromBody] CoachProfileStatus.
             // We send the integer value directly as the body.
             var response = await _api.PutAsync($"/api/v1/coach-profile/{targetCoachId}/status", newStatus, jwtToken: adminToken, logBody: true);
 

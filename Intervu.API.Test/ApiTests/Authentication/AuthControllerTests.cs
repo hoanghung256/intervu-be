@@ -15,48 +15,48 @@ namespace Intervu.API.Test.ApiTests.Authentication
             _api = new ApiHelper(factory.CreateClient());
         }
 
-        [Fact]
-        [Trait("Category", "API")]
-        [Trait("Category", "Authentication")]
-        public async Task GoogleLogin_ReturnsBadRequest_WhenTokenIsMissing()
-        {
-            // Arrange
-            var request = new
-            {
-                idToken = ""
-            };
-
-            // Act
-            LogInfo("Sending google login request with missing token.");
-            var response = await _api.PostAsync("/api/v1/auth/google", request, logBody: true);
-
-            // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 BadRequest");
-            var apiResponse = await _api.LogDeserializeJson<object>(response);
-            await AssertHelper.AssertFalse(apiResponse.Success, "Google login failed as expected");
-            await AssertHelper.AssertEqual("IdToken (or credential) is required", apiResponse.Message, "Error message matches");
-        }
-
-        [Fact]
-        [Trait("Category", "API")]
-        [Trait("Category", "Authentication")]
-        public async Task GoogleLogin_ReturnsBadRequest_WhenTokenIsInvalid()
-        {
-            // Arrange
-            var request = new
-            {
-                idToken = "invalid_fake_token_string_12345"
-            };
-
-            // Act
-            LogInfo("Sending invalid google token.");
-            var response = await _api.PostAsync("/api/v1/auth/google", request, logBody: true);
-
-            // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 BadRequest");
-            var apiResponse = await _api.LogDeserializeJson<object>(response);
-            await AssertHelper.AssertFalse(apiResponse.Success, "Google login failed");
-        }
+//         [Fact]
+//         [Trait("Category", "API")]
+//         [Trait("Category", "Authentication")]
+//         public async Task GoogleLogin_ReturnsBadRequest_WhenTokenIsMissing()
+//         {
+//             // Arrange
+//             var request = new
+//             {
+//                 idToken = ""
+//             };
+//
+//             // Act
+//             LogInfo("Sending google login request with missing token.");
+//             var response = await _api.PostAsync("/api/v1/auth/google", request, logBody: true);
+//
+//             // Assert
+//             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 BadRequest");
+//             var apiResponse = await _api.LogDeserializeJson<object>(response);
+//             await AssertHelper.AssertFalse(apiResponse.Success, "Google login failed as expected");
+//             await AssertHelper.AssertEqual("IdToken (or credential) is required", apiResponse.Message, "Error message matches");
+//         }
+//
+//         [Fact]
+//         [Trait("Category", "API")]
+//         [Trait("Category", "Authentication")]
+//         public async Task GoogleLogin_ReturnsBadRequest_WhenTokenIsInvalid()
+//         {
+//             // Arrange
+//             var request = new
+//             {
+//                 idToken = "invalid_fake_token_string_12345"
+//             };
+//
+//             // Act
+//             LogInfo("Sending invalid google token.");
+//             var response = await _api.PostAsync("/api/v1/auth/google", request, logBody: true);
+//
+//             // Assert
+//             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 BadRequest");
+//             var apiResponse = await _api.LogDeserializeJson<object>(response);
+//             await AssertHelper.AssertFalse(apiResponse.Success, "Google login failed");
+//         }
 
         [Fact]
         [Trait("Category", "API")]

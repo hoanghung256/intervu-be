@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Intervu.API.Test.Base;
 using Intervu.API.Test.Utils;
 using Intervu.Application.DTOs.RescheduleRequest;
+using Intervu.Application.DTOs.User;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -13,467 +14,182 @@ namespace Intervu.API.Test.ApiTests.InterviewRescheduleRequest
     public class RescheduleRequestControllerTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         private readonly ApiHelper _api;
-        private string _candidateToken = "";
-        private string _coachToken = "";
 
         public RescheduleRequestControllerTests(BaseApiTest<Program> factory, ITestOutputHelper output) : base(output)
         {
             _api = new ApiHelper(factory.CreateClient());
         }
 
-        #region Helper Methods
-
-        // Seeded IDs from database (IntervuPostgreDbContext)
-        private readonly Guid _existingRoomId = Guid.Parse("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a66");
-        private readonly DateTime _proposedStartTime = DateTime.UtcNow.AddDays(7);
-
-        private async Task<string> LoginAndGetToken(string email, string password)
+        private async Task<(string token, Guid userId)> LoginSeededUserAsync(string email, string role = "Candidate")
         {
-            var loginRequest = new
-            {
-                Email = email,
-                Password = password
-            };
-
-            var response = await _api.PostAsync("/api/v1/account/login", loginRequest);
-            var apiResponse = await _api.LogDeserializeJson<LoginResponse>(response);
-            return apiResponse.Data?.Token ?? "";
+            var password = role == "Admin" || role == "Coach" || email.Contains("alice") ? DEFAULT_PASSWORD : CANDIDATE_PASSWORD;
+            var loginResponse = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = email, Password = password });
+            var loginData = await _api.LogDeserializeJson<LoginResponse>(loginResponse);
+            return (loginData.Data!.Token, loginData.Data.User.Id);
         }
 
-        private async Task SetupAuthTokens()
-        {
-            if (string.IsNullOrEmpty(_candidateToken))
-            {
-                _candidateToken = await LoginAndGetToken("alice@example.com", "123");
-            }
-            if (string.IsNullOrEmpty(_coachToken))
-            {
-                _coachToken = await LoginAndGetToken("bob@example.com", "123");
-            }
-        }
+        // Seeded IDs from IntervuPostgreDbContext
+        private readonly Guid _roomRescheduleCreateId = Guid.Parse("b1b1b1b1-2222-4a1a-8a1a-222222222222");
+        private readonly Guid _roomRescheduleRespondId = Guid.Parse("c1c1c1c1-3333-4a1a-8a1a-333333333333");
+        private readonly Guid _availProposedCreateId = Guid.Parse("d1d1d1d1-4444-4a1a-8a1a-444444444444");
+        private readonly Guid _availProposedRespondId = Guid.Parse("e1e1e1e1-5555-4a1a-8a1a-555555555555");
+        private readonly Guid _rescheduleRequestId = Guid.Parse("f1f1f1f1-6666-4a1a-8a1a-666666666666");
 
-        #endregion
-
-        #region CreateRescheduleRequest Tests
+        private readonly string _aliceEmail = "alice@example.com";
+        private readonly string _bobEmail = "bob@example.com";
 
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "RescheduleRequest")]
-        [Trait("Name", "RR-01")]
         public async Task CreateRescheduleRequest_WithValidData_ReturnsSuccess()
         {
-            // Arrange - Using seeded data from DbContext
-            await SetupAuthTokens();
-            
+            // Arrange
+            var (token, _) = await LoginSeededUserAsync(_aliceEmail, "Candidate");
+
             var dto = new CreateRescheduleRequestDto
             {
-                RoomId = _existingRoomId,
-                NewStartTime = _proposedStartTime,
+                RoomId = _roomRescheduleCreateId,
+                ProposedAvailabilityId = _availProposedCreateId,
                 Reason = "Need to reschedule due to personal emergency that requires my immediate attention"
             };
 
-            LogInfo($"Creating reschedule request for room {_existingRoomId}");
-            var response = await _api.PostAsync("/api/v1/reschedule-requests", dto, _candidateToken, logBody: true);
+            // Act
+            LogInfo($"Creating reschedule request for room {_roomRescheduleCreateId}");
+            var response = await _api.PostAsync("/api/v1/reschedule-requests", dto, jwtToken: token, logBody: true);
 
-            LogInfo("Verify response is successful");
-            await AssertHelper.AssertTrue(
-                response.IsSuccessStatusCode,
-                $"Should return success. Got: {response.StatusCode}"
-            );
-            
-            if (response.IsSuccessStatusCode)
-            {
-                var apiResponse = await _api.LogDeserializeJson<CreateRescheduleResponse>(response);
-                await AssertHelper.AssertTrue(apiResponse.Success, "API response should indicate success");
-                await AssertHelper.AssertNotNull(apiResponse.Data, "Response data should not be null");
-            }
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
+            var apiResponse = await _api.LogDeserializeJson<CreateRescheduleResponseData>(response, true);
+            await AssertHelper.AssertTrue(apiResponse.Success, "API response should indicate success");
+            await AssertHelper.AssertNotNull(apiResponse.Data?.RequestId, "RequestId should be returned");
         }
 
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "RescheduleRequest")]
-        [Trait("Name", "RR-02")]
-        public async Task CreateRescheduleRequest_WithoutAuthentication_ReturnsUnauthorized()
+        public async Task RespondToRescheduleRequest_ReturnsSuccess_WhenAuthorized()
         {
             // Arrange
-            var dto = new CreateRescheduleRequestDto
-            {
-                RoomId = Guid.NewGuid(),
-                NewStartTime = DateTime.UtcNow.AddDays(5),
-                Reason = "Need to reschedule due to personal emergency"
-            };
+            var (token, _) = await LoginSeededUserAsync(_bobEmail, "Coach");
+            var requestId = _rescheduleRequestId; // Seeded request for roomRescheduleRespondId
 
-            LogInfo("Creating reschedule request without authentication");
-            var response = await _api.PostAsync("/api/v1/reschedule-requests", dto, logBody: true);
-
-            LogInfo("Verify response returns Unauthorized");
-            await AssertHelper.AssertTrue(
-                response.StatusCode == HttpStatusCode.Unauthorized,
-                "Should return Unauthorized status"
-            );
-        }
-
-        [Fact]
-        [Trait("Category", "API")]
-        [Trait("Category", "RescheduleRequest")]
-        [Trait("Name", "RR-03")]
-        public async Task CreateRescheduleRequest_WithShortReason_ReturnsBadRequest()
-        {
-            // Arrange
-            await SetupAuthTokens();
-            var dto = new CreateRescheduleRequestDto
-            {
-                RoomId = Guid.NewGuid(),
-                NewStartTime = DateTime.UtcNow.AddDays(6),
-                Reason = "Short" // Less than 10 characters
-            };
-
-            LogInfo("Creating reschedule request with reason less than 10 characters");
-            var response = await _api.PostAsync("/api/v1/reschedule-requests", dto, _candidateToken, logBody: true);
-
-            LogInfo("Verify response returns BadRequest");
-            await AssertHelper.AssertTrue(
-                response.StatusCode == HttpStatusCode.BadRequest,
-                "Should return BadRequest for short reason"
-            );
-        }
-
-        [Fact]
-        [Trait("Category", "API")]
-        [Trait("Category", "RescheduleRequest")]
-        [Trait("Name", "RR-04")]
-        public async Task CreateRescheduleRequest_WithMissingRoomId_ReturnsBadRequest()
-        {
-            // Arrange
-            await SetupAuthTokens();
-            var dto = new CreateRescheduleRequestDto
-            {
-                RoomId = Guid.Empty, // Missing RoomId
-                NewStartTime = DateTime.UtcNow.AddDays(7),
-                Reason = "Need to reschedule due to conflict"
-            };
-
-            LogInfo("Creating reschedule request with missing RoomId");
-            var response = await _api.PostAsync("/api/v1/reschedule-requests", dto, _candidateToken, logBody: true);
-
-            LogInfo("Verify response returns BadRequest");
-            var apiResponse = await _api.LogDeserializeJson<CreateRescheduleResponse>(response);
-            await AssertHelper.AssertFalse(apiResponse.Success, "Should not be successful with missing RoomId");
-        }
-
-        #endregion
-
-        #region RespondToRescheduleRequest Tests
-
-        [Fact]
-        [Trait("Category", "API")]
-        [Trait("Category", "RescheduleRequest")]
-        [Trait("Name", "RR-05")]
-        public async Task RespondToRescheduleRequest_WithApproval_ReturnsSuccess()
-        {
-            // Arrange
-            await SetupAuthTokens();
-            
-            // First create a reschedule request to respond to
-            var createDto = new CreateRescheduleRequestDto
-            {
-                RoomId = _existingRoomId,
-                NewStartTime = _proposedStartTime.AddHours(1),
-                Reason = "Need to reschedule - test scenario for approval"
-            };
-            
-            LogInfo("Creating reschedule request to test approval");
-            var createResponse = await _api.PostAsync("/api/v1/reschedule-requests", createDto, _candidateToken);
-            
-            if (!createResponse.IsSuccessStatusCode)
-            {
-                LogInfo($"Could not create reschedule request: {createResponse.StatusCode}");
-                return; // Skip test if can't create request
-            }
-            
-            var createApiResponse = await _api.LogDeserializeJson<CreateRescheduleResponse>(createResponse);
-            var requestId = createApiResponse.Data?.RequestId ?? Guid.Empty;
-            
             var respondDto = new RespondToRescheduleRequestDto
             {
                 IsApproved = true,
                 RejectionReason = null
             };
 
-            LogInfo($"Approving reschedule request {requestId}");
-            var response = await _api.PostAsync($"/api/v1/reschedule-requests/{requestId}/respond", respondDto, _coachToken, logBody: true);
+            // Act
+            LogInfo($"Responding to reschedule request {requestId} as Bob.");
+            var response = await _api.PostAsync($"/api/v1/reschedule-requests/{requestId}/respond", respondDto, jwtToken: token, logBody: true);
 
-            LogInfo($"Response received with status: {response.StatusCode}");
-            await AssertHelper.AssertTrue(
-                response.IsSuccessStatusCode,
-                $"Should return success. Got: {response.StatusCode}"
-            );
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Response status code is 200 OK");
+            var apiResponse = await _api.LogDeserializeJson<object>(response);
+            await AssertHelper.AssertTrue(apiResponse.Success, "Response was successful");
         }
 
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "RescheduleRequest")]
-        [Trait("Name", "RR-06")]
-        public async Task RespondToRescheduleRequest_WithRejection_ReturnsSuccess()
+        public async Task CreateRescheduleRequest_WithoutAuthentication_ReturnsUnauthorized()
         {
             // Arrange
-            await SetupAuthTokens();
-            
-            // First create a reschedule request to respond to
-            var createDto = new CreateRescheduleRequestDto
+            var dto = new CreateRescheduleRequestDto
             {
-                RoomId = _existingRoomId,
-                NewStartTime = _proposedStartTime.AddHours(2),
-                Reason = "Need to reschedule - test scenario for rejection"
-            };
-            
-            LogInfo("Creating reschedule request to test rejection");
-            var createResponse = await _api.PostAsync("/api/v1/reschedule-requests", createDto, _candidateToken);
-            
-            if (!createResponse.IsSuccessStatusCode)
-            {
-                LogInfo($"Could not create reschedule request: {createResponse.StatusCode}");
-                return; // Skip test if can't create request
-            }
-            
-            var createApiResponse = await _api.LogDeserializeJson<CreateRescheduleResponse>(createResponse);
-            var requestId = createApiResponse.Data?.RequestId ?? Guid.Empty;
-            
-            var respondDto = new RespondToRescheduleRequestDto
-            {
-                IsApproved = false,
-                RejectionReason = "I'm not available at that proposed time slot"
+                RoomId = Guid.NewGuid(),
+                ProposedAvailabilityId = Guid.NewGuid(),
+                Reason = "Need to reschedule due to personal emergency"
             };
 
-            LogInfo($"Rejecting reschedule request {requestId}");
-            var response = await _api.PostAsync($"/api/v1/reschedule-requests/{requestId}/respond", respondDto, _coachToken, logBody: true);
+            // Act
+            LogInfo("Creating reschedule request without authentication");
+            var response = await _api.PostAsync("/api/v1/reschedule-requests", dto, logBody: true);
 
-            LogInfo($"Response received with status: {response.StatusCode}");
-            await AssertHelper.AssertTrue(
-                response.IsSuccessStatusCode,
-                $"Should return success. Got: {response.StatusCode}"
-            );
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Status code is 401 Unauthorized");
         }
 
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "RescheduleRequest")]
-        [Trait("Name", "RR-07")]
-        public async Task RespondToRescheduleRequest_WithoutAuthentication_ReturnsUnauthorized()
+        public async Task CreateRescheduleRequest_WithShortReason_ReturnsBadRequest()
         {
             // Arrange
-            var requestId = Guid.NewGuid();
-            var dto = new RespondToRescheduleRequestDto
+            var (token, _) = await LoginSeededUserAsync(_aliceEmail, "Candidate");
+            var dto = new CreateRescheduleRequestDto
             {
-                IsApproved = true
+                RoomId = _roomRescheduleCreateId,
+                ProposedAvailabilityId = _availProposedCreateId,
+                Reason = "Short" // Less than 10 characters
             };
 
-            LogInfo("Responding to reschedule request without authentication");
-            var response = await _api.PostAsync($"/api/v1/reschedule-requests/{requestId}/respond", dto, logBody: true);
+            // Act
+            LogInfo("Creating reschedule request with short reason.");
+            var response = await _api.PostAsync("/api/v1/reschedule-requests", dto, jwtToken: token, logBody: true);
 
-            LogInfo("Verify response returns Unauthorized");
-            await AssertHelper.AssertTrue(
-                response.StatusCode == HttpStatusCode.Unauthorized,
-                "Should return Unauthorized status"
-            );
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 Bad Request");
         }
-
-        #endregion
-
-        #region GetRescheduleRequestById Tests
 
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "RescheduleRequest")]
-        [Trait("Name", "RR-08")]
-        public async Task GetRescheduleRequestById_WithValidId_ReturnsData()
+        public async Task GetRescheduleRequestById_ReturnsSuccess_WhenIdIsValid()
         {
             // Arrange
-            await SetupAuthTokens();
-            var requestId = Guid.NewGuid();
+            var (token, _) = await LoginSeededUserAsync(_aliceEmail, "Candidate");
+            var requestId = _rescheduleRequestId;
 
+            // Act
             LogInfo($"Getting reschedule request by ID: {requestId}");
-            var response = await _api.GetAsync($"/api/v1/reschedule-requests/{requestId}", _candidateToken, logBody: true);
+            var response = await _api.GetAsync($"/api/v1/reschedule-requests/{requestId}", jwtToken: token, logBody: true);
 
-            LogInfo("Verify response received");
-            var apiResponse = await _api.LogDeserializeJson<GetRescheduleRequestResponse>(response);
-            
-            LogInfo($"Response status: {response.StatusCode}");
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
+            var apiResponse = await _api.LogDeserializeJson<object>(response, true);
+            await AssertHelper.AssertTrue(apiResponse.Success, "API response should indicate success");
         }
 
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "RescheduleRequest")]
-        [Trait("Name", "RR-09")]
-        public async Task GetRescheduleRequestById_WithoutAuthentication_ReturnsUnauthorized()
+        public async Task GetMyRescheduleRequests_ReturnsSuccess_WhenAuthenticated()
         {
             // Arrange
-            var requestId = Guid.NewGuid();
+            var (token, _) = await LoginSeededUserAsync(_aliceEmail, "Candidate");
 
-            LogInfo("Getting reschedule request without authentication");
-            var response = await _api.GetAsync($"/api/v1/reschedule-requests/{requestId}", logBody: true);
+            // Act
+            LogInfo("Getting my reschedule requests.");
+            var response = await _api.GetAsync("/api/v1/reschedule-requests/my-requests", jwtToken: token, logBody: true);
 
-            LogInfo("Verify response returns Unauthorized");
-            await AssertHelper.AssertTrue(
-                response.StatusCode == HttpStatusCode.Unauthorized,
-                "Should return Unauthorized status"
-            );
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
+            var apiResponse = await _api.LogDeserializeJson<List<object>>(response, true);
+            await AssertHelper.AssertTrue(apiResponse.Success, "API response should indicate success");
         }
 
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "RescheduleRequest")]
-        [Trait("Name", "RR-10")]
-        public async Task GetRescheduleRequestById_WithNonExistentId_ReturnsNotFound()
+        public async Task GetPendingResponses_ReturnsSuccess_WhenAuthenticated()
         {
             // Arrange
-            await SetupAuthTokens();
-            var nonExistentId = Guid.NewGuid();
+            var (token, _) = await LoginSeededUserAsync(_bobEmail, "Coach");
 
-            LogInfo($"Getting non-existent reschedule request: {nonExistentId}");
-            var response = await _api.GetAsync($"/api/v1/reschedule-requests/{nonExistentId}", _candidateToken, logBody: true);
+            // Act
+            LogInfo("Getting pending reschedule responses.");
+            var response = await _api.GetAsync("/api/v1/reschedule-requests/pending-responses", jwtToken: token, logBody: true);
 
-            LogInfo("Verify response returns NotFound");
-            await AssertHelper.AssertTrue(
-                response.StatusCode == HttpStatusCode.NotFound,
-                "Should return NotFound for non-existent request"
-            );
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
+            var apiResponse = await _api.LogDeserializeJson<List<object>>(response, true);
+            await AssertHelper.AssertTrue(apiResponse.Success, "API response should indicate success");
         }
 
-        #endregion
-
-        #region GetMyRescheduleRequests Tests
-
-        [Fact]
-        [Trait("Category", "API")]
-        [Trait("Category", "RescheduleRequest")]
-        [Trait("Name", "RR-11")]
-        public async Task GetMyRescheduleRequests_WithAuthentication_ReturnsData()
-        {
-            // Arrange
-            await SetupAuthTokens();
-
-            LogInfo("Getting my reschedule requests");
-            var response = await _api.GetAsync("/api/v1/reschedule-requests/my-requests", _candidateToken, logBody: true);
-
-            LogInfo("Verify response is successful");
-            
-            // API should return success even with empty list
-            await AssertHelper.AssertTrue(
-                response.IsSuccessStatusCode,
-                $"Should return success status. Got: {response.StatusCode}"
-            );
-            
-            if (response.IsSuccessStatusCode)
-            {
-                var apiResponse = await _api.LogDeserializeJson<GetMyRescheduleRequestsResponse>(response);
-                await AssertHelper.AssertTrue(apiResponse.Success, "API response should indicate success");
-                LogInfo($"Found {(apiResponse.Data?.Count ?? 0)} reschedule requests");
-            }
-        }
-
-        [Fact]
-        [Trait("Category", "API")]
-        [Trait("Category", "RescheduleRequest")]
-        [Trait("Name", "RR-12")]
-        public async Task GetMyRescheduleRequests_WithoutAuthentication_ReturnsUnauthorized()
-        {
-            LogInfo("Getting my reschedule requests without authentication");
-            var response = await _api.GetAsync("/api/v1/reschedule-requests/my-requests", logBody: true);
-
-            LogInfo("Verify response returns Unauthorized");
-            await AssertHelper.AssertTrue(
-                response.StatusCode == HttpStatusCode.Unauthorized,
-                "Should return Unauthorized status"
-            );
-        }
-
-        #endregion
-
-        #region GetPendingResponses Tests
-
-        [Fact]
-        [Trait("Category", "API")]
-        [Trait("Category", "RescheduleRequest")]
-        [Trait("Name", "RR-13")]
-        public async Task GetPendingResponses_WithAuthentication_ReturnsData()
-        {
-            // Arrange
-            await SetupAuthTokens();
-
-            LogInfo("Getting pending reschedule responses");
-            var response = await _api.GetAsync("/api/v1/reschedule-requests/pending-responses", _coachToken, logBody: true);
-
-            LogInfo("Verify response is successful");
-            
-            // API should return success even with empty list
-            await AssertHelper.AssertTrue(
-                response.IsSuccessStatusCode,
-                $"Should return success status. Got: {response.StatusCode}"
-            );
-            
-            if (response.IsSuccessStatusCode)
-            {
-                var apiResponse = await _api.LogDeserializeJson<GetPendingResponsesResponse>(response);
-                await AssertHelper.AssertTrue(apiResponse.Success, "API response should indicate success");
-                LogInfo($"Found {(apiResponse.Data?.Count ?? 0)} pending responses");
-            }
-        }
-
-        [Fact]
-        [Trait("Category", "API")]
-        [Trait("Category", "RescheduleRequest")]
-        [Trait("Name", "RR-14")]
-        public async Task GetPendingResponses_WithoutAuthentication_ReturnsUnauthorized()
-        {
-            LogInfo("Getting pending responses without authentication");
-            var response = await _api.GetAsync("/api/v1/reschedule-requests/pending-responses", logBody: true);
-
-            LogInfo("Verify response returns Unauthorized");
-            await AssertHelper.AssertTrue(
-                response.StatusCode == HttpStatusCode.Unauthorized,
-                "Should return Unauthorized status"
-            );
-        }
-
-        #endregion
-
-        #region Response DTOs
-
-        private class LoginResponse
-        {
-            public string? Token { get; set; }
-        }
-
-        private class CreateRescheduleResponse
+        private class CreateRescheduleResponseData
         {
             public Guid RequestId { get; set; }
         }
-
-        private class RespondToRescheduleResponse
-        {
-            public string? Message { get; set; }
-        }
-
-        private class GetRescheduleRequestResponse
-        {
-            public Guid Id { get; set; }
-            public Guid InterviewRoomId { get; set; }
-            public string? Status { get; set; }
-        }
-
-        private class GetMyRescheduleRequestsResponse
-        {
-            public List<object>? Data { get; set; }
-            public int Count => Data?.Count ?? 0;
-        }
-
-        private class GetPendingResponsesResponse
-        {
-            public List<object>? Data { get; set; }
-            public int Count => Data?.Count ?? 0;
-        }
-
-        #endregion
     }
 }

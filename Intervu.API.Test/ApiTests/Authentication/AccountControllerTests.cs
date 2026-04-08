@@ -27,7 +27,7 @@ namespace Intervu.API.Test.ApiTests.Authentication
             var registerRequest = new RegisterRequest
             {
                 Email = $"test_{Guid.NewGuid()}@example.com",
-                Password = ACCOUNT_PASSWORD,
+                Password = CANDIDATE_PASSWORD,
                 FullName = "Test_User",
             };
 
@@ -48,9 +48,21 @@ namespace Intervu.API.Test.ApiTests.Authentication
         [Trait("Category", "Smoke")]
         public async Task Login_ReturnsToken_WhenCredentialsAreValid()
         {
-            // Arrange
-            var email = _aliceEmail;
-            var password = ACCOUNT_PASSWORD;
+            // Arrange - Register a new candidate account
+            var email = $"login_test_{Guid.NewGuid()}@example.com";
+            var password = CANDIDATE_PASSWORD;
+            var fullName = "Login Test User";
+
+            var registerRequest = new RegisterRequest
+            {
+                Email = email,
+                Password = password,
+                FullName = fullName
+            };
+
+            LogInfo($"Registering new user: {email}");
+            var registerResponse = await _api.PostAsync("/api/v1/account/register", registerRequest, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, registerResponse.StatusCode, "Registration should succeed");
 
             var loginRequest = new LoginRequest
             {
@@ -59,7 +71,7 @@ namespace Intervu.API.Test.ApiTests.Authentication
             };
 
             // Act
-            LogInfo("Logging in.");
+            LogInfo("Logging in with the newly registered account.");
             var response = await _api.PostAsync("/api/v1/account/login", loginRequest, logBody: true);
 
             // Assert
@@ -69,7 +81,8 @@ namespace Intervu.API.Test.ApiTests.Authentication
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
             await AssertHelper.AssertTrue(apiResponse.Success, "Login successful");
             await AssertHelper.AssertNotNull(apiResponse.Data?.Token, "Token is returned");
-            
+            await AssertHelper.AssertEqual(email, apiResponse.Data?.User?.Email, "User email matches");
+
             var cookies = response.Headers.GetValues("Set-Cookie");
             await AssertHelper.AssertNotEmpty(cookies, "Cookies are set");
             await AssertHelper.AssertContains("refreshToken", cookies.First(), "RefreshToken cookie present");
@@ -103,7 +116,7 @@ namespace Intervu.API.Test.ApiTests.Authentication
         {
             // Arrange
             var email = $"refresh_{Guid.NewGuid()}@example.com";
-            var password = ACCOUNT_PASSWORD;
+            var password = CANDIDATE_PASSWORD;
             
             await _api.PostAsync("/api/v1/account/register", new RegisterRequest 
             { 
@@ -157,7 +170,7 @@ namespace Intervu.API.Test.ApiTests.Authentication
         {
             // Arrange
             var email = $"logout_{Guid.NewGuid()}@example.com";
-            var password = ACCOUNT_PASSWORD;
+            var password = CANDIDATE_PASSWORD;
             
             await _api.PostAsync("/api/v1/account/register", new RegisterRequest 
             { 
@@ -195,7 +208,7 @@ namespace Intervu.API.Test.ApiTests.Authentication
             var request = new RegisterRequest
             {
                 Email = email,
-                Password = ACCOUNT_PASSWORD,
+                Password = CANDIDATE_PASSWORD,
                 FullName = "Duplicate User"
             };
 
@@ -239,7 +252,7 @@ namespace Intervu.API.Test.ApiTests.Authentication
             var request = new RegisterRequest
             {
                 Email = "invalid-email-format",
-                Password = ACCOUNT_PASSWORD,
+                Password = CANDIDATE_PASSWORD,
                 FullName = "Invalid Email User"
             };
 

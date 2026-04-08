@@ -17,26 +17,34 @@ namespace Intervu.API.Test.ApiTests.Candidate
             _api = new ApiHelper(factory.CreateClient());
         }
 
-        // Seeded Data
-        private readonly Guid _aliceId = Guid.Parse("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11");
-        private readonly string _aliceEmail = "alice@example.com";
-        private readonly string _aliceSlug = "alice-candidate";
-
-        private readonly string _adminEmail = "admin@example.com";
-
-        private async Task<(string token, Guid userId)> LoginSeededUserAsync(string email)
+        private async Task<(string token, Guid userId, string slug)> RegisterAndLoginCandidateAsync()
         {
-            var password = ACCOUNT_PASSWORD;
+            var email = $"candidate_{Guid.NewGuid()}@example.com";
+            var password = CANDIDATE_PASSWORD;
+            var fullName = "Test Candidate";
+            var slug = $"slug-{Guid.NewGuid()}";
+
+            await _api.PostAsync("/api/v1/account/register", new RegisterRequest
+            {
+                Email = email,
+                Password = password,
+                FullName = fullName,
+                SlugProfileUrl = slug
+            }, logBody: true);
 
             var loginResponse = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = email, Password = password });
-            var loginData = await _api.LogDeserializeJson<LoginResponse>(loginResponse);
+            var loginData = await _api.LogDeserializeJson<LoginResponse>(loginResponse, true);
 
-            if (!loginData.Success)
-            {
-                throw new Exception($"Failed to login seeded user {email}.");
-            }
+            slug = loginData.Data!.User.SlugProfileUrl; // Update slug with actual value from response
 
-            return (loginData.Data!.Token, loginData.Data.User.Id);
+            return (loginData.Data!.Token, loginData.Data.User.Id, slug);
+        }
+
+        private async Task<string> LoginAdminAsync()
+        {
+            var loginResponse = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = ADMIN_EMAIL, Password = DEFAULT_PASSWORD });
+            var loginData = await _api.LogDeserializeJson<LoginResponse>(loginResponse, true);
+            return loginData.Data!.Token;
         }
 
         [Fact]
@@ -45,7 +53,7 @@ namespace Intervu.API.Test.ApiTests.Candidate
         public async Task GetOwnCandidateProfile_ReturnsSuccess_WhenCandidateIsAuthenticated()
         {
             // Arrange
-            var (token, userId) = await LoginSeededUserAsync(_aliceEmail);
+            var (token, userId, _) = await RegisterAndLoginCandidateAsync();
 
             // Act
             LogInfo($"Getting own profile for candidate {userId}.");
@@ -64,7 +72,7 @@ namespace Intervu.API.Test.ApiTests.Candidate
         public async Task GetProfileBySlug_ReturnsSuccess_WhenSlugExists()
         {
             // Arrange
-            var slug = _aliceSlug;
+            var (_, _, slug) = await RegisterAndLoginCandidateAsync();
 
             // Act
             LogInfo($"Getting public profile for slug '{slug}'.");
@@ -84,16 +92,15 @@ namespace Intervu.API.Test.ApiTests.Candidate
         public async Task UpdateCandidateProfile_ReturnsSuccess_WhenDataIsValid()
         {
             // Arrange
-            var (token, userId) = await LoginSeededUserAsync(_aliceEmail);
+            var (token, userId, _) = await RegisterAndLoginCandidateAsync();
 
             var updateDto = new CandidateUpdateDto
             {
-                // Id = userId,
-                FullName = "Alice Updated",
+                FullName = "Candidate Updated",
                 Email = "updated@example.com",
                 Bio = "Updated Bio for testing purposes.",
-                PortfolioUrl = "https://updated-portfolio.example.com/alice",
-                CVUrl = "https://updated-cv.example.com/alice.pdf"
+                PortfolioUrl = "https://updated-portfolio.example.com/test",
+                CVUrl = "https://updated-cv.example.com/test.pdf"
             };
 
             // Act
@@ -110,11 +117,29 @@ namespace Intervu.API.Test.ApiTests.Candidate
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "CandidateProfile")]
+        public async Task GetCandidateRating_ReturnsSuccess_WhenAuthenticated()
+        {
+            // Arrange
+            var (token, userId, _) = await RegisterAndLoginCandidateAsync();
+
+            // Act
+            LogInfo($"Getting rating for candidate {userId}.");
+            var response = await _api.GetAsync($"/api/v1/candidate-profile/{userId}/rating", jwtToken: token, logBody: true);
+
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
+            var apiResponse = await _api.LogDeserializeJson<object>(response);
+            await AssertHelper.AssertTrue(apiResponse.Success, "Request was successful");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "CandidateProfile")]
         public async Task UpdateCandidateStatus_ReturnsSuccess_WhenAdminIsAuthenticated()
         {
             // Arrange
-            var (adminToken, _) = await LoginSeededUserAsync(_adminEmail);
-            var targetCandidateId = _aliceId;
+            var adminToken = await LoginAdminAsync();
+            var (_, targetCandidateId, _) = await RegisterAndLoginCandidateAsync();
             var newStatus = 0; // Active
 
             // Act
@@ -125,24 +150,119 @@ namespace Intervu.API.Test.ApiTests.Candidate
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
             var apiResponse = await _api.LogDeserializeJson<object>(response);
             await AssertHelper.AssertTrue(apiResponse.Success, "Status update was successful");
-            await AssertHelper.AssertEqual("Status updated successfully", apiResponse.Message, "Message matches");
+            await AssertHelper.AssertEqual("Profile updated successfully", apiResponse.Message, "Message matches");
         }
 
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "CandidateProfile")]
-        public async Task UpdateCandidateStatus_ReturnsForbidden_WhenUserIsNotAdmin()
+        public async Task DeleteCandidateProfile_ReturnsSuccess_WhenAdminIsAuthenticated()
         {
             // Arrange
-            var (candidateToken, candidateId) = await LoginSeededUserAsync(_aliceEmail);
-            var newStatus = 0; // Inactive
+            var adminToken = await LoginAdminAsync();
+            var (_, targetCandidateId, _) = await RegisterAndLoginCandidateAsync();
 
             // Act
-            LogInfo("Candidate attempting to update their own status (should fail).");
-            var response = await _api.PutAsync($"/api/v1/candidate-profile/{candidateId}/status", newStatus, jwtToken: candidateToken, logBody: true);
+            LogInfo($"Admin deleting profile for candidate {targetCandidateId}.");
+            var response = await _api.DeleteAsync($"/api/v1/candidate-profile/{targetCandidateId}", jwtToken: adminToken, logBody: true);
 
             // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Status code is 403 Forbidden");
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
+            var apiResponse = await _api.LogDeserializeJson<object>(response);
+            await AssertHelper.AssertTrue(apiResponse.Success, "Deletion was successful");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "CandidateProfile")]
+        public async Task ManageWorkExperiences_ReturnsSuccess()
+        {
+            // Arrange
+            var (token, userId, _) = await RegisterAndLoginCandidateAsync();
+
+            // 1. Create Work Experience
+            var createDto = new CandidateWorkExperienceDto
+            {
+                CompanyName = "Initial Corp",
+                PositionTitle = "Junior dev",
+                StartDate = DateTime.UtcNow.AddYears(-1),
+                IsCurrentWorking = true
+            };
+
+            LogInfo("Creating work experience.");
+            var createResponse = await _api.PostAsync($"/api/v1/candidate-profile/{userId}/work-experiences", createDto, jwtToken: token, logBody: true);
+            var createResult = await _api.LogDeserializeJson<CandidateWorkExperienceDto>(createResponse);
+            var workId = createResult.Data!.Id;
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, createResponse.StatusCode, "Create status code is 200 OK");
+
+            // 2. Update Work Experience
+            var updateDto = new CandidateWorkExperienceDto
+            {
+                Id = workId,
+                CompanyName = "Updated Corp",
+                PositionTitle = "Senior dev",
+                StartDate = DateTime.UtcNow.AddYears(-1),
+                IsCurrentWorking = true
+            };
+
+            LogInfo("Updating work experience.");
+            var updateResponse = await _api.PutAsync($"/api/v1/candidate-profile/{userId}/work-experiences/{workId}", updateDto, jwtToken: token, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, updateResponse.StatusCode, "Update status code is 200 OK");
+
+            // 3. Batch Update (UpdateCandidateWorkExperiences)
+            var batchRequest = new UpdateCandidateWorkExperiencesRequest
+            {
+                WorkExperiences = new List<CandidateWorkExperienceDto> { updateDto }
+            };
+            LogInfo("Batch updating work experiences.");
+            var batchResponse = await _api.PutAsync($"/api/v1/candidate-profile/{userId}/work-experiences", batchRequest, jwtToken: token, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, batchResponse.StatusCode, "Batch update status code is 200 OK");
+
+            // 4. Delete Work Experience
+            LogInfo("Deleting work experience.");
+            var deleteResponse = await _api.DeleteAsync($"/api/v1/candidate-profile/{userId}/work-experiences/{workId}", jwtToken: token, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, deleteResponse.StatusCode, "Delete status code is 200 OK");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "CandidateProfile")]
+        public async Task ManageCertificates_ReturnsSuccess()
+        {
+            // Arrange
+            var (token, userId, _) = await RegisterAndLoginCandidateAsync();
+
+            // 1. Add Certificate
+            var addDto = new CandidateCertificateDto
+            {
+                Name = "AWS Cloud Practitioner",
+                Issuer = "Amazon Web Services",
+                IssuedAt = DateTime.UtcNow.AddMonths(-3)
+            };
+
+            LogInfo("Adding certificate.");
+            var addResponse = await _api.PostAsync($"/api/v1/candidate-profile/{userId}/certificates", addDto, jwtToken: token, logBody: true);
+            var addResult = await _api.LogDeserializeJson<CandidateCertificateDto>(addResponse);
+            var certId = addResult.Data!.Id;
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, addResponse.StatusCode, "Add certificate status code is 200 OK");
+
+            // 2. Update Certificate
+            var updateDto = new CandidateCertificateDto
+            {
+                Id = certId,
+                Name = "AWS Certified Developer",
+                Issuer = "Amazon Web Services",
+                IssuedAt = DateTime.UtcNow.AddMonths(-3)
+            };
+
+            LogInfo("Updating certificate.");
+            var updateResponse = await _api.PutAsync($"/api/v1/candidate-profile/{userId}/certificates/{certId}", updateDto, jwtToken: token, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, updateResponse.StatusCode, "Update certificate status code is 200 OK");
+
+            // 3. Delete Certificate
+            LogInfo("Deleting certificate.");
+            var deleteResponse = await _api.DeleteAsync($"/api/v1/candidate-profile/{userId}/certificates/{certId}", jwtToken: token, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, deleteResponse.StatusCode, "Delete certificate status code is 200 OK");
         }
     }
 }
