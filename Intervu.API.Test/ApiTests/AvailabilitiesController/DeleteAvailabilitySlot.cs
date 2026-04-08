@@ -26,7 +26,7 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
         [Trait("Category", "Availability")]
         public async Task DeleteAvailabilitySlot_ReturnsSuccess()
         {
-            var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(12));
+            var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(67).Date.AddHours(3));
             var end = start.AddHours(1);
             await _api.PostAsync("/api/v1/availabilities", new CoachAvailabilityCreateDto
             {
@@ -45,6 +45,7 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
             var deletePayload = await _api.LogDeserializeJson<JsonElement>(deleteResponse, logBody: true);
             await AssertHelper.AssertEqual(HttpStatusCode.OK, deleteResponse.StatusCode, "Delete range status is 200 OK");
             await AssertHelper.AssertTrue(deletePayload.Success, "Delete range succeeds");
+            await AssertHelper.AssertEqual("Range deleted", deletePayload.Message, "Delete message matches");
         }
 
         private async Task<HttpResponseMessage> DeleteWithBodyAsync(string requestUri, object payload, string jwtToken = "")

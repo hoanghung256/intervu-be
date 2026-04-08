@@ -59,8 +59,29 @@ namespace Intervu.API.Test.ApiTests.AccountController
         {
             LogInfo("Refreshing token without cookie.");
             var response = await _api.PostAsync<object>("/api/v1/account/refresh-token", null, logBody: true);
+            var apiResponse = await _api.LogDeserializeJson<object>(response);
 
             await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Status code is 401 Unauthorized");
+            await AssertHelper.AssertFalse(apiResponse.Success, "Refresh should fail");
+            await AssertHelper.AssertEqual("Refresh token not found", apiResponse.Message, "Error message matches");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Authentication")]
+        public async Task Handle_RefreshToken_InvalidCookie_ReturnsUnauthorized()
+        {
+            var headers = new Dictionary<string, string>
+            {
+                { "Cookie", "refreshToken=invalid_refresh_token_value" }
+            };
+
+            var response = await _api.PostAsync<object>("/api/v1/account/refresh-token", null, headers: headers, logBody: true);
+            var apiResponse = await _api.LogDeserializeJson<object>(response);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Status code is 401 Unauthorized");
+            await AssertHelper.AssertFalse(apiResponse.Success, "Refresh should fail");
+            await AssertHelper.AssertEqual("Invalid or expired refresh token", apiResponse.Message, "Error message matches");
         }
 
         private class RefreshTokenResponseData

@@ -51,6 +51,8 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
             var payload = await _api.LogDeserializeJson<JsonElement>(response, logBody: true);
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Single round booking status is 200 OK");
             await AssertHelper.AssertTrue(payload.Success, "Single round booking succeeds");
+            await AssertHelper.AssertEqual("JD multi-round booking request created successfully", payload.Message, "Success message matches");
+            await AssertHelper.AssertNotNull(payload.Data, "Booking request data is returned");
         }
 
         [Fact]
@@ -82,6 +84,37 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
             var payload = await _api.LogDeserializeJson<JsonElement>(response, logBody: true);
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Multi-round booking status is 200 OK");
             await AssertHelper.AssertTrue(payload.Success, "Multi-round booking succeeds");
+            await AssertHelper.AssertEqual("JD multi-round booking request created successfully", payload.Message, "Success message matches");
+            await AssertHelper.AssertNotNull(payload.Data, "Booking request data is returned");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "BookingRequest")]
+        public async Task Handle_CreateJDBookingRequest_WithoutToken_ReturnsUnauthorized()
+        {
+            var services = await GetCoachServicesAsync();
+            var service = services.First();
+            var requiredBlocks = GetRequiredBlockCount(service.DurationMinutes);
+            var availabilityIds = await CreateAvailabilityBlocksAsync(requiredBlocks, 25, 9);
+
+            var response = await _api.PostAsync("/api/v1/booking-requests/jd-interview", new CreateJDBookingRequestDto
+            {
+                CoachId = BobCoachId,
+                JobDescriptionUrl = "https://example.com/no-token-jd.pdf",
+                CVUrl = "https://example.com/no-token-cv.pdf",
+                AimLevel = AimLevel.MidLevel,
+                Rounds =
+                [
+                    new CreateInterviewRoundDto
+                    {
+                        CoachInterviewServiceId = service.Id,
+                        AvailabilityIds = availabilityIds
+                    }
+                ]
+            }, logBody: true);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Status code is 401 Unauthorized");
         }
 
         private async Task<string> LoginSeededCandidateAsync()

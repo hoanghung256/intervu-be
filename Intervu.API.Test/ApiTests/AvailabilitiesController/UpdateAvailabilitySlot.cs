@@ -22,7 +22,7 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
         [Trait("Category", "Availability")]
         public async Task UpdateAvailabilitySlot_ReturnsSuccess()
         {
-            var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(12));
+            var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(73).Date.AddHours(4));
             var end = start.AddHours(2);
 
             await _api.PostAsync("/api/v1/availabilities", new CoachAvailabilityCreateDto
@@ -44,6 +44,7 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
             var updatePayload = await _api.LogDeserializeJson<JsonElement>(updateResponse, logBody: true);
             await AssertHelper.AssertEqual(HttpStatusCode.OK, updateResponse.StatusCode, "Update status is 200 OK");
             await AssertHelper.AssertTrue(updatePayload.Success, "Update availability succeeds");
+            await AssertHelper.AssertEqual("Updated", updatePayload.Message, "Update message matches");
         }
 
         private static DateTime AlignToHalfHourUtc(DateTime value)

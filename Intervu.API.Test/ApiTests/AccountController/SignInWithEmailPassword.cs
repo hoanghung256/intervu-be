@@ -71,7 +71,47 @@ namespace Intervu.API.Test.ApiTests.AccountController
             var response = await _api.PostAsync("/api/v1/account/login", loginRequest, logBody: true);
 
             var apiResponse = await _api.LogDeserializeJson<object>(response);
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK for invalid credentials");
             await AssertHelper.AssertFalse(apiResponse.Success, "Login should fail");
+            await AssertHelper.AssertEqual("Invalid email or password", apiResponse.Message, "Error message matches");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Authentication")]
+        public async Task Handle_Login_MissingEmail_ReturnsFailureResponse()
+        {
+            var request = new LoginRequest
+            {
+                Email = "",
+                Password = CANDIDATE_PASSWORD
+            };
+
+            var response = await _api.PostAsync("/api/v1/account/login", request, logBody: true);
+            var apiResponse = await _api.LogDeserializeJson<object>(response);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
+            await AssertHelper.AssertFalse(apiResponse.Success, "Login should fail");
+            await AssertHelper.AssertEqual("Invalid email or password", apiResponse.Message, "Error message matches");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Authentication")]
+        public async Task Handle_Login_MissingPassword_ReturnsFailureResponse()
+        {
+            var request = new LoginRequest
+            {
+                Email = $"missingpass_{Guid.NewGuid()}@example.com",
+                Password = ""
+            };
+
+            var response = await _api.PostAsync("/api/v1/account/login", request, logBody: true);
+            var apiResponse = await _api.LogDeserializeJson<object>(response);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
+            await AssertHelper.AssertFalse(apiResponse.Success, "Login should fail");
+            await AssertHelper.AssertEqual("Invalid email or password", apiResponse.Message, "Error message matches");
         }
     }
 }

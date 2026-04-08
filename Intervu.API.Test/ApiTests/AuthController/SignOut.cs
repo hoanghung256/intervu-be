@@ -5,7 +5,7 @@ using System.Linq;
 using System.Net;
 using Xunit.Abstractions;
 
-namespace Intervu.API.Test.ApiTests.AccountController
+namespace Intervu.API.Test.ApiTests.AuthController
 {
     public class SignOutTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
@@ -19,40 +19,27 @@ namespace Intervu.API.Test.ApiTests.AccountController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Authentication")]
-        public async Task Logout_ClearsCookie_WhenAuthenticated()
+        public async Task Handle_AuthenticatedUser_SignsOutSuccessfully()
         {
             var email = $"logout_{Guid.NewGuid()}@example.com";
-            var password = CANDIDATE_PASSWORD;
-
-            await _api.PostAsync("/api/v1/account/register", new RegisterRequest
-            {
-                Email = email,
-                Password = password,
-                FullName = "Logout_User"
-            });
-
-            var loginRequest = new LoginRequest { Email = email, Password = password };
-            var loginResponse = await _api.PostAsync("/api/v1/account/login", loginRequest);
+            await _api.PostAsync("/api/v1/account/register", new RegisterRequest { Email = email, Password = CANDIDATE_PASSWORD, FullName = "Logout User" });
+            var loginResponse = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = email, Password = CANDIDATE_PASSWORD });
             var loginData = await _api.LogDeserializeJson<LoginResponse>(loginResponse);
-            var token = loginData.Data?.Token;
 
-            LogInfo("Logging out.");
-            var response = await _api.PostAsync<object>("/api/v1/account/logout", null, jwtToken: token!, logBody: true);
+            var response = await _api.PostAsync<object>("/api/v1/account/logout", null, jwtToken: loginData.Data!.Token, logBody: true);
             var apiResponse = await _api.LogDeserializeJson<object>(response);
-
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
             await AssertHelper.AssertTrue(apiResponse.Success, "Logout should succeed");
             await AssertHelper.AssertEqual("Logged out successfully", apiResponse.Message, "Success message matches");
 
             var cookies = response.Headers.GetValues("Set-Cookie");
-            var refreshTokenCookie = cookies.FirstOrDefault(c => c.Contains("refreshToken"));
-            await AssertHelper.AssertContains("Expires=", refreshTokenCookie!, "Cookie expiration set to past");
+            await AssertHelper.AssertContains("Expires=", cookies.First(), "Refresh token cookie is expired");
         }
 
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Authentication")]
-        public async Task Handle_Logout_MissingToken_ReturnsUnauthorized()
+        public async Task Handle_SignOut_WithoutToken_ReturnsUnauthorized()
         {
             var response = await _api.PostAsync<object>("/api/v1/account/logout", null, logBody: true);
 

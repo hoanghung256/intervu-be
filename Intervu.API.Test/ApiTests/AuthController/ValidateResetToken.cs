@@ -26,6 +26,19 @@ namespace Intervu.API.Test.ApiTests.AuthController
 
             var apiResponse = await _api.LogDeserializeJson<object>(response);
             await AssertHelper.AssertFalse(apiResponse.Success, "Validation failed");
+            await AssertHelper.AssertNotNull(apiResponse.Message, "Error message is returned");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Authentication")]
+        public async Task Handle_ValidateResetToken_WhitespaceToken_ReturnsBadRequest()
+        {
+            var response = await _api.GetAsync("/api/v1/auth/validate-reset-token/%20", logBody: true);
+            var apiResponse = await _api.LogDeserializeJson<object>(response);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 BadRequest");
+            await AssertHelper.AssertFalse(apiResponse.Success, "Validation should fail");
         }
     }
 }

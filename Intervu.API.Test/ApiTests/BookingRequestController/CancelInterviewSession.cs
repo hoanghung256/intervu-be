@@ -33,6 +33,8 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
             var cancelPayload = await _api.LogDeserializeJson<JsonElement>(cancelResponse, logBody: true);
 
             await AssertHelper.AssertEqual(HttpStatusCode.OK, cancelResponse.StatusCode, "Single-round cancel status is 200 OK");
+            await AssertHelper.AssertTrue(cancelPayload.Success, "Cancel request succeeds");
+            await AssertHelper.AssertEqual("Booking request cancelled successfully", cancelPayload.Message, "Success message matches");
             await AssertHelper.AssertEqual((int)BookingRequestStatus.Cancelled, cancelPayload.Data!.GetProperty("status").GetInt32(), "Single-round booking status is Cancelled");
         }
 
@@ -48,7 +50,19 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
             var cancelPayload = await _api.LogDeserializeJson<JsonElement>(cancelResponse, logBody: true);
 
             await AssertHelper.AssertEqual(HttpStatusCode.OK, cancelResponse.StatusCode, "Multi-round cancel status is 200 OK");
+            await AssertHelper.AssertTrue(cancelPayload.Success, "Cancel request succeeds");
+            await AssertHelper.AssertEqual("Booking request cancelled successfully", cancelPayload.Message, "Success message matches");
             await AssertHelper.AssertEqual((int)BookingRequestStatus.Cancelled, cancelPayload.Data!.GetProperty("status").GetInt32(), "Multi-round booking status is Cancelled");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "BookingRequest")]
+        public async Task Handle_CancelBookingRequest_WithoutToken_ReturnsUnauthorized()
+        {
+            var response = await _api.PostAsync<object>($"/api/v1/booking-requests/{Guid.NewGuid()}/cancel", null, logBody: true);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Status code is 401 Unauthorized");
         }
 
         private async Task<Guid> CreateBookingAndGetIdAsync(string candidateToken, bool isMultipleRounds, int dayOffset, int hourOffset)

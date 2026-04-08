@@ -41,6 +41,46 @@ namespace Intervu.API.Test.ApiTests.AccountController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Authentication")]
+        public async Task Handle_Register_MissingEmail_ReturnsBadRequestWithValidationMessage()
+        {
+            var request = new RegisterRequest
+            {
+                Email = "",
+                Password = CANDIDATE_PASSWORD,
+                FullName = "Missing Email User"
+            };
+
+            var response = await _api.PostAsync("/api/v1/account/register", request, logBody: true);
+            var apiResponse = await _api.LogDeserializeJson<object>(response);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 BadRequest");
+            await AssertHelper.AssertFalse(apiResponse.Success, "Registration should fail");
+            await AssertHelper.AssertEqual("Email is required", apiResponse.Message, "Validation message matches");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Authentication")]
+        public async Task Handle_Register_MissingPassword_ReturnsBadRequestWithValidationMessage()
+        {
+            var request = new RegisterRequest
+            {
+                Email = $"nopass_{Guid.NewGuid()}@example.com",
+                Password = "",
+                FullName = "Missing Password User"
+            };
+
+            var response = await _api.PostAsync("/api/v1/account/register", request, logBody: true);
+            var apiResponse = await _api.LogDeserializeJson<object>(response);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 BadRequest");
+            await AssertHelper.AssertFalse(apiResponse.Success, "Registration should fail");
+            await AssertHelper.AssertEqual("Password is required", apiResponse.Message, "Validation message matches");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Authentication")]
         public async Task Register_ReturnsBadRequest_WhenEmailAlreadyExists()
         {
             var request = new RegisterRequest
@@ -56,6 +96,7 @@ namespace Intervu.API.Test.ApiTests.AccountController
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 BadRequest");
             var apiResponse = await _api.LogDeserializeJson<object>(response);
             await AssertHelper.AssertFalse(apiResponse.Success, "Registration failed");
+            await AssertHelper.AssertEqual("Email already exists", apiResponse.Message, "Conflict message matches");
         }
 
         [Fact]
@@ -72,8 +113,11 @@ namespace Intervu.API.Test.ApiTests.AccountController
 
             LogInfo("Registering user with weak password.");
             var response = await _api.PostAsync("/api/v1/account/register", request, logBody: true);
+            var apiResponse = await _api.LogDeserializeJson<object>(response);
 
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 BadRequest");
+            await AssertHelper.AssertFalse(apiResponse.Success, "Registration should fail");
+            await AssertHelper.AssertEqual("Password must be at least 8 characters", apiResponse.Message, "Validation message matches");
         }
 
         [Fact]
@@ -90,8 +134,11 @@ namespace Intervu.API.Test.ApiTests.AccountController
 
             LogInfo("Registering user with invalid email.");
             var response = await _api.PostAsync("/api/v1/account/register", request, logBody: true);
+            var apiResponse = await _api.LogDeserializeJson<object>(response);
 
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 BadRequest");
+            await AssertHelper.AssertFalse(apiResponse.Success, "Registration should fail");
+            await AssertHelper.AssertEqual("Invalid email format", apiResponse.Message, "Validation message matches");
         }
     }
 }

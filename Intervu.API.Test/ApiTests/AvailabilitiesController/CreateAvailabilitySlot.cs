@@ -35,6 +35,7 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
             var createPayload = await _api.LogDeserializeJson<JsonElement>(createResponse, logBody: true);
             await AssertHelper.AssertEqual(HttpStatusCode.OK, createResponse.StatusCode, "Create status is 200 OK");
             await AssertHelper.AssertTrue(createPayload.Success, "Create availability succeeds");
+            await AssertHelper.AssertEqual("Created", createPayload.Message, "Create message matches");
         }
 
         private static DateTime AlignToHalfHourUtc(DateTime value)
