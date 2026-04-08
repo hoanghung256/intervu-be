@@ -72,22 +72,29 @@ namespace Intervu.Application.UseCases.BookingRequest
 
             if (!dto.IsApproved)
             {
-                var candidate = await _userRepository.GetByIdAsync(bookingRequest.CandidateId);
-                var coach = await _userRepository.GetByIdAsync(bookingRequest.CoachId);
-
-                if (candidate != null)
+                try
                 {
-                    var placeholders = new Dictionary<string, string>
-                    {
-                        ["CandidateName"] = candidate.FullName,
-                        ["CoachName"] = coach?.FullName ?? "Coach",
-                        ["RejectionReason"] = bookingRequest.RejectionReason ?? "The coach declined this request."
-                    };
+                    var candidate = await _userRepository.GetByIdAsync(bookingRequest.CandidateId);
+                    var coach = await _userRepository.GetByIdAsync(bookingRequest.CoachId);
 
-                    _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
-                        candidate.Email,
-                        "BookingRequestRejected",
-                        placeholders));
+                    if (candidate != null)
+                    {
+                        var placeholders = new Dictionary<string, string>
+                        {
+                            ["CandidateName"] = candidate.FullName,
+                            ["CoachName"] = coach?.FullName ?? "Coach",
+                            ["RejectionReason"] = bookingRequest.RejectionReason ?? "The coach declined this request."
+                        };
+
+                        _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                            candidate.Email,
+                            "BookingRequestRejected",
+                            placeholders));
+                    }
+                }
+                catch
+                {
+                    // Do not fail booking request response if email enqueue fails.
                 }
             }
 

@@ -151,18 +151,25 @@ namespace Intervu.Application.UseCases.RescheduleRequest
                 var requester = await _userRepository.GetByIdAsync(request.RequestedBy);
                 if (requester != null)
                 {
-                    var placeholders = new Dictionary<string, string>
+                    try
                     {
-                        ["RecipientName"] = requester.FullName,
-                        ["Status"] = "Approved",
-                        ["RejectionReason"] = string.Empty,
-                        ["NewTime"] = approvedTime
-                    };
+                        var placeholders = new Dictionary<string, string>
+                        {
+                            ["RecipientName"] = requester.FullName,
+                            ["Status"] = "Approved",
+                            ["RejectionReason"] = string.Empty,
+                            ["NewTime"] = approvedTime
+                        };
 
-                    _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
-                        requester.Email,
-                        "RescheduleResponse",
-                        placeholders));
+                        _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                            requester.Email,
+                            "RescheduleResponse",
+                            placeholders));
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to enqueue approved reschedule response email for request {RequestId}", requestId);
+                    }
                 }
             }
 
@@ -187,18 +194,25 @@ namespace Intervu.Application.UseCases.RescheduleRequest
                 var requester = await _userRepository.GetByIdAsync(request.RequestedBy);
                 if (requester != null)
                 {
-                    var placeholders = new Dictionary<string, string>
+                    try
                     {
-                        ["RecipientName"] = requester.FullName,
-                        ["Status"] = "Rejected",
-                        ["RejectionReason"] = rejectionReason ?? "No reason provided",
-                        ["NewTime"] = "-"
-                    };
+                        var placeholders = new Dictionary<string, string>
+                        {
+                            ["RecipientName"] = requester.FullName,
+                            ["Status"] = "Rejected",
+                            ["RejectionReason"] = rejectionReason ?? "No reason provided",
+                            ["NewTime"] = "-"
+                        };
 
-                    _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
-                        requester.Email,
-                        "RescheduleResponse",
-                        placeholders));
+                        _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                            requester.Email,
+                            "RescheduleResponse",
+                            placeholders));
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to enqueue rejected reschedule response email for request {RequestId}", requestId);
+                    }
                 }
             }
         }

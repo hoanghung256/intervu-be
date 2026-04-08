@@ -100,17 +100,24 @@ namespace Intervu.Application.UseCases.InterviewRoom
             var reporter = await userRepository.GetByIdAsync(userId);
             if (reporter != null)
             {
-                var placeholders = new Dictionary<string, string>
+                try
                 {
-                    ["RecipientName"] = reporter.FullName,
-                    ["RoomId"] = interviewRoomId.ToString()[..8].ToUpperInvariant(),
-                    ["Reason"] = reason
-                };
+                    var placeholders = new Dictionary<string, string>
+                    {
+                        ["RecipientName"] = reporter.FullName,
+                        ["RoomId"] = interviewRoomId.ToString()[..8].ToUpperInvariant(),
+                        ["Reason"] = reason
+                    };
 
-                jobService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
-                    reporter.Email,
-                    "ReportReceipt",
-                    placeholders));
+                    jobService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                        reporter.Email,
+                        "ReportReceipt",
+                        placeholders));
+                }
+                catch
+                {
+                    // Do not fail report submission if email enqueue fails.
+                }
             }
 
 

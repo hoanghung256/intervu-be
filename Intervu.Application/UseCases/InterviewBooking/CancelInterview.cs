@@ -114,45 +114,52 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
 
-                var candidate = await _userRepository.GetByIdAsync(candidateId);
-                var coach = room.CoachId.HasValue
-                    ? await _userRepository.GetByIdAsync(room.CoachId.Value)
-                    : null;
-
-                var interviewDate = availability.StartTime.ToString("dd MMM yyyy HH:mm");
-
-                if (candidate != null)
+                try
                 {
-                    var candidatePlaceholders = new Dictionary<string, string>
-                    {
-                        ["RecipientName"] = candidate.FullName,
-                        ["OtherPartyName"] = coach?.FullName ?? "Coach",
-                        ["InterviewDate"] = interviewDate,
-                        ["RefundAmount"] = refundAmount.ToString("N0"),
-                        ["RefundNote"] = $"A refund of {refundAmount:N0} resources has been processed to your account."
-                    };
+                    var candidate = await _userRepository.GetByIdAsync(candidateId);
+                    var coach = room.CoachId.HasValue
+                        ? await _userRepository.GetByIdAsync(room.CoachId.Value)
+                        : null;
 
-                    _jobService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
-                        candidate.Email,
-                        "InterviewCancellation",
-                        candidatePlaceholders));
+                    var interviewDate = availability.StartTime.ToString("dd MMM yyyy HH:mm");
+
+                    if (candidate != null)
+                    {
+                        var candidatePlaceholders = new Dictionary<string, string>
+                        {
+                            ["RecipientName"] = candidate.FullName,
+                            ["OtherPartyName"] = coach?.FullName ?? "Coach",
+                            ["InterviewDate"] = interviewDate,
+                            ["RefundAmount"] = refundAmount.ToString("N0"),
+                            ["RefundNote"] = $"A refund of {refundAmount:N0} resources has been processed to your account."
+                        };
+
+                        _jobService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                            candidate.Email,
+                            "InterviewCancellation",
+                            candidatePlaceholders));
+                    }
+
+                    if (coach != null)
+                    {
+                        var coachPlaceholders = new Dictionary<string, string>
+                        {
+                            ["RecipientName"] = coach.FullName,
+                            ["OtherPartyName"] = candidate?.FullName ?? "Candidate",
+                            ["InterviewDate"] = interviewDate,
+                            ["RefundAmount"] = "0",
+                            ["RefundNote"] = "This cancellation was initiated by the candidate. No payout will be processed for this session."
+                        };
+
+                        _jobService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                            coach.Email,
+                            "InterviewCancellation",
+                            coachPlaceholders));
+                    }
                 }
-
-                if (coach != null)
+                catch
                 {
-                    var coachPlaceholders = new Dictionary<string, string>
-                    {
-                        ["RecipientName"] = coach.FullName,
-                        ["OtherPartyName"] = candidate?.FullName ?? "Candidate",
-                        ["InterviewDate"] = interviewDate,
-                        ["RefundAmount"] = "0",
-                        ["RefundNote"] = "This cancellation was initiated by the candidate. No payout will be processed for this session."
-                    };
-
-                    _jobService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
-                        coach.Email,
-                        "InterviewCancellation",
-                        coachPlaceholders));
+                    // Do not fail cancellation flow if background email enqueue fails.
                 }
 
                 return refundAmount;

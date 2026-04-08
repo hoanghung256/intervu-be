@@ -134,48 +134,55 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
 
-                var candidate = await _userRepository.GetByIdAsync(candidateId);
-                if (candidate != null)
+                try
                 {
-                    var receiptPlaceholders = new Dictionary<string, string>
+                    var candidate = await _userRepository.GetByIdAsync(candidateId);
+                    if (candidate != null)
                     {
-                        ["CandidateName"] = candidate.FullName,
-                        ["CoachName"] = "Coach",
-                        ["Amount"] = transaction.Amount.ToString("N0"),
-                        ["OrderCode"] = transaction.OrderCode.ToString(),
-                        ["InterviewDate"] = (scheduledAt ?? DateTime.UtcNow).ToString("dd MMM yyyy"),
-                        ["InterviewTime"] = (scheduledAt ?? DateTime.UtcNow).ToString("HH:mm"),
-                        ["Duration"] = (durationMinutes ?? 60).ToString()
-                    };
-
-                    if (coachId.HasValue)
-                    {
-                        var coachUser = await _userRepository.GetByIdAsync(coachId.Value);
-                        receiptPlaceholders["CoachName"] = coachUser?.FullName ?? "Coach";
-
-                        if (coachUser != null)
+                        var receiptPlaceholders = new Dictionary<string, string>
                         {
-                            var coachPlaceholders = new Dictionary<string, string>
+                            ["CandidateName"] = candidate.FullName,
+                            ["CoachName"] = "Coach",
+                            ["Amount"] = transaction.Amount.ToString("N0"),
+                            ["OrderCode"] = transaction.OrderCode.ToString(),
+                            ["InterviewDate"] = (scheduledAt ?? DateTime.UtcNow).ToString("dd MMM yyyy"),
+                            ["InterviewTime"] = (scheduledAt ?? DateTime.UtcNow).ToString("HH:mm"),
+                            ["Duration"] = (durationMinutes ?? 60).ToString()
+                        };
+
+                        if (coachId.HasValue)
+                        {
+                            var coachUser = await _userRepository.GetByIdAsync(coachId.Value);
+                            receiptPlaceholders["CoachName"] = coachUser?.FullName ?? "Coach";
+
+                            if (coachUser != null)
                             {
-                                ["CoachName"] = coachUser.FullName,
-                                ["CandidateName"] = candidate.FullName,
-                                ["InterviewDate"] = (scheduledAt ?? DateTime.UtcNow).ToString("dd MMM yyyy"),
-                                ["InterviewTime"] = (scheduledAt ?? DateTime.UtcNow).ToString("HH:mm"),
-                                ["Duration"] = (durationMinutes ?? 60).ToString(),
-                                ["DashboardLink"] = $"{frontendUrl.TrimEnd('/')}/dashboard/interviews"
-                            };
+                                var coachPlaceholders = new Dictionary<string, string>
+                                {
+                                    ["CoachName"] = coachUser.FullName,
+                                    ["CandidateName"] = candidate.FullName,
+                                    ["InterviewDate"] = (scheduledAt ?? DateTime.UtcNow).ToString("dd MMM yyyy"),
+                                    ["InterviewTime"] = (scheduledAt ?? DateTime.UtcNow).ToString("HH:mm"),
+                                    ["Duration"] = (durationMinutes ?? 60).ToString(),
+                                    ["DashboardLink"] = $"{frontendUrl.TrimEnd('/')}/dashboard/interviews"
+                                };
 
-                            _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
-                                coachUser.Email,
-                                "BookingConfirmationCoach",
-                                coachPlaceholders));
+                                _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                                    coachUser.Email,
+                                    "BookingConfirmationCoach",
+                                    coachPlaceholders));
+                            }
                         }
-                    }
 
-                    _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
-                        candidate.Email,
-                        "PaymentReceipt",
-                        receiptPlaceholders));
+                        _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                            candidate.Email,
+                            "PaymentReceipt",
+                            receiptPlaceholders));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to enqueue payment receipt emails for transaction {TransactionId}", transaction.Id);
                 }
             }
             catch
@@ -338,7 +345,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
 
             var service = await _coachInterviewServiceRepository.GetByIdWithDetailsAsync(coachInterviewServiceId.Value);
 
-            if (service == null)
+            if (service?.InterviewType?.EvaluationStructure == null)
                 return [];
 
             return [.. service.InterviewType.EvaluationStructure.Select(c => new EvaluationResult

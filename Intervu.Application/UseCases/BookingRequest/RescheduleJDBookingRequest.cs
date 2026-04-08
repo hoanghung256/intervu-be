@@ -246,36 +246,43 @@ namespace Intervu.Application.UseCases.BookingRequest
             var coach = await _userRepository.GetByIdAsync(bookingRequest.CoachId);
             var frontendUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:5173";
 
-            if (candidate != null)
+            try
             {
-                var candidatePlaceholders = new Dictionary<string, string>
+                if (candidate != null)
                 {
-                    ["RecipientName"] = candidate.FullName,
-                    ["OtherPartyName"] = coach?.FullName ?? "Coach",
-                    ["RoundCount"] = rescheduledCount.ToString(),
-                    ["DashboardLink"] = $"{frontendUrl.TrimEnd('/')}/interview?tab=upcoming"
-                };
+                    var candidatePlaceholders = new Dictionary<string, string>
+                    {
+                        ["RecipientName"] = candidate.FullName,
+                        ["OtherPartyName"] = coach?.FullName ?? "Coach",
+                        ["RoundCount"] = rescheduledCount.ToString(),
+                        ["DashboardLink"] = $"{frontendUrl.TrimEnd('/')}/interview?tab=upcoming"
+                    };
 
-                _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
-                    candidate.Email,
-                    "JDRescheduleNotification",
-                    candidatePlaceholders));
+                    _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                        candidate.Email,
+                        "JDRescheduleNotification",
+                        candidatePlaceholders));
+                }
+
+                if (coach != null)
+                {
+                    var coachPlaceholders = new Dictionary<string, string>
+                    {
+                        ["RecipientName"] = coach.FullName,
+                        ["OtherPartyName"] = candidate?.FullName ?? "Candidate",
+                        ["RoundCount"] = rescheduledCount.ToString(),
+                        ["DashboardLink"] = $"{frontendUrl.TrimEnd('/')}/interview?tab=upcoming"
+                    };
+
+                    _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                        coach.Email,
+                        "JDRescheduleNotification",
+                        coachPlaceholders));
+                }
             }
-
-            if (coach != null)
+            catch (Exception ex)
             {
-                var coachPlaceholders = new Dictionary<string, string>
-                {
-                    ["RecipientName"] = coach.FullName,
-                    ["OtherPartyName"] = candidate?.FullName ?? "Candidate",
-                    ["RoundCount"] = rescheduledCount.ToString(),
-                    ["DashboardLink"] = $"{frontendUrl.TrimEnd('/')}/interview?tab=upcoming"
-                };
-
-                _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
-                    coach.Email,
-                    "JDRescheduleNotification",
-                    coachPlaceholders));
+                _logger.LogWarning(ex, "Failed to enqueue JD reschedule emails for booking request {BookingRequestId}", bookingRequestId);
             }
 
             _logger.LogInformation(

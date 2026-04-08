@@ -164,24 +164,31 @@ namespace Intervu.Application.UseCases.BookingRequest
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
 
-                var candidateUser = await _userRepository.GetByIdAsync(candidateId);
-                var coachUser = await _userRepository.GetByIdAsync(dto.CoachId);
-                if (coachUser != null)
+                try
                 {
-                    var frontendUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:5173";
-                    var placeholders = new Dictionary<string, string>
+                    var candidateUser = await _userRepository.GetByIdAsync(candidateId);
+                    var coachUser = await _userRepository.GetByIdAsync(dto.CoachId);
+                    if (coachUser != null)
                     {
-                        ["CoachName"] = coachUser.FullName,
-                        ["CandidateName"] = candidateUser?.FullName ?? "Candidate",
-                        ["TotalAmount"] = totalAmount.ToString("N0"),
-                        ["RoundCount"] = rounds.Count.ToString(),
-                        ["DashboardLink"] = $"{frontendUrl.TrimEnd('/')}/dashboard/booking-requests"
-                    };
+                        var frontendUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:5173";
+                        var placeholders = new Dictionary<string, string>
+                        {
+                            ["CoachName"] = coachUser.FullName,
+                            ["CandidateName"] = candidateUser?.FullName ?? "Candidate",
+                            ["TotalAmount"] = totalAmount.ToString("N0"),
+                            ["RoundCount"] = rounds.Count.ToString(),
+                            ["DashboardLink"] = $"{frontendUrl.TrimEnd('/')}/dashboard/booking-requests"
+                        };
 
-                    _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
-                        coachUser.Email,
-                        "NewBookingRequest",
-                        placeholders));
+                        _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                            coachUser.Email,
+                            "NewBookingRequest",
+                            placeholders));
+                    }
+                }
+                catch
+                {
+                    // Do not fail booking creation if background email enqueue fails.
                 }
 
                 // Reload with navigation properties

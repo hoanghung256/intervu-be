@@ -94,10 +94,17 @@ namespace Intervu.Application.UseCases.PasswordReset
                 ["FullName"] = user.FullName
             };
 
-            _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
-                user.Email,
-                "PasswordChanged",
-                placeholders));
+            try
+            {
+                _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                    user.Email,
+                    "PasswordChanged",
+                    placeholders));
+            }
+            catch
+            {
+                // Do not fail password reset if background email enqueue fails.
+            }
 
             return new PasswordResetResponse
             {

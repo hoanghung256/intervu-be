@@ -200,20 +200,27 @@ namespace Intervu.Application.UseCases.RescheduleRequest
             var recipient = await _userRepository.GetByIdAsync(otherPartyId);
             if (recipient != null)
             {
-                var frontendUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:5173";
-                var placeholders = new Dictionary<string, string>
+                try
                 {
-                    ["RecipientName"] = recipient.FullName,
-                    ["RequesterName"] = requester.FullName,
-                    ["Reason"] = reason,
-                    ["ProposedTime"] = proposedAvailability.StartTime.ToString("dd MMM yyyy HH:mm"),
-                    ["DashboardLink"] = $"{frontendUrl.TrimEnd('/')}/interview?tab=upcoming"
-                };
+                    var frontendUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:5173";
+                    var placeholders = new Dictionary<string, string>
+                    {
+                        ["RecipientName"] = recipient.FullName,
+                        ["RequesterName"] = requester.FullName,
+                        ["Reason"] = reason,
+                        ["ProposedTime"] = proposedAvailability.StartTime.ToString("dd MMM yyyy HH:mm"),
+                        ["DashboardLink"] = $"{frontendUrl.TrimEnd('/')}/interview?tab=upcoming"
+                    };
 
-                _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
-                    recipient.Email,
-                    "RescheduleProposal",
-                    placeholders));
+                    _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                        recipient.Email,
+                        "RescheduleProposal",
+                        placeholders));
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to enqueue reschedule proposal email for request {RequestId}", rescheduleRequest.Id);
+                }
             }
 
             _logger.LogInformation("Created reschedule request {RequestId} for room {RoomId}", rescheduleRequest.Id, roomId);

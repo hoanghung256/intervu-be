@@ -109,10 +109,17 @@ namespace Intervu.Application.UseCases.Authentication
                 ["LoginLink"] = $"{frontendUrl.TrimEnd('/')}/login"
             };
 
-            _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
-                user.Email,
-                "Welcome",
-                welcomePlaceholders));
+            try
+            {
+                _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                    user.Email,
+                    "Welcome",
+                    welcomePlaceholders));
+            }
+            catch
+            {
+                // Do not fail registration if background email enqueue fails.
+            }
 
             return new Intervu.Application.DTOs.User.RegisterResult { Success = true, Message = "Registration successful" };
         }

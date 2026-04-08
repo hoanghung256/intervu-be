@@ -89,18 +89,25 @@ namespace Intervu.Application.UseCases.InterviewRoom
 
                 if (candidate != null)
                 {
-                    var frontendUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:5173";
-                    var placeholders = new Dictionary<string, string>
+                    try
                     {
-                        ["CandidateName"] = candidate.FullName,
-                        ["CoachName"] = coach?.FullName ?? "Coach",
-                        ["DashboardLink"] = $"{frontendUrl.TrimEnd('/')}/interview?tab=past"
-                    };
+                        var frontendUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:5173";
+                        var placeholders = new Dictionary<string, string>
+                        {
+                            ["CandidateName"] = candidate.FullName,
+                            ["CoachName"] = coach?.FullName ?? "Coach",
+                            ["DashboardLink"] = $"{frontendUrl.TrimEnd('/')}/interview?tab=past"
+                        };
 
-                    _jobService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
-                        candidate.Email,
-                        "EvaluationReady",
-                        placeholders));
+                        _jobService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                            candidate.Email,
+                            "EvaluationReady",
+                            placeholders));
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to enqueue EvaluationReady email for room {RoomId}", interviewRoomId);
+                    }
                 }
             }
 

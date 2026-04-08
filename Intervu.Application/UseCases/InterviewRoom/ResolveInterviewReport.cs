@@ -113,19 +113,26 @@ namespace Intervu.Application.UseCases.InterviewRoom
                 var reporter = await userRepository.GetByIdAsync(reporterId);
                 if (reporter != null)
                 {
-                    var placeholders = new Dictionary<string, string>
+                    try
                     {
-                        ["RecipientName"] = reporter.FullName,
-                        ["RoomId"] = room.Id.ToString()[..8].ToUpperInvariant(),
-                        ["Status"] = request.Status.ToString(),
-                        ["AdminNote"] = request.AdminNote ?? "No additional notes.",
-                        ["RefundInfo"] = refundInfo
-                    };
+                        var placeholders = new Dictionary<string, string>
+                        {
+                            ["RecipientName"] = reporter.FullName,
+                            ["RoomId"] = room.Id.ToString()[..8].ToUpperInvariant(),
+                            ["Status"] = request.Status.ToString(),
+                            ["AdminNote"] = request.AdminNote ?? "No additional notes.",
+                            ["RefundInfo"] = refundInfo
+                        };
 
-                    jobService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
-                        reporter.Email,
-                        "ReportResolution",
-                        placeholders));
+                        jobService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                            reporter.Email,
+                            "ReportResolution",
+                            placeholders));
+                    }
+                    catch
+                    {
+                        // Do not fail report resolution flow if email enqueue fails.
+                    }
                 }
             }
             catch (Exception)

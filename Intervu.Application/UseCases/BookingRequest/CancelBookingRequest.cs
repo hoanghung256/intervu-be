@@ -134,37 +134,44 @@ namespace Intervu.Application.UseCases.BookingRequest
             _bookingRepo.UpdateAsync(bookingRequest);
             await _bookingRepo.SaveChangesAsync();
 
-            var candidate = await _userRepository.GetByIdAsync(bookingRequest.CandidateId);
-            var coach = await _userRepository.GetByIdAsync(bookingRequest.CoachId);
-
-            if (candidate != null)
+            try
             {
-                var candidatePlaceholders = new Dictionary<string, string>
-                {
-                    ["RecipientName"] = candidate.FullName,
-                    ["OtherPartyName"] = coach?.FullName ?? "Coach",
-                    ["RefundAmount"] = totalRefundAmount.ToString("N0")
-                };
+                var candidate = await _userRepository.GetByIdAsync(bookingRequest.CandidateId);
+                var coach = await _userRepository.GetByIdAsync(bookingRequest.CoachId);
 
-                _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
-                    candidate.Email,
-                    "BookingRequestCancelled",
-                    candidatePlaceholders));
+                if (candidate != null)
+                {
+                    var candidatePlaceholders = new Dictionary<string, string>
+                    {
+                        ["RecipientName"] = candidate.FullName,
+                        ["OtherPartyName"] = coach?.FullName ?? "Coach",
+                        ["RefundAmount"] = totalRefundAmount.ToString("N0")
+                    };
+
+                    _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                        candidate.Email,
+                        "BookingRequestCancelled",
+                        candidatePlaceholders));
+                }
+
+                if (coach != null)
+                {
+                    var coachPlaceholders = new Dictionary<string, string>
+                    {
+                        ["RecipientName"] = coach.FullName,
+                        ["OtherPartyName"] = candidate?.FullName ?? "Candidate",
+                        ["RefundAmount"] = totalRefundAmount.ToString("N0")
+                    };
+
+                    _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                        coach.Email,
+                        "BookingRequestCancelled",
+                        coachPlaceholders));
+                }
             }
-
-            if (coach != null)
+            catch
             {
-                var coachPlaceholders = new Dictionary<string, string>
-                {
-                    ["RecipientName"] = coach.FullName,
-                    ["OtherPartyName"] = candidate?.FullName ?? "Candidate",
-                    ["RefundAmount"] = totalRefundAmount.ToString("N0")
-                };
-
-                _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
-                    coach.Email,
-                    "BookingRequestCancelled",
-                    coachPlaceholders));
+                // Do not fail booking cancellation flow if email enqueue fails.
             }
 
             var result = _mapper.Map<BookingRequestDto>(bookingRequest);

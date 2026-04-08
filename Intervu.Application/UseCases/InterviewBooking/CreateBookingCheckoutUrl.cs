@@ -242,53 +242,60 @@ namespace Intervu.Application.UseCases.InterviewBooking
 
                 if (shouldSendBookingEmails)
                 {
-                    var candidate = await _userRepository.GetByIdAsync(candidateId);
-                    var coachUser = await _userRepository.GetByIdAsync(coachId);
-                    var frontendUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:5173";
-                    var interviewDate = startTime.ToString("dd MMM yyyy");
-                    var interviewTime = startTime.ToString("HH:mm");
-
-                    if (candidate != null)
+                    try
                     {
-                        var bookingPlaceholders = new Dictionary<string, string>
-                        {
-                            ["CandidateName"] = candidate.FullName,
-                            ["BookingID"] = br.Id.ToString()[..8].ToUpperInvariant(),
-                            ["InterviewDate"] = interviewDate,
-                            ["InterviewTime"] = interviewTime,
-                            ["Position"] = service.InterviewType.Name,
-                            ["InterviewerName"] = coachUser?.FullName ?? "Coach",
-                            ["Duration"] = duration.ToString(),
-                            ["JoinLink"] = $"{frontendUrl.TrimEnd('/')}/interview/{br.Id}",
-                            ["RescheduleLink"] = $"{frontendUrl.TrimEnd('/')}/interview?tab=upcoming",
-                            ["FAQLink"] = $"{frontendUrl.TrimEnd('/')}/faq",
-                            ["SupportLink"] = $"{frontendUrl.TrimEnd('/')}/support",
-                            ["TermsLink"] = $"{frontendUrl.TrimEnd('/')}/terms",
-                            ["PrivacyLink"] = $"{frontendUrl.TrimEnd('/')}/privacy"
-                        };
+                        var candidate = await _userRepository.GetByIdAsync(candidateId);
+                        var coachUser = await _userRepository.GetByIdAsync(coachId);
+                        var frontendUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:5173";
+                        var interviewDate = startTime.ToString("dd MMM yyyy");
+                        var interviewTime = startTime.ToString("HH:mm");
 
-                        _jobService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
-                            candidate.Email,
-                            "BookingConfirmation",
-                            bookingPlaceholders));
+                        if (candidate != null)
+                        {
+                            var bookingPlaceholders = new Dictionary<string, string>
+                            {
+                                ["CandidateName"] = candidate.FullName,
+                                ["BookingID"] = br.Id.ToString()[..8].ToUpperInvariant(),
+                                ["InterviewDate"] = interviewDate,
+                                ["InterviewTime"] = interviewTime,
+                                ["Position"] = service.InterviewType.Name,
+                                ["InterviewerName"] = coachUser?.FullName ?? "Coach",
+                                ["Duration"] = duration.ToString(),
+                                ["JoinLink"] = $"{frontendUrl.TrimEnd('/')}/interview/{br.Id}",
+                                ["RescheduleLink"] = $"{frontendUrl.TrimEnd('/')}/interview?tab=upcoming",
+                                ["FAQLink"] = $"{frontendUrl.TrimEnd('/')}/faq",
+                                ["SupportLink"] = $"{frontendUrl.TrimEnd('/')}/support",
+                                ["TermsLink"] = $"{frontendUrl.TrimEnd('/')}/terms",
+                                ["PrivacyLink"] = $"{frontendUrl.TrimEnd('/')}/privacy"
+                            };
+
+                            _jobService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                                candidate.Email,
+                                "BookingConfirmation",
+                                bookingPlaceholders));
+                        }
+
+                        if (coachUser != null)
+                        {
+                            var coachPlaceholders = new Dictionary<string, string>
+                            {
+                                ["CoachName"] = coachUser.FullName,
+                                ["CandidateName"] = candidate?.FullName ?? "Candidate",
+                                ["InterviewDate"] = interviewDate,
+                                ["InterviewTime"] = interviewTime,
+                                ["Duration"] = duration.ToString(),
+                                ["DashboardLink"] = $"{frontendUrl.TrimEnd('/')}/dashboard/interviews"
+                            };
+
+                            _jobService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                                coachUser.Email,
+                                "BookingConfirmationCoach",
+                                coachPlaceholders));
+                        }
                     }
-
-                    if (coachUser != null)
+                    catch (Exception ex)
                     {
-                        var coachPlaceholders = new Dictionary<string, string>
-                        {
-                            ["CoachName"] = coachUser.FullName,
-                            ["CandidateName"] = candidate?.FullName ?? "Candidate",
-                            ["InterviewDate"] = interviewDate,
-                            ["InterviewTime"] = interviewTime,
-                            ["Duration"] = duration.ToString(),
-                            ["DashboardLink"] = $"{frontendUrl.TrimEnd('/')}/dashboard/interviews"
-                        };
-
-                        _jobService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
-                            coachUser.Email,
-                            "BookingConfirmationCoach",
-                            coachPlaceholders));
+                        _logger.LogWarning(ex, "Failed to enqueue booking confirmation emails for booking request {BookingRequestId}", br.Id);
                     }
                 }
 
@@ -308,7 +315,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
 
             var service = await _coachInterviewServiceRepository.GetByIdWithDetailsAsync(coachInterviewServiceId.Value);
 
-            if (service == null)
+            if (service?.InterviewType?.EvaluationStructure == null)
                 return [];
 
             return [.. service.InterviewType.EvaluationStructure.Select(c => new EvaluationResult
