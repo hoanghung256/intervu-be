@@ -41,15 +41,23 @@ namespace Intervu.API.Test.ApiTests.CandidateProfileController
             return loginData.Data!.Token;
         }
 
+        // ===== [N] Normal / Happy Path Tests =====
+
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "CandidateProfile")]
         public async Task GetOwnCandidateProfile_ReturnsSuccess_WhenCandidateIsAuthenticated()
         {
+            // Arrange
             var (token, userId) = await RegisterAndLoginCandidateAsync();
 
+            // Act
             var response = await _api.GetAsync($"/api/v1/candidate-profile/{userId}", jwtToken: token, logBody: true);
+
+            // Assert
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
+            var apiResponse = await _api.LogDeserializeJson<object>(response);
+            await AssertHelper.AssertTrue(apiResponse.Success, "Request was successful");
         }
 
         [Fact]
@@ -57,6 +65,7 @@ namespace Intervu.API.Test.ApiTests.CandidateProfileController
         [Trait("Category", "CandidateProfile")]
         public async Task UpdateCandidateProfile_ReturnsSuccess_WhenDataIsValid()
         {
+            // Arrange
             var (token, userId) = await RegisterAndLoginCandidateAsync();
             var updateDto = new CandidateUpdateDto
             {
@@ -67,8 +76,13 @@ namespace Intervu.API.Test.ApiTests.CandidateProfileController
                 CVUrl = "https://updated-cv.example.com/test.pdf"
             };
 
+            // Act
             var response = await _api.PutAsync($"/api/v1/candidate-profile/{userId}", updateDto, jwtToken: token, logBody: true);
+
+            // Assert
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
+            var apiResponse = await _api.LogDeserializeJson<object>(response);
+            await AssertHelper.AssertTrue(apiResponse.Success, "Update was successful");
         }
 
         [Fact]
@@ -76,10 +90,16 @@ namespace Intervu.API.Test.ApiTests.CandidateProfileController
         [Trait("Category", "CandidateProfile")]
         public async Task GetCandidateRating_ReturnsSuccess_WhenAuthenticated()
         {
+            // Arrange
             var (token, userId) = await RegisterAndLoginCandidateAsync();
 
+            // Act
             var response = await _api.GetAsync($"/api/v1/candidate-profile/{userId}/rating", jwtToken: token, logBody: true);
+
+            // Assert
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
+            var apiResponse = await _api.LogDeserializeJson<object>(response);
+            await AssertHelper.AssertTrue(apiResponse.Success, "Rating request was successful");
         }
 
         [Fact]
@@ -87,10 +107,14 @@ namespace Intervu.API.Test.ApiTests.CandidateProfileController
         [Trait("Category", "CandidateProfile")]
         public async Task UpdateCandidateStatus_ReturnsSuccess_WhenAdminIsAuthenticated()
         {
+            // Arrange
             var adminToken = await LoginAdminAsync();
             var (_, targetCandidateId) = await RegisterAndLoginCandidateAsync();
 
+            // Act - Status 0 = Active
             var response = await _api.PutAsync($"/api/v1/candidate-profile/{targetCandidateId}/status", 0, jwtToken: adminToken, logBody: true);
+
+            // Assert
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
         }
 
@@ -99,11 +123,17 @@ namespace Intervu.API.Test.ApiTests.CandidateProfileController
         [Trait("Category", "CandidateProfile")]
         public async Task DeleteCandidateProfile_ReturnsSuccess_WhenAdminIsAuthenticated()
         {
+            // Arrange
             var adminToken = await LoginAdminAsync();
             var (_, targetCandidateId) = await RegisterAndLoginCandidateAsync();
 
+            // Act
             var response = await _api.DeleteAsync($"/api/v1/candidate-profile/{targetCandidateId}", jwtToken: adminToken, logBody: true);
+
+            // Assert
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
+            var apiResponse = await _api.LogDeserializeJson<object>(response);
+            await AssertHelper.AssertTrue(apiResponse.Success, "Delete was successful");
         }
 
         [Fact]
@@ -111,8 +141,10 @@ namespace Intervu.API.Test.ApiTests.CandidateProfileController
         [Trait("Category", "CandidateProfile")]
         public async Task ManageWorkExperiences_ReturnsSuccess()
         {
+            // Arrange
             var (token, userId) = await RegisterAndLoginCandidateAsync();
 
+            // Create
             var createDto = new CandidateWorkExperienceDto
             {
                 CompanyName = "Initial Corp",
@@ -125,6 +157,7 @@ namespace Intervu.API.Test.ApiTests.CandidateProfileController
             var createResult = await _api.LogDeserializeJson<CandidateWorkExperienceDto>(createResponse);
             var workId = createResult.Data!.Id;
 
+            // Update single
             var updateDto = new CandidateWorkExperienceDto
             {
                 Id = workId,
@@ -137,12 +170,14 @@ namespace Intervu.API.Test.ApiTests.CandidateProfileController
             var updateResponse = await _api.PutAsync($"/api/v1/candidate-profile/{userId}/work-experiences/{workId}", updateDto, jwtToken: token, logBody: true);
             await AssertHelper.AssertEqual(HttpStatusCode.OK, updateResponse.StatusCode, "Update status code is 200 OK");
 
+            // Batch update
             var batchResponse = await _api.PutAsync($"/api/v1/candidate-profile/{userId}/work-experiences", new UpdateCandidateWorkExperiencesRequest
             {
                 WorkExperiences = new List<CandidateWorkExperienceDto> { updateDto }
             }, jwtToken: token, logBody: true);
             await AssertHelper.AssertEqual(HttpStatusCode.OK, batchResponse.StatusCode, "Batch update status code is 200 OK");
 
+            // Delete
             var deleteResponse = await _api.DeleteAsync($"/api/v1/candidate-profile/{userId}/work-experiences/{workId}", jwtToken: token, logBody: true);
             await AssertHelper.AssertEqual(HttpStatusCode.OK, deleteResponse.StatusCode, "Delete status code is 200 OK");
         }
@@ -152,8 +187,10 @@ namespace Intervu.API.Test.ApiTests.CandidateProfileController
         [Trait("Category", "CandidateProfile")]
         public async Task ManageCertificates_ReturnsSuccess()
         {
+            // Arrange
             var (token, userId) = await RegisterAndLoginCandidateAsync();
 
+            // Create
             var addResponse = await _api.PostAsync($"/api/v1/candidate-profile/{userId}/certificates", new CandidateCertificateDto
             {
                 Name = "AWS Cloud Practitioner",
@@ -164,6 +201,7 @@ namespace Intervu.API.Test.ApiTests.CandidateProfileController
             var addResult = await _api.LogDeserializeJson<CandidateCertificateDto>(addResponse);
             var certId = addResult.Data!.Id;
 
+            // Update
             var updateResponse = await _api.PutAsync($"/api/v1/candidate-profile/{userId}/certificates/{certId}", new CandidateCertificateDto
             {
                 Id = certId,
@@ -173,8 +211,152 @@ namespace Intervu.API.Test.ApiTests.CandidateProfileController
             }, jwtToken: token, logBody: true);
             await AssertHelper.AssertEqual(HttpStatusCode.OK, updateResponse.StatusCode, "Update certificate status code is 200 OK");
 
+            // Delete
             var deleteResponse = await _api.DeleteAsync($"/api/v1/candidate-profile/{userId}/certificates/{certId}", jwtToken: token, logBody: true);
             await AssertHelper.AssertEqual(HttpStatusCode.OK, deleteResponse.StatusCode, "Delete certificate status code is 200 OK");
+        }
+
+        // ===== [B] Boundary Tests =====
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "CandidateProfile")]
+        public async Task GetOwnCandidateProfile_NonExistentId_ReturnsOkWithMessage()
+        {
+            // Arrange - Controller catches exceptions and returns OK with message
+            var (token, _) = await RegisterAndLoginCandidateAsync();
+            var nonExistentId = Guid.NewGuid();
+
+            // Act
+            var response = await _api.GetAsync($"/api/v1/candidate-profile/{nonExistentId}", jwtToken: token, logBody: true);
+
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Non-existent ID returns 200 OK with message");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "CandidateProfile")]
+        public async Task UpdateCandidateProfile_NonExistentId_ReturnsBadRequest()
+        {
+            // Arrange
+            var (token, _) = await RegisterAndLoginCandidateAsync();
+            var nonExistentId = Guid.NewGuid();
+            var updateDto = new CandidateUpdateDto
+            {
+                FullName = "Ghost Candidate",
+                Email = "ghost@example.com",
+                Bio = "Should fail"
+            };
+
+            // Act
+            var response = await _api.PutAsync($"/api/v1/candidate-profile/{nonExistentId}", updateDto, jwtToken: token, logBody: true);
+
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Non-existent candidate returns 400 BadRequest");
+        }
+
+        // ===== [A] Abnormal / Error Path Tests =====
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "CandidateProfile")]
+        public async Task GetOwnCandidateProfile_ReturnsUnauthorized_WhenNoToken()
+        {
+            // Arrange
+            var (_, userId) = await RegisterAndLoginCandidateAsync();
+
+            // Act
+            var response = await _api.GetAsync($"/api/v1/candidate-profile/{userId}", logBody: true);
+
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "No token returns 401 Unauthorized");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "CandidateProfile")]
+        public async Task UpdateCandidateProfile_ReturnsUnauthorized_WhenNoToken()
+        {
+            // Arrange
+            var (_, userId) = await RegisterAndLoginCandidateAsync();
+            var updateDto = new CandidateUpdateDto
+            {
+                FullName = "No Auth Candidate",
+                Email = "noauth@example.com"
+            };
+
+            // Act
+            var response = await _api.PutAsync($"/api/v1/candidate-profile/{userId}", updateDto, logBody: true);
+
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "No token update returns 401 Unauthorized");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "CandidateProfile")]
+        public async Task GetCandidateRating_ReturnsUnauthorized_WhenNoToken()
+        {
+            // Arrange
+            var (_, userId) = await RegisterAndLoginCandidateAsync();
+
+            // Act
+            var response = await _api.GetAsync($"/api/v1/candidate-profile/{userId}/rating", logBody: true);
+
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "No token rating returns 401 Unauthorized");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "CandidateProfile")]
+        public async Task UpdateCandidateStatus_ReturnsForbidden_WhenCandidateAccesses()
+        {
+            // Arrange - Status update requires Admin policy
+            var (candidateToken, candidateId) = await RegisterAndLoginCandidateAsync();
+
+            // Act
+            var response = await _api.PutAsync($"/api/v1/candidate-profile/{candidateId}/status", 0, jwtToken: candidateToken, logBody: true);
+
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Candidate updating own status returns 403 Forbidden");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "CandidateProfile")]
+        public async Task DeleteCandidateProfile_ReturnsForbidden_WhenCandidateAccesses()
+        {
+            // Arrange - Delete requires Admin policy
+            var (candidateToken, candidateId) = await RegisterAndLoginCandidateAsync();
+
+            // Act
+            var response = await _api.DeleteAsync($"/api/v1/candidate-profile/{candidateId}", jwtToken: candidateToken, logBody: true);
+
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Candidate deleting own profile returns 403 Forbidden");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "CandidateProfile")]
+        public async Task CreateWorkExperience_ReturnsUnauthorized_WhenNoToken()
+        {
+            // Arrange
+            var (_, userId) = await RegisterAndLoginCandidateAsync();
+
+            // Act
+            var response = await _api.PostAsync($"/api/v1/candidate-profile/{userId}/work-experiences", new CandidateWorkExperienceDto
+            {
+                CompanyName = "No Auth Corp",
+                PositionTitle = "Dev",
+                StartDate = DateTime.UtcNow.AddYears(-1),
+                IsCurrentWorking = true
+            }, logBody: true);
+
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Create work experience without token returns 401");
         }
     }
 }
