@@ -23,6 +23,7 @@ using Intervu.Application.Utils;
 using Hangfire.PostgreSql;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -45,7 +46,9 @@ namespace Intervu.Infrastructure
             {
                 if (environment.IsEnvironment("Testing"))
                 {
-                    options.UseInMemoryDatabase("Intervu_TestDb");
+                    options
+                        .UseInMemoryDatabase("Intervu_TestDb")
+                        .ConfigureWarnings(warnings => warnings.Ignore(InMemoryEventId.TransactionIgnoredWarning));
                 }
                 else
                 {
@@ -103,8 +106,10 @@ namespace Intervu.Infrastructure
             return services;
         }
 
-        public static IServiceCollection AddInfrastructureExternalServices(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddInfrastructureExternalServices(this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
         {
+            var isTesting = environment.IsEnvironment("Testing");
+
             var firebaseConfigJson = configuration["Firebase:CredentialPath"];
             var bucketName = configuration["Firebase:StorageBucket"];
 
@@ -210,21 +215,27 @@ namespace Intervu.Infrastructure
 
             services.AddHostedService<InterviewRoomCacheLoader>();
 
-            // --- HANGFIRE JOBS ---
-            services.AddScoped<HangfireJobScheduler>();
-            services.AddScoped<InterviewMonitorJob>();
-            services.AddScoped<IRecurringJob>(sp => sp.GetRequiredService<InterviewMonitorJob>());
+            if (isTesting)
+            {
+                services.AddScoped<IBackgroundService, NoopBackgroundService>();
+            }
+            else
+            {
+                // --- HANGFIRE JOBS ---
+                services.AddScoped<HangfireJobScheduler>();
+                services.AddScoped<InterviewMonitorJob>();
+                services.AddScoped<IRecurringJob>(sp => sp.GetRequiredService<InterviewMonitorJob>());
 
+                // HANGFIRE
+                services.AddHangfire(config => config
+                    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+                    .UseSimpleAssemblyNameTypeSerializer()
+                    .UseRecommendedSerializerSettings()
+                    .UsePostgreSqlStorage(configuration.GetConnectionString("PostgreSqlDefaultConnection")));
 
-            // HANGFIRE
-            services.AddHangfire(config => config
-                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-                .UseSimpleAssemblyNameTypeSerializer()
-                .UseRecommendedSerializerSettings()
-                .UsePostgreSqlStorage(configuration.GetConnectionString("PostgreSqlDefaultConnection")));
-
-            services.AddHangfireServer();
-            services.AddScoped<IBackgroundService, HangfireBackgroundService>();
+                services.AddHangfireServer();
+                services.AddScoped<IBackgroundService, HangfireBackgroundService>();
+            }
 
             return services;
         }

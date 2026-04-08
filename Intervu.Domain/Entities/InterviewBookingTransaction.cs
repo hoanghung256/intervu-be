@@ -11,12 +11,7 @@ namespace Intervu.Domain.Entities
         public Guid UserId { get; set; }
 
         /// <summary>
-        /// Flow A (normal booking): links payment to the availability slot
-        /// </summary>
-        public Guid? CoachAvailabilityId { get; set; }
-
-        /// <summary>
-        /// Flow B & C: links payment to the booking request
+        /// Links payment to the booking request (all flows)
         /// </summary>
         public Guid? BookingRequestId { get; set; }
 
@@ -26,23 +21,7 @@ namespace Intervu.Domain.Entities
 
         public TransactionStatus Status { get; set; }
 
-        /// <summary>
-        /// Flow A: The coach who owns the availability (needed after availability is split/deleted).
-        /// </summary>
-        public Guid? CoachId { get; set; }
-
-        /// <summary>
-        /// Flow A: The candidate-chosen start time within the availability range.
-        /// </summary>
-        public DateTime? BookedStartTime { get; set; }
-
-        /// <summary>
-        /// Flow A: Duration in minutes from the CoachInterviewService.
-        /// </summary>
-        public int? BookedDurationMinutes { get; set; }
-
         // Navigation
-        public CoachAvailability? CoachAvailability { get; set; }
         public BookingRequest? BookingRequest { get; set; }
         public User? User { get; set; }
     }

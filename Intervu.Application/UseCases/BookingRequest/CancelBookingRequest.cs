@@ -64,71 +64,62 @@ namespace Intervu.Application.UseCases.BookingRequest
             bookingRequest.Status = BookingRequestStatus.Cancelled;
             bookingRequest.UpdatedAt = DateTime.UtcNow;
 
-            // Load related interview rooms (if any)
-            var rooms = await _roomRepo.GetByBookingRequestIdAsync(bookingRequestId);
-            var totalRefundAmount = 0;
+            // Handle refunds via BookingRequest transactions
+            var payout = await _transactionRepo.GetByBookingRequestId(bookingRequestId, TransactionType.Payout);
+            if (payout != null)
+            {
+                payout.Status = TransactionStatus.Cancel;
+                _transactionRepo.UpdateAsync(payout);
+            }
 
+            var payment = await _transactionRepo.GetByBookingRequestId(bookingRequestId, TransactionType.Payment);
+            if (payment != null)
+            {
+                int refundAmount;
+                var firstRound = bookingRequest.Rounds.OrderBy(r => r.RoundNumber).FirstOrDefault();
+                var scheduledTime = firstRound?.StartTime ?? DateTime.UtcNow;
+
+                try
+                {
+                    refundAmount = _refundPolicy.CalculateRefundAmount(payment.Amount, scheduledTime, DateTime.UtcNow);
+                }
+                catch
+                {
+                    refundAmount = payment.Amount;
+                }
+
+                await _transactionRepo.AddAsync(new Domain.Entities.InterviewBookingTransaction
+                {
+                    OrderCode = Intervu.Application.Utils.RandomGenerator.GenerateOrderCode(),
+                    UserId = bookingRequest.CandidateId,
+                    BookingRequestId = bookingRequestId,
+                    Amount = refundAmount,
+                    Type = TransactionType.Refund,
+                    Status = TransactionStatus.Created
+                });
+            }
+
+            // Cancel all related interview rooms
+            var rooms = await _roomRepo.GetByBookingRequestIdAsync(bookingRequestId);
             foreach (var room in rooms)
             {
-                // Skip rows that are already cancelled, but cancel every other room state.
                 if (room.Status == InterviewRoomStatus.Cancelled)
                     continue;
 
-                // Only active sessions should trigger payout/refund handling.
-                if (room.Status == InterviewRoomStatus.Scheduled || room.Status == InterviewRoomStatus.Ongoing)
-                {
-                    // If room has an associated availability and transactions, handle refunds similar to CancelInterview
-                    if (room.CurrentAvailabilityId.HasValue)
-                    {
-                        var availability = await _availabilityRepo.GetByIdAsync(room.CurrentAvailabilityId.Value);
-
-                        // Cancel payout transaction (coach-side)
-                        var payout = await _transactionRepo.GetByAvailabilityId(room.CurrentAvailabilityId.Value, Domain.Entities.Constants.TransactionType.Payout);
-                        if (payout != null)
-                        {
-                            payout.Status = Domain.Entities.Constants.TransactionStatus.Cancel;
-                            _transactionRepo.UpdateAsync(payout);
-                        }
-
-                        // Find payment transaction and create refund
-                        var payment = await _transactionRepo.GetByAvailabilityId(room.CurrentAvailabilityId.Value, Domain.Entities.Constants.TransactionType.Payment);
-                        if (payment != null)
-                        {
-                            int refundAmount;
-
-                            if (availability != null)
-                            {
-                                try
-                                {
-                                    refundAmount = _refundPolicy.CalculateRefundAmount(payment.Amount, availability.StartTime, DateTime.UtcNow);
-                                }
-                                catch
-                                {
-                                    refundAmount = payment.Amount;
-                                }
-                            }
-                            else
-                            {
-                                refundAmount = payment.Amount;
-                            }
-
-                            await _transactionRepo.AddAsync(new Domain.Entities.InterviewBookingTransaction
-                            {
-                                OrderCode = Intervu.Application.Utils.RandomGenerator.GenerateOrderCode(),
-                                UserId = room.CandidateId!.Value,
-                                CoachAvailabilityId = room.CurrentAvailabilityId.Value,
-                                Amount = refundAmount,
-                                Type = Domain.Entities.Constants.TransactionType.Refund,
-                                Status = Domain.Entities.Constants.TransactionStatus.Created
-                            });
-
-                            totalRefundAmount += refundAmount;
-                        }
-                    }
-                }
-
                 room.Status = InterviewRoomStatus.Cancelled;
                 _roomRepo.UpdateAsync(room);
+            }
+
+            // Restore availability blocks for all rounds back to Available
+            foreach (var round in bookingRequest.Rounds)
+            {
+                if (round.AvailabilityBlocks == null) continue;
+                foreach (var block in round.AvailabilityBlocks)
+                {
+                    block.Status = CoachAvailabilityStatus.Available;
+                    block.InterviewRoundId = null;
+                    _availabilityRepo.UpdateAsync(block);
+                }
             }
 
             _bookingRepo.UpdateAsync(bookingRequest);

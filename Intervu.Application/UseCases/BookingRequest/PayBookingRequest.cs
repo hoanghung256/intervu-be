@@ -1,16 +1,12 @@
 using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.UseCases.BookingRequest;
-using Intervu.Application.Services;
 using Intervu.Application.Utils;
 using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Intervu.Application.UseCases.BookingRequest
 {
@@ -30,70 +26,41 @@ namespace Intervu.Application.UseCases.BookingRequest
             _unitOfWork = unitOfWork;
         }
 
+        /// <summary>
+        /// Creates interview rooms from booking request rounds.
+        /// Direct and JD bookings both have rounds with pre-booked availability blocks.
+        /// </summary>
         private async Task CreateRoomsForBookingRequestAsync(Domain.Entities.BookingRequest bookingRequest, InterviewBookingTransaction paymentTx)
         {
             var roomRepo = _unitOfWork.GetRepository<IInterviewRoomRepository>();
-            var availabilityRepo = _unitOfWork.GetRepository<ICoachAvailabilitiesRepository>();
             var coachInterviewServiceRepo = _unitOfWork.GetRepository<ICoachInterviewServiceRepository>();
 
-            if (bookingRequest.Type == BookingRequestType.External)
+            foreach (var round in bookingRequest.Rounds.OrderBy(r => r.RoundNumber))
             {
-                var durationMinutes = bookingRequest.CoachInterviewService?.DurationMinutes ?? 60;
-                var startTime = bookingRequest.RequestedStartTime!
-                    ?? throw new BadRequestException("RequestedStartTime is required for external booking request");
-                var endTime = startTime.AddMinutes(durationMinutes);
+                var roundDuration = round.CoachInterviewService?.DurationMinutes ?? 60;
 
-                var currentAvailabilityId = await SplitAvailabilityForBookingAsync(availabilityRepo, bookingRequest.CoachId, startTime, endTime);
+                // Use the first availability block of this round as the reference
+                var firstBlockId = round.AvailabilityBlocks?.OrderBy(b => b.StartTime).FirstOrDefault()?.Id;
 
                 var room = new Domain.Entities.InterviewRoom
                 {
                     CandidateId = bookingRequest.CandidateId,
                     CoachId = bookingRequest.CoachId,
-                    ScheduledTime = startTime,
-                    DurationMinutes = durationMinutes,
-                    CurrentAvailabilityId = currentAvailabilityId,
+                    ScheduledTime = round.StartTime,
+                    DurationMinutes = roundDuration,
+                    CurrentAvailabilityId = firstBlockId,
                     Status = InterviewRoomStatus.Scheduled,
                     TransactionId = paymentTx.Id,
                     BookingRequestId = bookingRequest.Id,
-                    CoachInterviewServiceId = bookingRequest.CoachInterviewServiceId,
+                    CoachInterviewServiceId = round.CoachInterviewServiceId,
                     AimLevel = bookingRequest.AimLevel,
-                    EvaluationResults = await CreateEvaluationResultsFromInterviewServiceAsync(coachInterviewServiceRepo, bookingRequest.CoachInterviewServiceId),
+                    RoundNumber = round.RoundNumber,
+                    EvaluationResults = await CreateEvaluationResultsFromInterviewServiceAsync(coachInterviewServiceRepo, round.CoachInterviewServiceId),
                     IsEvaluationCompleted = false
                 };
 
                 await roomRepo.AddAsync(room);
-            }
-            else if (bookingRequest.Type == BookingRequestType.JDInterview)
-            {
-                // With block-based model, CoachAvailability blocks are already marked Booked
-                // during booking creation. No splitting needed.
-                foreach (var round in bookingRequest.Rounds.OrderBy(r => r.RoundNumber))
-                {
-                    var roundDuration = round.CoachInterviewService?.DurationMinutes ?? 60;
-
-                    // Use the first availability block of this round as the reference
-                    var firstBlockId = round.AvailabilityBlocks?.OrderBy(b => b.StartTime).FirstOrDefault()?.Id;
-
-                    var room = new Domain.Entities.InterviewRoom
-                    {
-                        CandidateId = bookingRequest.CandidateId,
-                        CoachId = bookingRequest.CoachId,
-                        ScheduledTime = round.StartTime,
-                        DurationMinutes = roundDuration,
-                        CurrentAvailabilityId = firstBlockId,
-                        Status = InterviewRoomStatus.Scheduled,
-                        TransactionId = paymentTx.Id,
-                        BookingRequestId = bookingRequest.Id,
-                        CoachInterviewServiceId = round.CoachInterviewServiceId,
-                        AimLevel = bookingRequest.AimLevel,
-                        RoundNumber = round.RoundNumber,
-                        EvaluationResults = await CreateEvaluationResultsFromInterviewServiceAsync(coachInterviewServiceRepo, round.CoachInterviewServiceId),
-                        IsEvaluationCompleted = false
-                    };
-
-                    await roomRepo.AddAsync(room);
-                    round.InterviewRoom = room;
-                }
+                round.InterviewRoom = room;
             }
         }
 
@@ -116,36 +83,6 @@ namespace Intervu.Application.UseCases.BookingRequest
                 Score = 0,
                 Answer = ""
             })];
-        }
-
-        private static async Task<Guid?> SplitAvailabilityForBookingAsync(
-            ICoachAvailabilitiesRepository availabilityRepo,
-            Guid coachId,
-            DateTime bookingStart,
-            DateTime bookingEnd)
-        {
-            var containingAvailability = await availabilityRepo.FindContainingAvailabilityAsync(
-                coachId, bookingStart, bookingEnd);
-
-            if (containingAvailability == null)
-            {
-                return null;
-            }
-
-            var (before, after) = AvailabilitySplitService.Split(containingAvailability, bookingStart, bookingEnd);
-
-            // Keep original row as reserved slot for the created InterviewRoom.
-            containingAvailability.StartTime = bookingStart;
-            containingAvailability.EndTime = bookingEnd;
-            containingAvailability.Status = CoachAvailabilityStatus.Unavailable;
-            availabilityRepo.UpdateAsync(containingAvailability);
-
-            if (before != null)
-                await availabilityRepo.AddAsync(before);
-            if (after != null)
-                await availabilityRepo.AddAsync(after);
-
-            return containingAvailability.Id;
         }
 
         public async Task<string?> ExecuteAsync(Guid candidateId, Guid bookingRequestId, string returnUrl)
@@ -210,10 +147,11 @@ namespace Intervu.Application.UseCases.BookingRequest
                 }
                 else
                 {
-                    // Create PayOS payment order
-                    string description = bookingRequest.Type == BookingRequestType.External
-                        ? "External booking"
-                        : "JD multi-round booking";
+                    string description = bookingRequest.Type switch
+                    {
+                        BookingRequestType.Direct => "Direct booking",
+                        _ => "JD multi-round booking"
+                    };
 
                     checkoutUrl = await _paymentService.CreatePaymentOrderAsync(
                         paymentTx.OrderCode,

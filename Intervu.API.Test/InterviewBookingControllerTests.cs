@@ -28,7 +28,6 @@ namespace Intervu.API.Test
                         Id = Guid.NewGuid(),
                         OrderCode = 123,
                         UserId = userId,
-                        CoachAvailabilityId = Guid.NewGuid(),
                         Amount = 100,
                         Type = TransactionType.Payment,
                         Status = TransactionStatus.Paid

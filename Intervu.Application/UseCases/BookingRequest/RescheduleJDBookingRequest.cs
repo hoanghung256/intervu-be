@@ -21,7 +21,6 @@ namespace Intervu.Application.UseCases.BookingRequest
         private readonly IInterviewRoomRepository _roomRepo;
         private readonly IRescheduleRequestRepository _rescheduleRequestRepo;
         private readonly ICoachAvailabilitiesRepository _availabilityRepo;
-        private readonly ITransactionRepository _transactionRepo;
         private readonly IBackgroundService _backgroundService;
         private readonly IUserRepository _userRepository;
         private readonly IConfiguration _configuration;
@@ -42,7 +41,6 @@ namespace Intervu.Application.UseCases.BookingRequest
             _roomRepo = roomRepo;
             _rescheduleRequestRepo = rescheduleRequestRepo;
             _availabilityRepo = availabilityRepo;
-            _transactionRepo = transactionRepo;
             _backgroundService = backgroundService;
             _userRepository = userRepository;
             _configuration = configuration;
@@ -309,9 +307,7 @@ namespace Intervu.Application.UseCases.BookingRequest
             var rangeStart = rawAvailabilities.Min(a => a.StartTime);
             var rangeEnd = rawAvailabilities.Max(a => a.EndTime);
 
-            var activeTransactions = await _transactionRepo
-                .GetActiveBookingsByCoachAsync(coachId, rangeStart, rangeEnd);
-
+            // All bookings (Direct, JD, External) are tracked through rounds
             var activeRounds = await _bookingRepo
                 .GetActiveRoundsByCoachAsync(coachId, rangeStart, rangeEnd);
 
@@ -324,18 +320,11 @@ namespace Intervu.Application.UseCases.BookingRequest
                 .Select(t => (Start: t.CurrentStartTime, End: t.CurrentStartTime.AddMinutes(t.DurationMinutes)))
                 .ToList();
 
-            var filteredActiveRounds = activeRounds
+            // Exclude the rounds being rescheduled from the "occupied" set
+            var allBookedIntervals = activeRounds
                 .Where(interval => !selectedCurrentIntervals.Any(s =>
                     s.Start == EnsureUtc(interval.Start) && s.End == EnsureUtc(interval.End)))
-                .ToList();
-
-            var allBookedIntervals = activeTransactions
-                .Where(t => t.BookedStartTime.HasValue && t.BookedDurationMinutes.HasValue)
-                .Select(t => (
-                    Start: EnsureUtc(t.BookedStartTime!.Value),
-                    End: EnsureUtc(t.BookedStartTime!.Value).AddMinutes(t.BookedDurationMinutes!.Value)
-                ))
-                .Concat(filteredActiveRounds.Select(x => (EnsureUtc(x.Start), EnsureUtc(x.End))))
+                .Select(x => (EnsureUtc(x.Start), EnsureUtc(x.End)))
                 .ToList();
 
             var freeSlots = AvailabilityCalculatorService.CalculateFreeSlots(rawAvailabilities, allBookedIntervals);

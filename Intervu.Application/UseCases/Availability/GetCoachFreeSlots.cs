@@ -8,22 +8,19 @@ namespace Intervu.Application.UseCases.Availability
 {
     /// <summary>
     /// Returns computed free time slots for a coach by subtracting active bookings
-    /// (both direct and JD flows) from available blocks.
-    /// The frontend receives these to display bookable time slots.
+    /// from available blocks. All booking flows (Direct, External, JD) are tracked
+    /// through InterviewRounds on BookingRequests.
     /// </summary>
     public class GetCoachFreeSlots : IGetCoachFreeSlots
     {
         private readonly ICoachAvailabilitiesRepository _availabilityRepo;
-        private readonly ITransactionRepository _transactionRepo;
         private readonly IBookingRequestRepository _bookingRequestRepo;
 
         public GetCoachFreeSlots(
             ICoachAvailabilitiesRepository availabilityRepo,
-            ITransactionRepository transactionRepo,
             IBookingRequestRepository bookingRequestRepo)
         {
             _availabilityRepo = availabilityRepo;
-            _transactionRepo = transactionRepo;
             _bookingRequestRepo = bookingRequestRepo;
         }
 
@@ -35,14 +32,8 @@ namespace Intervu.Application.UseCases.Availability
                 .Where(a => a.Status == CoachAvailabilityStatus.Available)
                 .ToList();
 
-            // 2. Get confirmed bookings from both direct booking and JD booking flows
-            var directBookings = await _transactionRepo.GetConfirmedBookingEntitiesForCoachAsync(coachId, month, year);
-            var jdBookings = await _bookingRequestRepo.GetConfirmedBookingEntitiesForCoachAsync(coachId, month, year);
-
-            var allBookedIntervals = directBookings
-                .Select(b => (b.BookedStartTime!.Value, b.BookedStartTime!.Value.AddMinutes(b.BookedDurationMinutes!.Value)))
-                .Concat(jdBookings.Select(b => (b.StartTime, b.EndTime)))
-                .ToList();
+            // 2. Get confirmed bookings from all flows (unified through rounds)
+            var allBookedIntervals = await _bookingRequestRepo.GetConfirmedBookingsForCoachAsync(coachId, month, year);
 
             // 3. Calculate free slots by subtracting bookings from availabilities
             var freeTimeSlots = AvailabilityCalculatorService.CalculateFreeSlots(availabilities, allBookedIntervals);

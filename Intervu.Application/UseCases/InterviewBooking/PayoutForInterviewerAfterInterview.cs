@@ -3,7 +3,6 @@ using Intervu.Application.Interfaces.ExternalServices.Email;
 using Intervu.Application.Interfaces.UseCases.Availability;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
 using Intervu.Application.Interfaces.UseCases.Notification;
-using Intervu.Application.UseCases.Availability;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
@@ -16,17 +15,15 @@ namespace Intervu.Application.UseCases.InterviewBooking
         private readonly IInterviewRoomRepository _interviewRoomRepository;
         private readonly ITransactionRepository _transactionRepository;
         private readonly ICoachProfileRepository _coachProfileRepository;
-        private readonly IGetCoachAvailabilities _getCoachAvailabilities;
         private readonly IPaymentService _paymentService;
         private readonly IBackgroundService _jobService;
         private readonly IUserRepository _userRepository;
         private readonly IConfiguration _configuration;
 
         public PayoutForCoachAfterInterview(
-            IInterviewRoomRepository interviewRoomRepository, 
-            ITransactionRepository transactionRepository, 
-            ICoachProfileRepository coachProfileRepository, 
-            IGetCoachAvailabilities getCoachAvailabilities, 
+            IInterviewRoomRepository interviewRoomRepository,
+            ITransactionRepository transactionRepository,
+            ICoachProfileRepository coachProfileRepository,
             IPaymentService paymentService,
             IBackgroundService jobService,
             IUserRepository userRepository,
@@ -35,7 +32,6 @@ namespace Intervu.Application.UseCases.InterviewBooking
             _interviewRoomRepository = interviewRoomRepository;
             _transactionRepository = transactionRepository;
             _coachProfileRepository = coachProfileRepository;
-            _getCoachAvailabilities = getCoachAvailabilities;
             _paymentService = paymentService;
             _jobService = jobService;
             _userRepository = userRepository;
@@ -49,12 +45,12 @@ namespace Intervu.Application.UseCases.InterviewBooking
             var interviewerId = room.CoachId ?? throw new Exception("InterviewerId is missing for room");
             var coach = await _coachProfileRepository.GetProfileByIdAsync(interviewerId);
 
-            // Get availability by schedule time + coachId
-            CoachAvailability? avai = await _getCoachAvailabilities.GetAsync(interviewerId, (DateTime)room.ScheduledTime);
+            if (room.BookingRequestId == null) return;
 
-            if (avai == null) return;
-            // Check coach already paid or not
-            InterviewBookingTransaction t = await _transactionRepository.GetByAvailabilityId(avai.Id);
+            // Find payout transaction via BookingRequest
+            InterviewBookingTransaction? t = await _transactionRepository.GetByBookingRequestId(room.BookingRequestId.Value, TransactionType.Payout);
+
+            if (t == null) return;
 
             if (t.Status == TransactionStatus.Created)
             {

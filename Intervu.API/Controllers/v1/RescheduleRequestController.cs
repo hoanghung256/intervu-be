@@ -53,7 +53,7 @@ namespace Intervu.API.Controllers.v1
 
             var requestId = await _createRescheduleRequest.ExecuteAsync(
                 dto.RoomId,
-                dto.ProposedAvailabilityId,
+                dto.NewStartTime,
                 userId,
                 dto.Reason
             );

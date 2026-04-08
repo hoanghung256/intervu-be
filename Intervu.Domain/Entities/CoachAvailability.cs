@@ -30,7 +30,5 @@ namespace Intervu.Domain.Entities
         // Navigation
         public CoachProfile? CoachProfile { get; set; }
         public InterviewRound? InterviewRound { get; set; }
-
-        public ICollection<InterviewBookingTransaction> InterviewBookingTransactions { get; set; } = [];
     }
 }

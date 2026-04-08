@@ -3,6 +3,7 @@ using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.ExternalServices.Email;
 using Intervu.Application.Interfaces.UseCases.Notification;
 using Intervu.Application.Interfaces.UseCases.RescheduleRequest;
+using Intervu.Application.Services;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
@@ -12,6 +13,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Intervu.Application.UseCases.RescheduleRequest
 {
+    // TODO: Implement approval/rejection flow — currently auto-approved
     internal class CreateRescheduleRequestUseCase : ICreateRescheduleRequestUseCase
     {
         private readonly ILogger<CreateRescheduleRequestUseCase> _logger;
@@ -19,6 +21,7 @@ namespace Intervu.Application.UseCases.RescheduleRequest
         private readonly IInterviewRoomRepository _interviewRoomRepository;
         private readonly ITransactionRepository _transactionRepository;
         private readonly ICoachAvailabilitiesRepository _coachAvailabilitiesRepository;
+        private readonly IBookingRequestRepository _bookingRequestRepository;
         private readonly IUserRepository _userRepository;
         private readonly IBackgroundService _backgroundService;
         private readonly IConfiguration _configuration;
@@ -29,6 +32,7 @@ namespace Intervu.Application.UseCases.RescheduleRequest
             IInterviewRoomRepository interviewRoomRepository,
             ITransactionRepository transactionRepository,
             ICoachAvailabilitiesRepository coachAvailabilitiesRepository,
+            IBookingRequestRepository bookingRequestRepository,
             IUserRepository userRepository,
             IBackgroundService backgroundService,
             IConfiguration configuration)
@@ -38,13 +42,16 @@ namespace Intervu.Application.UseCases.RescheduleRequest
             _interviewRoomRepository = interviewRoomRepository;
             _transactionRepository = transactionRepository;
             _coachAvailabilitiesRepository = coachAvailabilitiesRepository;
+            _bookingRequestRepository = bookingRequestRepository;
             _userRepository = userRepository;
             _backgroundService = backgroundService;
             _configuration = configuration;
         }
 
-        public async Task<Guid> ExecuteAsync(Guid roomId, Guid proposedAvailabilityId, Guid requestedBy, string reason)
+        public async Task<Guid> ExecuteAsync(Guid roomId, DateTime newStartTime, Guid requestedBy, string reason)
         {
+            newStartTime = EnsureUtc(newStartTime);
+
             var room = await _interviewRoomRepository.GetByIdWithDetailsAsync(roomId);
             if (room == null)
             {
@@ -70,12 +77,6 @@ namespace Intervu.Application.UseCases.RescheduleRequest
                 throw new ConflictException("Interview room has no transaction");
             }
 
-            if (room.CurrentAvailabilityId == null)
-            {
-                _logger.LogWarning("Interview room {RoomId} has no current availability.", roomId);
-                throw new ConflictException("Interview room has no current availability");
-            }
-
             // Use room's built-in validation method (checks 12-hour rule and reschedule count)
             if (!room.IsAvailableForReschedule())
             {
@@ -98,53 +99,34 @@ namespace Intervu.Application.UseCases.RescheduleRequest
                 throw new ConflictException("This interview is not available for rescheduling.");
             }
 
-            // Get current booking transaction
-            var currentTransaction = await _transactionRepository.GetByIdAsync(room.TransactionId.Value);
-            if (currentTransaction == null)
+            // Validate proposed time is in the future
+            if (newStartTime <= DateTime.UtcNow)
             {
-                _logger.LogWarning("Transaction {TransactionId} not found for room {RoomId}.", room.TransactionId, roomId);
-                throw new NotFoundException("Transaction not found for this interview room");
-            }
-
-            var proposedAvailability = await _coachAvailabilitiesRepository.GetByIdAsync(proposedAvailabilityId);
-            if (proposedAvailability == null)
-            {
-                _logger.LogWarning("Proposed availability with ID {ProposedAvailabilityId} not found.", proposedAvailabilityId);
-                throw new NotFoundException("Proposed availability not found");
-            }
-
-            if (proposedAvailability.Status != CoachAvailabilityStatus.Available)
-            {
-                _logger.LogWarning("Proposed availability with ID {ProposedAvailabilityId} is not available.", proposedAvailabilityId);
-                throw new CoachAvailabilityNotAvailableException("Proposed availability is not available for booking");
-            }
-
-            // Validation: Proposed time must be in the future
-            if (proposedAvailability.StartTime <= DateTime.UtcNow)
-            {
-                _logger.LogWarning("Proposed availability {ProposedAvailabilityId} has start time in the past: {StartTime}",
-                    proposedAvailabilityId, proposedAvailability.StartTime);
                 throw new ConflictException("Proposed time must be in the future");
             }
 
-            // Proposed availability must be different from current (CurrentAvailabilityId is required)
-            if (room.CurrentAvailabilityId == proposedAvailabilityId)
+            // Proposed time must be different from current
+            var currentStart = EnsureUtc(room.ScheduledTime.Value);
+            if (newStartTime == currentStart)
             {
-                _logger.LogWarning("Proposed availability {ProposedAvailabilityId} is the same as current availability {CurrentAvailabilityId}.",
-                    proposedAvailabilityId, room.CurrentAvailabilityId);
-                throw new ConflictException("Proposed availability must be different from the current scheduled time");
+                throw new ConflictException("Proposed time must be different from the current scheduled time");
             }
 
-            // Validation: Check if sender has conflicting interview sessions at proposed time
-            var conflictingRooms = await _interviewRoomRepository.GetConflictingRoomsAsync(
-                requestedBy,
-                proposedAvailability.StartTime,
-                proposedAvailability.EndTime);
+            var durationMinutes = room.DurationMinutes ?? 30;
+            var proposedEndTime = newStartTime.AddMinutes(durationMinutes);
 
-            if (conflictingRooms.Any())
+            // Validate against coach free slots (same pattern as RescheduleJDBookingRequest)
+            await ValidateCoachAvailability(room.CoachId.Value, newStartTime, proposedEndTime, room);
+
+            // Validate no conflicts for the requester
+            var conflictingRooms = await _interviewRoomRepository.GetConflictingRoomsAsync(
+                requestedBy, newStartTime, proposedEndTime);
+
+            // Exclude the current room from conflict check
+            if (conflictingRooms.Any(c => c.Id != roomId))
             {
                 _logger.LogWarning("User {UserId} has conflicting interview sessions at proposed time {StartTime}-{EndTime}",
-                    requestedBy, proposedAvailability.StartTime, proposedAvailability.EndTime);
+                    requestedBy, newStartTime, proposedEndTime);
                 throw new ConflictException("The proposed time conflicts with your existing interview sessions");
             }
 
@@ -171,29 +153,40 @@ namespace Intervu.Application.UseCases.RescheduleRequest
                 throw new ForbiddenException("You are not authorized to reschedule this interview");
             }
 
+            // Create reschedule request record (auto-approved)
             var rescheduleRequest = new InterviewRescheduleRequest
             {
                 Id = Guid.NewGuid(),
                 InterviewRoomId = room.Id,
-                CurrentAvailabilityId = room.CurrentAvailabilityId.Value, // Safe because validated earlier (null check above)
-                ProposedAvailabilityId = proposedAvailability.Id,
+                CurrentAvailabilityId = room.CurrentAvailabilityId,
+                ProposedStartTime = newStartTime,
+                ProposedEndTime = proposedEndTime,
                 RequestedBy = requester.Id,
                 Reason = reason,
-                Status = RescheduleRequestStatus.Pending,
+                // TODO: Implement approval/rejection flow — currently auto-approved
+                Status = RescheduleRequestStatus.Approved,
+                RespondedAt = DateTime.UtcNow,
                 ExpiresAt = DateTime.UtcNow.AddDays(1)
             };
 
             await _rescheduleRequestRepository.AddAsync(rescheduleRequest);
+
+            // Auto-approve: update room schedule immediately
+            room.ScheduledTime = newStartTime;
+            room.RescheduleAttemptCount++;
+            _interviewRoomRepository.UpdateAsync(room);
+
             await _rescheduleRequestRepository.SaveChangesAsync();
 
-            // Notify the other party about the reschedule request
+            // Notify both parties about the completed reschedule
             var otherPartyId = isCandidate ? room.CoachId!.Value : room.CandidateId!.Value;
+
             _backgroundService.Enqueue<INotificationUseCase>(
                 uc => uc.CreateAsync(
                     otherPartyId,
-                    NotificationType.RescheduleRequested,
-                    "Reschedule request received",
-                    $"{requester.FullName} has requested to reschedule the interview.",
+                    NotificationType.RescheduleAccepted,
+                    "Interview rescheduled",
+                    $"{requester.FullName} has rescheduled the interview.",
                     "/interview?tab=upcoming",
                     rescheduleRequest.Id));
 
@@ -224,7 +217,61 @@ namespace Intervu.Application.UseCases.RescheduleRequest
             }
 
             _logger.LogInformation("Created reschedule request {RequestId} for room {RoomId}", rescheduleRequest.Id, roomId);
+            _backgroundService.Enqueue<INotificationUseCase>(
+                uc => uc.CreateAsync(
+                    requestedBy,
+                    NotificationType.RescheduleAccepted,
+                    "Reschedule successful",
+                    "Your interview has been rescheduled successfully.",
+                    "/interview?tab=upcoming",
+                    rescheduleRequest.Id));
+
+            _logger.LogInformation("Created and auto-approved reschedule request {RequestId} for room {RoomId}", rescheduleRequest.Id, roomId);
             return rescheduleRequest.Id;
+        }
+
+        private async Task ValidateCoachAvailability(Guid coachId, DateTime newStartTime, DateTime proposedEndTime, Domain.Entities.InterviewRoom room)
+        {
+            var rawAvailabilities = (await _coachAvailabilitiesRepository
+                .GetCoachAvailabilitiesByMonthAsync(coachId, 0, 0))
+                .ToList();
+
+            if (rawAvailabilities.Count == 0)
+            {
+                throw new ConflictException("Coach has no available slots to reschedule");
+            }
+
+            // Get all booked intervals, excluding the current room's interval
+            var currentRoomStart = EnsureUtc(room.ScheduledTime!.Value);
+            var currentRoomEnd = currentRoomStart.AddMinutes(room.DurationMinutes ?? 30);
+
+            var rangeStart = rawAvailabilities.Min(a => a.StartTime);
+            var rangeEnd = rawAvailabilities.Max(a => a.EndTime);
+
+            var activeRounds = await _bookingRequestRepository
+                .GetActiveRoundsByCoachAsync(coachId, rangeStart, rangeEnd);
+
+            // Exclude the current room's booking from the occupied set
+            var allBookedIntervals = activeRounds
+                .Where(interval => !(EnsureUtc(interval.Start) == currentRoomStart && EnsureUtc(interval.End) == currentRoomEnd))
+                .Select(x => (EnsureUtc(x.Start), EnsureUtc(x.End)))
+                .ToList();
+
+            var freeSlots = AvailabilityCalculatorService.CalculateFreeSlots(rawAvailabilities, allBookedIntervals);
+
+            var fits = freeSlots.Any(slot => newStartTime >= slot.Start && proposedEndTime <= slot.End);
+
+            if (!fits)
+            {
+                throw new ConflictException("The proposed time does not fit in coach available slots");
+            }
+        }
+
+        private static DateTime EnsureUtc(DateTime value)
+        {
+            if (value.Kind == DateTimeKind.Utc) return value;
+            if (value.Kind == DateTimeKind.Unspecified) return DateTime.SpecifyKind(value, DateTimeKind.Utc);
+            return value.ToUniversalTime();
         }
     }
 }

@@ -60,7 +60,7 @@ namespace Intervu.Application.UseCases.InterviewRoom
                                 Id = Guid.NewGuid(),
                                 OrderCode = RandomGenerator.GenerateOrderCode(),
                                 UserId = room.CandidateId ?? report.ReporterId ?? report.ReportedBy,
-                                CoachAvailabilityId = room.CurrentAvailabilityId,
+                                //CoachAvailabilityId = room.CurrentAvailabilityId,
                                 Amount = refundAmount,
                                 Type = TransactionType.Refund,
                                 Status = TransactionStatus.Paid // Mark as paid immediately for internal resource refund

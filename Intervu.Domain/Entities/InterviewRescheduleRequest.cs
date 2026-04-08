@@ -12,9 +12,13 @@ namespace Intervu.Domain.Entities
     {
         public Guid InterviewRoomId { get; set; }
 
-        public Guid CurrentAvailabilityId { get; set; }
+        public Guid? CurrentAvailabilityId { get; set; }
 
-        public Guid ProposedAvailabilityId { get; set; }
+        public Guid? ProposedAvailabilityId { get; set; }
+
+        public DateTime ProposedStartTime { get; set; }
+
+        public DateTime ProposedEndTime { get; set; }
 
         public Guid RequestedBy { get; set; }
 

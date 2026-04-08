@@ -20,6 +20,8 @@ namespace Intervu.Application.UseCases.InterviewBooking
     /// </summary>
     internal class CreateBookingCheckoutUrl : ICreateBookingCheckoutUrl
     {
+        private const int AvailabilityBlockMinutes = 30;
+
         private readonly ILogger<CreateBookingCheckoutUrl> _logger;
         private readonly IPaymentService _paymentService;
         private readonly IBackgroundService _jobService;
@@ -81,8 +83,6 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 var endTime = startTime.AddMinutes(duration);
 
                 // 3. Validate the starting availability slot exists, belongs to coach, and is Available
-                // Lock the selected availability row so concurrent requests for the same slot
-                // cannot both pass the overlap check before one booking is persisted.
                 var availability = await availabilityRepo.GetByIdForUpdateAsync(coachAvailabilityId)
                     ?? throw new NotFoundException("Coach availability not found");
 
@@ -93,10 +93,6 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     throw new CoachAvailabilityNotAvailableException("Availability is not available for booking");
 
                 // 4. Bounds check: all 30-min blocks covering [startTime, endTime) must exist and be Available.
-                //    A single availability block may be only 30 min while the service requires 60+ min,
-                //    so we need to verify coverage across multiple consecutive blocks.
-                // Lock all blocks in the requested range so overlap checks and transaction creation
-                // serialize against concurrent requests targeting the same time window.
                 var coveringBlocks = await availabilityRepo.GetBlocksInRangeForUpdateAsync(coachId, startTime, endTime);
                 var availableBlocks = coveringBlocks
                     .Where(b => b.Status == CoachAvailabilityStatus.Available)
@@ -118,12 +114,53 @@ namespace Intervu.Application.UseCases.InterviewBooking
                         $"The requested time range ({startTime:g} - {endTime:g}) " +
                         $"is not fully covered by available slots for this coach");
 
-                // 5. Overlap check: no existing active booking may collide with the requested range
-                var hasOverlap = await transactionRepo.HasOverlappingBookingAsync(coachId, startTime, endTime);
-                if (hasOverlap)
-                    throw new BadRequestException("This time slot has already been booked.");
+                // 5. Create BookingRequest (Direct)
+                Domain.Entities.BookingRequest br = new()
+                {
+                    Id = Guid.NewGuid(),
+                    CandidateId = candidateId,
+                    CoachId = coachId,
+                    Type = BookingRequestType.Direct,
+                    Status = (paymentAmount == 0) ? BookingRequestStatus.Paid : BookingRequestStatus.Accepted,
+                    CoachInterviewServiceId = coachInterviewServiceId,
+                    TotalAmount = paymentAmount,
+                    ExpiresAt = DateTime.UtcNow.AddHours(24),
+                    CreatedAt = DateTime.UtcNow
+                };
 
-                // 6. Create Payment + Payout transactions referencing the original availability
+                // 6. Create 1 InterviewRound linked to the BookingRequest
+                var requiredBlockCount = (duration + (AvailabilityBlockMinutes - 1)) / AvailabilityBlockMinutes;
+                var roundBlocks = availableBlocks
+                    .Where(b => b.StartTime >= startTime && b.StartTime < endTime)
+                    .OrderBy(b => b.StartTime)
+                    .Take(requiredBlockCount)
+                    .ToList();
+
+                var round = new InterviewRound
+                {
+                    Id = Guid.NewGuid(),
+                    BookingRequestId = br.Id,
+                    CoachInterviewServiceId = coachInterviewServiceId,
+                    RoundNumber = 1,
+                    StartTime = startTime,
+                    EndTime = endTime,
+                    Price = paymentAmount
+                };
+
+                // Mark availability blocks as Booked and link to this round
+                foreach (var block in roundBlocks)
+                {
+                    block.Status = CoachAvailabilityStatus.Booked;
+                    block.InterviewRoundId = round.Id;
+                    availabilityRepo.UpdateAsync(block);
+                }
+
+                br.Rounds.Add(round);
+
+                var brRepo = _unitOfWork.GetRepository<IBookingRequestRepository>();
+                await brRepo.AddAsync(br);
+
+                // 7. Create Payment + Payout transactions linked to BookingRequest
                 InterviewBookingTransaction t = new()
                 {
                     OrderCode = RandomGenerator.GenerateOrderCode(),
@@ -131,10 +168,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     Amount = paymentAmount,
                     Status = TransactionStatus.Created,
                     Type = TransactionType.Payment,
-                    CoachAvailabilityId = coachAvailabilityId,
-                    CoachId = coachId,
-                    BookedStartTime = startTime,
-                    BookedDurationMinutes = duration,
+                    BookingRequestId = br.Id,
                 };
 
                 InterviewBookingTransaction t2 = new()
@@ -144,34 +178,8 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     Amount = paymentAmount,
                     Status = TransactionStatus.Created,
                     Type = TransactionType.Payout,
-                    CoachAvailabilityId = coachAvailabilityId,
-                    CoachId = coachId,
-                    BookedStartTime = startTime,
-                    BookedDurationMinutes = duration,
+                    BookingRequestId = br.Id,
                 };
-
-                // 7. Create BookingRequest for Flow A (Direct)
-                // This ensures it shows up in "Booking Requests" list for both candidate and coach.
-                // Status is "Accepted" because it's a direct booking from an available slot (auto-approved).
-                Domain.Entities.BookingRequest br = new()
-                {
-                    CandidateId = candidateId,
-                    CoachId = coachId,
-                    Type = BookingRequestType.Direct,
-                    Status = (paymentAmount == 0) ? BookingRequestStatus.Paid : BookingRequestStatus.Accepted,
-                    CoachInterviewServiceId = coachInterviewServiceId,
-                    RequestedStartTime = startTime,
-                    TotalAmount = paymentAmount,
-                    ExpiresAt = DateTime.UtcNow.AddHours(24) // Auto-expire if not paid
-                };
-                br.CreatedAt = DateTime.UtcNow;
-
-                var brRepo = _unitOfWork.GetRepository<IBookingRequestRepository>();
-                await brRepo.AddAsync(br);
-
-                // Link transactions to this BookingRequest
-                t.BookingRequestId = br.Id;
-                t2.BookingRequestId = br.Id;
 
                 await transactionRepo.AddAsync(t);
                 await transactionRepo.AddAsync(t2);
@@ -187,23 +195,28 @@ namespace Intervu.Application.UseCases.InterviewBooking
 
                     var evaluation = await CreateEvaluationResultsFromInterviewService(coachInterviewServiceId);
 
-                    _jobService.Enqueue<ICreateInterviewRoom>(
-                        uc => uc.ExecuteAsync(new Domain.Entities.InterviewRoom()
-                        {
-                            CandidateId = candidateId,
-                            CoachId = coachId,
-                            ScheduledTime = startTime,
-                            DurationMinutes = duration,
-                            Status = InterviewRoomStatus.Scheduled,
-                            CurrentAvailabilityId = coachAvailabilityId,
-                            TransactionId = t.Id,
-                            BookingRequestId = br.Id,
-                            CoachInterviewServiceId = coachInterviewServiceId,
-                            AimLevel = null,
-                            EvaluationResults = evaluation,
-                            IsEvaluationCompleted = false
-                        })
-                    );
+                    // Use the first availability block as the reference
+                    var firstBlockId = roundBlocks.FirstOrDefault()?.Id;
+
+                    var roomRepo = _unitOfWork.GetRepository<IInterviewRoomRepository>();
+                    var room = new Domain.Entities.InterviewRoom()
+                    {
+                        CandidateId = candidateId,
+                        CoachId = coachId,
+                        ScheduledTime = startTime,
+                        DurationMinutes = duration,
+                        Status = InterviewRoomStatus.Scheduled,
+                        CurrentAvailabilityId = firstBlockId,
+                        TransactionId = t.Id,
+                        BookingRequestId = br.Id,
+                        CoachInterviewServiceId = coachInterviewServiceId,
+                        AimLevel = null,
+                        RoundNumber = 1,
+                        EvaluationResults = evaluation,
+                        IsEvaluationCompleted = false
+                    };
+                    await roomRepo.AddAsync(room);
+                    round.InterviewRoomId = room.Id;
 
                     // Notify Candidate and Coach about successful booking (Free interview)
                     _jobService.Enqueue<INotificationUseCase>(uc => uc.CreateAsync(
@@ -223,7 +236,6 @@ namespace Intervu.Application.UseCases.InterviewBooking
                         "/interview?tab=upcoming",
                         null
                     ));
-                    
                 }
                 else
                 {
@@ -236,7 +248,6 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     );
                 }
 
-                // 8. Single save — no split/delete, no EF fixup issues
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
 

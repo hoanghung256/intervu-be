@@ -38,8 +38,8 @@ namespace Intervu.Application.UseCases.InterviewBooking
             {
                 var interviewRoomRepo = _unitOfWork.GetRepository<IInterviewRoomRepository>();
                 var transactionRepo = _unitOfWork.GetRepository<ITransactionRepository>();
-                var availabilityRepo = _unitOfWork.GetRepository<ICoachAvailabilitiesRepository>();
                 var bookingRepo = _unitOfWork.GetRepository<IBookingRequestRepository>();
+                var availabilityRepo = _unitOfWork.GetRepository<ICoachAvailabilitiesRepository>();
 
                 Domain.Entities.InterviewRoom room = await interviewRoomRepo.GetByIdAsync(interviewRoomId)
                     ?? throw new NotFoundException("Interview room not found");
@@ -47,28 +47,27 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 if (!room.IsAvailableForCancel())
                     throw new BadRequestException("This interview can no longer be cancelled (scheduled time has passed or it is not in a scheduled state).");
 
-                if (room.CurrentAvailabilityId == null)
-                    throw new NotFoundException("No coach availability linked to this interview room");
-
-                CoachAvailability availability = await availabilityRepo.GetByIdAsync(room.CurrentAvailabilityId.Value)
-                    ?? throw new NotFoundException("Coach availability not found for interview room");
+                if (room.BookingRequestId == null)
+                    throw new NotFoundException("No booking request linked to this interview room");
 
                 if (room.CandidateId == null)
                     throw new NotFoundException("Candidate not found for interview room");
 
-                // Cancel the payout transaction (coach-side)
-                InterviewBookingTransaction? payout = await transactionRepo.GetByAvailabilityId(room.CurrentAvailabilityId.Value, TransactionType.Payout) ?? throw new NotFoundException("Payout transaction not found");
+                // Find transactions via BookingRequestId
+                InterviewBookingTransaction payout = await transactionRepo.GetByBookingRequestId(room.BookingRequestId.Value, TransactionType.Payout)
+                    ?? throw new NotFoundException("Payout transaction not found");
                 payout.Status = TransactionStatus.Cancel;
 
-                // Create a refund transaction (candidate-side) using the original payment amount
-                InterviewBookingTransaction? payment = await transactionRepo.GetByAvailabilityId(room.CurrentAvailabilityId.Value, TransactionType.Payment) ?? throw new NotFoundException("Payment transaction not found");
-                int refundAmount = _refundPolicy.CalculateRefundAmount(payment.Amount, availability.StartTime, DateTime.UtcNow);
+                InterviewBookingTransaction payment = await transactionRepo.GetByBookingRequestId(room.BookingRequestId.Value, TransactionType.Payment)
+                    ?? throw new NotFoundException("Payment transaction not found");
+
+                int refundAmount = _refundPolicy.CalculateRefundAmount(payment.Amount, room.ScheduledTime ?? DateTime.UtcNow, DateTime.UtcNow);
 
                 await transactionRepo.AddAsync(new InterviewBookingTransaction
                 {
                     OrderCode = RandomGenerator.GenerateOrderCode(),
                     UserId = room.CandidateId.Value,
-                    CoachAvailabilityId = room.CurrentAvailabilityId.Value,
+                    BookingRequestId = room.BookingRequestId.Value,
                     Amount = refundAmount,
                     Type = TransactionType.Refund,
                     Status = TransactionStatus.Created
@@ -77,14 +76,23 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 room.Status = InterviewRoomStatus.Cancelled;
                 interviewRoomRepo.UpdateAsync(room);
 
-                // If this room belongs to a BookingRequest, also cancel the parent request
-                if (room.BookingRequestId.HasValue)
+                // Restore availability blocks: load booking request with rounds and their blocks
+                var bookingRequest = await bookingRepo.GetByIdWithDetailsAsync(room.BookingRequestId.Value);
+                if (bookingRequest != null)
                 {
-                    var bookingRequest = await bookingRepo.GetByIdAsync(room.BookingRequestId.Value);
-                    if (bookingRequest != null)
+                    bookingRequest.Status = BookingRequestStatus.Cancelled;
+                    bookingRepo.UpdateAsync(bookingRequest);
+
+                    // Find the round matching this room and restore its availability blocks
+                    var round = bookingRequest.Rounds.FirstOrDefault(r => r.RoundNumber == room.RoundNumber);
+                    if (round?.AvailabilityBlocks != null)
                     {
-                        bookingRequest.Status = BookingRequestStatus.Cancelled;
-                        bookingRepo.UpdateAsync(bookingRequest);
+                        foreach (var block in round.AvailabilityBlocks)
+                        {
+                            block.Status = CoachAvailabilityStatus.Available;
+                            block.InterviewRoundId = null;
+                            availabilityRepo.UpdateAsync(block);
+                        }
                     }
                 }
 
