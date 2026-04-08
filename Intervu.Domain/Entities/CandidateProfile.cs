@@ -18,9 +18,15 @@ namespace Intervu.Domain.Entities
 
         public ICollection<Skill> Skills { get; set; } = new List<Skill>();
 
+        public ICollection<Industry> Industries { get; set; } = new List<Industry>();
+
         public string? Bio { get; set; }
 
         public int CurrentAmount { get; set; }
+
+        public ICollection<CandidateCertificate> Certificates { get; set; } = new List<CandidateCertificate>();
+
+        public ICollection<CandidateWorkExperience> WorkExperiences { get; set; } = new List<CandidateWorkExperience>();
 
         /// <summary>
         /// JSON list of saved question snapshots. Nullable.

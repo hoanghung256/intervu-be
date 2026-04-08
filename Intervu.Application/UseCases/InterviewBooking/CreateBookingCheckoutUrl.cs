@@ -60,6 +60,9 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 var coach = await coachRepo.GetProfileByIdAsync(coachId)
                     ?? throw new NotFoundException("Interviewer not found");
 
+                //if (coach.Status != CoachProfileStatus.Enable || coach.User == null || coach.User.Status != UserStatus.Active)
+                //    throw new BadRequestException("Interviewer is not available for booking");
+
                 // 2. Validate CoachInterviewService exists and belongs to this coach
                 var service = await serviceRepo.GetByIdWithDetailsAsync(coachInterviewServiceId)
                     ?? throw new NotFoundException("Coach interview service not found");

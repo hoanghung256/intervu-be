@@ -27,6 +27,6 @@ namespace Intervu.Domain.Entities
 
         public CoachProfile CoachProfile { get; set; }
 
-        public CandidateProfile CandidateProfile { get; set; }
+        public CandidateProfile? CandidateProfile { get; set; }
     }
 }

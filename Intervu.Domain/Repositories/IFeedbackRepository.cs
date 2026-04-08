@@ -15,6 +15,7 @@ namespace Intervu.Domain.Repositories
         Task<(IReadOnlyList<Feedback> Items, int TotalCount)> GetFeedbacksByCandidateIdAsync(Guid candidateId, int page, int pageSize);
         Task<Feedback?> GetFeedbackByIdAsync(Guid id);
         Task<List<Feedback>> GetFeedbacksByInterviewRoomIdAsync(Guid interviewRoomId);
+        Task<Dictionary<Guid, double?>> GetRatingsByInterviewRoomIdsAsync(IEnumerable<Guid> interviewRoomIds);
         Task CreateFeedbackAsync(Feedback feedback);
         Task UpdateFeedbackAsync(Feedback updatedFeedback);
     }

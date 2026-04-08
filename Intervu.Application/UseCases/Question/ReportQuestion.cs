@@ -1,15 +1,21 @@
 using Intervu.Application.DTOs.Question;
 using Intervu.Application.Exceptions;
+using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.UseCases.Notification;
 using Intervu.Application.Interfaces.UseCases.Question;
 using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Intervu.Domain.Entities;
+using Intervu.Domain.Entities.Constants;
+using Intervu.Domain.Entities.Constants.QuestionConstants;
 using Intervu.Domain.Repositories;
 using System;
 using System.Threading.Tasks;
 
 namespace Intervu.Application.UseCases.Question
 {
-    public class ReportQuestion(IUnitOfWork unitOfWork) : IReportQuestion
+    public class ReportQuestion(
+        IUnitOfWork unitOfWork,
+        IBackgroundService jobService) : IReportQuestion
     {
         private const int MaxReasonLength = 1000;
 
@@ -48,6 +54,7 @@ namespace Intervu.Application.UseCases.Question
                 QuestionId = questionId,
                 ReportedBy = userId,
                 Reason = reason,
+                Status = QuestionReportStatus.Pending,
                 CreatedAt = now,
                 UpdatedAt = now
             };
@@ -55,10 +62,28 @@ namespace Intervu.Application.UseCases.Question
             await reportRepo.AddAsync(report);
             await unitOfWork.SaveChangesAsync();
 
+            jobService.Enqueue<INotificationUseCase>(uc => uc.CreateAsync(
+                userId,
+                NotificationType.SystemAnnouncement,
+                "Question Report Submitted",
+                $"Your report for question \"{(question.Title.Length > 30 ? question.Title.Substring(0, 30) + "..." : question.Title)}\" has been submitted successfully and is being reviewed.",
+                "/history",
+                null
+            ));
+
+            // Notify all admins via system event
+            jobService.Enqueue<INotificationUseCase>(uc => uc.BroadcastToRoleAsync(
+                "Admin",
+                NotificationType.SystemAnnouncement,
+                "New Question Report",
+                $"A new report has been submitted for question: {question.Title}",
+                "/admin/reports"
+            ));
+
             return new ReportQuestionResult
             {
                 ReportId = report.Id
             };
         }
     }
-}
+}

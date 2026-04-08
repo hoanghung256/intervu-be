@@ -1,12 +1,16 @@
 using Asp.Versioning;
 using Intervu.API.Utils.Constant;
 using Intervu.Application.DTOs.Admin;
+using Intervu.Application.DTOs.InterviewRoom;
 using Intervu.Application.Interfaces.UseCases.Admin;
 using Intervu.Application.Interfaces.UseCases.Audit;
+using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Intervu.Domain.Entities.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace Intervu.API.Controllers.v1
@@ -29,6 +33,8 @@ namespace Intervu.API.Controllers.v1
         private readonly IDeleteUserForAdmin _deleteUserForAdmin;
         private readonly IActivateUserForAdmin _activateUserForAdmin;
         private readonly IGetAuditLogs _getAuditLogs;
+        private readonly IGetInterviewReports _getInterviewReports;
+        private readonly IResolveInterviewReport _resolveInterviewReport;
 
         public AdminController(
             IGetDashboardStats getDashboardStats,
@@ -43,7 +49,9 @@ namespace Intervu.API.Controllers.v1
             IUpdateUserForAdmin updateUserForAdmin,
             IDeleteUserForAdmin deleteUserForAdmin,
             IActivateUserForAdmin activateUserForAdmin,
-            IGetAuditLogs getAuditLogs)
+            IGetAuditLogs getAuditLogs,
+            IGetInterviewReports getInterviewReports,
+            IResolveInterviewReport resolveInterviewReport)
         {
             _getDashboardStats = getDashboardStats;
             _getAllUsers = getAllUsers;
@@ -58,6 +66,8 @@ namespace Intervu.API.Controllers.v1
             _deleteUserForAdmin = deleteUserForAdmin;
             _activateUserForAdmin = activateUserForAdmin;
             _getAuditLogs = getAuditLogs;
+            _getInterviewReports = getInterviewReports;
+            _resolveInterviewReport = resolveInterviewReport;
         }
 
         /// <summary>
@@ -469,6 +479,115 @@ namespace Intervu.API.Controllers.v1
                     success = false,
                     message = ex.Message,
                     data = (object?)null
+                });
+            }
+        }
+
+        /// <summary>
+        /// Get audit logs for a specific interview room (for room report modal)
+        /// </summary>
+        [HttpGet("room-reports/{roomId:guid}/audit-logs")]
+        [Authorize(Policy = AuthorizationPolicies.Admin)]
+        public async Task<IActionResult> GetAuditLogsByRoomId([FromRoute] Guid roomId, [FromQuery] int page = 1, [FromQuery] int pageSize = 100)
+        {
+            try
+            {
+                var logs = await _getAuditLogs.ExecuteByRoomAsync(roomId, page, pageSize);
+                return Ok(new
+                {
+                    success = true,
+                    message = "Success",
+                    data = logs
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = ex.Message,
+                    data = (object?)null
+                });
+            }
+        }
+
+        /// <summary>
+        /// Admin gets interview room reports for management.
+        /// </summary>
+        [HttpGet("room-reports")]
+        [Authorize(Policy = AuthorizationPolicies.Admin)]
+        public async Task<IActionResult> GetRoomReports([FromQuery] InterviewReportFilterRequest filter)
+        {
+            try
+            {
+                var reports = await _getInterviewReports.ExecuteAsync(filter);
+
+                var items = reports.Items.Select(r => new
+                {
+                    id = r.Id,
+                    interviewRoomId = r.InterviewRoomId,
+                    reporter = new
+                    {
+                        id = r.ReporterId,
+                        fullName = r.ReporterName
+                    },
+                    reason = r.Reason,
+                    details = r.Details,
+                    content = r.Details,
+                    reportType = r.Reason, // Mapping for FE compatibility
+                    status = (int)r.Status,
+                    createdAt = r.CreatedAt,
+                    updatedAt = r.UpdatedAt
+                });
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Success",
+                    data = new
+                    {
+                        items,
+                        reports.TotalItems,
+                        reports.PageSize,
+                        reports.CurrentPage
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = ex.Message,
+                    data = (object?)null
+                });
+            }
+        }
+
+        /// <summary>
+        /// Resolve room report with refund options
+        /// </summary>
+        [HttpPost("resolve-room-report")]
+        [Authorize(Policy = AuthorizationPolicies.Admin)]
+        public async Task<IActionResult> ResolveRoomReport([FromBody] ResolveRoomReportRequest request)
+        {
+            try
+            {
+                var adminIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                Guid.TryParse(adminIdStr, out Guid adminId);
+                await _resolveInterviewReport.ExecuteAsync(request, adminId);
+                return Ok(new
+                {
+                    success = true,
+                    message = "Report resolved successfully"
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = ex.Message
                 });
             }
         }

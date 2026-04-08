@@ -4,7 +4,9 @@ using Intervu.API.Utils.Constant;
 using Intervu.Application.DTOs.Coach;
 using Intervu.Application.Interfaces.UseCases.CoachProfile;
 using Intervu.Application.Interfaces.UseCases.Feedbacks;
+using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
+using Intervu.Domain.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -22,14 +24,22 @@ namespace Intervu.API.Controllers.v1.Interviewer
         private readonly IViewCoachProfile _getCoachProfile;
         private readonly IDeleteCoachProfile _deleteCoachProfile;
         private readonly IGetCoachRating _getCoachRating;
+        private readonly ICoachProfileRepository _repo;
 
-        public CoachProfileController(ICreateCoachProfile createCoachProfile, IUpdateCoachProfile updateCoachProfile, IViewCoachProfile getCoachProfile, IDeleteCoachProfile deleteCoachProfile, IGetCoachRating getCoachRating)
+        public CoachProfileController(
+            ICreateCoachProfile createCoachProfile,
+            IUpdateCoachProfile updateCoachProfile,
+            IViewCoachProfile getCoachProfile,
+            IDeleteCoachProfile deleteCoachProfile,
+            IGetCoachRating getCoachRating,
+            ICoachProfileRepository repo)
         {
             _createCoachProfile = createCoachProfile;
             _updateCoachProfile = updateCoachProfile;
             _getCoachProfile = getCoachProfile;
             _deleteCoachProfile = deleteCoachProfile;
             _getCoachRating = getCoachRating;
+            _repo = repo;
         }
 
         //[GET] api/coach-profile/{id}
@@ -113,17 +123,54 @@ namespace Intervu.API.Controllers.v1.Interviewer
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateCoachProfile([FromRoute] Guid id, [FromBody] CoachUpdateDto request)
         {
-            string msg = "Profile updated successfully!";
+            if (request == null)
+            {
+                return BadRequest(new { success = false, message = "Request body is required" });
+            }
+
             try
             {
                 await _updateCoachProfile.ExecuteAsync(id, request);
-                return Ok(new { success = true, message = msg });
+                return Ok(new { success = true, message = "Profile updated successfully!" });
             }
             catch (Exception ex)
             {
-                msg = ex.Message;
+                return BadRequest(new { success = false, message = ex.Message });
             }
-            return Ok(new { success = false, message = msg });
+        }
+
+        // [PUT] api/coach-profile/{id}/work-experiences
+        [Authorize(Policy = AuthorizationPolicies.Interviewer)]
+        [HttpPut("{id}/work-experiences")]
+        public async Task<IActionResult> UpdateCoachWorkExperiences([FromRoute] Guid id, [FromBody] UpdateCoachWorkExperiencesRequest request)
+        {
+            if (request == null)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Request body is required"
+                });
+            }
+
+            try
+            {
+                var profile = await _updateCoachProfile.UpdateCoachWorkExperiencesAsync(id, request.WorkExperiences);
+                return Ok(new
+                {
+                    success = true,
+                    message = "Work experiences updated successfully",
+                    data = profile
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
+            }
         }
 
         // [PUT] api/coach-profile/{id}/status
@@ -200,5 +247,124 @@ namespace Intervu.API.Controllers.v1.Interviewer
                 });
             }
         }
+
+        // [POST] api/coach-profile/{profileId}/work-experiences
+        [HttpPost("{profileId}/work-experiences")]
+        [Authorize(Policy = AuthorizationPolicies.Interviewer)]
+        public async Task<IActionResult> CreateWorkExperience([FromRoute] Guid profileId, [FromBody] CoachWorkExperienceDto dto)
+        {
+            if (dto == null) return BadRequest();
+
+            var entity = new CoachWorkExperience
+            {
+                Id = Guid.NewGuid(),
+                CoachProfileId = profileId,
+                CompanyName = dto.CompanyName,
+                PositionTitle = dto.PositionTitle,
+                JobType = dto.JobType,
+                Location = dto.Location,
+                LocationType = dto.LocationType,
+                StartDate = dto.StartDate,
+                EndDate = dto.EndDate,
+                IsCurrentWorking = dto.IsCurrentWorking,
+                IsEnded = dto.IsEnded,
+                Description = dto.Description,
+                SkillIds = dto.SkillIds ?? new List<Guid>()
+            };
+
+            var added = await _repo.AddWorkExperienceAsync(entity);
+            return Ok(new { success = true, data = added });
+        }
+
+        // [PUT] api/coach-profile/{profileId}/work-experiences/{workExperienceId}
+        [HttpPut("{profileId}/work-experiences/{workExperienceId}")]
+        [Authorize(Policy = AuthorizationPolicies.Interviewer)]
+        public async Task<IActionResult> UpdateWorkExperience([FromRoute] Guid profileId, [FromRoute] Guid workExperienceId, [FromBody] CoachWorkExperienceDto dto)
+        {
+            if (dto == null) return BadRequest();
+
+            var entity = new CoachWorkExperience
+            {
+                Id = workExperienceId,
+                CoachProfileId = profileId,
+                CompanyName = dto.CompanyName,
+                PositionTitle = dto.PositionTitle,
+                JobType = dto.JobType,
+                Location = dto.Location,
+                LocationType = dto.LocationType,
+                StartDate = dto.StartDate,
+                EndDate = dto.EndDate,
+                IsCurrentWorking = dto.IsCurrentWorking,
+                IsEnded = dto.IsEnded,
+                Description = dto.Description,
+                SkillIds = dto.SkillIds ?? new List<Guid>()
+            };
+
+            await _repo.UpdateWorkExperienceAsync(entity);
+            return Ok(new { success = true });
+        }
+
+        // [DELETE] api/coach-profile/{profileId}/work-experiences/{workExperienceId}
+        [HttpDelete("{profileId}/work-experiences/{workExperienceId}")]
+        [Authorize(Policy = AuthorizationPolicies.Interviewer)]
+        public async Task<IActionResult> DeleteWorkExperience([FromRoute] Guid profileId, [FromRoute] Guid workExperienceId)
+        {
+            await _repo.DeleteWorkExperienceAsync(workExperienceId);
+            return Ok(new { success = true });
+        }
+
+        // [POST] api/coach-profile/{profileId}/certificates
+        [HttpPost("{profileId}/certificates")]
+        [Authorize(Policy = AuthorizationPolicies.Interviewer)]
+        public async Task<IActionResult> AddCertificate([FromRoute] Guid profileId, [FromBody] CoachCertificateDto dto)
+        {
+            if (dto == null) return BadRequest();
+
+            var entity = new CoachCertificate
+            {
+                Id = Guid.NewGuid(),
+                CoachProfileId = profileId,
+                Name = dto.Name,
+                Issuer = dto.Issuer,
+                IssuedAt = dto.IssuedAt,
+                ExpiryAt = dto.ExpiryAt,
+                Link = dto.Link
+            };
+
+            var added = await _repo.AddCoachCertificateAsync(entity);
+            return Ok(new { success = true, data = added });
+        }
+
+        // [PUT] api/coach-profile/{profileId}/certificates/{certificateId}
+        [HttpPut("{profileId}/certificates/{certificateId}")]
+        [Authorize(Policy = AuthorizationPolicies.Interviewer)]
+        public async Task<IActionResult> UpdateCertificate([FromRoute] Guid profileId, [FromRoute] Guid certificateId, [FromBody] CoachCertificateDto dto)
+        {
+            if (dto == null) return BadRequest();
+
+            var entity = new CoachCertificate
+            {
+                Id = certificateId,
+                CoachProfileId = profileId,
+                Name = dto.Name,
+                Issuer = dto.Issuer,
+                IssuedAt = dto.IssuedAt,
+                ExpiryAt = dto.ExpiryAt,
+                Link = dto.Link
+            };
+
+            await _repo.UpdateCoachCertificateAsync(entity);
+            return Ok(new { success = true });
+        }
+
+        // [DELETE] api/coach-profile/{profileId}/certificates/{certificateId}
+        [HttpDelete("{profileId}/certificates/{certificateId}")]
+        [Authorize(Policy = AuthorizationPolicies.Interviewer)]
+        public async Task<IActionResult> DeleteCertificate([FromRoute] Guid profileId, [FromRoute] Guid certificateId)
+        {
+            await _repo.DeleteCoachCertificateAsync(certificateId);
+            return Ok(new { success = true });
+        }
+
     }
 }

@@ -4,6 +4,7 @@ using Intervu.Application.DTOs.Coach;
 using Intervu.Application.DTOs.Skill;
 using Intervu.Application.DTOs.User;
 using Intervu.Application.Interfaces.UseCases.CoachProfile;
+using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 
 namespace Intervu.Application.UseCases.CoachProfile
@@ -39,9 +40,10 @@ namespace Intervu.Application.UseCases.CoachProfile
         public async Task<CoachViewDto?> ViewProfileForCandidateAsync(string slug)
         {
             Domain.Entities.User? userData = await _userRepository.GetBySlugAsync(slug);
-            if (userData == null) return null;
+            if (userData == null || userData.Status != UserStatus.Active) return null;
 
             Domain.Entities.CoachProfile? profile = await _coachProfileRepository.GetProfileBySlugAsync(slug);
+            if (profile == null) return null;
             CoachViewDto result = _mapper.Map<CoachViewDto>(profile);
             result.User = _mapper.Map<UserDto>(userData);
             return result;

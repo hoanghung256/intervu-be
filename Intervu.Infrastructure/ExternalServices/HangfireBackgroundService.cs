@@ -1,4 +1,4 @@
-﻿using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.ExternalServices;
 using System.Linq.Expressions;
 using Hangfire;
 
