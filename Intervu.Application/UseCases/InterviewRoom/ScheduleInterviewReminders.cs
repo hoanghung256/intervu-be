@@ -1,4 +1,5 @@
 using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.UseCases.Email;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Intervu.Application.Interfaces.UseCases.Notification;
 
@@ -16,6 +17,23 @@ namespace Intervu.Application.UseCases.InterviewRoom
         public void Schedule(Guid roomId, DateTime scheduledTime)
         {
             var now = DateTime.UtcNow;
+
+            // Email reminders (Phase 3): 24h and 1h before interview
+            var delay24h = scheduledTime.AddDays(-1) - now;
+            if (delay24h > TimeSpan.Zero)
+            {
+                _backgroundService.Schedule<ISendInterviewReminderEmail>(
+                    svc => svc.ExecuteAsync(roomId, "24 hours"),
+                    delay24h);
+            }
+
+            var delay1h = scheduledTime.AddHours(-1) - now;
+            if (delay1h > TimeSpan.Zero)
+            {
+                _backgroundService.Schedule<ISendInterviewReminderEmail>(
+                    svc => svc.ExecuteAsync(roomId, "1 hour"),
+                    delay1h);
+            }
 
             // 4 reminder milestones before the interview
             var milestones = new[]
