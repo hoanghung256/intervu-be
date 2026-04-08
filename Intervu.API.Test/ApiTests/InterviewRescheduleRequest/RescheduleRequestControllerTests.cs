@@ -25,7 +25,7 @@ namespace Intervu.API.Test.ApiTests.InterviewRescheduleRequest
 
         // Seeded IDs from database (IntervuPostgreDbContext)
         private readonly Guid _existingRoomId = Guid.Parse("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a66");
-        private readonly Guid _proposedAvailId = Guid.Parse("aaaaaaaa-1111-4a1a-8a1a-111111111111");
+        private readonly DateTime _proposedStartTime = DateTime.UtcNow.AddDays(7);
 
         private async Task<string> LoginAndGetToken(string email, string password)
         {
@@ -68,7 +68,7 @@ namespace Intervu.API.Test.ApiTests.InterviewRescheduleRequest
             var dto = new CreateRescheduleRequestDto
             {
                 RoomId = _existingRoomId,
-                ProposedAvailabilityId = _proposedAvailId,
+                NewStartTime = _proposedStartTime,
                 Reason = "Need to reschedule due to personal emergency that requires my immediate attention"
             };
 
@@ -99,7 +99,7 @@ namespace Intervu.API.Test.ApiTests.InterviewRescheduleRequest
             var dto = new CreateRescheduleRequestDto
             {
                 RoomId = Guid.NewGuid(),
-                ProposedAvailabilityId = Guid.NewGuid(),
+                NewStartTime = DateTime.UtcNow.AddDays(5),
                 Reason = "Need to reschedule due to personal emergency"
             };
 
@@ -124,7 +124,7 @@ namespace Intervu.API.Test.ApiTests.InterviewRescheduleRequest
             var dto = new CreateRescheduleRequestDto
             {
                 RoomId = Guid.NewGuid(),
-                ProposedAvailabilityId = Guid.NewGuid(),
+                NewStartTime = DateTime.UtcNow.AddDays(6),
                 Reason = "Short" // Less than 10 characters
             };
 
@@ -149,7 +149,7 @@ namespace Intervu.API.Test.ApiTests.InterviewRescheduleRequest
             var dto = new CreateRescheduleRequestDto
             {
                 RoomId = Guid.Empty, // Missing RoomId
-                ProposedAvailabilityId = Guid.NewGuid(),
+                NewStartTime = DateTime.UtcNow.AddDays(7),
                 Reason = "Need to reschedule due to conflict"
             };
 
@@ -178,7 +178,7 @@ namespace Intervu.API.Test.ApiTests.InterviewRescheduleRequest
             var createDto = new CreateRescheduleRequestDto
             {
                 RoomId = _existingRoomId,
-                ProposedAvailabilityId = _proposedAvailId,
+                NewStartTime = _proposedStartTime.AddHours(1),
                 Reason = "Need to reschedule - test scenario for approval"
             };
             
@@ -223,7 +223,7 @@ namespace Intervu.API.Test.ApiTests.InterviewRescheduleRequest
             var createDto = new CreateRescheduleRequestDto
             {
                 RoomId = _existingRoomId,
-                ProposedAvailabilityId = _proposedAvailId,
+                NewStartTime = _proposedStartTime.AddHours(2),
                 Reason = "Need to reschedule - test scenario for rejection"
             };
             

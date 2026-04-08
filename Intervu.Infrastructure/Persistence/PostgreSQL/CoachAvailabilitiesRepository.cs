@@ -98,18 +98,13 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .FirstOrDefaultAsync(a => a.CoachId == coachId && a.StartTime == startTime);
         }
 
-        public Task<CoachAvailability?> FindContainingAvailabilityAsync(Guid coachId, DateTime startTime, DateTime endTime)
-        {
-            return _context.CoachAvailabilities
-                .FirstOrDefaultAsync(a =>
-                    a.CoachId == coachId
-                    && a.Status == CoachAvailabilityStatus.Available
-                    && a.StartTime <= startTime
-                    && a.EndTime >= endTime);
-        }
-
         public Task<CoachAvailability?> GetByIdForUpdateAsync(Guid availabilityId)
         {
+            if (_context.Database.IsInMemory())
+            {
+                return _context.CoachAvailabilities.FirstOrDefaultAsync(x => x.Id == availabilityId);
+            }
+
             return _context.CoachAvailabilities
                 .FromSqlInterpolated($@"SELECT * FROM ""CoachAvailabilities"" WHERE ""Id"" = {availabilityId} FOR UPDATE")
                 .FirstOrDefaultAsync();
@@ -127,6 +122,16 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
         public Task<List<CoachAvailability>> GetBlocksInRangeForUpdateAsync(Guid coachId, DateTime startTime, DateTime endTime)
         {
+            if (_context.Database.IsInMemory())
+            {
+                return _context.CoachAvailabilities
+                    .Where(x => x.CoachId == coachId
+                        && x.StartTime >= startTime
+                        && x.EndTime <= endTime)
+                    .OrderBy(x => x.StartTime)
+                    .ToListAsync();
+            }
+
             return _context.CoachAvailabilities
                 .FromSqlInterpolated($@"SELECT * FROM ""CoachAvailabilities""
                     WHERE ""CoachId"" = {coachId}

@@ -11,6 +11,24 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            // Re-point FK references before deleting the old seed row to avoid
+            // FK constraint violation (Restrict delete on CoachInterviewServices).
+            // The replacement row "...25cf" will receive the same InterviewType after the update below.
+            migrationBuilder.Sql(
+                """
+                UPDATE "BookingRequests"
+                SET "CoachInterviewServiceId" = '019d1467-d415-79f8-9bdc-5bb25a0b25cf'
+                WHERE "CoachInterviewServiceId" = '019d1467-d415-7224-8808-39aa3e3b6377';
+
+                UPDATE "InterviewRounds"
+                SET "CoachInterviewServiceId" = '019d1467-d415-79f8-9bdc-5bb25a0b25cf'
+                WHERE "CoachInterviewServiceId" = '019d1467-d415-7224-8808-39aa3e3b6377';
+
+                UPDATE "InterviewRooms"
+                SET "CoachInterviewServiceId" = '019d1467-d415-79f8-9bdc-5bb25a0b25cf'
+                WHERE "CoachInterviewServiceId" = '019d1467-d415-7224-8808-39aa3e3b6377';
+                """);
+
             migrationBuilder.DeleteData(
                 table: "CoachInterviewServices",
                 keyColumn: "Id",

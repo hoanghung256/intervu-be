@@ -607,13 +607,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.Type).IsRequired();
                 b.Property(x => x.Status).IsRequired();
 
-                b.HasOne(x => x.CoachAvailability)
-                .WithMany(x => x.InterviewBookingTransactions)
-                .HasForeignKey(x => x.CoachAvailabilityId)
-                .IsRequired(false)
-                .HasConstraintName("FK_InterviewBookingTransaction_CoachAvailabilities_CoachAvailabilityId")
-                .OnDelete(DeleteBehavior.Restrict);
-
                 b.HasOne(x => x.BookingRequest)
                 .WithMany(x => x.Transactions)
                 .HasForeignKey(x => x.BookingRequestId)
@@ -635,8 +628,10 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.HasKey(x => x.Id);
 
                 b.Property(x => x.InterviewRoomId).IsRequired();
-                b.Property(x => x.CurrentAvailabilityId).IsRequired();
-                b.Property(x => x.ProposedAvailabilityId).IsRequired();
+                b.Property(x => x.CurrentAvailabilityId).IsRequired(false);
+                b.Property(x => x.ProposedAvailabilityId).IsRequired(false);
+                b.Property(x => x.ProposedStartTime).IsRequired();
+                b.Property(x => x.ProposedEndTime).IsRequired();
                 b.Property(x => x.RequestedBy).IsRequired();
                 b.Property(x => x.Status).IsRequired();
                 b.Property(x => x.ExpiresAt).IsRequired();
@@ -653,12 +648,14 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.HasOne(x => x.CurrentAvailability)
                  .WithMany()
                  .HasForeignKey(x => x.CurrentAvailabilityId)
+                 .IsRequired(false)
                  .HasConstraintName("FK_InterviewRescheduleRequests_CoachAvailabilities_CurrentAvailabilityId")
                  .OnDelete(DeleteBehavior.Restrict);
 
                 b.HasOne(x => x.ProposedAvailability)
                  .WithMany()
                  .HasForeignKey(x => x.ProposedAvailabilityId)
+                 .IsRequired(false)
                  .HasConstraintName("FK_InterviewRescheduleRequests_CoachAvailabilities_ProposedAvailabilityId")
                  .OnDelete(DeleteBehavior.Restrict);
 
@@ -1229,7 +1226,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 {
                     Id = transaction1Id,
                     UserId = user1Id,
-                    CoachAvailabilityId = CoachAvail1Id,
                     Amount = 1000,
                     Type = TransactionType.Payment,
                     Status = TransactionStatus.Paid
@@ -1238,7 +1234,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 {
                     Id = transaction2Id,
                     UserId = user2Id,
-                    CoachAvailabilityId = CoachAvail1Id,
                     Amount = 500,
                     Type = TransactionType.Payout,
                     Status = TransactionStatus.Paid
@@ -1247,7 +1242,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 {
                     Id = transaction3Id,
                     UserId = user1Id,
-                    CoachAvailabilityId = CoachAvail2Id,
                     Amount = 1500,
                     Type = TransactionType.Payment,
                     Status = TransactionStatus.Paid
@@ -1256,7 +1250,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 {
                     Id = transaction4Id,
                     UserId = user1Id,
-                    CoachAvailabilityId = CoachAvail3Id,
                     Amount = 2000,
                     Type = TransactionType.Payment,
                     Status = TransactionStatus.Paid

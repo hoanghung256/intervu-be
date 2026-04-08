@@ -8,7 +8,7 @@ namespace Intervu.Application.DTOs.RescheduleRequest
         public Guid RoomId { get; set; }
 
         [Required]
-        public Guid ProposedAvailabilityId { get; set; }
+        public DateTime NewStartTime { get; set; }
 
         [Required]
         [StringLength(500, MinimumLength = 10)]

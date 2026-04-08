@@ -4,9 +4,11 @@ using Intervu.Domain.Entities.Constants;
 namespace Intervu.Domain.Entities
 {
     /// <summary>
-    /// Handles booking requests for Flow B (External) and Flow C (JD Multi-Round).
-    /// Flow A (Normal Booking) goes directly to payment without a BookingRequest.
-    /// 
+    /// Handles booking requests for all flows:
+    /// Flow A (Direct) — 1 round from available slot, auto-accepted
+    /// Flow B (External) — outside coach's available time
+    /// Flow C (JD Multi-Round) — multiple rounds
+    ///
     /// State machine: Pending → Accepted → Paid → (rooms created)
     ///                Pending → Rejected
     ///                Pending → Expired

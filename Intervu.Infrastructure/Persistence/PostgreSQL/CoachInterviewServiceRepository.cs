@@ -38,5 +38,15 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Where(s => ids.Contains(s.Id))
                 .ToListAsync();
         }
+
+        public async Task<bool> HasActiveReferencesAsync(Guid serviceId)
+        {
+            return await _context.BookingRequests
+                       .AnyAsync(b => b.CoachInterviewServiceId == serviceId)
+                || await _context.InterviewRounds
+                       .AnyAsync(r => r.CoachInterviewServiceId == serviceId)
+                || await _context.InterviewRooms
+                       .AnyAsync(r => r.CoachInterviewServiceId == serviceId);
+        }
     }
 }
