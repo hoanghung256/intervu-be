@@ -72,10 +72,10 @@ namespace Intervu.Application.UseCases.BookingRequest
                 _transactionRepo.UpdateAsync(payout);
             }
 
+            int refundAmount = 0;
             var payment = await _transactionRepo.GetByBookingRequestId(bookingRequestId, TransactionType.Payment);
             if (payment != null)
             {
-                int refundAmount;
                 var firstRound = bookingRequest.Rounds.OrderBy(r => r.RoundNumber).FirstOrDefault();
                 var scheduledTime = firstRound?.StartTime ?? DateTime.UtcNow;
 
@@ -136,7 +136,7 @@ namespace Intervu.Application.UseCases.BookingRequest
                     {
                         ["RecipientName"] = candidate.FullName,
                         ["OtherPartyName"] = coach?.FullName ?? "Coach",
-                        ["RefundAmount"] = totalRefundAmount.ToString("N0")
+                        ["RefundAmount"] = refundAmount.ToString("N0")
                     };
 
                     _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
@@ -151,7 +151,7 @@ namespace Intervu.Application.UseCases.BookingRequest
                     {
                         ["RecipientName"] = coach.FullName,
                         ["OtherPartyName"] = candidate?.FullName ?? "Candidate",
-                        ["RefundAmount"] = totalRefundAmount.ToString("N0")
+                        ["RefundAmount"] = refundAmount.ToString("N0")
                     };
 
                     _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(

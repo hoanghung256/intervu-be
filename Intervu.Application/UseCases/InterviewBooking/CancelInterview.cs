@@ -129,7 +129,9 @@ namespace Intervu.Application.UseCases.InterviewBooking
                         ? await _userRepository.GetByIdAsync(room.CoachId.Value)
                         : null;
 
-                    var interviewDate = availability.StartTime.ToString("dd MMM yyyy HH:mm");
+                    var interviewDate = bookingRequest?.RequestedStartTime?.ToString("dd MMM yyyy HH:mm")
+                        ?? room.ScheduledTime?.ToString("dd MMM yyyy HH:mm")
+                        ?? "TBD";
 
                     if (candidate != null)
                     {

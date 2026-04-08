@@ -71,22 +71,19 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 await HandleBookingRequestPayment(transaction);
 
                 var candidateId = transaction.UserId;
-                var coachId = transaction.CoachId;
                 var frontendUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:5173";
 
-                DateTime? scheduledAt = transaction.BookedStartTime;
-                int? durationMinutes = transaction.BookedDurationMinutes;
-                if (transaction.BookingRequestId.HasValue)
-                {
-                    var bookingRequestRepo = _unitOfWork.GetRepository<IBookingRequestRepository>();
-                    var bookingRequest = await bookingRequestRepo.GetByIdWithDetailsAsync(transaction.BookingRequestId.Value);
-                    if (bookingRequest != null)
-                    {
-                        scheduledAt ??= bookingRequest.RequestedStartTime ?? bookingRequest.Rounds.OrderBy(r => r.RoundNumber).FirstOrDefault()?.StartTime;
-                        durationMinutes ??= bookingRequest.CoachInterviewService?.DurationMinutes
-                            ?? (bookingRequest.Rounds.Count > 0 ? (int)(bookingRequest.Rounds.First().EndTime - bookingRequest.Rounds.First().StartTime).TotalMinutes : null);
-                    }
-                }
+                var bookingRepo = _unitOfWork.GetRepository<IBookingRequestRepository>();
+                var bookingRequest = await bookingRepo.GetByIdWithDetailsAsync(transaction.BookingRequestId.Value)
+                    ?? throw new NotFoundException("Booking request not found");
+
+                Guid? coachId = bookingRequest.CoachId;
+                DateTime? scheduledAt = bookingRequest.RequestedStartTime
+                    ?? bookingRequest.Rounds.OrderBy(r => r.RoundNumber).FirstOrDefault()?.StartTime;
+                int? durationMinutes = bookingRequest.CoachInterviewService?.DurationMinutes
+                    ?? (bookingRequest.Rounds.Count > 0
+                        ? (int)(bookingRequest.Rounds.First().EndTime - bookingRequest.Rounds.First().StartTime).TotalMinutes
+                        : null);
 
                 // Notify candidate — booking confirmed
                 _backgroundService.Enqueue<INotificationUseCase>(
@@ -98,15 +95,12 @@ namespace Intervu.Application.UseCases.InterviewBooking
                         "/interview?tab=upcoming",
                         null));
 
-                var bookingRepo = _unitOfWork.GetRepository<IBookingRequestRepository>();
-                var bookingRequest = await bookingRepo.GetByIdAsync(transaction.BookingRequestId.Value);
-                if (bookingRequest != null)
+                if (coachId.HasValue)
                 {
-                    var coachId = bookingRequest.CoachId;
                     // Notify coach — new booking
                     _backgroundService.Enqueue<INotificationUseCase>(
                         uc => uc.CreateAsync(
-                            coachId,
+                            coachId.Value,
                             NotificationType.BookingNew,
                             "New interview booking",
                             "A candidate has booked an interview with you.",

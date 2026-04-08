@@ -201,7 +201,7 @@ namespace Intervu.Application.UseCases.RescheduleRequest
                         ["RecipientName"] = recipient.FullName,
                         ["RequesterName"] = requester.FullName,
                         ["Reason"] = reason,
-                        ["ProposedTime"] = proposedAvailability.StartTime.ToString("dd MMM yyyy HH:mm"),
+                        ["ProposedTime"] = rescheduleRequest.ProposedStartTime.ToString("dd MMM yyyy HH:mm"),
                         ["DashboardLink"] = $"{frontendUrl.TrimEnd('/')}/interview?tab=upcoming"
                     };
 
