@@ -8,13 +8,25 @@ namespace Intervu.API.Test.ApiTests.InterviewRoomController
 {
     public class ReportInterviewProblemTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
+        private readonly ApiHelper _api;
+
         public ReportInterviewProblemTests(BaseApiTest<Program> factory, ITestOutputHelper output) : base(output)
         {
+            _api = new ApiHelper(factory.CreateClient());
         }
 
-        [Fact(Skip = "Covered in legacy room tests; extracted endpoint behavior requires room-setup helpers to be shared before enabling.")]
+        [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "InterviewRoom")]
-        public Task ReportInterviewProblem_Placeholder() => Task.CompletedTask;
+        public async Task ReportInterviewProblem_ReturnsUnauthorized_WhenNoToken()
+        {
+            var response = await _api.PostAsync($"/api/v1/interviewroom/{Guid.NewGuid()}/report", new CreateRoomReportRequest
+            {
+                Reason = "Audio issue",
+                Details = "Mic was disconnected during interview"
+            }, logBody: true);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Status code is 401 Unauthorized");
+        }
     }
 }

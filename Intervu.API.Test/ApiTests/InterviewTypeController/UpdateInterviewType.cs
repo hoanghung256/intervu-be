@@ -43,5 +43,25 @@ namespace Intervu.API.Test.ApiTests.InterviewTypeController
 
             await AssertHelper.AssertEqual(HttpStatusCode.OK, updateResponse.StatusCode, "Update status code is 200 OK");
         }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "InterviewType")]
+        public async Task UpdateInterviewType_ReturnsBadRequest_WhenTypeDoesNotExist()
+        {
+            var missingTypeId = Guid.NewGuid();
+
+            var updateResponse = await _api.PutAsync($"/api/v1/interviewtype/{missingTypeId}", new InterviewTypeDto
+            {
+                Id = missingTypeId,
+                Name = "Updated Type",
+                Description = "Updated description",
+                SuggestedDurationMinutes = 45,
+                MinPrice = 1200,
+                MaxPrice = 4800
+            }, logBody: true);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, updateResponse.StatusCode, "Update status code is 400 BadRequest");
+        }
     }
 }

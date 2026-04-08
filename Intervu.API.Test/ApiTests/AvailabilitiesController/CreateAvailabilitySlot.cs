@@ -38,6 +38,25 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
             await AssertHelper.AssertEqual("Created", createPayload.Message, "Create message matches");
         }
 
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Availability")]
+        public async Task CreateAvailabilitySlot_ThrowsArgumentException_WhenRangeIsInvalid()
+        {
+            var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(12));
+            var end = start.AddMinutes(-30);
+
+            var exception = await Assert.ThrowsAsync<ArgumentException>(async () =>
+                await _api.PostAsync("/api/v1/availabilities", new CoachAvailabilityCreateDto
+                {
+                    CoachId = BobCoachId,
+                    RangeStartTime = new DateTimeOffset(start, TimeSpan.Zero),
+                    RangeEndTime = new DateTimeOffset(end, TimeSpan.Zero)
+                }, logBody: true));
+
+            await AssertHelper.AssertContains("RangeEndTime must be greater than RangeStartTime", exception.Message, "Validation exception message matches");
+        }
+
         private static DateTime AlignToHalfHourUtc(DateTime value)
         {
             var utc = DateTime.SpecifyKind(value, DateTimeKind.Utc);

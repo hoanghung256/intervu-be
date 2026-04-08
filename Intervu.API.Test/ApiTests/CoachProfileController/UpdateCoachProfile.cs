@@ -48,5 +48,25 @@ namespace Intervu.API.Test.ApiTests.CoachProfileController
             await AssertHelper.AssertTrue(apiResponse.Success, "Update was successful");
             await AssertHelper.AssertEqual("Profile updated successfully!", apiResponse.Message, "Message matches");
         }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "CoachProfile")]
+        public async Task UpdateCoachProfile_ReturnsUnauthorized_WhenNoToken()
+        {
+            var (_, userId) = await LoginSeededUserAsync(_bobEmail);
+            var updateDto = new CoachUpdateDto
+            {
+                FullName = "Unauthorized Update",
+                Email = "unauthorized@example.com",
+                Bio = "Unauthorized update payload",
+                ExperienceYears = 3,
+                PortfolioUrl = "https://unauthorized.example.com",
+                CurrentAmount = 1
+            };
+
+            var response = await _api.PutAsync($"/api/v1/coach-profile/{userId}", updateDto, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Status code is 401 Unauthorized");
+        }
     }
 }

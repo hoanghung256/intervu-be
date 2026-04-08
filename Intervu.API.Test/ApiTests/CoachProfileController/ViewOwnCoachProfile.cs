@@ -38,5 +38,16 @@ namespace Intervu.API.Test.ApiTests.CoachProfileController
             await AssertHelper.AssertTrue(apiResponse.Success, "Request was successful");
             await AssertHelper.AssertEqual(userId, apiResponse.Data!.Id, "Returned ID matches requested ID");
         }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "CoachProfile")]
+        public async Task GetOwnInterviewerProfile_ReturnsUnauthorized_WhenNoToken()
+        {
+            var (_, userId) = await LoginSeededUserAsync(_bobEmail);
+            var response = await _api.GetAsync($"/api/v1/coach-profile/{userId}", logBody: true);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Status code is 401 Unauthorized");
+        }
     }
 }

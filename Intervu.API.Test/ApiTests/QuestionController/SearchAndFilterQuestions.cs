@@ -25,5 +25,17 @@ namespace Intervu.API.Test.ApiTests.QuestionController
             var apiResponse = await _api.LogDeserializeJson<List<QuestionSearchResultDto>>(response);
             await AssertHelper.AssertTrue(apiResponse.Success, "API response indicates success");
         }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Question")]
+        public async Task Search_ReturnsEmpty_WhenKeywordIsWhitespace()
+        {
+            var response = await _api.GetAsync("/api/v1/questions/search?keyword=%20", logBody: true);
+            var content = await response.Content.ReadAsStringAsync();
+
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 BadRequest");
+            await AssertHelper.AssertContains("keyword", content, "Validation message contains keyword field");
+        }
     }
 }

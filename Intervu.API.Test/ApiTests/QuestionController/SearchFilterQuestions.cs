@@ -19,5 +19,15 @@ namespace Intervu.API.Test.ApiTests.QuestionController
             var body = await _api.LogDeserializeJson<List<QuestionSearchResultDto>>(response);
             await AssertHelper.AssertTrue(body.Success, "Search succeeds");
         }
+
+        [Fact]
+        public async Task Handle_EmptyKeyword_ReturnsSuccessWithEmptyList()
+        {
+            var response = await _api.GetAsync("/api/v1/questions/search?keyword=", logBody: true);
+            var content = await response.Content.ReadAsStringAsync();
+
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 BadRequest");
+            await AssertHelper.AssertContains("keyword", content, "Validation message contains keyword field");
+        }
     }
 }

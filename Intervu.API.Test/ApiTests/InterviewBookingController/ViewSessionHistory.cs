@@ -31,5 +31,14 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
             var apiResponse = await _api.LogDeserializeJson<PagedResult<InterviewBookingTransactionHistoryDto>>(response);
             await AssertHelper.AssertTrue(apiResponse.Success, "API response indicates success");
         }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "InterviewBooking")]
+        public async Task GetHistory_ReturnsUnauthorized_WhenNoToken()
+        {
+            var response = await _api.GetAsync("/api/v1/interview-booking/history?page=1&pageSize=10", logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Status code is 401 Unauthorized");
+        }
     }
 }

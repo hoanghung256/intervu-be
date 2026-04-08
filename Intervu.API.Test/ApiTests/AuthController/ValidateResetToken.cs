@@ -40,5 +40,14 @@ namespace Intervu.API.Test.ApiTests.AuthController
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 BadRequest");
             await AssertHelper.AssertFalse(apiResponse.Success, "Validation should fail");
         }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Authentication")]
+        public async Task Handle_ValidateResetToken_MissingTokenRoute_ReturnsNotFound()
+        {
+            var response = await _api.GetAsync("/api/v1/auth/validate-reset-token/", logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Status code is 404 NotFound when route token is missing");
+        }
     }
 }
