@@ -21,5 +21,12 @@ namespace Intervu.API.Test.ApiTests.FeedbacksController
             var response = await _api.PutAsync($"/api/v1/feedbacks/{_feedbackUpdatePendingId}", new UpdateFeedbackDto { Rating = 5, Comments = "Great interview" }, jwtToken: token, logBody: true);
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
         }
+
+        [Fact]
+        public async Task Handle_MissingToken_ReturnsUnauthorized()
+        {
+            var response = await _api.PutAsync($"/api/v1/feedbacks/{_feedbackUpdatePendingId}", new UpdateFeedbackDto { Rating = 5, Comments = "Great interview" }, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Status code is 401 Unauthorized");
+        }
     }
 }

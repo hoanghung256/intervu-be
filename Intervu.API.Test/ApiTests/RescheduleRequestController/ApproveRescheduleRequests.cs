@@ -33,5 +33,19 @@ namespace Intervu.API.Test.ApiTests.RescheduleRequestController
 
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Response status code is 200 OK");
         }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "RescheduleRequest")]
+        public async Task RespondToRescheduleRequest_ReturnsUnauthorized_WhenNoToken()
+        {
+            var response = await _api.PostAsync($"/api/v1/reschedule-requests/{_rescheduleRequestId}/respond", new RespondToRescheduleRequestDto
+            {
+                IsApproved = true,
+                RejectionReason = null
+            }, logBody: true);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Response status code is 401 Unauthorized");
+        }
     }
 }

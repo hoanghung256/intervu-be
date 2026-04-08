@@ -1,13 +1,40 @@
 using Intervu.API.Test.Base;
+using Intervu.API.Test.Utils;
+using Intervu.Application.DTOs.Question;
+using Intervu.Domain.Entities.Constants;
+using Intervu.Domain.Entities.Constants.QuestionConstants;
+using System.Net;
 using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.QuestionController
 {
     public class UpdateQuestionTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
-        public UpdateQuestionTests(BaseApiTest<Program> factory, ITestOutputHelper output) : base(output) { }
+        private readonly ApiHelper _api;
 
-        [Fact(Skip = "Update question endpoint is not explicitly covered in current QuestionController tests.")]
-        public Task Handle_Placeholder_NotImplemented() => Task.CompletedTask;
+        public UpdateQuestionTests(BaseApiTest<Program> factory, ITestOutputHelper output) : base(output)
+        {
+            _api = new ApiHelper(factory.CreateClient());
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Question")]
+        public async Task UpdateQuestion_ReturnsUnauthorized_WhenNoToken()
+        {
+            var response = await _api.PutAsync($"/api/v1/questions/{Guid.NewGuid()}", new UpdateQuestionRequest
+            {
+                Title = "Unauthorized Update",
+                Content = "Unauthorized Update",
+                Level = ExperienceLevel.Junior,
+                Round = InterviewRound.TechnicalScreen,
+                Category = QuestionCategory.Coding,
+                CompanyIds = new List<Guid>(),
+                Roles = new List<Role>(),
+                TagIds = new List<Guid>()
+            }, logBody: true);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Status code is 401 Unauthorized");
+        }
     }
 }

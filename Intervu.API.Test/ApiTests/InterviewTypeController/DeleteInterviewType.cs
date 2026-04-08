@@ -34,5 +34,14 @@ namespace Intervu.API.Test.ApiTests.InterviewTypeController
             var deleteResponse = await _api.DeleteAsync($"/api/v1/interviewtype/{typeId}", logBody: true);
             await AssertHelper.AssertEqual(HttpStatusCode.OK, deleteResponse.StatusCode, "Delete status code is 200 OK");
         }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "InterviewType")]
+        public async Task DeleteInterviewType_ReturnsBadRequest_WhenTypeDoesNotExist()
+        {
+            var response = await _api.DeleteAsync($"/api/v1/interviewtype/{Guid.NewGuid()}", logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Delete status code is 400 BadRequest");
+        }
     }
 }

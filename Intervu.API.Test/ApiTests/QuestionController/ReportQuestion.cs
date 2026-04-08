@@ -40,5 +40,17 @@ namespace Intervu.API.Test.ApiTests.QuestionController
                 await AssertHelper.AssertEqual(HttpStatusCode.OK, updateResponse.StatusCode, "Update report status code is 200 OK");
             }
         }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Question")]
+        public async Task GetQuestionReports_ReturnsForbidden_WhenUserIsNotAdmin()
+        {
+            var login = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = "alice@example.com", Password = DEFAULT_PASSWORD });
+            var userData = await _api.LogDeserializeJson<LoginResponse>(login);
+
+            var response = await _api.GetAsync("/api/v1/questions/reports", jwtToken: userData.Data!.Token, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Non-admin user receives 403 Forbidden");
+        }
     }
 }

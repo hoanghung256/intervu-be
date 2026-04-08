@@ -56,5 +56,26 @@ namespace Intervu.API.Test.ApiTests.UserProfileController
             await AssertHelper.AssertTrue(apiResponse.Success, "CV upload was successful");
             await AssertHelper.AssertNotNull(apiResponse.Data, "CV URL is returned");
         }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "UserProfile")]
+        public async Task UploadCV_ReturnsNotFound_WhenUserDoesNotExist()
+        {
+            var (_, token) = await RegisterAndLoginUserAsync();
+            var nonExistentUserId = Guid.NewGuid();
+            var fileContent = Encoding.UTF8.GetBytes("This is a dummy CV file for testing.");
+
+            var response = await _api.PostMultipartAsync(
+                $"/api/v1/userprofile/upload-cv/{nonExistentUserId}",
+                fileContent,
+                "cv.pdf",
+                "application/pdf",
+                "file",
+                jwtToken: token,
+                logBody: true);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Status code is 404 Not Found");
+        }
     }
 }

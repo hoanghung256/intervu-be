@@ -13,17 +13,11 @@ namespace Intervu.API.Test.ApiTests.AdminController
         private readonly ApiHelper _api;
         public UpdateUserAccountsTests(BaseApiTest<Program> factory, ITestOutputHelper output) : base(output) => _api = new ApiHelper(factory.CreateClient());
 
-        [Fact]
-        public async Task Handle_ValidRequest_UpdatesUserAccount()
+        private async Task<string> LoginAdminAsync()
         {
-            var login = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = ADMIN_EMAIL, Password = DEFAULT_PASSWORD });
-            var token = (await _api.LogDeserializeJson<LoginResponse>(login)).Data!.Token;
-            var email = $"upd_{Guid.NewGuid()}@example.com";
-            var create = await _api.PostAsync("/api/v1/admin/users", new AdminCreateUserDto { FullName = "Temp", Email = email, Password = CANDIDATE_PASSWORD, Role = UserRole.Candidate, Status = UserStatus.Active }, jwtToken: token);
-            var user = await _api.LogDeserializeJson<Intervu.Application.DTOs.User.UserDto>(create);
-
-            var updateResponse = await _api.PutAsync($"/api/v1/admin/users/{user.Data!.Id}", new AdminCreateUserDto { FullName = "Temp Updated", Email = email, Role = UserRole.Candidate, Status = UserStatus.Active }, jwtToken: token, logBody: true);
-            await AssertHelper.AssertEqual(HttpStatusCode.OK, updateResponse.StatusCode, "Update status code is 200 OK");
+            var response = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = ADMIN_EMAIL, Password = DEFAULT_PASSWORD });
+            var data = await _api.LogDeserializeJson<LoginResponse>(response);
+            return data.Data!.Token;
         }
 
         private async Task<(Guid Id, string Email)> CreateTestUserAsync(string token, UserRole role = UserRole.Candidate)
@@ -45,25 +39,16 @@ namespace Intervu.API.Test.ApiTests.AdminController
         // ===== [N] Normal / Happy Path Tests =====
 
         [Fact]
-        [Trait("Category", "API")]
-        [Trait("Category", "Admin")]
-        public async Task UpdateUser_ValidData_ReturnsSuccess()
+        public async Task Handle_ValidRequest_UpdatesUserAccount()
         {
             // Arrange
             var token = await LoginAdminAsync();
-            var (userId, email) = await CreateTestUserAsync(token);
-
-            var updateDto = new AdminCreateUserDto
-            {
-                FullName = "Managed User Updated",
-                Email = email,
-                Role = UserRole.Candidate,
-                Status = UserStatus.Active
-            };
+            var email = $"upd_{Guid.NewGuid()}@example.com";
+            var create = await _api.PostAsync("/api/v1/admin/users", new AdminCreateUserDto { FullName = "Temp", Email = email, Password = CANDIDATE_PASSWORD, Role = UserRole.Candidate, Status = UserStatus.Active }, jwtToken: token);
+            var user = await _api.LogDeserializeJson<Intervu.Application.DTOs.User.UserDto>(create);
 
             // Act
-            LogInfo($"Updating user {userId} with new FullName.");
-            var updateResponse = await _api.PutAsync($"/api/v1/admin/users/{userId}", updateDto, jwtToken: token, logBody: true);
+            var updateResponse = await _api.PutAsync($"/api/v1/admin/users/{user.Data!.Id}", new AdminCreateUserDto { FullName = "Temp Updated", Email = email, Role = UserRole.Candidate, Status = UserStatus.Active }, jwtToken: token, logBody: true);
 
             // Assert
             await AssertHelper.AssertEqual(HttpStatusCode.OK, updateResponse.StatusCode, "Update status code is 200 OK");
@@ -257,7 +242,7 @@ namespace Intervu.API.Test.ApiTests.AdminController
             // Act
             var updateResponse = await _api.PutAsync($"/api/v1/admin/users/{nonExistentId}", updateDto, jwtToken: token, logBody: true);
 
-            // Assert - use case throws InvalidOperationException → controller returns 400
+            // Assert
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, updateResponse.StatusCode, "Non-existent user returns 400 BadRequest");
             var result = await _api.LogDeserializeJson<object>(updateResponse);
             await AssertHelper.AssertFalse(result.Success, "Response success is false");
@@ -266,7 +251,7 @@ namespace Intervu.API.Test.ApiTests.AdminController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Admin")]
-        public async Task UpdateUser_EmptyGuid_ReturnsBadRequestOrNotFound()
+        public async Task UpdateUser_EmptyGuid_ReturnsBadRequest()
         {
             // Arrange
             var token = await LoginAdminAsync();
@@ -282,7 +267,7 @@ namespace Intervu.API.Test.ApiTests.AdminController
             // Act
             var updateResponse = await _api.PutAsync($"/api/v1/admin/users/{Guid.Empty}", updateDto, jwtToken: token, logBody: true);
 
-            // Assert - Guid.Empty is valid format but no user exists → 400
+            // Assert
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, updateResponse.StatusCode, "Empty GUID returns 400 BadRequest");
         }
 
@@ -301,7 +286,7 @@ namespace Intervu.API.Test.ApiTests.AdminController
             var updateDto = new AdminCreateUserDto
             {
                 FullName = "Duplicate Email User",
-                Email = existingEmail, // email already taken by user2
+                Email = existingEmail,
                 Role = UserRole.Candidate,
                 Status = UserStatus.Active
             };
@@ -309,7 +294,7 @@ namespace Intervu.API.Test.ApiTests.AdminController
             // Act
             var updateResponse = await _api.PutAsync($"/api/v1/admin/users/{userId1}", updateDto, jwtToken: token, logBody: true);
 
-            // Assert - use case throws InvalidOperationException for duplicate email
+            // Assert
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, updateResponse.StatusCode, "Duplicate email returns 400 BadRequest");
             var result = await _api.LogDeserializeJson<object>(updateResponse);
             await AssertHelper.AssertFalse(result.Success, "Response success is false");
@@ -332,7 +317,7 @@ namespace Intervu.API.Test.ApiTests.AdminController
                 Status = UserStatus.Active
             };
 
-            // Act - call without JWT token
+            // Act
             var updateResponse = await _api.PutAsync($"/api/v1/admin/users/{userId}", updateDto, logBody: true);
 
             // Assert

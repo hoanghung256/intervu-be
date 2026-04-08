@@ -49,5 +49,22 @@ namespace Intervu.API.Test.ApiTests.UserProfileController
             await AssertHelper.AssertTrue(apiResponse.Success, "Update was successful");
             await AssertHelper.AssertEqual("Updated Test User", apiResponse.Data!.FullName, "Full name was updated");
         }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "UserProfile")]
+        public async Task UpdateProfile_ReturnsNotFound_WhenUserDoesNotExist()
+        {
+            var (_, token) = await RegisterAndLoginUserAsync();
+            var nonExistentUserId = Guid.NewGuid();
+            var updateRequest = new UpdateProfileRequest { FullName = "Updated Test User" };
+
+            var response = await _api.PutAsync($"/api/v1/userprofile/{nonExistentUserId}", updateRequest, jwtToken: token, logBody: true);
+            var apiResponse = await _api.LogDeserializeJson<object>(response, true);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Status code is 404 Not Found");
+            await AssertHelper.AssertFalse(apiResponse.Success, "Update should fail for unknown user");
+            await AssertHelper.AssertEqual("User not found", apiResponse.Message, "Error message matches");
+        }
     }
 }

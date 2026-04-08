@@ -69,5 +69,26 @@ namespace Intervu.API.Test.ApiTests.UserProfileController
 
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 Bad Request");
         }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "UserProfile")]
+        public async Task ChangePassword_ReturnsBadRequest_WhenUserDoesNotExist()
+        {
+            var (_, token) = await RegisterAndLoginUserAsync();
+            var nonExistentUserId = Guid.NewGuid();
+            var changePasswordRequest = new Intervu.Application.DTOs.User.ChangePasswordRequest
+            {
+                CurrentPassword = CANDIDATE_PASSWORD,
+                NewPassword = "NewPassword456!"
+            };
+
+            var response = await _api.PutAsync($"/api/v1/userprofile/{nonExistentUserId}/password", changePasswordRequest, jwtToken: token, logBody: true);
+            var apiResponse = await _api.LogDeserializeJson<object>(response, true);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 Bad Request");
+            await AssertHelper.AssertFalse(apiResponse.Success, "Password change should fail for unknown user");
+            await AssertHelper.AssertEqual("Current password is incorrect or user not found", apiResponse.Message, "Error message matches");
+        }
     }
 }

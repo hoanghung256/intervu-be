@@ -37,9 +37,26 @@ namespace Intervu.API.Test.ApiTests.NotificationsController
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Admin gets 200 OK");
         }
 
-        [Fact(Skip = "Broadcast variations are covered in legacy tests and can be split further if required.")]
+        [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Notifications")]
-        public Task BroadcastNotification_Placeholder() => Task.CompletedTask;
+        public async Task AdminBroadcast_ReturnsBadRequest_WhenUserIdsEmpty()
+        {
+            var loginResponse = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = "admin@example.com", Password = DEFAULT_PASSWORD });
+            var loginData = await _api.LogDeserializeJson<LoginResponse>(loginResponse);
+
+            var response = await _api.PostAsync("/api/v1/notifications/admin/broadcast", new BroadcastNotificationRequestDto
+            {
+                UserIds = new List<Guid>(),
+                Type = NotificationType.SystemAnnouncement,
+                Title = "Broadcast Test",
+                Message = "Should fail because user list is empty"
+            }, jwtToken: loginData.Data!.Token, logBody: true);
+
+            var apiResponse = await _api.LogDeserializeJson<object>(response, true);
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Empty userIds returns 400 BadRequest");
+            await AssertHelper.AssertFalse(apiResponse.Success, "Broadcast request should fail");
+            await AssertHelper.AssertEqual("UserIds must not be empty", apiResponse.Message, "Validation message matches");
+        }
     }
 }

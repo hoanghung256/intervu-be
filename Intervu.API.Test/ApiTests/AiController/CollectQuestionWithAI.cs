@@ -23,5 +23,12 @@ namespace Intervu.API.Test.ApiTests.AiController
             var body = await _api.LogDeserializeJson<List<GeneratedQuestionDto>>(response);
             await AssertHelper.AssertTrue(body.Success, "Request succeeds");
         }
+
+        [Fact]
+        public async Task Handle_MissingToken_ReturnsUnauthorized()
+        {
+            var response = await _api.GetAsync($"/api/v1/generated-questions/rooms/{_room1Id}", logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Status code is 401 Unauthorized");
+        }
     }
 }

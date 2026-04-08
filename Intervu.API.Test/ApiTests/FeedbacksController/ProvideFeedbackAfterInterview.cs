@@ -33,5 +33,19 @@ namespace Intervu.API.Test.ApiTests.FeedbacksController
 
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
         }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Feedbacks")]
+        public async Task UpdateFeedback_ReturnsUnauthorized_WhenNoToken()
+        {
+            var response = await _api.PutAsync($"/api/v1/feedbacks/{_feedbackUpdatePendingId}", new UpdateFeedbackDto
+            {
+                Rating = 5,
+                Comments = "Unauthorized request"
+            }, logBody: true);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Status code is 401 Unauthorized");
+        }
     }
 }
