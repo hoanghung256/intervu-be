@@ -57,6 +57,32 @@ namespace Intervu.API.Test.ApiTests.AdminController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Admin")]
+        public async Task UpdateUser_ValidData_ReturnsSuccess()
+        {
+            // Arrange
+            var token = await LoginAdminAsync();
+            var (userId, email) = await CreateTestUserAsync(token);
+
+            var updateDto = new AdminCreateUserDto
+            {
+                FullName = "Managed User Updated",
+                Email = email,
+                Role = UserRole.Candidate,
+                Status = UserStatus.Active
+            };
+
+            // Act
+            var updateResponse = await _api.PutAsync($"/api/v1/admin/users/{userId}", updateDto, jwtToken: token, logBody: true);
+
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, updateResponse.StatusCode, "Update returns 200 OK");
+            var result = await _api.LogDeserializeJson<AdminUserResponseDto>(updateResponse);
+            await AssertHelper.AssertTrue(result.Success, "Response success is true");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Admin")]
         public async Task UpdateUser_ValidData_ReturnsUpdatedFullName()
         {
             // Arrange

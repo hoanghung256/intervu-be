@@ -117,6 +117,156 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
             await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Status code is 401 Unauthorized");
         }
 
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "BookingRequest")]
+        public async Task Handle_CreateJDBookingRequest_WithEmptyRounds_ReturnsBadRequest()
+        {
+            // Arrange
+            var token = await LoginSeededCandidateAsync();
+
+            // Act – submit a booking with no rounds (violates MinLength(1) validation)
+            var response = await _api.PostAsync("/api/v1/booking-requests/jd-interview", new CreateJDBookingRequestDto
+            {
+                CoachId = BobCoachId,
+                JobDescriptionUrl = "https://example.com/jd-empty.pdf",
+                CVUrl = "https://example.com/cv-empty.pdf",
+                AimLevel = AimLevel.Junior,
+                Rounds = []
+            }, jwtToken: token, logBody: true);
+
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Empty rounds list returns 400 BadRequest");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "BookingRequest")]
+        public async Task Handle_CreateJDBookingRequest_AsCoach_ReturnsForbidden()
+        {
+            // Arrange – coaches are not allowed to create booking requests (Candidate policy)
+            var loginResponse = await _api.PostAsync("/api/v1/account/login",
+                new LoginRequest { Email = COACH_EMAIL, Password = DEFAULT_PASSWORD }, logBody: true);
+            var loginPayload = await _api.LogDeserializeJson<LoginResponse>(loginResponse);
+            var coachToken = loginPayload.Data!.Token;
+
+            var services = await GetCoachServicesAsync();
+            var service = services.First();
+            var requiredBlocks = GetRequiredBlockCount(service.DurationMinutes);
+            var availabilityIds = await CreateAvailabilityBlocksAsync(requiredBlocks, 35, 10);
+
+            // Act
+            var response = await _api.PostAsync("/api/v1/booking-requests/jd-interview", new CreateJDBookingRequestDto
+            {
+                CoachId = BobCoachId,
+                JobDescriptionUrl = "https://example.com/coach-jd.pdf",
+                CVUrl = "https://example.com/coach-cv.pdf",
+                AimLevel = AimLevel.MidLevel,
+                Rounds =
+                [
+                    new CreateInterviewRoundDto
+                    {
+                        CoachInterviewServiceId = service.Id,
+                        AvailabilityIds = availabilityIds
+                    }
+                ]
+            }, jwtToken: coachToken, logBody: true);
+
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Coach role cannot create booking requests – 403 Forbidden");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "BookingRequest")]
+        public async Task Handle_CreateJDBookingRequest_WithInvalidJobDescriptionUrl_ReturnsBadRequest()
+        {
+            // Arrange – [Url] attribute rejects non-URL strings
+            var token = await LoginSeededCandidateAsync();
+            var services = await GetCoachServicesAsync();
+            var service = services.First();
+            var requiredBlocks = GetRequiredBlockCount(service.DurationMinutes);
+            var availabilityIds = await CreateAvailabilityBlocksAsync(requiredBlocks, 40, 8);
+
+            // Act
+            var response = await _api.PostAsync("/api/v1/booking-requests/jd-interview", new CreateJDBookingRequestDto
+            {
+                CoachId = BobCoachId,
+                JobDescriptionUrl = "not-a-valid-url",   // fails [Url] validation
+                CVUrl = "https://example.com/cv.pdf",
+                AimLevel = AimLevel.MidLevel,
+                Rounds =
+                [
+                    new CreateInterviewRoundDto
+                    {
+                        CoachInterviewServiceId = service.Id,
+                        AvailabilityIds = availabilityIds
+                    }
+                ]
+            }, jwtToken: token, logBody: true);
+
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Invalid JobDescriptionUrl returns 400 BadRequest");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "BookingRequest")]
+        public async Task Handle_CreateJDBookingRequest_WithAdminToken_ReturnsForbidden()
+        {
+            // Arrange – admin role is not in the Candidate authorization policy
+            var loginResponse = await _api.PostAsync("/api/v1/account/login",
+                new LoginRequest { Email = ADMIN_EMAIL, Password = DEFAULT_PASSWORD }, logBody: true);
+            var loginPayload = await _api.LogDeserializeJson<LoginResponse>(loginResponse);
+            var adminToken = loginPayload.Data!.Token;
+
+            // Act – admin tries to create a booking (no availability setup needed; 403 fires at the auth layer)
+            var response = await _api.PostAsync("/api/v1/booking-requests/jd-interview", new CreateJDBookingRequestDto
+            {
+                CoachId = BobCoachId,
+                JobDescriptionUrl = "https://example.com/admin-jd.pdf",
+                CVUrl = "https://example.com/admin-cv.pdf",
+                AimLevel = AimLevel.Junior,
+                Rounds = []
+            }, jwtToken: adminToken, logBody: true);
+
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Admin role cannot create booking requests – 403 Forbidden");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "BookingRequest")]
+        public async Task Handle_CreateJDBookingRequest_GuidEmptyCoachId_ThrowsException()
+        {
+            // Arrange – Guid.Empty passes [Required] model validation but the coach does not exist in the DB
+            var token = await LoginSeededCandidateAsync();
+            var services = await GetCoachServicesAsync();
+            var service = services.First();
+            var requiredBlocks = GetRequiredBlockCount(service.DurationMinutes);
+            var availabilityIds = await CreateAvailabilityBlocksAsync(requiredBlocks, 43, 7);
+
+            // Act & Assert – business logic throws when the coach cannot be found
+            var exception = await Assert.ThrowsAsync<Exception>(async () =>
+                await _api.PostAsync("/api/v1/booking-requests/jd-interview", new CreateJDBookingRequestDto
+                {
+                    CoachId = Guid.Empty,
+                    JobDescriptionUrl = "https://example.com/empty-coach-jd.pdf",
+                    CVUrl = "https://example.com/empty-coach-cv.pdf",
+                    AimLevel = AimLevel.Junior,
+                    Rounds =
+                    [
+                        new CreateInterviewRoundDto
+                        {
+                            CoachInterviewServiceId = service.Id,
+                            AvailabilityIds = availabilityIds
+                        }
+                    ]
+                }, jwtToken: token, logBody: true));
+
+            await AssertHelper.AssertNotNull(exception.Message, "Exception is raised for Guid.Empty coach ID");
+        }
+
         private async Task<string> LoginSeededCandidateAsync()
         {
             var response = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = "alice@example.com", Password = DEFAULT_PASSWORD }, logBody: true);

@@ -69,6 +69,108 @@ namespace Intervu.API.Test.ApiTests.AuthController
             await AssertHelper.AssertEqual("If the email is registered, a password reset link has been sent.", apiResponse.Message, "Generic success message matches");
         }
 
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Authentication")]
+        public async Task Handle_ForgotPassword_EmptyEmail_ReturnsBadRequest()
+        {
+            // Arrange
+            var forgotRequest = new ForgotPasswordRequest { Email = "" };
+
+            // Act
+            LogInfo("Requesting password reset with empty email string.");
+            var response = await _api.PostAsync("/api/v1/auth/forgot-password", forgotRequest, logBody: true);
+            var responseBody = await response.Content.ReadAsStringAsync();
+
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 BadRequest");
+            await AssertHelper.AssertNotNull(responseBody, "Error response body is returned");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Authentication")]
+        public async Task Handle_ForgotPassword_NullEmail_ReturnsBadRequest()
+        {
+            // Arrange
+            var forgotRequest = new ForgotPasswordRequest { Email = null! };
+
+            // Act
+            LogInfo("Requesting password reset with null email value.");
+            var response = await _api.PostAsync("/api/v1/auth/forgot-password", forgotRequest, logBody: true);
+            var responseBody = await response.Content.ReadAsStringAsync();
+
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 BadRequest for null email");
+            await AssertHelper.AssertNotNull(responseBody, "Error response body is returned");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Authentication")]
+        public async Task Handle_ForgotPassword_VeryLongEmail_ReturnsBadRequest()
+        {
+            // Arrange – RFC 5321 limits local-part to 64 chars; a 300-char local part is invalid
+            var longLocalPart = new string('a', 300);
+            var forgotRequest = new ForgotPasswordRequest { Email = $"{longLocalPart}@example.com" };
+
+            // Act
+            LogInfo("Requesting password reset with over-length email local part (boundary).");
+            var response = await _api.PostAsync("/api/v1/auth/forgot-password", forgotRequest, logBody: true);
+            var responseBody = await response.Content.ReadAsStringAsync();
+
+            // Assert – email validation rejects the over-limit address
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Over-length email returns 400 BadRequest");
+            await AssertHelper.AssertNotNull(responseBody, "Validation error body is returned");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Authentication")]
+        public async Task Handle_ForgotPassword_EmailWithLeadingWhitespace_ReturnsBadRequest()
+        {
+            // Arrange – leading space makes the string an invalid email address
+            var forgotRequest = new ForgotPasswordRequest { Email = " alice@example.com" };
+
+            // Act
+            LogInfo("Requesting password reset with leading-whitespace email.");
+            var response = await _api.PostAsync("/api/v1/auth/forgot-password", forgotRequest, logBody: true);
+            var responseBody = await response.Content.ReadAsStringAsync();
+
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Email with leading whitespace returns 400 BadRequest");
+            await AssertHelper.AssertNotNull(responseBody, "Validation error body is returned");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Authentication")]
+        public async Task Handle_ForgotPassword_CalledTwiceForSameEmail_BothReturnSuccess()
+        {
+            // Arrange – register a fresh account so the email definitely exists
+            var email = $"double_forgot_{Guid.NewGuid()}@example.com";
+            await _api.PostAsync("/api/v1/account/register", new RegisterRequest
+            {
+                Email = email,
+                Password = "Password123!",
+                FullName = "Double Forgot User"
+            });
+            var request = new ForgotPasswordRequest { Email = email };
+
+            // Act – first call
+            var first = await _api.PostAsync("/api/v1/auth/forgot-password", request, logBody: true);
+            // Act – second call (idempotency)
+            var second = await _api.PostAsync("/api/v1/auth/forgot-password", request, logBody: true);
+
+            // Assert – both invocations succeed
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, first.StatusCode, "First forgot-password call returns 200 OK");
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, second.StatusCode, "Second forgot-password call also returns 200 OK (idempotent)");
+            var firstPayload = await _api.LogDeserializeJson<object>(first);
+            var secondPayload = await _api.LogDeserializeJson<object>(second);
+            await AssertHelper.AssertTrue(firstPayload.Success, "First call succeeds");
+            await AssertHelper.AssertTrue(secondPayload.Success, "Second call succeeds (idempotent behaviour)");
+        }
+
         private class ForgotPasswordRequest
         {
             public string Email { get; set; }

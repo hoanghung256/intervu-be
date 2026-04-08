@@ -45,5 +45,37 @@ namespace Intervu.API.Test.ApiTests.AuthController
 
             await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Status code is 401 Unauthorized");
         }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Authentication")]
+        public async Task Handle_SignOut_WithMalformedJwt_ReturnsUnauthorized()
+        {
+            // Arrange – a syntactically invalid JWT (not three dot-separated base64 segments)
+            const string malformedToken = "this.is.not.a.valid.jwt.at.all";
+
+            // Act
+            LogInfo("Attempting logout with a malformed JWT token.");
+            var response = await _api.PostAsync<object>("/api/v1/account/logout", null, jwtToken: malformedToken, logBody: true);
+
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Malformed JWT returns 401 Unauthorized");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Authentication")]
+        public async Task Handle_SignOut_WithRandomStringToken_ReturnsUnauthorized()
+        {
+            // Arrange – a random alphanumeric string with no JWT structure
+            const string junkToken = "abc123notareatoken";
+
+            // Act
+            LogInfo("Attempting logout with a random non-JWT string.");
+            var response = await _api.PostAsync<object>("/api/v1/account/logout", null, jwtToken: junkToken, logBody: true);
+
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Non-JWT token string returns 401 Unauthorized");
+        }
     }
 }

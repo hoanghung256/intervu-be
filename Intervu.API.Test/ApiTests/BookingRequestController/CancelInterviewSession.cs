@@ -65,6 +65,58 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
             await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Status code is 401 Unauthorized");
         }
 
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "BookingRequest")]
+        public async Task Handle_CancelBookingRequest_AsCoach_ReturnsForbidden()
+        {
+            // Arrange – the cancel endpoint is restricted to Candidate policy
+            var loginResponse = await _api.PostAsync("/api/v1/account/login",
+                new LoginRequest { Email = COACH_EMAIL, Password = DEFAULT_PASSWORD }, logBody: true);
+            var loginPayload = await _api.LogDeserializeJson<LoginResponse>(loginResponse);
+            var coachToken = loginPayload.Data!.Token;
+
+            // Act
+            var response = await _api.PostAsync<object>($"/api/v1/booking-requests/{Guid.NewGuid()}/cancel", null, jwtToken: coachToken, logBody: true);
+
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Coach role cannot cancel booking requests – 403 Forbidden");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "BookingRequest")]
+        public async Task Handle_CancelBookingRequest_AsAdmin_ReturnsForbidden()
+        {
+            // Arrange – admin role is not in the Candidate authorization policy
+            var loginResponse = await _api.PostAsync("/api/v1/account/login",
+                new LoginRequest { Email = ADMIN_EMAIL, Password = DEFAULT_PASSWORD }, logBody: true);
+            var loginPayload = await _api.LogDeserializeJson<LoginResponse>(loginResponse);
+            var adminToken = loginPayload.Data!.Token;
+
+            // Act
+            var response = await _api.PostAsync<object>($"/api/v1/booking-requests/{Guid.NewGuid()}/cancel", null, jwtToken: adminToken, logBody: true);
+
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Admin role cannot cancel booking requests – 403 Forbidden");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "BookingRequest")]
+        public async Task Handle_CancelBookingRequest_NonExistentBookingId_ThrowsException()
+        {
+            // Arrange – a random GUID that does not exist in the database
+            var token = await LoginSeededCandidateAsync();
+            var nonExistentBookingId = Guid.NewGuid();
+
+            // Act & Assert – business logic throws when the booking cannot be found
+            var exception = await Assert.ThrowsAsync<Exception>(async () =>
+                await _api.PostAsync<object>($"/api/v1/booking-requests/{nonExistentBookingId}/cancel", null, jwtToken: token, logBody: true));
+
+            await AssertHelper.AssertNotNull(exception.Message, "Exception is raised for non-existent booking ID");
+        }
+
         private async Task<Guid> CreateBookingAndGetIdAsync(string candidateToken, bool isMultipleRounds, int dayOffset, int hourOffset)
         {
             var services = await GetCoachServicesAsync();
