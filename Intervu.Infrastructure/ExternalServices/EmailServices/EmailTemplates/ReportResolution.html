@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Reviewed - Intervu</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #F8FAFC; padding: 20px 0; }
+        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #0F172A 0%, #334155 100%); color: white; padding: 40px 30px; text-align: center; }
+        .header h1 { font-size: 28px; font-weight: 700; margin-bottom: 10px; letter-spacing: -0.5px; }
+        .header p { font-size: 14px; opacity: 0.95; font-weight: 500; }
+        .content { padding: 40px 30px; }
+        .greeting { font-size: 16px; color: #0F172A; margin-bottom: 25px; line-height: 1.6; }
+        .greeting strong { font-weight: 600; }
+        .success-box { background-color: #f0fdf4; border-left: 4px solid #22C55E; padding: 20px; margin: 30px 0; border-radius: 4px; }
+        .success-box p { color: #374151; font-size: 14px; line-height: 1.6; margin-bottom: 10px; }
+        .success-box p:last-child { margin-bottom: 0; }
+        .info-box { background-color: #F8FAFC; border-left: 4px solid #0F172A; padding: 20px; margin: 30px 0; border-radius: 4px; }
+        .info-box p { color: #374151; font-size: 14px; line-height: 1.6; margin-bottom: 10px; }
+        .info-box p:last-child { margin-bottom: 0; }
+        .footer-section { margin-top: 30px; padding-top: 30px; border-top: 1px solid #e5e7eb; }
+        .footer-text { font-size: 13px; color: #64748B; line-height: 1.8; margin-bottom: 15px; }
+        .footer { background-color: #F8FAFC; padding: 20px 30px; text-align: center; font-size: 12px; color: #9ca3af; }
+        @media (max-width: 600px) { .container { border-radius: 0; } .header { padding: 30px 20px; } .content { padding: 25px 20px; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Report Reviewed</h1>
+            <p>Your report has been reviewed by our team</p>
+        </div>
+        <div class="content">
+            <div class="greeting">
+                Hello <strong>{{RecipientName}}</strong>,
+                <br><br>
+                We've completed the review of your report for interview room <strong>#{{RoomId}}</strong>.
+            </div>
+            <div class="success-box">
+                <p><strong>Resolution Status:</strong> {{Status}}</p>
+            </div>
+            <div class="info-box">
+                <p><strong>Admin Notes:</strong></p>
+                <p>{{AdminNote}}</p>
+                <p><strong>Refund Details:</strong></p>
+                <p>{{RefundInfo}}</p>
+            </div>
+            <div class="footer-section">
+                <div class="footer-text">
+                    If you have further concerns, please don't hesitate to contact us at <strong>support@intervu.com</strong>.
+                </div>
+            </div>
+        </div>
+        <div class="footer">
+            <p>&copy; 2025 Intervu. All rights reserved.</p>
+            <p style="margin-top: 8px; font-size: 11px;">This is an automated email. Please do not reply directly.</p>
+        </div>
+    </div>
+</body>
+</html>
