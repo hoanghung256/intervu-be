@@ -1316,7 +1316,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 {
                     Id = transactionEvaluationId,
                     UserId = user1Id,
-                    CoachAvailabilityId = availEvaluationId,
                     Amount = 2000,
                     Type = TransactionType.Payment,
                     Status = TransactionStatus.Paid
@@ -1325,7 +1324,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 {
                     Id = transactionReportId,
                     UserId = user1Id,
-                    CoachAvailabilityId = availReportId,
                     Amount = 2000,
                     Type = TransactionType.Payment,
                     Status = TransactionStatus.Paid
@@ -1334,7 +1332,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 {
                     Id = transactionRescheduleCreateId,
                     UserId = user1Id,
-                    CoachAvailabilityId = CoachAvail1Id,
                     Amount = 2000,
                     Type = TransactionType.Payment,
                     Status = TransactionStatus.Paid
@@ -1343,7 +1340,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 {
                     Id = transactionRescheduleRespondId,
                     UserId = user1Id,
-                    CoachAvailabilityId = CoachAvail1Id,
                     Amount = 2000,
                     Type = TransactionType.Payment,
                     Status = TransactionStatus.Paid
@@ -1352,7 +1348,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 {
                     Id = feedbackTestTransactionId,
                     UserId = user1Id,
-                    CoachAvailabilityId = feedbackTestAvailId,
                     Amount = 2000,
                     Type = TransactionType.Payment,
                     Status = TransactionStatus.Paid
