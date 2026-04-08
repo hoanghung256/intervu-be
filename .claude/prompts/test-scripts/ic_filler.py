@@ -1,236 +1,396 @@
 # ic_filler.py
-# Write IcSheetContent into an openpyxl Workbook
+# Write IcSheetContent into an openpyxl Workbook.
+#
+# DESIGN PRINCIPLE:
+#   When the target sheet already EXISTS (template prepared by user):
+#     - NEVER delete/recreate the sheet
+#     - NEVER call _apply_styles
+#     - Only write .value into:
+#         • a few specific metadata cells (IC code, function name, etc.)
+#         • col D  (content values)
+#         • col F+ (UTCID O-marks)
+#     - Col A, B, C, E and all styles are left completely untouched
+#
+#   When the target sheet does NOT exist yet:
+#     - Create it fresh and also apply basic styles.
 
+import re
 import openpyxl
-from openpyxl.styles import Alignment, Border, Side, Font, PatternFill
+from openpyxl.styles import Alignment, Font
 from openpyxl.utils import get_column_letter
 
 from ic_generator import IcSheetContent, IcRow
 
-# ── Fixed row positions (1-based, matching real IC template) ─────────────────
-ROW_FUNC_CODE   = 2
-ROW_CREATED_BY  = 3
-ROW_LINES_CODE  = 4
-ROW_TEST_REQ    = 5
-ROW_STATS_HDR   = 6
-ROW_STATS       = 7
-ROW_UTCID       = 9
-ROW_DATA_START  = 10
+# ── Fixed row positions (1-based) ────────────────────────────────────────────
+ROW_FUNC_CODE  = 2
+ROW_CREATED_BY = 3
+ROW_LINES_CODE = 4
+ROW_STATS_HDR  = 6
+ROW_STATS      = 7
+ROW_UTCID      = 9
+ROW_DATA_START = 10
 
 # ── Fixed column positions (1-based) ────────────────────────────────────────
-COL_A   = 1   # Section label:  "Condition", "Confirm", "Result"
-COL_B   = 2   # Sub-label:      "Precondition", "Input", "Return", …
-COL_D   = 4   # Value:          "API server is reachable", "200 OK", …
-COL_F   = 6   # First UTCID column (UTCID01)
+COL_A = 1   # Section label
+COL_B = 2   # Sub-label
+COL_C = 3   # (merged / IC code value)
+COL_D = 4   # Content value
+COL_E = 5   # Empty spacer — DO NOT TOUCH
+COL_F = 6   # First UTCID column (default)
 
-# Metadata layout
-COL_IC_CODE_VAL    = 3   # C: "IC-20"
-COL_FUNC_NAME_LBL  = 6   # F: "Function Name"
-COL_FUNC_NAME_VAL  = 12  # L: actual function name string
-COL_EXEC_LBL       = 6   # F: "Executed By"
-COL_EXEC_VAL       = 12  # L: executed-by name
-COL_TOTAL_TC       = 15  # O: "Total Test Cases" / count
+# Metadata cell positions
+COL_IC_CODE_VAL   = 3   # C: "IC-20"
+COL_FUNC_NAME_LBL = 6   # F: "Function Name"  label
+COL_FUNC_NAME_VAL = 12  # L: actual function name
+COL_EXEC_LBL      = 6   # F: "Executed By"    label
+COL_EXEC_VAL      = 12  # L: executed-by name
+COL_TOTAL_TC      = 15  # O: total test cases
 
-# ── Thin border helper ────────────────────────────────────────────────────────
-_THIN = Side(style='thin')
-_BORDER = Border(left=_THIN, right=_THIN, top=_THIN, bottom=_THIN)
+# ── Section label patterns (col B) ───────────────────────────────────────────
+_SECTIONS = {
+    'precondition': re.compile(r'precondition', re.I),
+    'input':        re.compile(r'^\s*input\s*$', re.I),
+    'http_method':  re.compile(r'http\s*method', re.I),
+    'api_endpoint': re.compile(r'api\s*endpoint', re.I),
+    'return_':      re.compile(r'^\s*return\s*$', re.I),
+    'exception':    re.compile(r'^\s*exception', re.I),
+    'log_message':  re.compile(r'log\s*message', re.I),
+    'type_':        re.compile(r'^\s*type\s*[\(\[]\s*n', re.I),
+    'passed_failed':re.compile(r'passed.*/?\s*failed', re.I),
+    'executed_date':re.compile(r'executed\s*date', re.I),
+    'defect_id':    re.compile(r'defect\s*id', re.I),
+}
 
 
 class IcSheetFiller:
-    """
-    Fills the target Excel sheet with IcSheetContent.
-    If the sheet already has O marks -> skip (do not overwrite).
-    """
 
-    # ── Public entry point ────────────────────────────────────────────────────
+    # ── Public API ────────────────────────────────────────────────────────────
 
     def fill(self, wb: openpyxl.Workbook, content: IcSheetContent) -> bool:
         """
-        Returns True  -> sheet was filled and workbook should be saved.
-        Returns False -> sheet was already filled; nothing changed.
-
-        Strategy:
-          - Sheet EXISTS  -> clear only cell VALUES (keep all style/colors/borders),
-                             then write values-only (no _apply_styles call).
-          - Sheet MISSING -> create new sheet, write content + apply styles.
+        Fill the target sheet.
+        Returns True if filled (caller should save), False if skipped.
         """
         name = content.sheet_name
 
         if name in wb.sheetnames:
             ws = wb[name]
             if self._is_filled(ws):
-                print(f'  -> Skip: sheet "{name}" already has content (O marks found).')
+                print(f'  -> Skip: sheet "{name}" already has O marks.')
                 return False
-            # Sheet exists but is empty: clear only VALUES, keep all formatting
-            self._clear_values_only(ws)
-            self._write_metadata(ws, content)
-            self._write_stats(ws, content)
-            self._write_utcid_headers(ws, content.n_cases)
-            last_row = self._write_data_rows(ws, content)
-            # NOTE: _apply_styles is NOT called — existing sheet style is preserved
+            print(f'  Template mode: writing values only (style preserved).')
+            self._fill_into_template(ws, content)
         else:
-            # Brand-new sheet: create with full style
             ws = wb.create_sheet(name)
-            self._write_metadata(ws, content)
-            self._write_stats(ws, content)
-            self._write_utcid_headers(ws, content.n_cases)
-            last_row = self._write_data_rows(ws, content)
-            self._apply_styles(ws, content, last_row)
+            print(f'  Fresh mode: creating new sheet with styles.')
+            self._fill_fresh(ws, content)
 
-        print(f'  [OK] Sheet "{name}" filled - {content.n_cases} test case(s), {last_row - ROW_DATA_START + 1} rows.')
+        n_rows = len(content.rows)
+        print(f'  [OK] Sheet "{name}" filled — {content.n_cases} test case(s), {n_rows} data rows.')
         return True
 
     # ── Filled detection ──────────────────────────────────────────────────────
 
     def _is_filled(self, ws) -> bool:
-        """Return True if any 'O' mark exists in data columns (F onward, rows 10+)."""
+        """True if any 'O' exists in UTCID columns (col F+) at rows 10+."""
         for row in ws.iter_rows(min_row=ROW_DATA_START, max_col=60, values_only=True):
-            if row and any(cell == 'O' for cell in row[COL_F - 1:]):
+            if row and any(v == 'O' for v in row[COL_F - 1:]):
                 return True
         return False
 
-    def _clear_values_only(self, ws):
+    # ═════════════════════════════════════════════════════════════════════════
+    # TEMPLATE MODE  —  existing sheet, preserve all styles
+    # ═════════════════════════════════════════════════════════════════════════
+
+    def _fill_into_template(self, ws, content: IcSheetContent):
         """
-        Clear ONLY cell values, never touching font/fill/border/alignment.
-        This preserves all the existing template formatting.
-        Skips merged-cell slaves (they have no independent value).
+        Write only values:
+          • A handful of metadata cells (IC code, function name, etc.)
+          • col D  — content values
+          • col F+ — UTCID marks / N/A/B / P / date
+        Everything else (col A, B, C, E, all styles) is left untouched.
         """
-        # Collect the top-left cells of all merge ranges (these are writable)
-        merged_masters = set()
-        for merge_range in ws.merged_cells.ranges:
-            merged_masters.add((merge_range.min_row, merge_range.min_col))
+        utcid_col = self._find_utcid_start_col(ws)
 
-        for row in ws.iter_rows():
-            for cell in row:
-                coord = (cell.row, cell.column)
-                # Merged slave cells cannot be written to directly
-                if hasattr(cell, 'value'):
-                    try:
-                        cell.value = None
-                    except AttributeError:
-                        pass  # MergedCell slave — skip silently
+        # 1. Metadata cells only
+        self._write_meta_values(ws, content)
 
+        # 2. UTCID headers (row 9)
+        for i in range(1, content.n_cases + 1):
+            ws.cell(ROW_UTCID, utcid_col + i - 1).value = f'UTCID{i:02d}'
 
-    # ── Metadata rows ─────────────────────────────────────────────────────────
+        # 3. Find section header rows in the template
+        sections = self._scan_sections(ws)
 
-    def _write_metadata(self, ws, content: IcSheetContent):
-        # Row 2: Function Code / Function Name
-        ws.cell(ROW_FUNC_CODE, COL_A).value = 'Function Code'
-        ws.cell(ROW_FUNC_CODE, COL_IC_CODE_VAL).value = content.sheet_name
-        ws.cell(ROW_FUNC_CODE, COL_FUNC_NAME_LBL).value = 'Function Name'
-        ws.cell(ROW_FUNC_CODE, COL_FUNC_NAME_VAL).value = content.function_name
+        # 4. Clear ONLY col D and UTCID-range cells in the data area
+        #    (so we can write fresh; structure labels in A/B/E stay)
+        self._clear_data_cells(ws, utcid_col, content.n_cases)
 
-        # Row 3: Created By / Executed By
-        ws.cell(ROW_CREATED_BY, COL_A).value = 'Created By'
-        ws.cell(ROW_CREATED_BY, COL_IC_CODE_VAL).value = content.created_by
-        ws.cell(ROW_CREATED_BY, COL_EXEC_LBL).value = 'Executed By'
-        ws.cell(ROW_CREATED_BY, COL_EXEC_VAL).value = content.executed_by
+        # 5. Write each section
+        self._write_all_sections(ws, sections, utcid_col, content)
 
-        # Row 4: Lines of code / Lack of test cases
-        ws.cell(ROW_LINES_CODE, COL_A).value = 'Lines  of code'
-        if content.lines_of_code:
-            ws.cell(ROW_LINES_CODE, COL_IC_CODE_VAL).value = content.lines_of_code
-        ws.cell(ROW_LINES_CODE, COL_EXEC_LBL).value = 'Lack of test cases'
+    # ── Helpers for template mode ─────────────────────────────────────────────
 
-        # Row 5: Test requirement
-        ws.cell(ROW_TEST_REQ, COL_A).value = 'Test requirement'
-        ws.cell(ROW_TEST_REQ, COL_IC_CODE_VAL).value = (
-            '<Brief description about requirements which are tested in this function>'
+    def _find_utcid_start_col(self, ws) -> int:
+        """Find the column of UTCID01 in row 9 (default COL_F if not found)."""
+        for cell in ws[ROW_UTCID]:
+            if cell.value and str(cell.value).strip().upper().startswith('UTCID'):
+                return cell.column
+        return COL_F
+
+    def _scan_sections(self, ws) -> dict:
+        """
+        Scan col B (and col A for 'Confirm'/'Result') from ROW_DATA_START downwards.
+        Returns {section_key: row_number}.
+        """
+        found = {}
+        for row in ws.iter_rows(min_row=ROW_DATA_START, max_row=200):
+            b_cell = next((c for c in row if c.column == COL_B), None)
+            if b_cell and b_cell.value:
+                val = str(b_cell.value).strip()
+                for key, pattern in _SECTIONS.items():
+                    if key not in found and pattern.search(val):
+                        found[key] = b_cell.row
+                        break
+        return found
+
+    def _clear_data_cells(self, ws, utcid_col: int, n_cases: int):
+        """
+        Clear ONLY values in col D and ALL UTCID columns (from n_cases+1 onwards).
+        This removes redundant "O" marks and headers if the template was too large.
+        """
+        # 1. Clear UTCID headers (row 9) from the first UTCID col to the very end of sheet
+        for c in range(utcid_col, ws.max_column + 1):
+            _set(ws, ROW_UTCID, c, None)
+
+        # 2. Clear data area (rows 10+)
+        # We clear COL_D and ALL columns from utcid_col to the right
+        for r in range(ROW_DATA_START, ws.max_row + 1):
+            # Clear content value
+            _set(ws, r, COL_D, None)
+            # Clear all marker columns
+            for c in range(utcid_col, ws.max_column + 1):
+                _set(ws, r, c, None)
+
+    def _write_meta_values(self, ws, content: IcSheetContent):
+        """Write only the value cells in the header area (rows 2-7)."""
+        _set(ws, ROW_FUNC_CODE,  COL_IC_CODE_VAL, content.sheet_name)
+        _set(ws, ROW_FUNC_CODE,  COL_FUNC_NAME_VAL, content.function_name)
+        _set(ws, ROW_CREATED_BY, COL_IC_CODE_VAL, content.created_by)
+        _set(ws, ROW_CREATED_BY, COL_EXEC_VAL,    content.executed_by)
+        _set(ws, ROW_STATS, COL_A,        content.n_cases)   # passed count
+        _set(ws, ROW_STATS, 3,            0)                  # failed
+        _set(ws, ROW_STATS, COL_F,        0)                  # untested
+        _set(ws, ROW_STATS, COL_TOTAL_TC, content.n_cases)    # total
+
+    def _write_all_sections(self, ws, sections: dict, utcid_col: int, content: IcSheetContent):
+        """
+        For each section found in the template, write generated rows into the
+        empty D cells and UTCID marker cells that follow the section header.
+        Section boundaries are determined by the next section header's row.
+        """
+        # Build an ordered list of (section_key, header_row, next_header_row)
+        # so we know how many rows each section has available.
+        order = [
+            'precondition', 'input', 'http_method', 'api_endpoint',
+            'return_', 'exception', 'log_message',
+            'type_', 'passed_failed', 'executed_date', 'defect_id',
+        ]
+        # All rows ordered by position in the sheet
+        rows_by_section = sorted(
+            [(k, v) for k, v in sections.items()],
+            key=lambda x: x[1]
         )
+        boundaries = {}
+        for i, (key, row) in enumerate(rows_by_section):
+            next_row = rows_by_section[i + 1][1] if i + 1 < len(rows_by_section) else 300
+            boundaries[key] = (row, row + 1, next_row - 1)  # (header, first_data, last_data)
 
-    def _write_stats(self, ws, content: IcSheetContent):
-        # Row 6: headers
-        ws.cell(ROW_STATS_HDR, COL_A).value = 'Passed'
-        ws.cell(ROW_STATS_HDR, 3).value = 'Failed'
-        ws.cell(ROW_STATS_HDR, COL_F).value = 'Untested'
-        ws.cell(ROW_STATS_HDR, 12).value = 'N/A/B'
-        ws.cell(ROW_STATS_HDR, COL_TOTAL_TC).value = 'Total Test Cases'
+        # Separate IcRows by section
+        prec_rows, inp_rows, http_rows, ep_rows = [], [], [], []
+        ret_rows, log_rows, exc_rows = [], [], []
 
-        # Row 7: values
-        ws.cell(ROW_STATS, COL_A).value = content.passed_count
-        ws.cell(ROW_STATS, 3).value = 0
-        ws.cell(ROW_STATS, COL_F).value = 0
-        ws.cell(ROW_STATS, COL_TOTAL_TC).value = content.n_cases
+        section_cursor = None
+        for ic_row in content.rows:
+            # Detect which logical section this row belongs to
+            sl = ic_row.section_label.lower() if ic_row.section_label else ''
+            sb = ic_row.sub_label.lower()   if ic_row.sub_label   else ''
 
-    # ── UTCID header row ──────────────────────────────────────────────────────
+            if 'precondition' in sb:
+                section_cursor = 'precondition'; continue
+            elif sb == 'input':
+                section_cursor = 'input'; continue
+            elif 'http method' in sb:
+                section_cursor = 'http_method'; continue
+            elif 'api endpoint' in sb:
+                section_cursor = 'api_endpoint'; continue
+            elif sb == 'return':
+                section_cursor = 'return_'; continue
+            elif 'exception' in sb:
+                section_cursor = 'exception'; continue
+            elif 'log message' in sb:
+                section_cursor = 'log_message'; continue
+            elif 'type' in sb:
+                section_cursor = 'type_'; continue
+            elif 'passed' in sb:
+                section_cursor = 'passed_failed'; continue
+            elif 'executed' in sb:
+                section_cursor = 'executed_date'; continue
+            elif 'defect' in sb:
+                section_cursor = 'defect_id'; continue
 
-    def _write_utcid_headers(self, ws, n_cases: int):
-        for i in range(1, n_cases + 1):
-            ws.cell(ROW_UTCID, COL_F + i - 1).value = f'UTCID{i:02d}'
+            if ic_row.is_header:
+                continue
 
-    # ── Data rows ─────────────────────────────────────────────────────────────
+            # Route this data row to the correct bucket
+            if section_cursor == 'precondition':   prec_rows.append(ic_row)
+            elif section_cursor == 'input':         inp_rows.append(ic_row)
+            elif section_cursor == 'http_method':   http_rows.append(ic_row)
+            elif section_cursor == 'api_endpoint':  ep_rows.append(ic_row)
+            elif section_cursor == 'return_':       ret_rows.append(ic_row)
+            elif section_cursor == 'exception':     exc_rows.append(ic_row)
+            elif section_cursor == 'log_message':   log_rows.append(ic_row)
+            # Result rows handled separately below
 
-    def _write_data_rows(self, ws, content: IcSheetContent) -> int:
-        """Write all IcRow objects. Returns the last row number written."""
+        # ── Write each section into the template ──────────────────────────────
+        def write_section(key, data_rows):
+            if key not in boundaries:
+                return
+            _, first, last = boundaries[key]
+            cur = first
+            for ic_row in data_rows:
+                if cur > last:
+                    print(f'  [WARN] More rows than template space in section "{key}" — some rows skipped.')
+                    break
+                if ic_row.value:
+                    _set(ws, cur, COL_D, ic_row.value)
+                for utcid_idx, mark in ic_row.marks.items():
+                    val = content.executed_date if mark == '__DATE__' else mark
+                    _set(ws, cur, utcid_col + utcid_idx - 1, val)
+                cur += 1
+
+        write_section('precondition', prec_rows)
+        write_section('input',        inp_rows)
+        write_section('http_method',  http_rows)
+        write_section('api_endpoint', ep_rows)
+        write_section('return_',      ret_rows)
+        write_section('exception',    exc_rows)
+        write_section('log_message',  log_rows)
+
+        # ── Result section rows (each sub-label has its own row) ──────────────
+        for key, sub in [
+            ('type_',        'type_'),
+            ('passed_failed','passed_failed'),
+            ('executed_date','executed_date'),
+            ('defect_id',    'defect_id'),
+        ]:
+            if key not in sections:
+                continue
+            r = sections[key]
+            # Find the matching IcRow
+            for ic_row in content.rows:
+                sb = (ic_row.sub_label or '').lower()
+                is_match = (
+                    (key == 'type_'         and 'type' in sb) or
+                    (key == 'passed_failed' and 'passed' in sb) or
+                    (key == 'executed_date' and 'executed' in sb) or
+                    (key == 'defect_id'     and 'defect' in sb)
+                )
+                if is_match:
+                    for utcid_idx, mark in ic_row.marks.items():
+                        val = content.executed_date if mark == '__DATE__' else mark
+                        _set(ws, r, utcid_col + utcid_idx - 1, val)
+                    break
+
+    # ═════════════════════════════════════════════════════════════════════════
+    # FRESH MODE  —  new sheet, create structure + apply styles
+    # ═════════════════════════════════════════════════════════════════════════
+
+    def _fill_fresh(self, ws, content: IcSheetContent):
+        """Write a brand-new sheet from scratch, then apply basic styles."""
+        utcid_col = COL_F
+
+        # Metadata labels + values
+        _set(ws, ROW_FUNC_CODE,  COL_A,           'Function Code')
+        _set(ws, ROW_FUNC_CODE,  COL_IC_CODE_VAL, content.sheet_name)
+        _set(ws, ROW_FUNC_CODE,  COL_FUNC_NAME_LBL,'Function Name')
+        _set(ws, ROW_FUNC_CODE,  COL_FUNC_NAME_VAL, content.function_name)
+        _set(ws, ROW_CREATED_BY, COL_A,           'Created By')
+        _set(ws, ROW_CREATED_BY, COL_IC_CODE_VAL, content.created_by)
+        _set(ws, ROW_CREATED_BY, COL_EXEC_LBL,    'Executed By')
+        _set(ws, ROW_CREATED_BY, COL_EXEC_VAL,    content.executed_by)
+        _set(ws, ROW_LINES_CODE, COL_A,           'Lines  of code')
+        if content.lines_of_code:
+            _set(ws, ROW_LINES_CODE, COL_IC_CODE_VAL, content.lines_of_code)
+        _set(ws, ROW_LINES_CODE, COL_EXEC_LBL,    'Lack of test cases')
+        _set(ws, ROW_STATS_HDR,  COL_A,           'Passed')
+        _set(ws, ROW_STATS_HDR,  3,               'Failed')
+        _set(ws, ROW_STATS_HDR,  COL_F,           'Untested')
+        _set(ws, ROW_STATS_HDR,  12,              'N/A/B')
+        _set(ws, ROW_STATS_HDR,  COL_TOTAL_TC,    'Total Test Cases')
+        _set(ws, ROW_STATS,      COL_A,           content.n_cases)
+        _set(ws, ROW_STATS,      3,               0)
+        _set(ws, ROW_STATS,      COL_F,           0)
+        _set(ws, ROW_STATS,      COL_TOTAL_TC,    content.n_cases)
+
+        # UTCID headers
+        for i in range(1, content.n_cases + 1):
+            _set(ws, ROW_UTCID, utcid_col + i - 1, f'UTCID{i:02d}')
+
+        # Data rows (sequential)
         cur = ROW_DATA_START
         for ic_row in content.rows:
-            self._write_row(ws, cur, ic_row, content)
+            if ic_row.section_label:
+                _set(ws, cur, COL_A, ic_row.section_label)
+            if ic_row.sub_label:
+                _set(ws, cur, COL_B, ic_row.sub_label)
+            if ic_row.value and not ic_row.is_header:
+                _set(ws, cur, COL_D, ic_row.value)
+            for utcid_idx, mark in ic_row.marks.items():
+                val = content.executed_date if mark == '__DATE__' else mark
+                _set(ws, cur, utcid_col + utcid_idx - 1, val)
             cur += 1
-        return cur - 1
 
-    def _write_row(self, ws, row: int, ic_row: IcRow, content: IcSheetContent):
-        # Col A - section label (only if set, i.e. first row of section)
-        if ic_row.section_label:
-            ws.cell(row, COL_A).value = ic_row.section_label
+        last_row = cur - 1
+        self._apply_styles(ws, content, last_row, utcid_col)
 
-        # Col B - sub label
-        if ic_row.sub_label:
-            ws.cell(row, COL_B).value = ic_row.sub_label
+    # ── Styles (only used for fresh sheets) ──────────────────────────────────
 
-        # Col D - value (omit for header rows)
-        if ic_row.value and not ic_row.is_header:
-            ws.cell(row, COL_D).value = ic_row.value
-
-        # UTCID columns
-        for utcid_idx, mark_val in ic_row.marks.items():
-            col = COL_F + utcid_idx - 1
-            if mark_val == '__DATE__':
-                ws.cell(row, col).value = content.executed_date
-            else:
-                ws.cell(row, col).value = mark_val
-
-    # ── Styling ───────────────────────────────────────────────────────────────
-
-    def _apply_styles(self, ws, content: IcSheetContent, last_data_row: int):
+    def _apply_styles(self, ws, content: IcSheetContent, last_row: int, utcid_col: int):
         n = content.n_cases
-        max_col = COL_F + n - 1
+        center = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        left   = Alignment(vertical='center', wrap_text=True)
+        bold   = Font(bold=True)
 
-        # ── Column widths ──────────────────────────────────────────────────
         ws.column_dimensions['A'].width = 12
         ws.column_dimensions['B'].width = 20
         ws.column_dimensions['C'].width = 6
         ws.column_dimensions['D'].width = 50
         ws.column_dimensions['E'].width = 4
-
         for i in range(1, n + 1):
-            ws.column_dimensions[get_column_letter(COL_F + i - 1)].width = 14
+            ws.column_dimensions[get_column_letter(utcid_col + i - 1)].width = 14
 
-        # ── Cell styles for data area ──────────────────────────────────────
-        center_align = Alignment(horizontal='center', vertical='center', wrap_text=True)
-        left_align = Alignment(vertical='center', wrap_text=True)
-        bold_font = Font(bold=True)
-
-        for r in range(ROW_DATA_START, last_data_row + 1):
-            for c in range(1, max_col + 1):
+        for r in range(ROW_DATA_START, last_row + 1):
+            for c in range(1, utcid_col + n):
                 cell = ws.cell(r, c)
-                if c >= COL_F:
-                    cell.alignment = center_align
-                elif c == COL_D:
-                    cell.alignment = left_align
+                if c >= utcid_col:
+                    cell.alignment = center
                 else:
-                    cell.alignment = left_align
-                # Bold section / sub-label cells
+                    cell.alignment = left
                 if c in (COL_A, COL_B) and cell.value:
-                    cell.font = bold_font
+                    cell.font = bold
 
-        # ── UTCID header row styles ────────────────────────────────────────
         for i in range(1, n + 1):
-            cell = ws.cell(ROW_UTCID, COL_F + i - 1)
-            cell.alignment = center_align
-            cell.font = Font(bold=True)
+            cell = ws.cell(ROW_UTCID, utcid_col + i - 1)
+            cell.alignment = center
+            cell.font = bold
 
-        # ── Metadata bold labels ───────────────────────────────────────────
-        for r in (ROW_FUNC_CODE, ROW_CREATED_BY, ROW_LINES_CODE, ROW_TEST_REQ,
-                  ROW_STATS_HDR):
-            ws.cell(r, COL_A).font = bold_font
-            ws.cell(r, COL_FUNC_NAME_LBL).font = bold_font
+
+# ── Tiny helper ───────────────────────────────────────────────────────────────
+
+def _set(ws, row: int, col: int, value):
+    """Write a value to a cell, ignoring MergedCell slaves gracefully."""
+    try:
+        ws.cell(row, col).value = value
+    except AttributeError:
+        pass  # merged cell slave — skip silently

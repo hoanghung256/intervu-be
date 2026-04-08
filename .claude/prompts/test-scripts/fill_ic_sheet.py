@@ -187,9 +187,18 @@ def main():
     filled = filler.fill(wb, content)
 
     if filled:
-        wb.save(args.excel)
-        print()
-        print(f'[OK]  Saved: {args.excel}')
+        try:
+            wb.save(args.excel)
+            print()
+            print(f'[OK]  Saved: {args.excel}')
+        except PermissionError:
+            # Excel has the file open — save to a fallback copy
+            fallback = args.excel.replace('.xlsx', '_output.xlsx')
+            wb.save(fallback)
+            print()
+            print(f'[WARN] Could not save to original (file is open in Excel).')
+            print(f'       Saved to: {fallback}')
+            print(f'       Close Excel, then rename/replace the original manually.')
     else:
         print()
         print('[SKIP]   Nothing written. Use --force to overwrite an already-filled sheet.')
