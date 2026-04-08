@@ -15,5 +15,7 @@ namespace Intervu.Domain.Repositories
             int pageSize,
             TransactionType? type = null,
             TransactionStatus? status = null);
+
+        Task<InterviewBookingTransaction?> GetByAvailabilityId(Guid availabilityId, TransactionType type);
     }
 }

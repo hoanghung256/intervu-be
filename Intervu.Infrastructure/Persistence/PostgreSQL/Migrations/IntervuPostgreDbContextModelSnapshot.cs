@@ -3309,11 +3309,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Navigation("WorkExperiences");
                 });
 
-            modelBuilder.Entity("Intervu.Domain.Entities.CoachAvailability", b =>
-                {
-                    b.Navigation("InterviewBookingTransactions");
-                });
-
             modelBuilder.Entity("Intervu.Domain.Entities.CoachProfile", b =>
                 {
                     b.Navigation("Certificates");

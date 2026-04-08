@@ -19,6 +19,19 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .FirstOrDefaultAsync(t => t.BookingRequestId == bookingRequestId && t.Type == type);
         }
 
+        public async Task<InterviewBookingTransaction?> GetByAvailabilityId(Guid availabilityId, TransactionType type)
+        {
+            return await (
+                from transaction in _context.InterviewBookingTransaction
+                join round in _context.InterviewRounds
+                    on transaction.BookingRequestId equals (Guid?)round.BookingRequestId
+                join availability in _context.CoachAvailabilities
+                    on round.Id equals availability.InterviewRoundId
+                where availability.Id == availabilityId && transaction.Type == type
+                select transaction
+            ).FirstOrDefaultAsync();
+        }
+
         public async Task<(IReadOnlyList<InterviewBookingTransaction> Items, int TotalItems)> GetListByUserAsync(
             Guid userId,
             int page,

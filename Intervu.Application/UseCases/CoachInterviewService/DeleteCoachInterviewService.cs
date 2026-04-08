@@ -21,6 +21,9 @@ namespace Intervu.Application.UseCases.CoachInterviewService
             if (service.CoachId != coachId)
                 throw new ForbiddenException("You can only delete your own interview services");
 
+            if (await _serviceRepo.HasActiveReferencesAsync(serviceId))
+                throw new ConflictException("Cannot delete this interview service because it has existing bookings or interview rounds");
+
             _serviceRepo.DeleteAsync(service);
             await _serviceRepo.SaveChangesAsync();
         }
