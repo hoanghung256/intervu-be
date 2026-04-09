@@ -432,6 +432,22 @@ namespace Intervu.API.Hubs
         }
 
         /// <summary>
+        /// Broadcasts whiteboard scene changes to other participants in the room.
+        /// Also persists the latest state in-memory for late-joiners.
+        /// </summary>
+        public async Task SendWhiteboardState(string roomId, string elementsJson, string appStateJson)
+        {
+            if (await isRoomCompleted(roomId)) return;
+            var roomState = await _roomManager.GetOrCreateRoomStateAsync(roomId);
+            roomState.WhiteboardElements = elementsJson;
+            // appStateJson is accepted for backward compat but intentionally not stored/broadcast.
+            // Each peer keeps their own tool/color selection locally.
+
+            await Clients.OthersInGroup(roomId)
+                .SendAsync("ReceiveWhiteboardState", elementsJson);
+        }
+
+        /// <summary>
         /// Called by a client when its microphone is toggled on or off.
         /// Persists the state in RoomState (for late-joiners) and broadcasts
         /// to all other participants in the room.

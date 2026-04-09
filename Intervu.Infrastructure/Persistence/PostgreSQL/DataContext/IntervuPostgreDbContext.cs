@@ -523,6 +523,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.Transcript)
                     .HasColumnType("text");
 
+                // Configure WhiteboardElements
+                b.Property(x => x.WhiteboardElements)
+                    .HasColumnName("WhiteboardElements")
+                    .HasColumnType("text");
+
                 // Configure QuestionList (JSONB)
                 var questionListComparer = new Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer<List<QuestionItem>>(
                     (c1, c2) => JsonSerializer.Serialize(c1, jsonOptions) == JsonSerializer.Serialize(c2, jsonOptions),

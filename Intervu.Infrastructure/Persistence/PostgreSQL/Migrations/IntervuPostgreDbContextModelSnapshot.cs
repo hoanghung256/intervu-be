@@ -1682,6 +1682,10 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<string>("Transcript")
                         .HasColumnType("text");
 
+                    b.Property<string>("WhiteboardElements")
+                        .HasColumnType("text")
+                        .HasColumnName("WhiteboardElements");
+
                     b.Property<int>("Type")
                         .HasColumnType("integer");
 

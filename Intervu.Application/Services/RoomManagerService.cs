@@ -41,6 +41,17 @@ namespace Intervu.Application.Services
         /// </summary>
         public Dictionary<string, bool> PeerMicStates { get; set; }
 
+        /// <summary>
+        /// Serialized JSON string of Excalidraw elements for the room's whiteboard.
+        /// Sent to late-joiners via ReceiveFullState.
+        /// </summary>
+        public string WhiteboardElements { get; set; }
+
+        /// <summary>
+        /// Serialized JSON string of Excalidraw appState for the room's whiteboard.
+        /// </summary>
+        public string WhiteboardAppState { get; set; }
+
         public RoomState()
         {
             CurrentLanguage = "javascript";
@@ -50,6 +61,8 @@ namespace Intervu.Application.Services
             TestCases = Array.Empty<object>();
             PeerCameraStates = new Dictionary<string, bool>();
             PeerMicStates = new Dictionary<string, bool>();
+            WhiteboardElements = string.Empty;
+            WhiteboardAppState = string.Empty;
         }
     }
 
@@ -116,7 +129,8 @@ namespace Intervu.Application.Services
                             room.ProblemDescription = roomState.ProblemDescription;
                             room.ProblemShortName = roomState.ProblemShortName;
                             room.TestCases = roomState.TestCases;
-                            
+                            room.WhiteboardElements = roomState.WhiteboardElements;
+
                             await updateRoom.ExecuteAsync(room);
                             _logger.LogInformation("Periodically saved data for room '{RoomId}'.", roomId);
                         }
@@ -155,7 +169,8 @@ namespace Intervu.Application.Services
                     LanguageCodes = interviewRoom?.LanguageCodes ?? new Dictionary<string, string>(),
                     ProblemDescription = interviewRoom?.ProblemDescription ?? string.Empty,
                     ProblemShortName = interviewRoom?.ProblemShortName ?? string.Empty,
-                    TestCases = interviewRoom?.TestCases ?? Array.Empty<object>()
+                    TestCases = interviewRoom?.TestCases ?? Array.Empty<object>(),
+                    WhiteboardElements = interviewRoom?.WhiteboardElements ?? string.Empty
                 };
             });
         }
@@ -211,6 +226,7 @@ namespace Intervu.Application.Services
                         room.ProblemDescription = roomState.ProblemDescription;
                         room.ProblemShortName = roomState.ProblemShortName;
                         room.TestCases = roomState.TestCases;
+                        room.WhiteboardElements = roomState.WhiteboardElements;
                     }
                     room.Status = InterviewRoomStatus.Completed;
                     _logger.LogInformation("Saved data for room '{RoomId}'.", roomId);
