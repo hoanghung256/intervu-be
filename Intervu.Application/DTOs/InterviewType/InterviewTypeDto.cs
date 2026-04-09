@@ -1,5 +1,6 @@
 ﻿using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
+using Intervu.Domain.Abstractions.Validation;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -27,6 +28,7 @@ namespace Intervu.Application.DTOs.InterviewType
         public int MaxPrice { get; set; }
 
         [Range(15, 300)]
+        [MultipleOf(30, ErrorMessage = "Suggested duration must be a multiple of 30 minutes.")]
         public int SuggestedDurationMinutes { get; set; }
 
         public List<EvaluationItem>? EvaluationStructure { get; set; }

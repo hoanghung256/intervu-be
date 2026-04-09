@@ -38,7 +38,7 @@ namespace Intervu.API.Test.ApiTests.InterviewTypeController
                 Id = typeId,
                 Name = "Updated Type",
                 Description = "Updated description",
-                SuggestedDurationMinutes = 45,
+                SuggestedDurationMinutes = 60,
                 MinPrice = 1200,
                 MaxPrice = 4800
             }, logBody: true);
@@ -62,7 +62,7 @@ namespace Intervu.API.Test.ApiTests.InterviewTypeController
                 Id = missingTypeId,
                 Name = "Updated Type",
                 Description = "Updated description",
-                SuggestedDurationMinutes = 45,
+                SuggestedDurationMinutes = 60,
                 MinPrice = 1200,
                 MaxPrice = 4800
             }, logBody: true);
@@ -99,6 +99,35 @@ namespace Intervu.API.Test.ApiTests.InterviewTypeController
             var updatePayload = await _api.LogDeserializeJson<JsonElement>(updateResponse, logBody: true);
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, updateResponse.StatusCode, "Status code is 400 Bad Request for invalid update data");
             await AssertHelper.AssertFalse(updatePayload.Success, "Invalid data update should fail");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "InterviewType")]
+        public async Task UpdateInterviewType_DurationNotMultipleOf30_ReturnsBadRequest()
+        {
+            var typeId = Guid.NewGuid();
+            await _api.PostAsync("/api/v1/interviewtype", new InterviewTypeDto
+            {
+                Id = typeId,
+                Name = $"Valid Type {Guid.NewGuid().ToString().Substring(0, 8)}",
+                Description = "Description",
+                SuggestedDurationMinutes = 60,
+                MinPrice = 1000,
+                MaxPrice = 5000
+            });
+
+            var updateResponse = await _api.PutAsync($"/api/v1/interviewtype/{typeId}", new InterviewTypeDto
+            {
+                Id = typeId,
+                Name = "Updated Type",
+                Description = "Updated description",
+                SuggestedDurationMinutes = 50,
+                MinPrice = 1200,
+                MaxPrice = 4800
+            }, logBody: true);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, updateResponse.StatusCode, "Non-multiple duration returns 400 Bad Request");
         }
 
         [Fact]

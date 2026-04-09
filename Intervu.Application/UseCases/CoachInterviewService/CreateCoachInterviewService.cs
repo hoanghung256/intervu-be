@@ -28,6 +28,11 @@ namespace Intervu.Application.UseCases.CoachInterviewService
 
         public async Task<CoachInterviewServiceDto> ExecuteAsync(Guid coachId, CreateCoachInterviewServiceDto dto)
         {
+            if (dto.DurationMinutes % 30 != 0)
+            {
+                throw new BadRequestException("Duration must be a multiple of 30 minutes.");
+            }
+
             var coach = await _coachRepo.GetProfileByIdAsync(coachId)
                 ?? throw new NotFoundException("Coach profile not found");
 

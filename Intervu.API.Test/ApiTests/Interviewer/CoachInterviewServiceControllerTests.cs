@@ -74,7 +74,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
             {
                 InterviewTypeId = _cvInterviewTypeId,
                 Price = 1500,
-                DurationMinutes = 45
+                DurationMinutes = 60
             };
 
             // Act
@@ -154,7 +154,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
             {
                 InterviewTypeId = _cvInterviewTypeId,
                 Price = 1500,
-                DurationMinutes = 45
+                DurationMinutes = 60
             };
             var createResponse = await _api.PostAsync("/api/v1/coach-interview-services", createDto, jwtToken: token);
             var createResult = await _api.LogDeserializeJson<CoachInterviewServiceDto>(createResponse);
@@ -163,7 +163,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
             var updateDto = new UpdateCoachInterviewServiceDto
             {
                 Price = 1800,
-                DurationMinutes = 50
+                DurationMinutes = 90
             };
 
             // Act
@@ -189,7 +189,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
             {
                 InterviewTypeId = _cvInterviewTypeId,
                 Price = 1500,
-                DurationMinutes = 45
+                DurationMinutes = 60
             };
             var createResponse = await _api.PostAsync("/api/v1/coach-interview-services", createDto, jwtToken: token);
             var createResult = await _api.LogDeserializeJson<CoachInterviewServiceDto>(createResponse);
@@ -312,7 +312,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
             {
                 InterviewTypeId = _cvInterviewTypeId,
                 Price = 1500,
-                DurationMinutes = 45
+                DurationMinutes = 60
             };
 
             // Act
@@ -333,7 +333,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
             {
                 InterviewTypeId = _cvInterviewTypeId,
                 Price = 1500,
-                DurationMinutes = 45
+                DurationMinutes = 60
             };
 
             // Act
@@ -354,7 +354,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
             {
                 InterviewTypeId = _nonExistentInterviewTypeId,
                 Price = 1500,
-                DurationMinutes = 45
+                DurationMinutes = 60
             };
 
             // Act
@@ -375,7 +375,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
             var updateDto = new UpdateCoachInterviewServiceDto
             {
                 Price = 1800,
-                DurationMinutes = 50
+                DurationMinutes = 60
             };
 
             // Act
@@ -398,7 +398,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
             {
                 InterviewTypeId = _cvInterviewTypeId,
                 Price = 1500,
-                DurationMinutes = 45
+                DurationMinutes = 60
             };
             var createResponse = await _api.PostAsync("/api/v1/coach-interview-services", createDto, jwtToken: coach1Token);
             var createResult = await _api.LogDeserializeJson<CoachInterviewServiceDto>(createResponse);
@@ -446,7 +446,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
             {
                 InterviewTypeId = _cvInterviewTypeId,
                 Price = 1500,
-                DurationMinutes = 45
+                DurationMinutes = 60
             };
             var createResponse = await _api.PostAsync("/api/v1/coach-interview-services", createDto, jwtToken: coach1Token);
             var createResult = await _api.LogDeserializeJson<CoachInterviewServiceDto>(createResponse);

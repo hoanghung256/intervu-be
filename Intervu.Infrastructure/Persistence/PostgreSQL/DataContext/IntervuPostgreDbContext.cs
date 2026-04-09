@@ -883,7 +883,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
 
             modelBuilder.Entity<InterviewType>(entity =>
             {
-                entity.ToTable("InterviewTypes");
+                entity.ToTable("InterviewTypes", tableBuilder =>
+                {
+                    tableBuilder.HasCheckConstraint(
+                        "CK_InterviewTypes_SuggestedDurationMinutes_MultipleOf30",
+                        "\"SuggestedDurationMinutes\" >= 15 AND \"SuggestedDurationMinutes\" <= 300 AND \"SuggestedDurationMinutes\" % 30 = 0");
+                });
 
                 entity.HasKey(e => e.Id);
 
@@ -913,7 +918,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
             // CoachInterviewService (many-to-many with payload: Coach × InterviewType)
             modelBuilder.Entity<CoachInterviewService>(b =>
             {
-                b.ToTable("CoachInterviewServices");
+                b.ToTable("CoachInterviewServices", tableBuilder =>
+                {
+                    tableBuilder.HasCheckConstraint(
+                        "CK_CoachInterviewServices_DurationMinutes_MultipleOf30",
+                        "\"DurationMinutes\" >= 15 AND \"DurationMinutes\" <= 300 AND \"DurationMinutes\" % 30 = 0");
+                });
                 b.HasKey(x => x.Id);
 
                 b.Property(x => x.Price).IsRequired();
@@ -2003,7 +2013,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 Name = "Soft Skills Interview",
                 Description = "Behavioral interview focused on communication and interpersonal skills.",
                 IsCoding = false,
-                SuggestedDurationMinutes = 45,
+                SuggestedDurationMinutes = 60,
                 MinPrice = 1000,
                 MaxPrice = 2000,
                 Status = InterviewTypeStatus.Active,
@@ -2022,7 +2032,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 Name = "Mock Interview",
                 Description = "Full mock interview simulating a real job interview experience.",
                 IsCoding = true,
-                SuggestedDurationMinutes = 75,
+                SuggestedDurationMinutes = 90,
                 MinPrice = 1000,
                 MaxPrice = 2000,
                 Status = InterviewTypeStatus.Active,
@@ -2060,7 +2070,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                     CoachId = user2Id,
                     InterviewTypeId = Guid.Parse("5c9e2a14-73bb-4b61-b7e2-91a8f42d3c6e"),
                     Price = 2000,
-                    DurationMinutes = 45,
+                    DurationMinutes = 60,
                 },
                 new CoachInterviewService
                 {
@@ -2068,7 +2078,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                     CoachId = user2Id,
                     InterviewTypeId = Guid.Parse("f14a7c6d-88b2-4d55-a9fd-2b4e73c91a08"),
                     Price = 2000,
-                    DurationMinutes = 75,
+                    DurationMinutes = 90,
                 }
             );
         }

@@ -1,4 +1,5 @@
 ﻿using Intervu.Domain.Abstractions.Entity;
+using Intervu.Domain.Abstractions.Validation;
 using Intervu.Domain.Entities.Constants;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -23,6 +24,7 @@ namespace Intervu.Domain.Entities
         public int MaxPrice { get; set; }
 
         [Range(15, 300)]
+        [MultipleOf(30, ErrorMessage = "Suggested duration must be a multiple of 30 minutes.")]
         public int SuggestedDurationMinutes { get; set; }
 
         // Store the evaluation structure as a JSON string in the database, EF purpose
