@@ -80,7 +80,7 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
 
             var result = await useCase.ExecuteAsync(candidateId, dto);
 
-            Assert.Equal(BookingRequestStatus.Accepted, result.Status);
+            Assert.Equal(BookingRequestStatus.Pending, result.Status);
             Assert.Equal(120, result.TotalAmount);
             Assert.NotNull(result.Rounds);
             Assert.Single(result.Rounds!);
@@ -181,7 +181,7 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
 
             var result = await useCase.ExecuteAsync(candidateId, dto);
 
-            Assert.Equal(BookingRequestStatus.Accepted, result.Status);
+            Assert.Equal(BookingRequestStatus.Pending, result.Status);
             Assert.Equal(180, result.TotalAmount);
             Assert.NotNull(result.Rounds);
             Assert.Equal(2, result.Rounds!.Count);

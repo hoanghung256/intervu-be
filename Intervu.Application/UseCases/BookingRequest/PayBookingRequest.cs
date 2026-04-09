@@ -26,65 +26,6 @@ namespace Intervu.Application.UseCases.BookingRequest
             _unitOfWork = unitOfWork;
         }
 
-        /// <summary>
-        /// Creates interview rooms from booking request rounds.
-        /// Direct and JD bookings both have rounds with pre-booked availability blocks.
-        /// </summary>
-        private async Task CreateRoomsForBookingRequestAsync(Domain.Entities.BookingRequest bookingRequest, InterviewBookingTransaction paymentTx)
-        {
-            var roomRepo = _unitOfWork.GetRepository<IInterviewRoomRepository>();
-            var coachInterviewServiceRepo = _unitOfWork.GetRepository<ICoachInterviewServiceRepository>();
-
-            foreach (var round in bookingRequest.Rounds.OrderBy(r => r.RoundNumber))
-            {
-                var roundDuration = round.CoachInterviewService?.DurationMinutes ?? 60;
-
-                // Use the first availability block of this round as the reference
-                var firstBlockId = round.AvailabilityBlocks?.OrderBy(b => b.StartTime).FirstOrDefault()?.Id;
-
-                var room = new Domain.Entities.InterviewRoom
-                {
-                    CandidateId = bookingRequest.CandidateId,
-                    CoachId = bookingRequest.CoachId,
-                    ScheduledTime = round.StartTime,
-                    DurationMinutes = roundDuration,
-                    CurrentAvailabilityId = firstBlockId,
-                    Status = InterviewRoomStatus.Scheduled,
-                    TransactionId = paymentTx.Id,
-                    BookingRequestId = bookingRequest.Id,
-                    CoachInterviewServiceId = round.CoachInterviewServiceId,
-                    AimLevel = bookingRequest.AimLevel,
-                    RoundNumber = round.RoundNumber,
-                    EvaluationResults = await CreateEvaluationResultsFromInterviewServiceAsync(coachInterviewServiceRepo, round.CoachInterviewServiceId),
-                    IsEvaluationCompleted = false
-                };
-
-                await roomRepo.AddAsync(room);
-                round.InterviewRoom = room;
-            }
-        }
-
-        private static async Task<List<EvaluationResult>> CreateEvaluationResultsFromInterviewServiceAsync(
-            ICoachInterviewServiceRepository coachInterviewServiceRepo,
-            Guid? coachInterviewServiceId)
-        {
-            if (coachInterviewServiceId == null)
-                return [];
-
-            var service = await coachInterviewServiceRepo.GetByIdWithDetailsAsync(coachInterviewServiceId.Value);
-
-            if (service == null)
-                return [];
-
-            return [.. service.InterviewType.EvaluationStructure.Select(c => new EvaluationResult
-            {
-                Type = c.Type,
-                Question = c.Question,
-                Score = 0,
-                Answer = ""
-            })];
-        }
-
         public async Task<string?> ExecuteAsync(Guid candidateId, Guid bookingRequestId, string returnUrl)
         {
             await _unitOfWork.BeginTransactionAsync();
@@ -100,11 +41,11 @@ namespace Intervu.Application.UseCases.BookingRequest
                 if (bookingRequest.CandidateId != candidateId)
                     throw new ForbiddenException("You can only pay for your own booking requests");
 
-                // Only Accepted requests can be paid
-                if (bookingRequest.Status != BookingRequestStatus.Accepted)
+                // Only Pending requests can be paid
+                if (bookingRequest.Status != BookingRequestStatus.Pending)
                     throw new BadRequestException(
                         $"Cannot pay for a booking request with status '{bookingRequest.Status}'. " +
-                        "Only Accepted requests can be paid.");
+                        "Only Pending requests can be paid.");
 
                 int paymentAmount = bookingRequest.TotalAmount;
 
@@ -136,14 +77,13 @@ namespace Intervu.Application.UseCases.BookingRequest
                 string? checkoutUrl = null;
                 if (paymentAmount == 0)
                 {
-                    // Free booking — mark as paid immediately
+                    // Free booking — mark as paid immediately, reset expiry for coach response window
                     paymentTx.Status = TransactionStatus.Paid;
                     payoutTx.Status = TransactionStatus.Paid;
                     bookingRequest.Status = BookingRequestStatus.Paid;
+                    bookingRequest.ExpiresAt = DateTime.UtcNow.AddHours(48);
                     bookingRequest.UpdatedAt = DateTime.UtcNow;
-
-                    // For free bookings, no webhook will fire — create rooms now
-                    await CreateRoomsForBookingRequestAsync(bookingRequest, paymentTx);
+                    // Rooms are created only after coach approves
                 }
                 else
                 {

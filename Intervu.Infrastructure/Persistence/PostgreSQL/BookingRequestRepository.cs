@@ -101,6 +101,23 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<BookingRequest>> GetExpiredPaidRequestsAsync()
+        {
+            return await _context.BookingRequests
+                .Include(br => br.Candidate)
+                    .ThenInclude(c => c.User)
+                .Include(br => br.Coach)
+                    .ThenInclude(c => c.User)
+                .Include(br => br.Rounds)
+                    .ThenInclude(r => r.AvailabilityBlocks)
+                .Include(br => br.Transactions)
+                .AsSplitQuery()
+                .Where(br => br.Status == BookingRequestStatus.Paid
+                    && br.ExpiresAt != null
+                    && br.ExpiresAt < DateTime.UtcNow)
+                .ToListAsync();
+        }
+
         public async Task<List<(DateTime Start, DateTime End)>> GetActiveRoundsByCoachAsync(
             Guid coachId, DateTime rangeStart, DateTime rangeEnd)
         {
