@@ -359,7 +359,7 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
                 CandidateId = candidateId,
                 CoachId = coachId,
                 Type = BookingRequestType.JDInterview,
-                Status = BookingRequestStatus.Paid,
+                Status = BookingRequestStatus.PendingForApprovalAfterPayment,
                 TotalAmount = roundList.Sum(r => r.Price),
                 Rounds = roundList,
                 Candidate = new CandidateProfile

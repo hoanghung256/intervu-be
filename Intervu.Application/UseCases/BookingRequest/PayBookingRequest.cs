@@ -81,7 +81,7 @@ namespace Intervu.Application.UseCases.BookingRequest
                     // then reset expiry for the 48h coach response window
                     paymentTx.Status = TransactionStatus.Paid;
                     payoutTx.Status = TransactionStatus.Paid;
-                    bookingRequest.Status = BookingRequestStatus.Paid;
+                    bookingRequest.Status = BookingRequestStatus.PendingForApprovalAfterPayment;
                     bookingRequest.ExpiresAt = DateTime.UtcNow.AddHours(48);
                     bookingRequest.UpdatedAt = DateTime.UtcNow;
 

@@ -173,7 +173,7 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
                 Id = bookingId,
                 CandidateId = candidateId,
                 CoachId = coachId,
-                Status = BookingRequestStatus.Paid,
+                Status = BookingRequestStatus.PendingForApprovalAfterPayment,
                 ExpiresAt = DateTime.UtcNow.AddHours(-1),
                 Rounds = [
                     new InterviewRound { Id = roundId, RoundNumber = 1, AvailabilityBlocks = blocks.ToList() }

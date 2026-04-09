@@ -322,7 +322,7 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
                 CandidateId = candidateId,
                 CoachId = coachId,
                 Type = BookingRequestType.JDInterview,
-                Status = BookingRequestStatus.Paid,
+                Status = BookingRequestStatus.PendingForApprovalAfterPayment,
                 TotalAmount = 200,
                 ExpiresAt = DateTime.UtcNow.AddHours(24),
                 Rounds = rounds.ToList(),
