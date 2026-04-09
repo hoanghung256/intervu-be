@@ -41,5 +41,21 @@ namespace Intervu.Domain.Repositories
         /// Get interview rooms linked to a booking request
         /// </summary>
         Task<List<InterviewRoom>> GetByBookingRequestIdAsync(Guid bookingRequestId);
+
+        /// <summary>
+        /// Count completed interviews for a coach within a date range.
+        /// </summary>
+        Task<int> GetCompletedCountByCoachIdAsync(Guid coachId, DateTime from, DateTime to);
+
+        /// <summary>
+        /// Get upcoming scheduled sessions for a coach with candidate info, ordered by scheduled time.
+        /// </summary>
+        Task<List<(InterviewRoom Room, string? CandidateName, string? CandidateProfilePicture, string? BookingStatus)>>
+            GetUpcomingByCoachIdAsync(Guid coachId, int limit);
+
+        /// <summary>
+        /// Get service distribution (InterviewType name → count) for completed rooms of a coach.
+        /// </summary>
+        Task<List<(string ServiceName, int Count)>> GetServiceDistributionByCoachIdAsync(Guid coachId);
     }
 }

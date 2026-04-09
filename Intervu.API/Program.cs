@@ -197,7 +197,8 @@ namespace Intervu.API
                               $"https://{currentIpV4}:5173",
                               "https://scrupleless-aliana-unbreachable.ngrok-free.dev",
                               "https://scrupleless-aliana-unbreachable.ngrok-free.dev:5173",
-                              "https://supereminent-alita-honorless.ngrok-free.dev"
+                              "https://supereminent-alita-honorless.ngrok-free.dev",
+                              "https://d9z00h1g-5173.asse.devtunnels.ms"
                           )
                           .AllowAnyHeader()
                           .AllowAnyMethod()

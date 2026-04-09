@@ -107,5 +107,21 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
             return average ?? 0;
         }
+
+        public async Task<List<(Feedback Feedback, string CandidateName)>> GetRecentFeedbacksByCoachIdAsync(Guid coachId, int limit)
+        {
+            var results = await _context.Feedbacks
+                .Where(f => f.CoachId == coachId)
+                .Include(f => f.InterviewRoom)
+                .Join(_context.Users,
+                    f => f.CandidateId,
+                    u => u.Id,
+                    (f, u) => new { Feedback = f, CandidateName = u.FullName })
+                .OrderByDescending(x => x.Feedback.InterviewRoom.ScheduledTime)
+                .Take(limit)
+                .ToListAsync();
+
+            return results.Select(r => (r.Feedback, r.CandidateName)).ToList();
+        }
     }
 }

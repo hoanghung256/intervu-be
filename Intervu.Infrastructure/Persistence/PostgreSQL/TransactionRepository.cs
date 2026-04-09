@@ -65,5 +65,39 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
             return (items, total);
         }
+
+        public async Task<int> GetTotalPayoutByUserAsync(Guid userId, DateTime from, DateTime to)
+        {
+            return await _context.InterviewBookingTransaction
+                .Where(t => t.UserId == userId
+                    && t.Type == TransactionType.Payout
+                    && t.Status == TransactionStatus.Paid
+                    && t.OrderCode >= 0) // valid transactions
+                .Join(_context.BookingRequests,
+                    t => t.BookingRequestId,
+                    br => br.Id,
+                    (t, br) => new { t, br })
+                .Where(x => x.br.RespondedAt >= from && x.br.RespondedAt < to)
+                .SumAsync(x => x.t.Amount);
+        }
+
+        public async Task<List<(DateTime Date, int Amount)>> GetDailyPayoutByUserAsync(Guid userId, DateTime from, DateTime to)
+        {
+            var results = await _context.InterviewBookingTransaction
+                .Where(t => t.UserId == userId
+                    && t.Type == TransactionType.Payout
+                    && t.Status == TransactionStatus.Paid)
+                .Join(_context.BookingRequests,
+                    t => t.BookingRequestId,
+                    br => br.Id,
+                    (t, br) => new { t, br })
+                .Where(x => x.br.RespondedAt >= from && x.br.RespondedAt < to)
+                .GroupBy(x => x.br.RespondedAt!.Value.Date)
+                .Select(g => new { Date = g.Key, Amount = g.Sum(x => x.t.Amount) })
+                .OrderBy(x => x.Date)
+                .ToListAsync();
+
+            return results.Select(r => (r.Date, r.Amount)).ToList();
+        }
     }
 }
