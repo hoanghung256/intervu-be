@@ -150,5 +150,60 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Where(r => r.BookingRequestId == bookingRequestId)
                 .ToListAsync();
         }
+
+        public async Task<int> GetCompletedCountByCoachIdAsync(Guid coachId, DateTime from, DateTime to)
+        {
+            return await _context.InterviewRooms
+                .CountAsync(r => r.CoachId == coachId
+                    && r.Status == InterviewRoomStatus.Completed
+                    && r.ScheduledTime >= from
+                    && r.ScheduledTime < to);
+        }
+
+        public async Task<List<(InterviewRoom Room, string? CandidateName, string? CandidateProfilePicture, string? BookingStatus)>>
+            GetUpcomingByCoachIdAsync(Guid coachId, int limit)
+        {
+            var rooms = await _context.InterviewRooms
+                .Where(r => r.CoachId == coachId
+                    && r.Status == InterviewRoomStatus.Scheduled
+                    && r.ScheduledTime >= DateTime.UtcNow)
+                .OrderBy(r => r.ScheduledTime)
+                .Take(limit)
+                .Include(r => r.BookingRequest)
+                .ToListAsync();
+
+            var candidateIds = rooms
+                .Where(r => r.CandidateId.HasValue)
+                .Select(r => r.CandidateId!.Value)
+                .Distinct()
+                .ToList();
+
+            var usersById = await _context.Users
+                .Where(u => candidateIds.Contains(u.Id))
+                .Select(u => new { u.Id, u.FullName, u.ProfilePicture })
+                .ToDictionaryAsync(u => u.Id);
+
+            return rooms.Select(r =>
+            {
+                usersById.TryGetValue(r.CandidateId ?? Guid.Empty, out var user);
+                var bookingStatus = r.BookingRequest?.Status.ToString();
+                return (r, user?.FullName, user?.ProfilePicture, bookingStatus);
+            }).ToList();
+        }
+
+        public async Task<List<(string ServiceName, int Count)>> GetServiceDistributionByCoachIdAsync(Guid coachId)
+        {
+            var results = await _context.InterviewRooms
+                .Where(r => r.CoachId == coachId
+                    && r.Status == InterviewRoomStatus.Completed
+                    && r.CoachInterviewServiceId != null)
+                .Include(r => r.CoachInterviewService!)
+                    .ThenInclude(s => s.InterviewType)
+                .GroupBy(r => r.CoachInterviewService!.InterviewType.Name)
+                .Select(g => new { ServiceName = g.Key, Count = g.Count() })
+                .ToListAsync();
+
+            return results.Select(r => (r.ServiceName, r.Count)).ToList();
+        }
     }
 }

@@ -17,5 +17,16 @@ namespace Intervu.Domain.Repositories
             TransactionStatus? status = null);
 
         Task<InterviewBookingTransaction?> GetByAvailabilityId(Guid availabilityId, TransactionType type);
+
+        /// <summary>
+        /// Sum payout amounts for a coach within a date range.
+        /// </summary>
+        Task<int> GetTotalPayoutByUserAsync(Guid userId, DateTime from, DateTime to);
+
+        /// <summary>
+        /// Daily payout breakdown for a coach within a date range.
+        /// Returns (Date, TotalAmount) pairs.
+        /// </summary>
+        Task<List<(DateTime Date, int Amount)>> GetDailyPayoutByUserAsync(Guid userId, DateTime from, DateTime to);
     }
 }

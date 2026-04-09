@@ -66,6 +66,8 @@ using Intervu.Application.Interfaces.UseCases.GeneratedQuestion;
 using Intervu.Application.UseCases.GeneratedQuestion;
 using Intervu.Application.Interfaces.UseCases.Audit;
 using Intervu.Application.UseCases.Audit;
+using CoachDashboardInterfaces = Intervu.Application.Interfaces.UseCases.CoachDashboard;
+using CoachDashboardUseCases = Intervu.Application.UseCases.CoachDashboard;
 
 namespace Intervu.Application
 {
@@ -264,6 +266,14 @@ namespace Intervu.Application
             // ----- Audit Log ----
             services.AddScoped<IAddAuditLogEntry, AddAuditLogEntry>();
             services.AddScoped<IGetAuditLogs, GetAuditLogs>();
+
+            // ----- Coach Dashboard ----
+            services.AddScoped<CoachDashboardInterfaces.IGetCoachDashboardStats, CoachDashboardUseCases.GetCoachDashboardStats>();
+            services.AddScoped<CoachDashboardInterfaces.IGetCoachUpcomingSessions, CoachDashboardUseCases.GetCoachUpcomingSessions>();
+            services.AddScoped<CoachDashboardInterfaces.IGetCoachPendingRequests, CoachDashboardUseCases.GetCoachPendingRequests>();
+            services.AddScoped<CoachDashboardInterfaces.IGetCoachServiceDistribution, CoachDashboardUseCases.GetCoachServiceDistribution>();
+            services.AddScoped<CoachDashboardInterfaces.IGetCoachFeedbackWall, CoachDashboardUseCases.GetCoachFeedbackWall>();
+            services.AddScoped<CoachDashboardInterfaces.IGetCoachAvailabilityOverview, CoachDashboardUseCases.GetCoachAvailabilityOverview>();
 
             return services;
         }
