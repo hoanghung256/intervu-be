@@ -242,6 +242,7 @@ namespace Intervu.Application
             services.AddScoped<BookingRequestInterfaces.IExpireBookingRequests, BookingRequestUseCases.ExpireBookingRequests>();
             services.AddScoped<BookingRequestInterfaces.IPayBookingRequest, BookingRequestUseCases.PayBookingRequest>();
             services.AddScoped<BookingRequestInterfaces.ICancelBookingRequest, BookingRequestUseCases.CancelBookingRequest>();
+            services.AddScoped<BookingRequestInterfaces.ICancelInterviewRound, BookingRequestUseCases.CancelInterviewRound>();
             services.AddScoped<BookingRequestInterfaces.IRescheduleJDBookingRequest, BookingRequestUseCases.RescheduleJDBookingRequest>();
             
             // ----- Notification ----

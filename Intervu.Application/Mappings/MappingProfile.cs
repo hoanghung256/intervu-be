@@ -164,12 +164,13 @@ namespace Intervu.Application.Mappings
             // InterviewRound mappings
             CreateMap<Domain.Entities.InterviewRound, InterviewRoundDto>()
                 .ForMember(dest => dest.InterviewRoomId, opt => opt.MapFrom(src => src.InterviewRoomId))
-                .ForMember(dest => dest.InterviewRoomStatus, opt => opt.MapFrom(src => 
+                .ForMember(dest => dest.InterviewRoomStatus, opt => opt.MapFrom(src =>
                     src.InterviewRoom != null ? src.InterviewRoom.Status.ToString() : null))
                 .ForMember(dest => dest.InterviewTypeName, opt => opt.MapFrom(src =>
                     src.CoachInterviewService.InterviewType.Name))
                 .ForMember(dest => dest.IsCoding, opt => opt.MapFrom(src =>
-                    src.CoachInterviewService.InterviewType.IsCoding));
+                    src.CoachInterviewService.InterviewType.IsCoding))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
         }
     }
 }
