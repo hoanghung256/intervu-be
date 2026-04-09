@@ -9,7 +9,7 @@ namespace Intervu.API.Controllers.v1.Interviewer
 {
     [ApiController]
     [ApiVersion("1.0")]
-    [Route("api/v{version:apiVersion}/coach/dashboard")]
+    [Route("api/v{version:apiVersion}/dashboard")]
     [Authorize(Policy = AuthorizationPolicies.Interviewer)]
     public class CoachDashboardController : ControllerBase
     {
