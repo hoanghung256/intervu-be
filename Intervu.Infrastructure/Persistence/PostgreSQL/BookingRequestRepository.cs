@@ -95,6 +95,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
         public async Task<IEnumerable<BookingRequest>> GetExpiredPendingRequestsAsync()
         {
             return await _context.BookingRequests
+                .Include(br => br.Rounds)
+                    .ThenInclude(r => r.AvailabilityBlocks)
+                .AsSplitQuery()
                 .Where(br => br.Status == BookingRequestStatus.Pending
                     && br.ExpiresAt != null
                     && br.ExpiresAt < DateTime.UtcNow)

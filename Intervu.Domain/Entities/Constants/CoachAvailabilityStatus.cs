@@ -10,6 +10,7 @@ namespace Intervu.Domain.Entities.Constants
     {
         Available,
         Unavailable,
-        Booked
+        Booked,
+        Reserved
     }
 }

@@ -21,7 +21,7 @@ namespace Intervu.Application.UseCases.BookingRequest
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        private static readonly TimeSpan DefaultExpiration = TimeSpan.FromHours(48);
+        private static readonly TimeSpan DefaultExpiration = TimeSpan.FromMinutes(5);
 
         public CreateJDBookingRequest(
             IBookingRequestRepository bookingRepo,
@@ -117,10 +117,10 @@ namespace Intervu.Application.UseCases.BookingRequest
                     rounds.Add(round);
                     totalAmount += service.Price;
 
-                    // Mark all blocks as Booked and link to this round
+                    // Mark all blocks as Reserved and link to this round (will become Booked after payment)
                     foreach (var block in roundBlocks)
                     {
-                        block.Status = CoachAvailabilityStatus.Booked;
+                        block.Status = CoachAvailabilityStatus.Reserved;
                         block.InterviewRoundId = round.Id;
                         _availabilityRepo.UpdateAsync(block);
                     }

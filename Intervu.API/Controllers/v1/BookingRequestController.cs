@@ -154,7 +154,7 @@ namespace Intervu.API.Controllers.v1
             return Ok(new
             {
                 success = true,
-                message = "Booking request cancelled successfully",
+            ssage = "Booking request cancelled successfully",
                 data = result
             });
         }

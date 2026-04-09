@@ -95,7 +95,7 @@ namespace Intervu.Application.UseCases.BookingRequest
                 var roundDuration = round.CoachInterviewService?.DurationMinutes ?? 60;
                 var firstBlockId = round.AvailabilityBlocks?.OrderBy(b => b.StartTime).FirstOrDefault()?.Id;
 
-                var room = new InterviewRoom
+                var room = new Domain.Entities.InterviewRoom
                 {
                     CandidateId = bookingRequest.CandidateId,
                     CoachId = bookingRequest.CoachId,
