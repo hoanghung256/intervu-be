@@ -68,9 +68,9 @@ namespace Intervu.Application.UseCases.BookingRequest
                 throw new ForbiddenException("You can only reschedule your own booking");
             }
 
-            if (bookingRequest.Status != BookingRequestStatus.Paid)
+            if (bookingRequest.Status != BookingRequestStatus.Accepted)
             {
-                throw new ConflictException("Only paid JD bookings can be rescheduled");
+                throw new ConflictException("Only accepted JD bookings can be rescheduled");
             }
 
             var bookingRooms = await _roomRepo.GetByBookingRequestIdAsync(bookingRequestId);

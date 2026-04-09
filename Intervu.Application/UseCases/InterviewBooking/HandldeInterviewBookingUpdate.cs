@@ -108,18 +108,17 @@ namespace Intervu.Application.UseCases.InterviewBooking
             var bookingRequest = await bookingRepo.GetByIdWithDetailsAsync(transaction.BookingRequestId!.Value)
                 ?? throw new NotFoundException("Booking request not found");
 
-            // Accept Pending (JD flow) or Accepted (Direct flow) — both await payment confirmation
-            if (bookingRequest.Status != BookingRequestStatus.Pending &&
-                bookingRequest.Status != BookingRequestStatus.Accepted)
+            // Accept only Pending status — payment must follow booking creation
+            if (bookingRequest.Status != BookingRequestStatus.Pending)
             {
                 _logger.LogWarning(
-                    "BookingRequest {Id} is not in Pending/Accepted status (current: {Status}), skipping payment handling",
+                    "BookingRequest {Id} is not in Pending status (current: {Status}), skipping payment handling",
                     bookingRequest.Id, bookingRequest.Status);
                 return;
             }
 
-            // Transition to Paid — reset expiry for the 48h coach response window
-            bookingRequest.Status = BookingRequestStatus.Paid;
+            // Transition to PendingForApprovalAfterPayment — reset expiry for the 48h coach response window
+            bookingRequest.Status = BookingRequestStatus.PendingForApprovalAfterPayment;
             bookingRequest.ExpiresAt = DateTime.UtcNow.AddHours(48);
             bookingRequest.UpdatedAt = DateTime.UtcNow;
             bookingRepo.UpdateAsync(bookingRequest);

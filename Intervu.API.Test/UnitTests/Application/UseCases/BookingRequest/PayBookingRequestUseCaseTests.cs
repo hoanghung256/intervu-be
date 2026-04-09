@@ -59,7 +59,7 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
             var after = DateTime.UtcNow;
 
             Assert.Null(result);
-            Assert.Equal(BookingRequestStatus.Paid, booking.Status);
+            Assert.Equal(BookingRequestStatus.PendingForApprovalAfterPayment, booking.Status);
 
             // ExpiresAt reset to now + 48h (coach response window)
             Assert.NotNull(booking.ExpiresAt);
@@ -87,7 +87,7 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
             var bookingId = Guid.NewGuid();
 
             var booking = BuildPendingBooking(bookingId, candidateId, totalAmount: 100);
-            booking.Status = BookingRequestStatus.Paid; // already paid
+            booking.Status = BookingRequestStatus.PendingForApprovalAfterPayment; // already paid
 
             var ctx = BuildContext(booking);
             var useCase = ctx.Provider.GetRequiredService<IPayBookingRequest>();

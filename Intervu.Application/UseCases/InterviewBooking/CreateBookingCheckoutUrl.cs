@@ -115,7 +115,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     CandidateId = candidateId,
                     CoachId = coachId,
                     Type = BookingRequestType.Direct,
-                    Status = (paymentAmount == 0) ? BookingRequestStatus.Paid : BookingRequestStatus.Accepted,
+                    Status = (paymentAmount == 0) ? BookingRequestStatus.Accepted : BookingRequestStatus.Pending,
                     CoachInterviewServiceId = coachInterviewServiceId,
                     TotalAmount = paymentAmount,
                     ExpiresAt = (paymentAmount == 0)

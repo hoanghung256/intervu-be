@@ -9,10 +9,13 @@ namespace Intervu.Domain.Entities
     /// Flow B (External) — outside coach's available time
     /// Flow C (JD Multi-Round) — multiple rounds
     ///
-    /// State machine: Pending → Accepted → Paid → (rooms created)
-    ///                Pending → Rejected
-    ///                Pending → Expired
-    ///                Any → Cancelled
+    /// State machine:
+    ///   Paid flow:  Pending → PendingForApprovalAfterPayment → Accepted (rooms created)
+    ///                                                        → Rejected (refund issued)
+    ///   Free flow:  Pending → Accepted (rooms created immediately, no payment step)
+    ///   Expiry:     Pending → Expired (no payment received in time)
+    ///               PendingForApprovalAfterPayment → Expired (coach did not respond in time, refund issued)
+    ///   Cancel:     Pending | PendingForApprovalAfterPayment | Accepted → Cancelled
     /// </summary>
     public class BookingRequest : EntityAuditable<Guid>
     {
