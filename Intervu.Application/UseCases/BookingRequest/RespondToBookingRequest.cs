@@ -45,8 +45,8 @@ namespace Intervu.Application.UseCases.BookingRequest
             if (bookingRequest.CoachId != coachId)
                 throw new ForbiddenException("You can only respond to booking requests addressed to you");
 
-            // Only Paid requests can be responded to — candidate has paid, coach must approve or reject
-            if (bookingRequest.Status != BookingRequestStatus.Paid)
+            // Only PendingForApprovalAfterPayment requests can be responded to — candidate has paid, coach must approve or reject
+            if (bookingRequest.Status != BookingRequestStatus.PendingForApprovalAfterPayment)
                 throw new BadRequestException($"Cannot respond to a booking request with status '{bookingRequest.Status}'");
 
             // Check if the coach response window has expired
@@ -95,7 +95,7 @@ namespace Intervu.Application.UseCases.BookingRequest
                 var roundDuration = round.CoachInterviewService?.DurationMinutes ?? 60;
                 var firstBlockId = round.AvailabilityBlocks?.OrderBy(b => b.StartTime).FirstOrDefault()?.Id;
 
-                var room = new InterviewRoom
+                var room = new Domain.Entities.InterviewRoom
                 {
                     CandidateId = bookingRequest.CandidateId,
                     CoachId = bookingRequest.CoachId,

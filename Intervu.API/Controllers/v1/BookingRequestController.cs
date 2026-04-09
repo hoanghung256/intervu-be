@@ -21,6 +21,7 @@ namespace Intervu.API.Controllers.v1
         private readonly IPayBookingRequest _pay;
         private readonly ICancelBookingRequest _cancel;
         private readonly IRescheduleJDBookingRequest _rescheduleJDBooking;
+        private readonly ICancelInterviewRound _cancelRound;
 
         public BookingRequestController(
             ICreateJDBookingRequest createJD,
@@ -29,7 +30,8 @@ namespace Intervu.API.Controllers.v1
             IGetBookingRequestDetail getDetail,
             IPayBookingRequest pay,
             ICancelBookingRequest cancel,
-            IRescheduleJDBookingRequest rescheduleJDBooking)
+            IRescheduleJDBookingRequest rescheduleJDBooking,
+            ICancelInterviewRound cancelRound)
         {
             _createJD = createJD;
             _respond = respond;
@@ -38,6 +40,7 @@ namespace Intervu.API.Controllers.v1
             _pay = pay;
             _cancel = cancel;
             _rescheduleJDBooking = rescheduleJDBooking;
+            _cancelRound = cancelRound;
         }
 
         /// <summary>
@@ -151,7 +154,24 @@ namespace Intervu.API.Controllers.v1
             return Ok(new
             {
                 success = true,
-                message = "Booking request cancelled successfully",
+            ssage = "Booking request cancelled successfully",
+                data = result
+            });
+        }
+
+        /// <summary>
+        /// Candidate cancels a single round in an Accepted JD booking
+        /// </summary>
+        [Authorize(Policy = AuthorizationPolicies.Candidate)]
+        [HttpPost("{id:guid}/rounds/{roundId:guid}/cancel")]
+        public async Task<IActionResult> CancelInterviewRound(Guid id, Guid roundId)
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var result = await _cancelRound.ExecuteAsync(userId, id, roundId);
+            return Ok(new
+            {
+                success = true,
+                message = "Interview round cancelled successfully",
                 data = result
             });
         }

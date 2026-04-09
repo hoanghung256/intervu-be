@@ -30,13 +30,14 @@ namespace Intervu.Application.UseCases.BookingRequest
         {
             int count = 0;
 
-            // Pending bookings that expired without payment — just mark as Expired
+            // Pending bookings that expired without payment — mark as Expired and free reserved blocks
             var expiredPending = (await _bookingRepo.GetExpiredPendingRequestsAsync()).ToList();
             foreach (var request in expiredPending)
             {
                 request.Status = BookingRequestStatus.Expired;
                 request.UpdatedAt = DateTime.UtcNow;
                 _bookingRepo.UpdateAsync(request);
+                FreeAvailabilityBlocks(request);
                 count++;
             }
 

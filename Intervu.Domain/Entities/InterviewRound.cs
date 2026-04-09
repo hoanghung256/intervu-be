@@ -1,4 +1,5 @@
 using Intervu.Domain.Abstractions.Entity;
+using Intervu.Domain.Entities.Constants;
 
 namespace Intervu.Domain.Entities
 {
@@ -38,6 +39,8 @@ namespace Intervu.Domain.Entities
         /// Set after payment — links to the InterviewRoom created for this round
         /// </summary>
         public Guid? InterviewRoomId { get; set; }
+
+        public InterviewRoundStatus Status { get; set; } = InterviewRoundStatus.Active;
 
         // Navigation
         public BookingRequest BookingRequest { get; set; } = null!;

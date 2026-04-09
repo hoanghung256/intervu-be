@@ -1236,40 +1236,40 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 {
                     Id = availEvaluationId,
                     CoachId = user2Id,
-                    StartTime = DateTime.SpecifyKind(DateTime.Now.AddDays(10), DateTimeKind.Utc),
-                    EndTime = DateTime.SpecifyKind(DateTime.Now.AddDays(11), DateTimeKind.Utc),
+                    StartTime = DateTime.SpecifyKind(new DateTime(2026, 5, 1, 9, 0, 0), DateTimeKind.Utc),
+                    EndTime = DateTime.SpecifyKind(new DateTime(2026, 5, 1, 10, 0, 0), DateTimeKind.Utc),
                     Status = CoachAvailabilityStatus.Available
                 },
                 new CoachAvailability
                 {
                     Id = availReportId,
                     CoachId = user2Id,
-                    StartTime = DateTime.SpecifyKind(DateTime.Now.AddDays(12), DateTimeKind.Utc),
-                    EndTime = DateTime.SpecifyKind(DateTime.Now.AddDays(13), DateTimeKind.Utc),
+                    StartTime = DateTime.SpecifyKind(new DateTime(2026, 5, 2, 9, 0, 0), DateTimeKind.Utc),
+                    EndTime = DateTime.SpecifyKind(new DateTime(2026, 5, 2, 10, 0, 0), DateTimeKind.Utc),
                     Status = CoachAvailabilityStatus.Available
                 },
                 new CoachAvailability
                 {
                     Id = availProposedCreateId,
                     CoachId = user2Id,
-                    StartTime = DateTime.SpecifyKind(DateTime.Now.AddDays(14), DateTimeKind.Utc),
-                    EndTime = DateTime.SpecifyKind(DateTime.Now.AddDays(15), DateTimeKind.Utc),
+                    StartTime = DateTime.SpecifyKind(new DateTime(2026, 5, 3, 9, 0, 0), DateTimeKind.Utc),
+                    EndTime = DateTime.SpecifyKind(new DateTime(2026, 5, 3, 10, 0, 0), DateTimeKind.Utc),
                     Status = CoachAvailabilityStatus.Available
                 },
                 new CoachAvailability
                 {
                     Id = availProposedRespondId,
                     CoachId = user2Id,
-                    StartTime = DateTime.SpecifyKind(DateTime.Now.AddDays(16), DateTimeKind.Utc),
-                    EndTime = DateTime.SpecifyKind(DateTime.Now.AddDays(17), DateTimeKind.Utc),
+                    StartTime = DateTime.SpecifyKind(new DateTime(2026, 5, 4, 9, 0, 0), DateTimeKind.Utc),
+                    EndTime = DateTime.SpecifyKind(new DateTime(2026, 5, 4, 10, 0, 0), DateTimeKind.Utc),
                     Status = CoachAvailabilityStatus.Available
                 },
                 new CoachAvailability
                 {
                     Id = feedbackTestAvailId,
                     CoachId = user2Id,
-                    StartTime = DateTime.SpecifyKind(DateTime.Now.AddDays(18), DateTimeKind.Utc),
-                    EndTime = DateTime.SpecifyKind(DateTime.Now.AddDays(19), DateTimeKind.Utc),
+                    StartTime = DateTime.SpecifyKind(new DateTime(2026, 5, 5, 9, 0, 0), DateTimeKind.Utc),
+                    EndTime = DateTime.SpecifyKind(new DateTime(2026, 5, 5, 10, 0, 0), DateTimeKind.Utc),
                     Status = CoachAvailabilityStatus.Available
                 }
             );
@@ -1404,7 +1404,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                     CoachId = user2Id,
                     TransactionId = transactionEvaluationId,
                     CurrentAvailabilityId = availEvaluationId,
-                    ScheduledTime = DateTime.SpecifyKind(DateTime.Now.AddDays(10), DateTimeKind.Utc),
+                    ScheduledTime = DateTime.SpecifyKind(new DateTime(2026, 5, 1, 9, 0, 0), DateTimeKind.Utc),
                     DurationMinutes = 60,
                     VideoCallRoomUrl = "https://meet.example/room-eval",
                     Status = InterviewRoomStatus.Ongoing,
@@ -1418,7 +1418,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                     CoachId = user2Id,
                     TransactionId = transactionReportId,
                     CurrentAvailabilityId = availReportId,
-                    ScheduledTime = DateTime.SpecifyKind(DateTime.Now.AddDays(12), DateTimeKind.Utc),
+                    ScheduledTime = DateTime.SpecifyKind(new DateTime(2026, 5, 2, 9, 0, 0), DateTimeKind.Utc),
                     DurationMinutes = 60,
                     VideoCallRoomUrl = "https://meet.example/room-report",
                     Status = InterviewRoomStatus.Completed,
@@ -1432,7 +1432,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                     CoachId = user2Id,
                     TransactionId = transactionRescheduleCreateId,
                     CurrentAvailabilityId = CoachAvail1Id,
-                    ScheduledTime = DateTime.SpecifyKind(DateTime.Now.AddDays(20), DateTimeKind.Utc),
+                    ScheduledTime = DateTime.SpecifyKind(new DateTime(2026, 5, 10, 9, 0, 0), DateTimeKind.Utc),
                     DurationMinutes = 60,
                     VideoCallRoomUrl = "https://meet.example/room-resch-create",
                     Status = InterviewRoomStatus.Scheduled,
@@ -1446,7 +1446,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                     CoachId = user2Id,
                     TransactionId = transactionRescheduleRespondId,
                     CurrentAvailabilityId = CoachAvail1Id,
-                    ScheduledTime = DateTime.SpecifyKind(DateTime.Now.AddDays(22), DateTimeKind.Utc),
+                    ScheduledTime = DateTime.SpecifyKind(new DateTime(2026, 5, 12, 9, 0, 0), DateTimeKind.Utc),
                     DurationMinutes = 60,
                     VideoCallRoomUrl = "https://meet.example/room-resch-respond",
                     Status = InterviewRoomStatus.Scheduled,
@@ -1464,7 +1464,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                     ProposedAvailabilityId = availProposedRespondId,
                     RequestedBy = user1Id,
                     Status = RescheduleRequestStatus.Pending,
-                    ExpiresAt = DateTime.SpecifyKind(DateTime.Now.AddDays(30), DateTimeKind.Utc),
+                    ExpiresAt = DateTime.SpecifyKind(new DateTime(2026, 6, 1, 0, 0, 0), DateTimeKind.Utc),
                     Reason = "Seed reason for testing response"
                 }
             );

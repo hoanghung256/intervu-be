@@ -77,16 +77,33 @@ namespace Intervu.Application.UseCases.BookingRequest
                 string? checkoutUrl = null;
                 if (paymentAmount == 0)
                 {
-                    // Free booking — mark as paid immediately, reset expiry for coach response window
+                    // Free booking — payment confirmed immediately, upgrade blocks from Reserved to Booked,
+                    // then reset expiry for the 48h coach response window
                     paymentTx.Status = TransactionStatus.Paid;
                     payoutTx.Status = TransactionStatus.Paid;
-                    bookingRequest.Status = BookingRequestStatus.Paid;
+                    bookingRequest.Status = BookingRequestStatus.PendingForApprovalAfterPayment;
                     bookingRequest.ExpiresAt = DateTime.UtcNow.AddHours(48);
                     bookingRequest.UpdatedAt = DateTime.UtcNow;
+
+                    var availabilityRepo = _unitOfWork.GetRepository<ICoachAvailabilitiesRepository>();
+                    foreach (var round in bookingRequest.Rounds)
+                    {
+                        if (round.AvailabilityBlocks == null) continue;
+                        foreach (var block in round.AvailabilityBlocks)
+                        {
+                            block.Status = CoachAvailabilityStatus.Booked;
+                            availabilityRepo.UpdateAsync(block);
+                        }
+                    }
+
                     // Rooms are created only after coach approves
                 }
                 else
                 {
+                    // Paid booking: extend the 5-min reservation hold to cover checkout duration
+                    bookingRequest.ExpiresAt = DateTime.UtcNow.AddHours(48);
+                    bookingRequest.UpdatedAt = DateTime.UtcNow;
+
                     string description = bookingRequest.Type switch
                     {
                         BookingRequestType.Direct => "Direct booking",

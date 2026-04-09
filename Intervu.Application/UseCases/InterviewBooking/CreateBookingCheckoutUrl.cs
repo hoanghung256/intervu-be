@@ -107,16 +107,20 @@ namespace Intervu.Application.UseCases.InterviewBooking
                         $"is not fully covered by available slots for this coach");
 
                 // 5. Create BookingRequest (Direct)
+                // Free bookings are immediately Paid; paid bookings are Reserved for 5 minutes
+                // until the PayOS webhook confirms payment and upgrades blocks to Booked.
                 Domain.Entities.BookingRequest br = new()
                 {
                     Id = Guid.NewGuid(),
                     CandidateId = candidateId,
                     CoachId = coachId,
                     Type = BookingRequestType.Direct,
-                    Status = (paymentAmount == 0) ? BookingRequestStatus.Paid : BookingRequestStatus.Accepted,
+                    Status = (paymentAmount == 0) ? BookingRequestStatus.Accepted : BookingRequestStatus.Pending,
                     CoachInterviewServiceId = coachInterviewServiceId,
                     TotalAmount = paymentAmount,
-                    ExpiresAt = DateTime.UtcNow.AddHours(24),
+                    ExpiresAt = (paymentAmount == 0)
+                        ? DateTime.UtcNow.AddHours(24)
+                        : DateTime.UtcNow.AddMinutes(5),
                     CreatedAt = DateTime.UtcNow
                 };
 
@@ -139,10 +143,12 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     Price = paymentAmount
                 };
 
-                // Mark availability blocks as Booked and link to this round
+                // Mark availability blocks as Reserved and link to this round.
+                // Free bookings will upgrade to Booked immediately below; paid bookings
+                // will transition to Booked once payment is confirmed via webhook.
                 foreach (var block in roundBlocks)
                 {
-                    block.Status = CoachAvailabilityStatus.Booked;
+                    block.Status = CoachAvailabilityStatus.Reserved;
                     block.InterviewRoundId = round.Id;
                     availabilityRepo.UpdateAsync(block);
                 }
@@ -182,6 +188,13 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 {
                     t.Status = TransactionStatus.Paid;
                     t2.Status = TransactionStatus.Paid;
+
+                    // Free booking: payment confirmed immediately — upgrade blocks from Reserved to Booked
+                    foreach (var block in roundBlocks)
+                    {
+                        block.Status = CoachAvailabilityStatus.Booked;
+                        availabilityRepo.UpdateAsync(block);
+                    }
 
                     var evaluation = await CreateEvaluationResultsFromInterviewService(coachInterviewServiceId);
 

@@ -98,7 +98,8 @@ namespace Intervu.Application.UseCases.InterviewBooking
 
         /// <summary>
         /// Unified payment handler for all booking request types (Direct, External, JD).
-        /// Marks booking as Paid and creates interview rooms from rounds.
+        /// Marks booking as Paid, transitions reserved availability blocks to Booked,
+        /// and resets expiry for the 48h coach response window.
         /// </summary>
         private async Task HandleBookingRequestPayment(InterviewBookingTransaction transaction)
         {
@@ -107,6 +108,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
             var bookingRequest = await bookingRepo.GetByIdWithDetailsAsync(transaction.BookingRequestId!.Value)
                 ?? throw new NotFoundException("Booking request not found");
 
+            // Accept only Pending status — payment must follow booking creation
             if (bookingRequest.Status != BookingRequestStatus.Pending)
             {
                 _logger.LogWarning(
@@ -115,14 +117,29 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 return;
             }
 
-            // Transition to Paid — reset expiry for the 48h coach response window
-            bookingRequest.Status = BookingRequestStatus.Paid;
+            // Transition to PendingForApprovalAfterPayment — reset expiry for the 48h coach response window
+            bookingRequest.Status = BookingRequestStatus.PendingForApprovalAfterPayment;
             bookingRequest.ExpiresAt = DateTime.UtcNow.AddHours(48);
             bookingRequest.UpdatedAt = DateTime.UtcNow;
             bookingRepo.UpdateAsync(bookingRequest);
 
+            // Upgrade all reserved availability blocks to Booked now that payment is confirmed
+            var availabilityRepo = _unitOfWork.GetRepository<ICoachAvailabilitiesRepository>();
+            foreach (var round in bookingRequest.Rounds)
+            {
+                if (round.AvailabilityBlocks == null) continue;
+                foreach (var block in round.AvailabilityBlocks)
+                {
+                    if (block.Status == CoachAvailabilityStatus.Reserved)
+                    {
+                        block.Status = CoachAvailabilityStatus.Booked;
+                        availabilityRepo.UpdateAsync(block);
+                    }
+                }
+            }
+
             _logger.LogInformation(
-                "BookingRequest {BookingRequestId} marked as Paid, awaiting coach approval",
+                "BookingRequest {BookingRequestId} marked as Paid, availability blocks confirmed as Booked",
                 bookingRequest.Id);
         }
 
