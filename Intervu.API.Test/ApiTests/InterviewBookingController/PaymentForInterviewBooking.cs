@@ -133,6 +133,54 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
             await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Status code is 404 Not Found for non-existent coach");
         }
 
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "InterviewBooking")]
+        public async Task CreatePaymentUrl_ReturnsUnauthorized_WhenNoToken()
+        {
+            // Arrange – construct a minimal booking request without authenticating
+            var request = new InterviewBookingRequest
+            {
+                CoachId = Guid.NewGuid(),
+                CoachAvailabilityId = Guid.NewGuid(),
+                CoachInterviewServiceId = Guid.NewGuid(),
+                StartTime = DateTime.UtcNow.AddDays(7),
+                ReturnUrl = "https://test.com/return"
+            };
+
+            // Act – no jwtToken supplied
+            var response = await _api.PostAsync("/api/v1/interview-booking", request, logBody: true);
+
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Status code is 401 Unauthorized without token");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "InterviewBooking")]
+        public async Task CreatePaymentUrl_ReturnsForbidden_WhenCalledByCoach()
+        {
+            // Arrange – bob is a Coach; the endpoint requires Candidate policy
+            var loginResponse = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = "bob@example.com", Password = DEFAULT_PASSWORD });
+            var loginData = await _api.LogDeserializeJson<LoginResponse>(loginResponse);
+            var coachToken = loginData.Data!.Token;
+
+            var request = new InterviewBookingRequest
+            {
+                CoachId = Guid.NewGuid(),
+                CoachAvailabilityId = Guid.NewGuid(),
+                CoachInterviewServiceId = Guid.NewGuid(),
+                StartTime = DateTime.UtcNow.AddDays(7),
+                ReturnUrl = "https://test.com/return"
+            };
+
+            // Act
+            var response = await _api.PostAsync("/api/v1/interview-booking", request, jwtToken: coachToken, logBody: true);
+
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Status code is 403 Forbidden for Coach role");
+        }
+
         private async Task<(string token, Guid userId)> LoginAsAliceAsync()
         {
             var loginResponse = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = "alice@example.com", Password = DEFAULT_PASSWORD });
