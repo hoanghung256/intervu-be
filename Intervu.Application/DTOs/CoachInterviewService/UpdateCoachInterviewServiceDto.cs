@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Intervu.Domain.Abstractions.Validation;
 
 namespace Intervu.Application.DTOs.CoachInterviewService
 {
@@ -19,6 +20,7 @@ namespace Intervu.Application.DTOs.CoachInterviewService
         /// </summary>
         [Required]
         [Range(15, 300)]
+        [MultipleOf(30, ErrorMessage = "Duration must be a multiple of 30 minutes.")]
         public int DurationMinutes { get; set; }
     }
 }
