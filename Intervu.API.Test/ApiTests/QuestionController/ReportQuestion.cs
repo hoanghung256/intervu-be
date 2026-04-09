@@ -5,6 +5,7 @@ using Intervu.Application.DTOs.Question;
 using Intervu.Application.DTOs.User;
 using Intervu.Domain.Entities.Constants.QuestionConstants;
 using System.Net;
+using System.Text.Json;
 using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.QuestionController
@@ -51,6 +52,50 @@ namespace Intervu.API.Test.ApiTests.QuestionController
 
             var response = await _api.GetAsync("/api/v1/questions/reports", jwtToken: userData.Data!.Token, logBody: true);
             await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Non-admin user receives 403 Forbidden");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Question")]
+        public async Task UpdateReportStatus_NonExistentReport_ReturnsNotFound()
+        {
+            var adminLogin = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = ADMIN_EMAIL, Password = DEFAULT_PASSWORD });
+            var adminData = await _api.LogDeserializeJson<LoginResponse>(adminLogin);
+
+            var response = await _api.PutAsync($"/api/v1/questions/reports/{Guid.NewGuid()}/status", new UpdateQuestionReportStatusRequest
+            {
+                Status = QuestionReportStatus.Reviewed
+            }, jwtToken: adminData.Data!.Token, logBody: true);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Status 404 for non-existent report ID");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Question")]
+        public async Task GetQuestionReports_InvalidPage_ReturnsBadRequest()
+        {
+            var adminLogin = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = ADMIN_EMAIL, Password = DEFAULT_PASSWORD });
+            var adminData = await _api.LogDeserializeJson<LoginResponse>(adminLogin);
+
+            var response = await _api.GetAsync("/api/v1/questions/reports?page=0&pageSize=10", jwtToken: adminData.Data!.Token, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status 400 for invalid page number");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Question")]
+        public async Task UpdateReportStatus_InvalidStatus_ReturnsBadRequest()
+        {
+            var adminLogin = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = ADMIN_EMAIL, Password = DEFAULT_PASSWORD });
+            var adminData = await _api.LogDeserializeJson<LoginResponse>(adminLogin);
+
+            var response = await _api.PutAsync($"/api/v1/questions/reports/{Guid.NewGuid()}/status", new
+            {
+                Status = 999 // Invalid status enum value
+            }, jwtToken: adminData.Data!.Token, logBody: true);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status 400 for invalid status value");
         }
     }
 }

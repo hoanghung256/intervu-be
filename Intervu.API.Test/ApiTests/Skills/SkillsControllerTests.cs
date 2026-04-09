@@ -80,5 +80,29 @@ namespace Intervu.API.Test.ApiTests.Skills
             var apiResponse = await _api.LogDeserializeJson<PagedResult<SkillDto>>(response);
             await AssertHelper.AssertTrue(apiResponse.Success, "Request was successful");
         }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Skills")]
+        public async Task GetAllSkills_ReturnsBadRequest_WhenPageSizeIsZero()
+        {
+            // Act
+            var response = await _api.GetAsync("/api/v1/skills?page=1&pageSize=0", logBody: true);
+
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "PageSize 0 should return 400 Bad Request");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Skills")]
+        public async Task GetAllSkills_ReturnsBadRequest_WhenPageIsZero()
+        {
+            // Act
+            var response = await _api.GetAsync("/api/v1/skills?page=0&pageSize=10", logBody: true);
+
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Page 0 should return 400 Bad Request");
+        }
     }
 }

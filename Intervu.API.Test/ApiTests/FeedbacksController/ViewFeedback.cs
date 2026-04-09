@@ -18,8 +18,6 @@ namespace Intervu.API.Test.ApiTests.FeedbacksController
             _api = new ApiHelper(factory.CreateClient());
         }
 
-        // ── GET /feedbacks ──────────────────────────────────────────────────────
-
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Feedbacks")]
@@ -76,7 +74,6 @@ namespace Intervu.API.Test.ApiTests.FeedbacksController
             await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Status code is 403 Forbidden for Coach role");
         }
 
-        // ── PUT /feedbacks/{id} ─────────────────────────────────────────────────
 
         [Fact]
         [Trait("Category", "API")]
@@ -151,6 +148,19 @@ namespace Intervu.API.Test.ApiTests.FeedbacksController
 
             // Assert – controller throws NullReferenceException; framework returns 500
             await AssertHelper.AssertEqual(HttpStatusCode.InternalServerError, response.StatusCode, "Status code is 500 when feedback ID does not exist (bug: no null guard before property assignment)");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Feedbacks")]
+        public async Task UpdateFeedback_ReturnsNotFound_WhenFeedbackDoesNotExist()
+        {
+            var loginResponse = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = "alice@example.com", Password = DEFAULT_PASSWORD });
+            var loginData = await _api.LogDeserializeJson<LoginResponse>(loginResponse);
+            var nonExistentId = Guid.NewGuid();
+
+            var response = await _api.PutAsync($"/api/v1/feedbacks/{nonExistentId}", new UpdateFeedbackDto { Rating = 5, Comments = "Valid comment" }, jwtToken: loginData.Data!.Token, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent feedback ID returns 404 Not Found");
         }
     }
 }

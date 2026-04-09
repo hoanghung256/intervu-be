@@ -84,6 +84,21 @@ namespace Intervu.API.Test.Utils
             }
         }
 
+        public static async Task AssertEmpty(IEnumerable<object> @object, string userMessage)
+        {
+            var test = BaseTest.Current.Value;
+            try
+            {
+                Assert.Empty(@object);
+                if (test != null) await test.LogPass($"Assertion passed: {userMessage}");
+            }
+            catch (Exception ex)
+            {
+                if (test != null) await test.LogFail($"Assertion failed: {userMessage}", ex);
+                throw;
+            }
+        }
+
         public static async Task AssertContains(string expectedSubstring, string actualString, string userMessage, StringComparison comparisonType = StringComparison.OrdinalIgnoreCase)
         {
             var test = BaseTest.Current.Value;

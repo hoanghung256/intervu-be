@@ -129,6 +129,91 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
             await AssertHelper.AssertEqual("Range deleted", deletePayload.Message, "Delete message matches for empty range");
         }
 
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Availability")]
+        public async Task DeleteAvailabilitySlot_NonExistentRange_ReturnsNotFound()
+        {
+            var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(80));
+            var end = start.AddHours(1);
+
+            var deleteResponse = await DeleteWithBodyAsync("/api/v1/availabilities/range", new CoachAvailabilityDeleteDto
+            {
+                CoachId = BobCoachId,
+                RangeStartTime = new DateTimeOffset(start, TimeSpan.Zero),
+                RangeEndTime = new DateTimeOffset(end, TimeSpan.Zero)
+            });
+
+            var deletePayload = await _api.LogDeserializeJson<JsonElement>(deleteResponse, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, deleteResponse.StatusCode, "Status code is 404 Not Found for non-existent range");
+            await AssertHelper.AssertFalse(deletePayload.Success, "Delete range should fail");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Availability")]
+        public async Task DeleteAvailabilitySlot_InvalidRange_ThrowsException()
+        {
+            var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(81));
+            var end = start.AddHours(-1);
+
+            var exception = await Assert.ThrowsAsync<ArgumentException>(async () =>
+                await DeleteWithBodyAsync("/api/v1/availabilities/range", new CoachAvailabilityDeleteDto
+                {
+                    CoachId = BobCoachId,
+                    RangeStartTime = new DateTimeOffset(start, TimeSpan.Zero),
+                    RangeEndTime = new DateTimeOffset(end, TimeSpan.Zero)
+                }));
+
+            await AssertHelper.AssertContains("RangeEndTime must be greater than RangeStartTime", exception.Message, "Validation exception message matches");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Availability")]
+        public async Task DeleteAvailabilitySlot_PartialRange_ReturnsNotFoundOrSuccessDependingOnImplementation()
+        {
+            var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(82));
+            var end = start.AddHours(2);
+            await _api.PostAsync("/api/v1/availabilities", new CoachAvailabilityCreateDto
+            {
+                CoachId = BobCoachId,
+                RangeStartTime = new DateTimeOffset(start, TimeSpan.Zero),
+                RangeEndTime = new DateTimeOffset(end, TimeSpan.Zero)
+            });
+
+            // Try to delete only half of the range
+            var deleteResponse = await DeleteWithBodyAsync("/api/v1/availabilities/range", new CoachAvailabilityDeleteDto
+            {
+                CoachId = BobCoachId,
+                RangeStartTime = new DateTimeOffset(start, TimeSpan.Zero),
+                RangeEndTime = new DateTimeOffset(start.AddHours(1), TimeSpan.Zero)
+            });
+
+            var deletePayload = await _api.LogDeserializeJson<JsonElement>(deleteResponse, logBody: true);
+            // This test depends on business logic, assuming it returns NotFound if the exact range isn't found
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, deleteResponse.StatusCode, "Status code is 404 Not Found for partial range deletion");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Availability")]
+        public async Task DeleteAvailabilitySlot_PastRange_ReturnsNotFound()
+        {
+            var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(-10));
+            var end = start.AddHours(1);
+
+            var deleteResponse = await DeleteWithBodyAsync("/api/v1/availabilities/range", new CoachAvailabilityDeleteDto
+            {
+                CoachId = BobCoachId,
+                RangeStartTime = new DateTimeOffset(start, TimeSpan.Zero),
+                RangeEndTime = new DateTimeOffset(end, TimeSpan.Zero)
+            });
+
+            var deletePayload = await _api.LogDeserializeJson<JsonElement>(deleteResponse, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, deleteResponse.StatusCode, "Status code is 404 Not Found for past range");
+        }
+
         private async Task<HttpResponseMessage> DeleteWithBodyAsync(string requestUri, object payload, string jwtToken = "")
         {
             var request = new HttpRequestMessage(HttpMethod.Delete, requestUri);

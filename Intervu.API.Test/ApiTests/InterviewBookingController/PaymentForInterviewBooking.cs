@@ -9,7 +9,9 @@ using Intervu.Application.DTOs.InterviewType;
 using Intervu.Application.DTOs.User;
 using Intervu.Domain.Entities.Constants;
 using System.Net;
+using System.Text.Json;
 using Xunit.Abstractions;
+using static Intervu.API.Test.Utils.ApiHelper;
 
 namespace Intervu.API.Test.ApiTests.InterviewBookingController
 {
@@ -42,6 +44,93 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
             var apiResponse = await _api.LogDeserializeJson<CreateBookingResponseData>(response);
             await AssertHelper.AssertTrue(apiResponse.Success, "API response indicates success");
+            await AssertHelper.AssertNotNull(apiResponse.Data?.Data?.CheckOutUrl, "CheckOutUrl is returned");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "InterviewBooking")]
+        public async Task CreatePaymentUrl_Unauthorized_ReturnsUnauthorized()
+        {
+            var response = await _api.PostAsync("/api/v1/interview-booking", new InterviewBookingRequest
+            {
+                CoachId = Guid.NewGuid(),
+                CoachAvailabilityId = Guid.NewGuid(),
+                CoachInterviewServiceId = Guid.NewGuid(),
+                StartTime = DateTime.UtcNow.AddDays(1),
+                ReturnUrl = "https://test.com/return"
+            }, logBody: true);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Status code is 401 Unauthorized");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "InterviewBooking")]
+        public async Task CreatePaymentUrl_InvalidData_ReturnsBadRequest()
+        {
+            var (token, _) = await LoginAsAliceAsync();
+            var response = await _api.PostAsync("/api/v1/interview-booking", new InterviewBookingRequest
+            {
+                CoachId = Guid.Empty, // Invalid ID
+                CoachAvailabilityId = Guid.NewGuid(),
+                CoachInterviewServiceId = Guid.NewGuid(),
+                StartTime = DateTime.UtcNow.AddDays(-1), // Past date
+                ReturnUrl = "" // Missing URL
+            }, jwtToken: token, logBody: true);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 Bad Request for invalid data");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "InterviewBooking")]
+        public async Task CreatePaymentUrl_AlreadyBookedAvailability_ReturnsConflict()
+        {
+            var (token, _) = await LoginAsAliceAsync();
+            var (coachId, availabilityId, serviceId, startTime) = await SetupTestData();
+
+            // First booking
+            await _api.PostAsync("/api/v1/interview-booking", new InterviewBookingRequest
+            {
+                CoachId = coachId,
+                CoachAvailabilityId = availabilityId,
+                CoachInterviewServiceId = serviceId,
+                StartTime = startTime,
+                ReturnUrl = "https://test.com/return"
+            }, jwtToken: token, logBody: true);
+
+            // Try second booking for same availability
+            var response = await _api.PostAsync("/api/v1/interview-booking", new InterviewBookingRequest
+            {
+                CoachId = coachId,
+                CoachAvailabilityId = availabilityId,
+                CoachInterviewServiceId = serviceId,
+                StartTime = startTime,
+                ReturnUrl = "https://test.com/return"
+            }, jwtToken: token, logBody: true);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.Conflict, response.StatusCode, "Status code is 409 Conflict for already booked availability");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "InterviewBooking")]
+        public async Task CreatePaymentUrl_NonExistentCoach_ReturnsNotFound()
+        {
+            var (token, _) = await LoginAsAliceAsync();
+            var (_, availabilityId, serviceId, startTime) = await SetupTestData();
+
+            var response = await _api.PostAsync("/api/v1/interview-booking", new InterviewBookingRequest
+            {
+                CoachId = Guid.NewGuid(), // Non-existent coach
+                CoachAvailabilityId = availabilityId,
+                CoachInterviewServiceId = serviceId,
+                StartTime = startTime,
+                ReturnUrl = "https://test.com/return"
+            }, jwtToken: token, logBody: true);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Status code is 404 Not Found for non-existent coach");
         }
 
         private async Task<(string token, Guid userId)> LoginAsAliceAsync()
@@ -100,7 +189,8 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
             return (coachId, scheduleResult.Data!.FreeSlots.First().Id, serviceResult.Data!.Id, startTime);
         }
 
-        private class CreateBookingResponseData
+        private class CreateBookingResponseData : ApiResponse<CreateBookingData> {}
+        private class CreateBookingData
         {
             public bool IsPaid { get; set; }
             public string? CheckOutUrl { get; set; }

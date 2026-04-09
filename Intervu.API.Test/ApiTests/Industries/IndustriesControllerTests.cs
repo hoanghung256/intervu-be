@@ -59,5 +59,34 @@ namespace Intervu.API.Test.ApiTests.Industries
             await AssertHelper.AssertEqual(pageSize, apiResponse.Data!.Items.Count, $"Items count should match pageSize {pageSize}");
             await AssertHelper.AssertEqual(page, apiResponse.Data.CurrentPage, "Current page matches request");
         }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Industries")]
+        public async Task GetAllIndustries_ReturnsEmptyList_WhenPageIsOutOfRange()
+        {
+            var response = await _api.GetAsync("/api/v1/industries?page=9999&pageSize=10", logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
+            var apiResponse = await _api.LogDeserializeJson<PagedResult<IndustryDto>>(response);
+            await AssertHelper.AssertTrue(apiResponse.Data?.Items != null && !apiResponse.Data.Items.Any(), "Items list should be empty");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Industries")]
+        public async Task GetAllIndustries_ReturnsBadRequest_WhenPageSizeIsZero()
+        {
+            var response = await _api.GetAsync("/api/v1/industries?page=1&pageSize=0", logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "PageSize 0 should return 400 Bad Request");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Industries")]
+        public async Task GetAllIndustries_ReturnsBadRequest_WhenPageIsZero()
+        {
+            var response = await _api.GetAsync("/api/v1/industries?page=0&pageSize=10", logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Page 0 should return 400 Bad Request");
+        }
     }
 }

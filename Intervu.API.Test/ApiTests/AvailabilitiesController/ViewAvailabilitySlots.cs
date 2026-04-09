@@ -11,6 +11,7 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
     {
         private readonly ApiHelper _api;
         private static readonly Guid BobCoachId = Guid.Parse("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22");
+        private static readonly Guid NonExistentCoachId = Guid.NewGuid();
 
         public ViewAvailabilitySlotsTests(BaseApiTest<Program> factory, ITestOutputHelper output) : base(output)
         {
@@ -178,6 +179,44 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Free-slots returns 200 OK after slot creation");
             await AssertHelper.AssertTrue(payload.Success, "Free-slots request succeeds");
             await AssertHelper.AssertNotNull(payload.Data, "Free-slots data is returned");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Availability")]
+        public async Task Handle_ViewCoachAvailabilities_NonExistentCoach_ReturnsEmptyList()
+        {
+            var response = await _api.GetAsync($"/api/v1/availabilities/{NonExistentCoachId}", logBody: true);
+            var payload = await _api.LogDeserializeJson<JsonElement>(response, logBody: true);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
+            await AssertHelper.AssertTrue(payload.Success, "Request succeeds");
+            await AssertHelper.AssertEqual(JsonValueKind.Array, payload.Data.ValueKind, "Data should be an array");
+            await AssertHelper.AssertEqual(0, payload.Data.GetArrayLength(), "Data should be empty for non-existent coach");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Availability")]
+        public async Task Handle_ViewCoachFreeSlots_NonExistentCoach_ReturnsEmptyList()
+        {
+            var response = await _api.GetAsync($"/api/v1/availabilities/{NonExistentCoachId}/free-slots", logBody: true);
+            var payload = await _api.LogDeserializeJson<JsonElement>(response, logBody: true);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
+            await AssertHelper.AssertTrue(payload.Success, "Request succeeds");
+            await AssertHelper.AssertEqual(JsonValueKind.Array, payload.Data.ValueKind, "Data should be an array");
+            await AssertHelper.AssertEqual(0, payload.Data.GetArrayLength(), "Free slots should be empty for non-existent coach");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Availability")]
+        public async Task Handle_ViewCoachAvailabilities_InvalidId_ReturnsBadRequest()
+        {
+            var response = await _api.GetAsync("/api/v1/availabilities/invalid-guid", logBody: true);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 Bad Request for invalid GUID");
         }
 
         private static DateTime AlignToHalfHourUtc(DateTime value)

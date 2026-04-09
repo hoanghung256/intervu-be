@@ -14,6 +14,8 @@ namespace Intervu.API.Test.ApiTests.AiController
         public CollectQuestionWithAITests(BaseApiTest<Program> factory, ITestOutputHelper output) : base(output) => _api = new ApiHelper(factory.CreateClient());
 
         [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "AI")]
         public async Task Handle_AuthenticatedUser_ReturnsGeneratedQuestions()
         {
             var login = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = "bob@example.com", Password = DEFAULT_PASSWORD });
@@ -25,10 +27,48 @@ namespace Intervu.API.Test.ApiTests.AiController
         }
 
         [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "AI")]
         public async Task Handle_MissingToken_ReturnsUnauthorized()
         {
             var response = await _api.GetAsync($"/api/v1/generated-questions/rooms/{_room1Id}", logBody: true);
             await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Status code is 401 Unauthorized");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "AI")]
+        public async Task Handle_InvalidRoomId_ReturnsNotFound()
+        {
+            var login = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = "bob@example.com", Password = DEFAULT_PASSWORD });
+            var token = (await _api.LogDeserializeJson<LoginResponse>(login)).Data!.Token;
+            var nonExistentRoomId = Guid.NewGuid();
+            var response = await _api.GetAsync($"/api/v1/generated-questions/rooms/{nonExistentRoomId}", jwtToken: token, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent room ID returns 404 Not Found");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "AI")]
+        public async Task Handle_UnauthorizedUserForRoom_ReturnsForbidden()
+        {
+            // Assuming alice is not part of room1
+            var login = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = "alice@example.com", Password = DEFAULT_PASSWORD });
+            var token = (await _api.LogDeserializeJson<LoginResponse>(login)).Data!.Token;
+            var response = await _api.GetAsync($"/api/v1/generated-questions/rooms/{_room1Id}", jwtToken: token, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "User not in room returns 403 Forbidden");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "AI")]
+        public async Task Handle_RoomIdFormatInvalid_ReturnsBadRequest()
+        {
+            var login = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = "bob@example.com", Password = DEFAULT_PASSWORD });
+            var token = (await _api.LogDeserializeJson<LoginResponse>(login)).Data!.Token;
+            var invalidRoomId = "not-a-guid";
+            var response = await _api.GetAsync($"/api/v1/generated-questions/rooms/{invalidRoomId}", jwtToken: token, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Invalid room ID format returns 400 Bad Request");
         }
     }
 }

@@ -22,18 +22,15 @@ namespace Intervu.API.Test.ApiTests.FeedbacksController
         [Trait("Category", "Feedbacks")]
         public async Task UpdateFeedback_ReturnsSuccess_WhenDataIsValid()
         {
-            // Arrange
             var loginResponse = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = "alice@example.com", Password = DEFAULT_PASSWORD });
             var loginData = await _api.LogDeserializeJson<LoginResponse>(loginResponse);
 
-            // Act
             var response = await _api.PutAsync($"/api/v1/feedbacks/{_feedbackUpdatePendingId}", new UpdateFeedbackDto
             {
                 Rating = 5,
                 Comments = "Excellent performance! The coach was very helpful."
             }, jwtToken: loginData.Data!.Token, logBody: true);
 
-            // Assert
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
         }
 
@@ -42,14 +39,12 @@ namespace Intervu.API.Test.ApiTests.FeedbacksController
         [Trait("Category", "Feedbacks")]
         public async Task UpdateFeedback_ReturnsUnauthorized_WhenNoToken()
         {
-            // Act – request sent without a Bearer token
             var response = await _api.PutAsync($"/api/v1/feedbacks/{_feedbackUpdatePendingId}", new UpdateFeedbackDto
             {
                 Rating = 5,
                 Comments = "Unauthorized request"
             }, logBody: true);
 
-            // Assert
             await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Status code is 401 Unauthorized");
         }
 
@@ -71,6 +66,46 @@ namespace Intervu.API.Test.ApiTests.FeedbacksController
 
             // Assert
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 Bad Request when Comments is null");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Feedbacks")]
+        public async Task UpdateFeedback_ReturnsBadRequest_WhenCommentsExceedMaxLength()
+        {
+            var loginResponse = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = "alice@example.com", Password = DEFAULT_PASSWORD });
+            var loginData = await _api.LogDeserializeJson<LoginResponse>(loginResponse);
+
+            var longComment = new string('A', 2001); // Assuming 2000 is the limit
+            var response = await _api.PutAsync($"/api/v1/feedbacks/{_feedbackUpdatePendingId}", new UpdateFeedbackDto { Rating = 5, Comments = longComment }, jwtToken: loginData.Data!.Token, logBody: true);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Too long comment returns 400 Bad Request");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Feedbacks")]
+        public async Task UpdateFeedback_ReturnsBadRequest_WhenRatingIsTooLow()
+        {
+            var loginResponse = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = "alice@example.com", Password = DEFAULT_PASSWORD });
+            var loginData = await _api.LogDeserializeJson<LoginResponse>(loginResponse);
+
+            var response = await _api.PutAsync($"/api/v1/feedbacks/{_feedbackUpdatePendingId}", new UpdateFeedbackDto { Rating = -1, Comments = "Invalid rating" }, jwtToken: loginData.Data!.Token, logBody: true);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Negative rating returns 400 Bad Request");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Feedbacks")]
+        public async Task UpdateFeedback_ReturnsNotFound_WhenFeedbackIdDoesNotExist()
+        {
+            var loginResponse = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = "alice@example.com", Password = DEFAULT_PASSWORD });
+            var loginData = await _api.LogDeserializeJson<LoginResponse>(loginResponse);
+            var nonExistentId = Guid.NewGuid();
+
+            var response = await _api.PutAsync($"/api/v1/feedbacks/{nonExistentId}", new UpdateFeedbackDto { Rating = 5, Comments = "Valid comment" }, jwtToken: loginData.Data!.Token, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent feedback ID returns 404 Not Found");
         }
     }
 }

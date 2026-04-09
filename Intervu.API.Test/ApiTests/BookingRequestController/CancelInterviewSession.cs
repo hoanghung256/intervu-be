@@ -15,6 +15,7 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
     {
         private readonly ApiHelper _api;
         private static readonly Guid BobCoachId = Guid.Parse("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22");
+        private static readonly Guid NonExistentBookingId = Guid.NewGuid();
 
         public CancelInterviewSessionTests(BaseApiTest<Program> factory, ITestOutputHelper output) : base(output)
         {
@@ -63,6 +64,64 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
             var response = await _api.PostAsync<object>($"/api/v1/booking-requests/{Guid.NewGuid()}/cancel", null, logBody: true);
 
             await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Status code is 401 Unauthorized");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "BookingRequest")]
+        public async Task CancelBookingRequest_NonExistentBooking_ReturnsNotFound()
+        {
+            var token = await LoginSeededCandidateAsync();
+            var response = await _api.PostAsync<object>($"/api/v1/booking-requests/{NonExistentBookingId}/cancel", null, jwtToken: token, logBody: true);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Status code is 404 Not Found for non-existent booking");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "BookingRequest")]
+        public async Task CancelBookingRequest_AlreadyCancelled_ReturnsBadRequest()
+        {
+            var token = await LoginSeededCandidateAsync();
+            var bookingId = await CreateBookingAndGetIdAsync(token, false, 24, 10);
+
+            // First cancellation
+            await _api.PostAsync<object>($"/api/v1/booking-requests/{bookingId}/cancel", null, jwtToken: token, logBody: true);
+
+            // Second cancellation
+            var response = await _api.PostAsync<object>($"/api/v1/booking-requests/{bookingId}/cancel", null, jwtToken: token, logBody: true);
+            var payload = await _api.LogDeserializeJson<JsonElement>(response, logBody: true);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 Bad Request for already cancelled booking");
+            await AssertHelper.AssertFalse(payload.Success, "Second cancellation should fail");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "BookingRequest")]
+        public async Task CancelBookingRequest_InvalidBookingIdFormat_ReturnsBadRequest()
+        {
+            var token = await LoginSeededCandidateAsync();
+            var response = await _api.PostAsync<object>($"/api/v1/booking-requests/invalid-guid-format/cancel", null, jwtToken: token, logBody: true);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 Bad Request for invalid GUID format");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "BookingRequest")]
+        public async Task CancelBookingRequest_ByDifferentUser_ReturnsForbidden()
+        {
+            var aliceToken = await LoginSeededCandidateAsync();
+            var bookingId = await CreateBookingAndGetIdAsync(aliceToken, false, 25, 11);
+
+            // Login as another user (e.g., Bob)
+            var bobLogin = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = "bob@example.com", Password = DEFAULT_PASSWORD });
+            var bobToken = (await _api.LogDeserializeJson<LoginResponse>(bobLogin)).Data!.Token;
+
+            var response = await _api.PostAsync<object>($"/api/v1/booking-requests/{bookingId}/cancel", null, jwtToken: bobToken, logBody: true);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Status code is 403 Forbidden for cancelling another user's booking");
         }
 
         [Fact]

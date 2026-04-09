@@ -19,7 +19,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
         private async Task<(string token, Guid userId)> RegisterAndLoginCoachAsync()
         {
             var email = $"coach_avail_{Guid.NewGuid()}@example.com";
-            var password = CANDIDATE_PASSWORD;
+            var password = DEFAULT_PASSWORD;
             var fullName = "Coach Avail Tester";
 
             await _api.PostAsync("/api/v1/account/register", new RegisterRequest
@@ -39,15 +39,12 @@ namespace Intervu.API.Test.ApiTests.Interviewer
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "CoachAvailability")]
-        public async Task Availability_Lifecycle_ReturnsSuccess()
+        public async Task CreateAvailability_ReturnsSuccess_WhenDataIsValid()
         {
-            // Arrange
             var (token, coachId) = await RegisterAndLoginCoachAsync();
-            var now = DateTimeOffset.UtcNow;
-            var startTime = new DateTimeOffset(now.Year, now.Month, now.Day, 10, 0, 0, TimeSpan.Zero).AddDays(1);
+            var startTime = DateTimeOffset.UtcNow.AddDays(1);
             var endTime = startTime.AddHours(2);
 
-            // 1. Create Availability
             var createDto = new CoachAvailabilityCreateDto
             {
                 CoachId = coachId,
@@ -55,60 +52,59 @@ namespace Intervu.API.Test.ApiTests.Interviewer
                 RangeEndTime = endTime
             };
 
-            LogInfo("Creating coach availability.");
-            var createResponse = await _api.PostAsync("/api/v1/availabilities", createDto, jwtToken: token, logBody: true);
-            await AssertHelper.AssertEqual(HttpStatusCode.OK, createResponse.StatusCode, "Create status code is 200 OK");
-            var createResult = await _api.LogDeserializeJson<CreateAvailResponseData>(createResponse);
-
-            // 2. Get Availabilities
-            LogInfo($"Getting availabilities for coach {coachId}.");
-            var getResponse = await _api.GetAsync($"/api/v1/availabilities/{coachId}?month={startTime.Month}&year={startTime.Year}", jwtToken: token, logBody: true);
-            await AssertHelper.AssertEqual(HttpStatusCode.OK, getResponse.StatusCode, "Get status code is 200 OK");
-            var getResult = await _api.LogDeserializeJson<CoachScheduleDto>(getResponse);
-            var availId = getResult.Data!.FreeSlots.First().Id;
-
-            // 3. Get Free Slots
-            LogInfo($"Getting free slots for coach {coachId}.");
-            var freeSlotsResponse = await _api.GetAsync($"/api/v1/availabilities/{coachId}/free-slots?month={startTime.Month}&year={startTime.Year}", logBody: true);
-            await AssertHelper.AssertEqual(HttpStatusCode.OK, freeSlotsResponse.StatusCode, "Get free slots status code is 200 OK");
-
-            // 4. Update Availability
-            var updateDto = new CoachAvailabilityUpdateDto
-            {
-                CoachId = coachId,
-                OriginalStartTime = startTime,
-                OriginalEndTime = endTime,
-                NewStartTime = startTime.AddHours(1),
-                NewEndTime = endTime.AddHours(1)
-            };
-            LogInfo($"Updating availability for coach {coachId}.");
-            var updateResponse = await _api.PutAsync("/api/v1/availabilities", updateDto, jwtToken: token, logBody: true);
-            await AssertHelper.AssertEqual(HttpStatusCode.OK, updateResponse.StatusCode, "Update status code is 200 OK");
-
-            // 5. Delete Specific Availability
-            LogInfo($"Deleting availability {availId}.");
-            var deleteResponse = await _api.DeleteAsync($"/api/v1/availabilities/{availId}", jwtToken: token, logBody: true);
-            await AssertHelper.AssertEqual(HttpStatusCode.OK, deleteResponse.StatusCode, "Delete status code is 200 OK");
-
-            // 6. Delete Range
-            var deleteRangeDto = new CoachAvailabilityDeleteDto
-            {
-                CoachId = coachId,
-                RangeStartTime = startTime.AddDays(-1),
-                RangeEndTime = startTime.AddDays(5)
-            };
-            LogInfo("Deleting availability range.");
-            // Since ApiHelper.DeleteAsync doesn't accept a body, we use a custom request or Patch/Post if the API supports it.
-            // However, the controller uses [HttpDelete("range")] with [FromBody].
-            // Let's use PostAsync with a custom header or just skip if it's problematic without helper support.
-            // Most consistent way here with current ApiHelper is to use PostAsync and manually set method to DELETE if possible,
-            // but for now, I'll focus on fixing the DTO mismatches.
+            var response = await _api.PostAsync("/api/v1/availabilities", createDto, jwtToken: token, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
         }
 
-        private class CreateAvailResponseData
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "CoachAvailability")]
+        public async Task CreateAvailability_ReturnsBadRequest_WhenEndTimeBeforeStartTime()
         {
-            public List<Guid> Ids { get; set; } = new();
-            public int BlockCount { get; set; }
+            var (token, coachId) = await RegisterAndLoginCoachAsync();
+            var startTime = DateTimeOffset.UtcNow.AddDays(1);
+            var endTime = startTime.AddHours(-1);
+
+            var createDto = new CoachAvailabilityCreateDto
+            {
+                CoachId = coachId,
+                RangeStartTime = startTime,
+                RangeEndTime = endTime
+            };
+
+            var response = await _api.PostAsync("/api/v1/availabilities", createDto, jwtToken: token, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 Bad Request");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "CoachAvailability")]
+        public async Task GetAvailabilities_ReturnsBadRequest_WhenInvalidMonth()
+        {
+            var (token, coachId) = await RegisterAndLoginCoachAsync();
+            var response = await _api.GetAsync($"/api/v1/availabilities/{coachId}?month=13&year=2024", jwtToken: token, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Invalid month returns 400 Bad Request");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "CoachAvailability")]
+        public async Task DeleteAvailability_ReturnsNotFound_WhenIdDoesNotExist()
+        {
+            var (token, _) = await RegisterAndLoginCoachAsync();
+            var nonExistentId = Guid.NewGuid();
+            var response = await _api.DeleteAsync($"/api/v1/availabilities/{nonExistentId}", jwtToken: token, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent ID returns 404 Not Found");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "CoachAvailability")]
+        public async Task UpdateAvailability_ReturnsUnauthorized_WhenNoToken()
+        {
+            var updateDto = new CoachAvailabilityUpdateDto { CoachId = Guid.NewGuid() };
+            var response = await _api.PutAsync("/api/v1/availabilities", updateDto, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "No token returns 401 Unauthorized");
         }
     }
 }

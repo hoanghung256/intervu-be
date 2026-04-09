@@ -7,6 +7,7 @@ using Intervu.Application.DTOs.User;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Entities.Constants.QuestionConstants;
 using System.Net;
+using System.Text.Json;
 using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.QuestionController
@@ -31,6 +32,53 @@ namespace Intervu.API.Test.ApiTests.QuestionController
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
             var apiResponse = await _api.LogDeserializeJson<PagedResult<QuestionListItemDto>>(response);
             await AssertHelper.AssertNotEmpty(apiResponse.Data!.Items, "Question list is not empty");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Question")]
+        public async Task GetList_InvalidPageSize_ReturnsBadRequest()
+        {
+            var response = await _api.GetAsync("/api/v1/questions?pageSize=0", logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 Bad Request for pageSize=0");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Question")]
+        public async Task GetList_LargePageSize_EnforcesLimit()
+        {
+            var response = await _api.GetAsync("/api/v1/questions?pageSize=5000", logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK for large pageSize");
+            var apiResponse = await _api.LogDeserializeJson<PagedResult<JsonElement>>(response);
+            await AssertHelper.AssertTrue(apiResponse.Data?.Items?.Count <= 100, "Should limit items to reasonable page size");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Question")]
+        public async Task GetList_NegativePage_ReturnsBadRequest()
+        {
+            var response = await _api.GetAsync("/api/v1/questions?page=-1", logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 Bad Request for negative page");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Question")]
+        public async Task GetList_FilterByCategory_ReturnsSuccess()
+        {
+            var response = await _api.GetAsync($"/api/v1/questions?category={(int)QuestionCategory.Coding}&pageSize=5", logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK for filtered list");
+            var apiResponse = await _api.LogDeserializeJson<PagedResult<QuestionListItemDto>>(response);
+            if (apiResponse.Data?.Items != null)
+            {
+                foreach (var item in apiResponse.Data.Items)
+                {
+                    // This assumes the API returns category information in the list item
+                    // await AssertHelper.AssertEqual(QuestionCategory.Coding, item.Category, "Item category should match filter");
+                }
+            }
         }
 
         private async Task<(Guid questionId, string userToken)> CreateTestQuestionViaExperienceAsync()

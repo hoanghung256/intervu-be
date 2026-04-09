@@ -151,6 +151,109 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
             await AssertHelper.AssertNotNull(exception.Message, "Exception is raised for Guid.Empty coach ID on update");
         }
 
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Availability")]
+        public async Task UpdateAvailabilitySlot_NonExistentOriginalRange_ReturnsNotFound()
+        {
+            var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(90));
+            var end = start.AddHours(1);
+
+            var updateResponse = await _api.PutAsync("/api/v1/availabilities", new CoachAvailabilityUpdateDto
+            {
+                CoachId = BobCoachId,
+                OriginalStartTime = new DateTimeOffset(start, TimeSpan.Zero),
+                OriginalEndTime = new DateTimeOffset(end, TimeSpan.Zero),
+                NewStartTime = new DateTimeOffset(start.AddHours(1), TimeSpan.Zero),
+                NewEndTime = new DateTimeOffset(end.AddHours(1), TimeSpan.Zero)
+            }, logBody: true);
+
+            var updatePayload = await _api.LogDeserializeJson<JsonElement>(updateResponse, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, updateResponse.StatusCode, "Status code is 404 Not Found for non-existent original range");
+            await AssertHelper.AssertFalse(updatePayload.Success, "Update should fail");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Availability")]
+        public async Task UpdateAvailabilitySlot_InvalidNewRange_ThrowsException()
+        {
+            var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(91));
+            var end = start.AddHours(1);
+
+            var exception = await Assert.ThrowsAsync<ArgumentException>(async () =>
+                await _api.PutAsync("/api/v1/availabilities", new CoachAvailabilityUpdateDto
+                {
+                    CoachId = BobCoachId,
+                    OriginalStartTime = new DateTimeOffset(start, TimeSpan.Zero),
+                    OriginalEndTime = new DateTimeOffset(end, TimeSpan.Zero),
+                    NewStartTime = new DateTimeOffset(end, TimeSpan.Zero),
+                    NewEndTime = new DateTimeOffset(start, TimeSpan.Zero)
+                }, logBody: true));
+
+            await AssertHelper.AssertContains("NewEndTime must be greater than NewStartTime", exception.Message, "Validation exception message matches");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Availability")]
+        public async Task UpdateAvailabilitySlot_NewRangeOverlapWithOther_ReturnsConflict()
+        {
+            var start1 = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(92));
+            var end1 = start1.AddHours(1);
+            var start2 = end1.AddHours(1);
+            var end2 = start2.AddHours(1);
+
+            // Create two slots
+            await _api.PostAsync("/api/v1/availabilities", new CoachAvailabilityCreateDto
+            {
+                CoachId = BobCoachId,
+                RangeStartTime = new DateTimeOffset(start1, TimeSpan.Zero),
+                RangeEndTime = new DateTimeOffset(end1, TimeSpan.Zero)
+            });
+            await _api.PostAsync("/api/v1/availabilities", new CoachAvailabilityCreateDto
+            {
+                CoachId = BobCoachId,
+                RangeStartTime = new DateTimeOffset(start2, TimeSpan.Zero),
+                RangeEndTime = new DateTimeOffset(end2, TimeSpan.Zero)
+            });
+
+            // Try to update first slot to overlap second slot
+            var updateResponse = await _api.PutAsync("/api/v1/availabilities", new CoachAvailabilityUpdateDto
+            {
+                CoachId = BobCoachId,
+                OriginalStartTime = new DateTimeOffset(start1, TimeSpan.Zero),
+                OriginalEndTime = new DateTimeOffset(end1, TimeSpan.Zero),
+                NewStartTime = new DateTimeOffset(start2.AddMinutes(-30), TimeSpan.Zero),
+                NewEndTime = new DateTimeOffset(start2.AddMinutes(30), TimeSpan.Zero)
+            }, logBody: true);
+
+            var updatePayload = await _api.LogDeserializeJson<JsonElement>(updateResponse, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.Conflict, updateResponse.StatusCode, "Status code is 409 Conflict for overlapping new range");
+            await AssertHelper.AssertFalse(updatePayload.Success, "Update should fail");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Availability")]
+        public async Task UpdateAvailabilitySlot_PastOriginalRange_ReturnsNotFound()
+        {
+            var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(-5));
+            var end = start.AddHours(1);
+
+            var updateResponse = await _api.PutAsync("/api/v1/availabilities", new CoachAvailabilityUpdateDto
+            {
+                CoachId = BobCoachId,
+                OriginalStartTime = new DateTimeOffset(start, TimeSpan.Zero),
+                OriginalEndTime = new DateTimeOffset(end, TimeSpan.Zero),
+                NewStartTime = new DateTimeOffset(DateTime.UtcNow.AddDays(10), TimeSpan.Zero),
+                NewEndTime = new DateTimeOffset(DateTime.UtcNow.AddDays(10).AddHours(1), TimeSpan.Zero)
+            }, logBody: true);
+
+            var updatePayload = await _api.LogDeserializeJson<JsonElement>(updateResponse, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, updateResponse.StatusCode, "Status code is 404 Not Found for past original range");
+        }
+
         private static DateTime AlignToHalfHourUtc(DateTime value)
         {
             var utc = DateTime.SpecifyKind(value, DateTimeKind.Utc);

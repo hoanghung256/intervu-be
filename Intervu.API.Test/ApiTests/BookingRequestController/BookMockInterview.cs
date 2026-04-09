@@ -15,6 +15,7 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
     {
         private readonly ApiHelper _api;
         private static readonly Guid BobCoachId = Guid.Parse("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22");
+        private static readonly Guid NonExistentCoachId = Guid.NewGuid();
 
         public BookMockInterviewTests(BaseApiTest<Program> factory, ITestOutputHelper output) : base(output)
         {
@@ -265,6 +266,141 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
                 }, jwtToken: token, logBody: true));
 
             await AssertHelper.AssertNotNull(exception.Message, "Exception is raised for Guid.Empty coach ID");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "BookingRequest")]
+        public async Task CreateJDBookingRequest_NonExistentCoach_ReturnsNotFound()
+        {
+            var token = await LoginSeededCandidateAsync();
+            var services = await GetCoachServicesAsync();
+            var service = services.First();
+            var requiredBlocks = GetRequiredBlockCount(service.DurationMinutes);
+            var availabilityIds = await CreateAvailabilityBlocksAsync(requiredBlocks, 26, 10);
+
+            var response = await _api.PostAsync("/api/v1/booking-requests/jd-interview", new CreateJDBookingRequestDto
+            {
+                CoachId = NonExistentCoachId,
+                JobDescriptionUrl = "https://example.com/non-existent-coach.pdf",
+                CVUrl = "https://example.com/non-existent-coach-cv.pdf",
+                AimLevel = AimLevel.Junior,
+                Rounds =
+                [
+                    new CreateInterviewRoundDto
+                    {
+                        CoachInterviewServiceId = service.Id,
+                        AvailabilityIds = availabilityIds
+                    }
+                ]
+            }, jwtToken: token, logBody: true);
+
+            var payload = await _api.LogDeserializeJson<JsonElement>(response, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Status code is 404 Not Found for non-existent coach");
+            await AssertHelper.AssertFalse(payload.Success, "Booking should fail");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "BookingRequest")]
+        public async Task CreateJDBookingRequest_InvalidAvailabilityId_ReturnsBadRequest()
+        {
+            var token = await LoginSeededCandidateAsync();
+            var services = await GetCoachServicesAsync();
+            var service = services.First();
+            var requiredBlocks = GetRequiredBlockCount(service.DurationMinutes);
+            var availabilityIds = await CreateAvailabilityBlocksAsync(requiredBlocks, 27, 11);
+            availabilityIds[0] = Guid.NewGuid(); // Introduce an invalid availability ID
+
+            var response = await _api.PostAsync("/api/v1/booking-requests/jd-interview", new CreateJDBookingRequestDto
+            {
+                CoachId = BobCoachId,
+                JobDescriptionUrl = "https://example.com/invalid-availability.pdf",
+                CVUrl = "https://example.com/invalid-availability-cv.pdf",
+                AimLevel = AimLevel.Junior,
+                Rounds =
+                [
+                    new CreateInterviewRoundDto
+                    {
+                        CoachInterviewServiceId = service.Id,
+                        AvailabilityIds = availabilityIds
+                    }
+                ]
+            }, jwtToken: token, logBody: true);
+
+            var payload = await _api.LogDeserializeJson<JsonElement>(response, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 Bad Request for invalid availability ID");
+            await AssertHelper.AssertFalse(payload.Success, "Booking should fail");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "BookingRequest")]
+        public async Task CreateJDBookingRequest_MissingRequiredFields_ReturnsBadRequest()
+        {
+            var token = await LoginSeededCandidateAsync();
+            var response = await _api.PostAsync("/api/v1/booking-requests/jd-interview", new CreateJDBookingRequestDto
+            {
+                CoachId = BobCoachId,
+                JobDescriptionUrl = "", // Missing
+                CVUrl = "https://example.com/missing-fields-cv.pdf",
+                AimLevel = AimLevel.Junior,
+                Rounds = [] // Missing
+            }, jwtToken: token, logBody: true);
+
+            var payload = await _api.LogDeserializeJson<JsonElement>(response, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 Bad Request for missing fields");
+            await AssertHelper.AssertFalse(payload.Success, "Booking should fail");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "BookingRequest")]
+        public async Task CreateJDBookingRequest_AvailabilityAlreadyBooked_ReturnsConflict()
+        {
+            var token = await LoginSeededCandidateAsync();
+            var services = await GetCoachServicesAsync();
+            var service = services.First();
+            var requiredBlocks = GetRequiredBlockCount(service.DurationMinutes);
+            var availabilityIds = await CreateAvailabilityBlocksAsync(requiredBlocks, 28, 12);
+
+            // Book once
+            await _api.PostAsync("/api/v1/booking-requests/jd-interview", new CreateJDBookingRequestDto
+            {
+                CoachId = BobCoachId,
+                JobDescriptionUrl = "https://example.com/first-booking.pdf",
+                CVUrl = "https://example.com/first-booking-cv.pdf",
+                AimLevel = AimLevel.Junior,
+                Rounds =
+                [
+                    new CreateInterviewRoundDto
+                    {
+                        CoachInterviewServiceId = service.Id,
+                        AvailabilityIds = availabilityIds
+                    }
+                ]
+            }, jwtToken: token, logBody: true);
+
+            // Try to book the same availability again
+            var response = await _api.PostAsync("/api/v1/booking-requests/jd-interview", new CreateJDBookingRequestDto
+            {
+                CoachId = BobCoachId,
+                JobDescriptionUrl = "https://example.com/second-booking.pdf",
+                CVUrl = "https://example.com/second-booking-cv.pdf",
+                AimLevel = AimLevel.Junior,
+                Rounds =
+                [
+                    new CreateInterviewRoundDto
+                    {
+                        CoachInterviewServiceId = service.Id,
+                        AvailabilityIds = availabilityIds
+                    }
+                ]
+            }, jwtToken: token, logBody: true);
+
+            var payload = await _api.LogDeserializeJson<JsonElement>(response, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.Conflict, response.StatusCode, "Status code is 409 Conflict for already booked availability");
+            await AssertHelper.AssertFalse(payload.Success, "Booking should fail");
         }
 
         private async Task<string> LoginSeededCandidateAsync()

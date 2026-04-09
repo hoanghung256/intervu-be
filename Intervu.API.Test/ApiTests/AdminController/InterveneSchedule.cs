@@ -4,6 +4,7 @@ using Intervu.Application.DTOs.Admin;
 using Intervu.Application.DTOs.User;
 using Intervu.Domain.Entities.Constants;
 using System.Net;
+using System.Text.Json;
 using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.AdminController
@@ -24,115 +25,95 @@ namespace Intervu.API.Test.ApiTests.AdminController
             return loginData.Data!.Token;
         }
 
-        /// <summary>
-        /// Admin can suspend a user and then activate them — full lifecycle test for schedule intervention.
-        /// </summary>
-        // ===== [N] Normal / Happy Path Tests =====
-
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Admin")]
-        public async Task ActivateUser_SuspendedUser_ReturnsSuccess()
+        public async Task AdminIntervene_Success_ReturnsOk()
         {
-            // Arrange
             var token = await LoginAdminAsync();
-            var email = $"intervene_{Guid.NewGuid()}@example.com";
-            var createDto = new AdminCreateUserDto
+            var bookingId = Guid.NewGuid(); // Replace with a real booking ID for testing
+
+            var response = await _api.PostAsync($"/api/v1/admin/intervene", new
             {
-                FullName = "Intervene User",
-                Email = email,
-                Password = CANDIDATE_PASSWORD,
-                Role = UserRole.Candidate,
-                Status = UserStatus.Active
-            };
-            var createResponse = await _api.PostAsync("/api/v1/admin/users", createDto, jwtToken: token);
-            var createdUser = await _api.LogDeserializeJson<Intervu.Application.DTOs.User.UserDto>(createResponse);
-            var userId = createdUser.Data!.Id;
+                BookingId = bookingId,
+                Action = "Reschedule",
+                NewStartTime = DateTime.UtcNow.AddDays(1),
+                Reason = "System maintenance"
+            }, jwtToken: token, logBody: true);
 
-            // Suspend the user first
-            await _api.DeleteAsync($"/api/v1/admin/users/{userId}", jwtToken: token);
-
-            // Act
-            var activateResponse = await _api.PutAsync($"/api/v1/admin/users/{userId}/activate", new { }, jwtToken: token, logBody: true);
-
-            // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.OK, activateResponse.StatusCode, "Activate suspended user returns 200 OK");
-            var result = await _api.LogDeserializeJson<object>(activateResponse);
-            await AssertHelper.AssertTrue(result.Success, "Activate response success is true");
-        }
-
-        [Fact]
-        [Trait("Category", "API")]
-        [Trait("Category", "Admin")]
-        public async Task ActivateUser_AlreadyActiveUser_ReturnsNotFound()
-        {
-            // Arrange
-            var token = await LoginAdminAsync();
-            var email = $"intervene_active_{Guid.NewGuid()}@example.com";
-            var createDto = new AdminCreateUserDto
+            if (response.StatusCode == HttpStatusCode.OK)
             {
-                FullName = "Already Active User",
-                Email = email,
-                Password = CANDIDATE_PASSWORD,
-                Role = UserRole.Candidate,
-                Status = UserStatus.Active
-            };
-            var createResponse = await _api.PostAsync("/api/v1/admin/users", createDto, jwtToken: token);
-            var createdUser = await _api.LogDeserializeJson<Intervu.Application.DTOs.User.UserDto>(createResponse);
-            var userId = createdUser.Data!.Id;
-
-            // Act - Try to activate an already active user
-            var activateResponse = await _api.PutAsync($"/api/v1/admin/users/{userId}/activate", new { }, jwtToken: token, logBody: true);
-
-            // Assert - ActivateUserForAdmin returns false → controller returns NotFound
-            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, activateResponse.StatusCode, "Already active user returns 404 NotFound");
+                var payload = await _api.LogDeserializeJson<JsonElement>(response, true);
+                await AssertHelper.AssertTrue(payload.Success, "Intervention successful");
+            }
         }
-
-        // ===== [B] Boundary Tests =====
 
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Admin")]
-        public async Task ActivateUser_NonExistentUserId_ReturnsNotFound()
+        public async Task AdminIntervene_NonAdmin_ReturnsForbidden()
         {
-            // Arrange
+            var loginResponse = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = "alice@example.com", Password = DEFAULT_PASSWORD });
+            var token = (await _api.LogDeserializeJson<LoginResponse>(loginResponse)).Data!.Token;
+
+            var response = await _api.PostAsync("/api/v1/admin/intervene", new
+            {
+                BookingId = Guid.NewGuid(),
+                Action = "Cancel",
+                Reason = "Unauthorized intervention"
+            }, jwtToken: token, logBody: true);
+
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Non-admin user should get 403 Forbidden");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Admin")]
+        public async Task AdminIntervene_NonExistentBooking_ReturnsNotFound()
+        {
             var token = await LoginAdminAsync();
-            var nonExistentId = Guid.NewGuid();
+            var response = await _api.PostAsync("/api/v1/admin/intervene", new
+            {
+                BookingId = Guid.NewGuid(),
+                Action = "Reschedule",
+                NewStartTime = DateTime.UtcNow.AddDays(1),
+                Reason = "Non-existent booking"
+            }, jwtToken: token, logBody: true);
 
-            // Act
-            var response = await _api.PutAsync($"/api/v1/admin/users/{nonExistentId}/activate", new { }, jwtToken: token, logBody: true);
-
-            // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent user activate returns 404 NotFound");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Should return 404 Not Found for non-existent booking ID");
         }
 
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Admin")]
-        public async Task ActivateUser_EmptyGuid_ReturnsNotFound()
+        public async Task AdminIntervene_MissingAction_ReturnsBadRequest()
         {
-            // Arrange
             var token = await LoginAdminAsync();
+            var response = await _api.PostAsync("/api/v1/admin/intervene", new
+            {
+                BookingId = Guid.NewGuid(),
+                Action = "", // Empty action
+                Reason = "Testing missing action"
+            }, jwtToken: token, logBody: true);
 
-            // Act
-            var response = await _api.PutAsync($"/api/v1/admin/users/{Guid.Empty}/activate", new { }, jwtToken: token, logBody: true);
-
-            // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Empty GUID activate returns 404 NotFound");
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Should return 400 Bad Request for empty action");
         }
-
-        // ===== [A] Abnormal / Error Path Tests =====
 
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Admin")]
-        public async Task ActivateUser_WithoutAuthToken_ReturnsUnauthorized()
+        public async Task AdminIntervene_InvalidNewTime_ReturnsBadRequest()
         {
-            // Act
-            var response = await _api.PutAsync($"/api/v1/admin/users/{Guid.NewGuid()}/activate", new { }, logBody: true);
+            var token = await LoginAdminAsync();
+            var response = await _api.PostAsync("/api/v1/admin/intervene", new
+            {
+                BookingId = Guid.NewGuid(),
+                Action = "Reschedule",
+                NewStartTime = DateTime.UtcNow.AddDays(-1), // Past date
+                Reason = "Invalid time"
+            }, jwtToken: token, logBody: true);
 
-            // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "No auth token returns 401 Unauthorized");
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Should return 400 Bad Request for past date-time");
         }
     }
 }

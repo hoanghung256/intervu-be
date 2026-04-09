@@ -77,5 +77,41 @@ namespace Intervu.API.Test.ApiTests.AuthController
             // Assert
             await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Non-JWT token string returns 401 Unauthorized");
         }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Authentication")]
+        public async Task Handle_SignOut_WithInvalidToken_ReturnsUnauthorized()
+        {
+            var response = await _api.PostAsync<object>("/api/v1/account/logout", null, jwtToken: "invalid-token", logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Invalid token returns 401 Unauthorized");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Authentication")]
+        public async Task Handle_SignOut_Twice_ReturnsUnauthorized()
+        {
+            var email = $"logout_twice_{Guid.NewGuid()}@example.com";
+            await _api.PostAsync("/api/v1/account/register", new RegisterRequest { Email = email, Password = DEFAULT_PASSWORD, FullName = "Logout User" });
+            var loginResponse = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = email, Password = DEFAULT_PASSWORD });
+            var loginData = await _api.LogDeserializeJson<LoginResponse>(loginResponse);
+
+            // First logout
+            await _api.PostAsync<object>("/api/v1/account/logout", null, jwtToken: loginData.Data!.Token);
+
+            // Second logout with same token
+            var response = await _api.PostAsync<object>("/api/v1/account/logout", null, jwtToken: loginData.Data!.Token, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Second logout with same token returns 401 Unauthorized");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Authentication")]
+        public async Task Handle_SignOut_WithEmptyToken_ReturnsUnauthorized()
+        {
+            var response = await _api.PostAsync<object>("/api/v1/account/logout", null, jwtToken: "", logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Empty token returns 401 Unauthorized");
+        }
     }
 }

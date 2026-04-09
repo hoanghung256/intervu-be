@@ -60,6 +60,72 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Availability")]
+        public async Task CreateAvailabilitySlot_PastDateTime_ThrowsException()
+        {
+            var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(-1));
+            var end = start.AddHours(1);
+
+            var exception = await Assert.ThrowsAsync<ArgumentException>(async () =>
+                await _api.PostAsync("/api/v1/availabilities", new CoachAvailabilityCreateDto
+                {
+                    CoachId = BobCoachId,
+                    RangeStartTime = new DateTimeOffset(start, TimeSpan.Zero),
+                    RangeEndTime = new DateTimeOffset(end, TimeSpan.Zero)
+                }, logBody: true));
+
+            await AssertHelper.AssertContains("RangeStartTime must be in the future", exception.Message, "Validation exception message matches");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Availability")]
+        public async Task CreateAvailabilitySlot_OverlapWithExisting_ReturnsConflict()
+        {
+            var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(15));
+            var end = start.AddHours(2);
+
+            // Create initial slot
+            await _api.PostAsync("/api/v1/availabilities", new CoachAvailabilityCreateDto
+            {
+                CoachId = BobCoachId,
+                RangeStartTime = new DateTimeOffset(start, TimeSpan.Zero),
+                RangeEndTime = new DateTimeOffset(end, TimeSpan.Zero)
+            });
+
+            // Try to create overlapping slot
+            var overlapResponse = await _api.PostAsync("/api/v1/availabilities", new CoachAvailabilityCreateDto
+            {
+                CoachId = BobCoachId,
+                RangeStartTime = new DateTimeOffset(start.AddHours(1), TimeSpan.Zero),
+                RangeEndTime = new DateTimeOffset(end.AddHours(1), TimeSpan.Zero)
+            }, logBody: true);
+
+            var overlapPayload = await _api.LogDeserializeJson<JsonElement>(overlapResponse, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.Conflict, overlapResponse.StatusCode, "Status code is 409 Conflict for overlapping slot");
+            await AssertHelper.AssertFalse(overlapPayload.Success, "Overlap creation should fail");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Availability")]
+        public async Task CreateAvailabilitySlot_ZeroDuration_ThrowsException()
+        {
+            var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(16));
+
+            var exception = await Assert.ThrowsAsync<ArgumentException>(async () =>
+                await _api.PostAsync("/api/v1/availabilities", new CoachAvailabilityCreateDto
+                {
+                    CoachId = BobCoachId,
+                    RangeStartTime = new DateTimeOffset(start, TimeSpan.Zero),
+                    RangeEndTime = new DateTimeOffset(start, TimeSpan.Zero)
+                }, logBody: true));
+
+            await AssertHelper.AssertContains("RangeEndTime must be greater than RangeStartTime", exception.Message, "Validation exception message matches");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Availability")]
         public async Task Handle_CreateAvailabilitySlot_SameStartAndEndTime_ThrowsArgumentException()
         {
             // Arrange – zero-duration range: start == end
