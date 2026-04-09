@@ -8,6 +8,7 @@ using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.RescheduleRequestController
 {
+    // IC-36
     public class ApproveRescheduleRequestsTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         private readonly ApiHelper _api;

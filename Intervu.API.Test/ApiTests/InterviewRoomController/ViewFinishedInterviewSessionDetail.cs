@@ -3,6 +3,7 @@ using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.InterviewRoomController
 {
+    // IC-48
     public class ViewFinishedInterviewSessionDetailTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         public ViewFinishedInterviewSessionDetailTests(BaseApiTest<Program> factory, ITestOutputHelper output) : base(output)

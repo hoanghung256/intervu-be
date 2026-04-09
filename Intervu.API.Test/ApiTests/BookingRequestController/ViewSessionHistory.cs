@@ -9,6 +9,7 @@ using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.BookingRequestController
 {
+    // IC-41
     public class ViewSessionHistoryTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         private readonly ApiHelper _api;

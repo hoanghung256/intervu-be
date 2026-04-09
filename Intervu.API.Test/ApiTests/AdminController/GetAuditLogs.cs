@@ -6,6 +6,7 @@ using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.AdminController
 {
+    // TODO: Add UC into doc - View all audit logs
     public class GetAuditLogsTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         private readonly ApiHelper _api;

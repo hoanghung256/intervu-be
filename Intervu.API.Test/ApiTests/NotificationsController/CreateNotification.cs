@@ -9,6 +9,7 @@ using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.NotificationsController
 {
+    // IC-57
     public class CreateNotificationTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         private readonly ApiHelper _api;

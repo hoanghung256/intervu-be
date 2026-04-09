@@ -15,6 +15,7 @@ using static Intervu.API.Test.Utils.ApiHelper;
 
 namespace Intervu.API.Test.ApiTests.InterviewBookingController
 {
+    // IC-54
     public class PaymentForInterviewBookingTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         private readonly ApiHelper _api;

@@ -7,6 +7,7 @@ using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.InterviewTypeController
 {
+    // IC-26
     public class AddInterviewTypeTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         private readonly ApiHelper _api;

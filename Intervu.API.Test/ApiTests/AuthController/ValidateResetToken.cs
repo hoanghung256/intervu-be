@@ -5,6 +5,7 @@ using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.AuthController
 {
+    // NOT A UC
     public class ValidateResetTokenTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         private readonly ApiHelper _api;

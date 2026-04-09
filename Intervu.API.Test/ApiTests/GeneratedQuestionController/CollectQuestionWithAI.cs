@@ -7,6 +7,7 @@ using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.GeneratedQuestionController
 {
+    // IC-60
     public class CollectQuestionWithAITests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         private readonly ApiHelper _api;

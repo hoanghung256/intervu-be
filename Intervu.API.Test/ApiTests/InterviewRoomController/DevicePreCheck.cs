@@ -7,6 +7,7 @@ using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.InterviewRoomController
 {
+    // IC-42
     public class DevicePreCheckTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         private readonly ApiHelper _api;

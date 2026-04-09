@@ -8,6 +8,7 @@ using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.AdminController
 {
+    // IC-9
     public class CreateUserAccountsTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         private readonly ApiHelper _api;

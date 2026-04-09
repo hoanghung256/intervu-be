@@ -7,6 +7,7 @@ using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.Interviewer
 {
+    // TODO: split into multiple test classes if it grows too large; consider adding more edge cases and error scenarios as needed
     public class CoachInterviewServiceControllerTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         private readonly ApiHelper _api;

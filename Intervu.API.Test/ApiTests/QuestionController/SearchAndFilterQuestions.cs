@@ -6,6 +6,7 @@ using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.QuestionController
 {
+    // IC-24
     public class SearchAndFilterQuestionsTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         private readonly ApiHelper _api;

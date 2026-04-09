@@ -7,6 +7,7 @@ using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.AvailabilitiesController
 {
+    // TODO: Add UC into doc - Update availability slot
     public class UpdateAvailabilitySlotTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         private readonly ApiHelper _api;

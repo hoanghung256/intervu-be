@@ -7,6 +7,7 @@ using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.InterviewRoomController
 {
+    // IC-47: realtime function, can not test via unit test
     public class ExecuteTestCasesTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         private readonly ApiHelper _api;

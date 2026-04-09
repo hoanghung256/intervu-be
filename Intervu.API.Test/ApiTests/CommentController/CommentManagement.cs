@@ -8,6 +8,7 @@ using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.CommentController
 {
+    // TODO: split to multiple test classes - AddComment, UpdateComment, DeleteComment, LikeComment, GetComments
     public class CommentManagementTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         private readonly ApiHelper _api;

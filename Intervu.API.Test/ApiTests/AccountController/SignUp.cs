@@ -6,6 +6,7 @@ using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.AccountController
 {
+    // IC-3
     public class SignUpTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         private readonly ApiHelper _api;

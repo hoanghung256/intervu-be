@@ -8,6 +8,7 @@ using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.AdminController
 {
+    // TODO: Add UC into doc - View all interview reports
     public class ReportInterviewProblemTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         private readonly ApiHelper _api;

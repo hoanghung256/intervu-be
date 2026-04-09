@@ -3,6 +3,7 @@ using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.InterviewBookingController
 {
+    // IC-39
     public class ResolveInterviewBookingFinanceIssueTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         public ResolveInterviewBookingFinanceIssueTests(BaseApiTest<Program> factory, ITestOutputHelper output) : base(output)

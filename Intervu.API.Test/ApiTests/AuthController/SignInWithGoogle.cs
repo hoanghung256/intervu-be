@@ -6,6 +6,7 @@ using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.AuthController
 {
+    // IC-1
     public class SignInWithGoogleTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         private readonly ApiHelper _api;

@@ -14,6 +14,7 @@ using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.InterviewRoomController
 {
+    // IC-58
     public class JoinInterviewRoomTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         private readonly ApiHelper _api;

@@ -10,6 +10,7 @@ using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.QuestionController
 {
+    // IC-22
     public class DeleteQuestionFromQuestionBankTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         private readonly ApiHelper _api;

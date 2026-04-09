@@ -3,6 +3,7 @@ using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.InterviewRoomController
 {
+    // IC-43: realtime function, can not test via unit test
     public class UseLiveCodingEditorTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         public UseLiveCodingEditorTests(BaseApiTest<Program> factory, ITestOutputHelper output) : base(output)

@@ -7,6 +7,8 @@ using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.Companies
 {
+    // TODO: split to multiple test classes - View all companies, View company details
+    // TODO: Add UCs into doc - View all companies, View company details
     public class CompaniesControllerTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         private readonly ApiHelper _api;

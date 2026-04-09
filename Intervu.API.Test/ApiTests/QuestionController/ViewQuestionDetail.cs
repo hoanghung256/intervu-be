@@ -11,6 +11,7 @@ using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.QuestionController
 {
+    // IC-59
     public class ViewQuestionDetailTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         private readonly ApiHelper _api;

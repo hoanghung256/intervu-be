@@ -9,6 +9,7 @@ using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.AvailabilitiesController
 {
+    // IC-31
     public class DeleteAvailabilitySlotTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         private readonly ApiHelper _api;

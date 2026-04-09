@@ -11,6 +11,7 @@ using Intervu.Domain.Entities.Constants.QuestionConstants;
 
 namespace Intervu.API.Test.ApiTests.InterviewExperience
 {
+    // TODO: split to multiple test classes - Create experience, Get experience detail, Get experience list, Update experience, Delete experience, Add question to experience
     public class InterviewExperienceControllerTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         private readonly ApiHelper _api;

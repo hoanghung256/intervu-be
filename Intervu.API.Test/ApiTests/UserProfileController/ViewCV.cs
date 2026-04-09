@@ -3,6 +3,7 @@ using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.UserProfileController
 {
+    // IC-13
     public class ViewCVTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         public ViewCVTests(BaseApiTest<Program> factory, ITestOutputHelper output) : base(output)

@@ -5,6 +5,7 @@ using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.AccountController
 {
+    // IC-4
     public class ResetPasswordTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         private readonly ApiHelper _api;

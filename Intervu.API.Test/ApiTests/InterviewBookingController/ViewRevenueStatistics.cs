@@ -5,6 +5,7 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
 {
     public class ViewRevenueStatisticsTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
+        // IC-56
         public ViewRevenueStatisticsTests(BaseApiTest<Program> factory, ITestOutputHelper output) : base(output)
         {
         }

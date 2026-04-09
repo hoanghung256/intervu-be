@@ -6,6 +6,7 @@ using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.UserProfileController
 {
+    // IC-7
     public class ViewPersonalInformationTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         private readonly ApiHelper _api;

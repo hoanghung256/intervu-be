@@ -3,11 +3,14 @@ using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.RescheduleRequestController
 {
+    // IC-37
     public class CancelRescheduleRequestTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         public CancelRescheduleRequestTests(BaseApiTest<Program> factory, ITestOutputHelper output) : base(output) { }
 
         [Fact(Skip = "No explicit cancel-reschedule endpoint exists in current backend API tests.")]
+        [Trait("Category", "API")]
+        [Trait("Category", "RescheduleRequest")]
         public Task Handle_Placeholder_NotImplemented() => Task.CompletedTask;
     }
 }
