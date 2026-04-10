@@ -23,6 +23,7 @@ namespace Intervu.Application.UseCases.BookingRequest
         private readonly IRefundForCandidate _refundForCandidate;
         private readonly IMapper _mapper;
         private readonly IBackgroundService _backgroundService;
+        private readonly IPaymentService _paymentService;
         private readonly IUserRepository _userRepository;
 
         public CancelBookingRequest(
@@ -34,6 +35,7 @@ namespace Intervu.Application.UseCases.BookingRequest
             IMapper mapper,
             IBackgroundService backgroundService,
             IRefundForCandidate refundForCandidate,
+            IPaymentService paymentService,
             IUserRepository userRepository)
         {
             _bookingRepo = bookingRepo;
@@ -44,6 +46,7 @@ namespace Intervu.Application.UseCases.BookingRequest
             _refundForCandidate = refundForCandidate;
             _mapper = mapper;
             _backgroundService = backgroundService;
+            _paymentService = paymentService;
             _userRepository = userRepository;
         }
 
@@ -95,13 +98,19 @@ namespace Intervu.Application.UseCases.BookingRequest
                 }
 
                 // Refund for Candidate
-                _backgroundService.Enqueue<IPaymentService>(
-                    uc => uc.CreateSpendOrderAsync(
-                        refundAmount, 
-                        "REFUND", 
+                //_backgroundService.Enqueue<IPaymentService>(
+                //    uc => uc.CreateSpendOrderAsync(
+                //        refundAmount, 
+                //        "REFUND", 
+                //        bookingRequest.Candidate.BankBinNumber,
+                //        bookingRequest.Candidate.BankAccountNumber
+                //)); 
+                await _paymentService.CreateSpendOrderAsync(
+                        refundAmount,
+                        "REFUND",
                         bookingRequest.Candidate.BankBinNumber,
                         bookingRequest.Candidate.BankAccountNumber
-                )); 
+                );
                 //await _transactionRepo.AddAsync(new Domain.Entities.InterviewBookingTransaction
                 //{
                 //    OrderCode = Intervu.Application.Utils.RandomGenerator.GenerateOrderCode(),
