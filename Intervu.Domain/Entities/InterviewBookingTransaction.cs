@@ -3,7 +3,7 @@ using Intervu.Domain.Entities.Constants;
 
 namespace Intervu.Domain.Entities
 {
-    public class InterviewBookingTransaction : EntityBase<Guid>
+    public class InterviewBookingTransaction : EntityDateTracking<Guid>
     {
         // For tracking with PayOS, IDENTITY(1,1)
         public int OrderCode { get; set; }

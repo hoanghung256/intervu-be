@@ -34,5 +34,6 @@ namespace Intervu.Domain.Repositories
         Task DeleteWorkExperienceAsync(Guid workExperienceId);
         void DeleteCoachProfile(Guid id);
         Task<int> GetTotalCoachCountAsync();
+        Task<List<CoachProfile>> GetTopPerformingCoachesAsync(int count);
     }
 }

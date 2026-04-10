@@ -1,4 +1,4 @@
-﻿using Intervu.Domain.Abstractions.Entity;
+using Intervu.Domain.Abstractions.Entity;
 using Intervu.Domain.Entities.Constants;
 using System;
 using System.Collections.Generic;
@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Intervu.Domain.Entities
 {
-    public class User : EntityBase<Guid>
+    public class User : EntityDateTracking<Guid>
     {
         public required string FullName { get; set; }
 

@@ -8,6 +8,7 @@ namespace Intervu.Domain.Repositories
     public interface IFeedbackRepository : IRepositoryBase<Feedback>
     {
         Task<(IReadOnlyList<Feedback> Items, int TotalCount)> GetPagedFeedbacksAsync(int page, int pageSize);
+        Task<(IReadOnlyList<Feedback> Items, int TotalCount)> GetPagedFeedbacksByFilterAsync(int page, int pageSize, Guid? coachId = null);
         Task<int> GetTotalFeedbacksCountAsync();
         Task<double> GetAverageRatingAsync();
         Task<double> GetAverageRatingByCoachIdAsync(Guid coachId);

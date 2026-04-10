@@ -10,5 +10,6 @@ namespace Intervu.Domain.Repositories
     {
         Task<bool> HasPendingReportAsync(Guid questionId, Guid userId);
         Task<(List<QuestionReport> Items, int TotalCount)> GetPagedAsync(int page, int pageSize, QuestionReportStatus? status = null, string? search = null);
+        Task<int> GetPendingCountAsync();
     }
 }

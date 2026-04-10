@@ -35,6 +35,9 @@ namespace Intervu.API.Controllers.v1
         private readonly IGetAuditLogs _getAuditLogs;
         private readonly IGetInterviewReports _getInterviewReports;
         private readonly IResolveInterviewReport _resolveInterviewReport;
+        private readonly IGetAdminDashboardCharts _getAdminDashboardCharts;
+        private readonly IGetTopCoachesLeaderboard _getTopCoachesLeaderboard;
+        private readonly IGetNeedsAttentionQueue _getNeedsAttentionQueue;
 
         public AdminController(
             IGetDashboardStats getDashboardStats,
@@ -51,7 +54,10 @@ namespace Intervu.API.Controllers.v1
             IActivateUserForAdmin activateUserForAdmin,
             IGetAuditLogs getAuditLogs,
             IGetInterviewReports getInterviewReports,
-            IResolveInterviewReport resolveInterviewReport)
+            IResolveInterviewReport resolveInterviewReport,
+            IGetAdminDashboardCharts getAdminDashboardCharts,
+            IGetTopCoachesLeaderboard getTopCoachesLeaderboard,
+            IGetNeedsAttentionQueue getNeedsAttentionQueue)
         {
             _getDashboardStats = getDashboardStats;
             _getAllUsers = getAllUsers;
@@ -68,6 +74,9 @@ namespace Intervu.API.Controllers.v1
             _getAuditLogs = getAuditLogs;
             _getInterviewReports = getInterviewReports;
             _resolveInterviewReport = resolveInterviewReport;
+            _getAdminDashboardCharts = getAdminDashboardCharts;
+            _getTopCoachesLeaderboard = getTopCoachesLeaderboard;
+            _getNeedsAttentionQueue = getNeedsAttentionQueue;
         }
 
         /// <summary>
@@ -94,6 +103,72 @@ namespace Intervu.API.Controllers.v1
                     message = ex.Message,
                     data = (object?)null
                 });
+            }
+        }
+
+        /// <summary>
+        /// Get dashboard chart data (Revenue Trend & User Growth)
+        /// </summary>
+        [HttpGet("charts")]
+        public async Task<IActionResult> GetDashboardCharts()
+        {
+            try
+            {
+                var (revenue, userGrowth) = await _getAdminDashboardCharts.ExecuteAsync();
+                return Ok(new
+                {
+                    success = true,
+                    message = "Success",
+                    data = new { revenue, userGrowth }
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Get top performing coaches leaderboard
+        /// </summary>
+        [HttpGet("top-coaches")]
+        public async Task<IActionResult> GetTopCoaches([FromQuery] int count = 5)
+        {
+            try
+            {
+                var coaches = await _getTopCoachesLeaderboard.ExecuteAsync(count);
+                return Ok(new
+                {
+                    success = true,
+                    message = "Success",
+                    data = coaches
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Get operations queue of items needing attention
+        /// </summary>
+        [HttpGet("attention-queue")]
+        public async Task<IActionResult> GetAttentionQueue()
+        {
+            try
+            {
+                var queue = await _getNeedsAttentionQueue.ExecuteAsync();
+                return Ok(new
+                {
+                    success = true,
+                    message = "Success",
+                    data = queue
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
             }
         }
 
