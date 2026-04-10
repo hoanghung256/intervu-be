@@ -18,5 +18,6 @@ namespace Intervu.Application.DTOs.Candidate
         public int CurrentAmount { get; set; }
         public string? BankBinNumber { get; set; }
         public string? BankAccountNumber { get; set; }
+        public string? AIEvaluation { get; set; }
     }
 }

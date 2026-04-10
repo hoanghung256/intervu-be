@@ -396,5 +396,47 @@ namespace Intervu.Infrastructure.ExternalServices
                 };
             }
         }
+
+        public async Task<AiCvEvaluationResponseDto?> EvaluateCvAsync(System.IO.Stream stream, string fileName, string contentType)
+        {
+            if (_httpClient.BaseAddress == null || stream == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                var endpoint = "api/evaluate-cv";
+                using var form = new MultipartFormDataContent();
+                
+                // Note: We don't dispose the stream here as it's passed in from outside
+                using var fileContent = new StreamContent(stream);
+                
+                fileContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+                form.Add(fileContent, "file", fileName);
+
+                var response = await _httpClient.PostAsync(endpoint, form);
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogError("AI service evaluation request failed with status code {StatusCode}", response.StatusCode);
+                    return null;
+                }
+
+                var rawContent = await response.Content.ReadAsStringAsync();
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    ReadCommentHandling = JsonCommentHandling.Skip,
+                    AllowTrailingCommas = true
+                };
+
+                return JsonSerializer.Deserialize<AiCvEvaluationResponseDto>(rawContent, options);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while evaluating CV via AI service.");
+                return null;
+            }
+        }
     }
 }

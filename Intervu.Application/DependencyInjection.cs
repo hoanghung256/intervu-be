@@ -186,6 +186,7 @@ namespace Intervu.Application
             services.AddScoped<IUpdateCandidateProfile, UpdateCandidateProfile>();
             services.AddScoped<IViewCandidateProfile, ViewCandidateProfile>();
             services.AddScoped<IDeleteCandidateProfile, DeleteCandidateProfile>();
+            services.AddScoped<IEvaluateCandidateCv, EvaluateCandidateCv>();
 
             // ----- Reschedule Request ----
             services.AddScoped<ICreateRescheduleRequestUseCase, CreateRescheduleRequestUseCase>();
