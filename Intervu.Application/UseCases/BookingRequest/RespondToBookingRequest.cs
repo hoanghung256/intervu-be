@@ -17,7 +17,7 @@ namespace Intervu.Application.UseCases.BookingRequest
         private readonly IBookingRequestRepository _bookingRepo;
         private readonly ITransactionRepository _transactionRepo;
         private readonly ICoachAvailabilitiesRepository _availabilityRepo;
-        private readonly ICoachInterviewServiceRepository _serviceRepo;
+        private readonly ICreateEvaluationResultsUseCase _createEvaluationResultsUseCase;
         private readonly IBackgroundService _backgroundService;
         private readonly IMapper _mapper;
 
@@ -25,14 +25,14 @@ namespace Intervu.Application.UseCases.BookingRequest
             IBookingRequestRepository bookingRepo,
             ITransactionRepository transactionRepo,
             ICoachAvailabilitiesRepository availabilityRepo,
-            ICoachInterviewServiceRepository serviceRepo,
+            ICreateEvaluationResultsUseCase createEvaluationResultsUseCase,
             IBackgroundService backgroundService,
             IMapper mapper)
         {
             _bookingRepo = bookingRepo;
             _transactionRepo = transactionRepo;
             _availabilityRepo = availabilityRepo;
-            _serviceRepo = serviceRepo;
+            _createEvaluationResultsUseCase = createEvaluationResultsUseCase;
             _backgroundService = backgroundService;
             _mapper = mapper;
         }
@@ -108,7 +108,7 @@ namespace Intervu.Application.UseCases.BookingRequest
                     CoachInterviewServiceId = round.CoachInterviewServiceId,
                     AimLevel = bookingRequest.AimLevel,
                     RoundNumber = round.RoundNumber,
-                    EvaluationResults = await CreateEvaluationResultsAsync(round.CoachInterviewServiceId),
+                    EvaluationResults = await _createEvaluationResultsUseCase.ExecuteAsync(round.CoachInterviewServiceId),
                     IsEvaluationCompleted = false
                 };
 
@@ -175,18 +175,6 @@ namespace Intervu.Application.UseCases.BookingRequest
                     null));
         }
 
-        private async Task<List<EvaluationResult>> CreateEvaluationResultsAsync(Guid? coachInterviewServiceId)
-        {
-            if (coachInterviewServiceId == null) return [];
-            var service = await _serviceRepo.GetByIdWithDetailsAsync(coachInterviewServiceId.Value);
-            if (service == null) return [];
-            return [.. service.InterviewType.EvaluationStructure.Select(c => new EvaluationResult
-            {
-                Type = c.Type,
-                Question = c.Question,
-                Score = 0,
-                Answer = ""
-            })];
-        }
+        
     }
 }

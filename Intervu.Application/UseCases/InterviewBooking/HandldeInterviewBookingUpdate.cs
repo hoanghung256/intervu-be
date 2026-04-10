@@ -15,6 +15,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
     {
         private readonly IPaymentService _paymentService;
         private readonly IBackgroundService _backgroundService;
+        private readonly Intervu.Application.Interfaces.UseCases.BookingRequest.ICreateEvaluationResultsUseCase _createEvaluationResults;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<HandldeInterviewBookingUpdate> _logger;
 
@@ -22,10 +23,12 @@ namespace Intervu.Application.UseCases.InterviewBooking
             IPaymentService paymentService,
             IBackgroundService backgroundService,
             IUnitOfWork unitOfWork,
+            Intervu.Application.Interfaces.UseCases.BookingRequest.ICreateEvaluationResultsUseCase createEvaluationResults,
             ILogger<HandldeInterviewBookingUpdate> logger)
         {
             _paymentService = paymentService;
             _backgroundService = backgroundService;
+            _createEvaluationResults = createEvaluationResults;
             _unitOfWork = unitOfWork;
             _logger = logger;
         }
@@ -105,16 +108,24 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 // Create room(s) only for accepted bookings
                 if (bookingRequest.Status == BookingRequestStatus.Accepted)
                 {
-                    _backgroundService.Enqueue<ICreateInterviewRoom>(
-                        uc => uc.ExecuteAsync(
-                            bookingRequest.CandidateId,
-                            bookingRequest.CoachId,
-                            availabilityId,
-                            round.StartTime,
-                            transaction.Id,
-                            duration,
-                            bookingRequest.Id
-                    ));
+                    var room = new Domain.Entities.InterviewRoom
+                    {
+                        CandidateId = bookingRequest.CandidateId,
+                        CoachId = bookingRequest.CoachId,
+                        ScheduledTime = round.StartTime,
+                        DurationMinutes = duration,
+                        CurrentAvailabilityId = availabilityId,
+                        Status = InterviewRoomStatus.Scheduled,
+                        TransactionId = transaction.Id,
+                        BookingRequestId = bookingRequest.Id,
+                        CoachInterviewServiceId = round.CoachInterviewServiceId,
+                        AimLevel = bookingRequest.AimLevel,
+                        RoundNumber = round.RoundNumber,
+                        EvaluationResults = await _createEvaluationResults.ExecuteAsync(round.CoachInterviewServiceId),
+                        IsEvaluationCompleted = false
+                    };
+
+                    _backgroundService.Enqueue<ICreateInterviewRoom>(uc => uc.ExecuteAsync(room));
                 }
             }
 

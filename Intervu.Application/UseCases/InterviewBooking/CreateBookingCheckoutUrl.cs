@@ -1,5 +1,6 @@
 using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.UseCases.BookingRequest;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Intervu.Application.Interfaces.UseCases.Notification;
@@ -24,6 +25,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
         private readonly IPaymentService _paymentService;
         private readonly IBackgroundService _jobService;
         private readonly ICoachInterviewServiceRepository _coachInterviewServiceRepository;
+        private readonly ICreateEvaluationResultsUseCase _createEvaluationResults;
         private readonly IUnitOfWork _unitOfWork;
 
         public CreateBookingCheckoutUrl(
@@ -31,12 +33,14 @@ namespace Intervu.Application.UseCases.InterviewBooking
             IPaymentService paymentService,
             IBackgroundService jobService,
             ICoachInterviewServiceRepository coachInterviewServiceRepository,
+            ICreateEvaluationResultsUseCase createEvaluationResults,
             IUnitOfWork unitOfWork)
         {
             _logger = logger;
             _paymentService = paymentService;
             _jobService = jobService;
             _coachInterviewServiceRepository = coachInterviewServiceRepository;
+            _createEvaluationResults = createEvaluationResults;
             _unitOfWork = unitOfWork;
         }
 
@@ -196,11 +200,11 @@ namespace Intervu.Application.UseCases.InterviewBooking
                         availabilityRepo.UpdateAsync(block);
                     }
 
-                    var evaluation = await CreateEvaluationResultsFromInterviewService(coachInterviewServiceId);
-
                     // Use the first availability block as the reference
                     var firstBlockId = roundBlocks.FirstOrDefault()?.Id;
 
+                    // Create the InterviewRoom immediately for free bookings since there's no payment dependency
+                    // Get IInterviewRoomRepository from UnitOfWork to ensure it participates in the same transaction
                     var roomRepo = _unitOfWork.GetRepository<IInterviewRoomRepository>();
                     var room = new Domain.Entities.InterviewRoom()
                     {
@@ -215,7 +219,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
                         CoachInterviewServiceId = coachInterviewServiceId,
                         AimLevel = null,
                         RoundNumber = 1,
-                        EvaluationResults = evaluation,
+                        EvaluationResults = await _createEvaluationResults.ExecuteAsync(coachInterviewServiceId),
                         IsEvaluationCompleted = false
                     };
                     await roomRepo.AddAsync(room);
@@ -261,25 +265,6 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 await _unitOfWork.RollbackTransactionAsync();
                 throw;
             }
-        }
-
-        private async Task<List<EvaluationResult>> CreateEvaluationResultsFromInterviewService(Guid? coachInterviewServiceId)
-        {
-            if (coachInterviewServiceId == null)
-                return [];
-
-            var service = await _coachInterviewServiceRepository.GetByIdWithDetailsAsync(coachInterviewServiceId.Value);
-
-            if (service == null)
-                return [];
-
-            return [.. service.InterviewType.EvaluationStructure.Select(c => new EvaluationResult
-            {
-                Type = c.Type,
-                Question = c.Question,
-                Score = 0,
-                Answer = ""
-            })];
         }
     }
 }
