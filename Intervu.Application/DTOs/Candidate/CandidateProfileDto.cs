@@ -16,7 +16,8 @@ namespace Intervu.Application.DTOs.Candidate
         public ICollection<CandidateWorkExperienceDto> WorkExperiences { get; set; } = new List<CandidateWorkExperienceDto>();
         public string? Bio { get; set; }
         public int CurrentAmount { get; set; }
-
+        public string? BankBinNumber { get; set; }
+        public string? BankAccountNumber { get; set; }
         public string? AIEvaluation { get; set; }
     }
 }

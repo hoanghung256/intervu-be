@@ -28,6 +28,10 @@ namespace Intervu.Domain.Entities
 
         public ICollection<CandidateWorkExperience> WorkExperiences { get; set; } = new List<CandidateWorkExperience>();
 
+        public string BankBinNumber { get; set; } = string.Empty;
+
+        public string BankAccountNumber { get; set; } = string.Empty;
+
         /// <summary>
         /// JSON list of saved question snapshots. Nullable.
         /// </summary>

@@ -17,17 +17,20 @@ namespace Intervu.Application.UseCases.InterviewBooking
         private readonly IUnitOfWork _unitOfWork;
         private readonly IRefundPolicy _refundPolicy;
         private readonly IBackgroundService _jobService;
+        private readonly IPaymentService _paymentService;
         private readonly IUserRepository _userRepository;
 
         public CancelInterview(
             IUnitOfWork unitOfWork,
             IRefundPolicy refundPolicy,
             IBackgroundService jobService,
+            IPaymentService paymentService,
             IUserRepository userRepository)
         {
             _unitOfWork = unitOfWork;
             _refundPolicy = refundPolicy;
             _jobService = jobService;
+            _paymentService = paymentService;
             _userRepository = userRepository;
         }
 
@@ -78,21 +81,36 @@ namespace Intervu.Application.UseCases.InterviewBooking
 
                 // Restore availability blocks: load booking request with rounds and their blocks
                 var bookingRequest = await bookingRepo.GetByIdWithDetailsAsync(room.BookingRequestId.Value);
-                if (bookingRequest != null)
-                {
-                    bookingRequest.Status = BookingRequestStatus.Cancelled;
-                    bookingRepo.UpdateAsync(bookingRequest);
+                if (bookingRequest == null) throw new NotFoundException("Booking request not found for interview room");
 
-                    // Find the round matching this room and restore its availability blocks
-                    var round = bookingRequest.Rounds.FirstOrDefault(r => r.RoundNumber == room.RoundNumber);
-                    if (round?.AvailabilityBlocks != null)
+                bookingRequest.Status = BookingRequestStatus.Cancelled;
+                bookingRepo.UpdateAsync(bookingRequest);
+
+                // Refund candidate
+                //_jobService.Enqueue<IPaymentService>(
+                //    uc => uc.CreateSpendOrderAsync(
+                //        refundAmount, 
+                //        "REFUND", 
+                //        bookingRequest.Candidate.BankBinNumber,
+                //        bookingRequest.Candidate.BankAccountNumber
+                //    )
+                //);
+                await _paymentService.CreateSpendOrderAsync(
+                        refundAmount, 
+                        "REFUND", 
+                        bookingRequest.Candidate.BankBinNumber,
+                        bookingRequest.Candidate.BankAccountNumber
+                    );
+
+                // Find the round matching this room and restore its availability blocks
+                var round = bookingRequest.Rounds.FirstOrDefault(r => r.RoundNumber == room.RoundNumber);
+                if (round?.AvailabilityBlocks != null)
+                {
+                    foreach (var block in round.AvailabilityBlocks)
                     {
-                        foreach (var block in round.AvailabilityBlocks)
-                        {
-                            block.Status = CoachAvailabilityStatus.Available;
-                            block.InterviewRoundId = null;
-                            availabilityRepo.UpdateAsync(block);
-                        }
+                        block.Status = CoachAvailabilityStatus.Available;
+                        block.InterviewRoundId = null;
+                        availabilityRepo.UpdateAsync(block);
                     }
                 }
 

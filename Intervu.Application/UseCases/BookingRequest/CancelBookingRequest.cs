@@ -4,9 +4,12 @@ using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.ExternalServices.Email;
 using Intervu.Application.Interfaces.UseCases.BookingRequest;
+using Intervu.Application.Interfaces.UseCases.InterviewBooking;
+using Intervu.Application.UseCases.InterviewBooking;
 using Intervu.Domain.Abstractions.Policies.Interfaces;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
+using Microsoft.Extensions.Hosting;
 
 namespace Intervu.Application.UseCases.BookingRequest
 {
@@ -17,6 +20,7 @@ namespace Intervu.Application.UseCases.BookingRequest
         private readonly ITransactionRepository _transactionRepo;
         private readonly ICoachAvailabilitiesRepository _availabilityRepo;
         private readonly IRefundPolicy _refundPolicy;
+        private readonly IRefundForCandidate _refundForCandidate;
         private readonly IMapper _mapper;
         private readonly IBackgroundService _backgroundService;
         private readonly IUserRepository _userRepository;
@@ -29,6 +33,7 @@ namespace Intervu.Application.UseCases.BookingRequest
             IRefundPolicy refundPolicy,
             IMapper mapper,
             IBackgroundService backgroundService,
+            IRefundForCandidate refundForCandidate,
             IUserRepository userRepository)
         {
             _bookingRepo = bookingRepo;
@@ -36,6 +41,7 @@ namespace Intervu.Application.UseCases.BookingRequest
             _transactionRepo = transactionRepo;
             _availabilityRepo = availabilityRepo;
             _refundPolicy = refundPolicy;
+            _refundForCandidate = refundForCandidate;
             _mapper = mapper;
             _backgroundService = backgroundService;
             _userRepository = userRepository;
@@ -88,15 +94,24 @@ namespace Intervu.Application.UseCases.BookingRequest
                     refundAmount = payment.Amount;
                 }
 
-                await _transactionRepo.AddAsync(new Domain.Entities.InterviewBookingTransaction
-                {
-                    OrderCode = Intervu.Application.Utils.RandomGenerator.GenerateOrderCode(),
-                    UserId = bookingRequest.CandidateId,
-                    BookingRequestId = bookingRequestId,
-                    Amount = refundAmount,
-                    Type = TransactionType.Refund,
-                    Status = TransactionStatus.Created
-                });
+                // Refund for Candidate
+                _backgroundService.Enqueue<IPaymentService>(
+                    uc => uc.CreateSpendOrderAsync(
+                        refundAmount, 
+                        "REFUND", 
+                        bookingRequest.Candidate.BankBinNumber,
+                        bookingRequest.Candidate.BankAccountNumber
+                )); 
+                //await _transactionRepo.AddAsync(new Domain.Entities.InterviewBookingTransaction
+                //{
+                //    OrderCode = Intervu.Application.Utils.RandomGenerator.GenerateOrderCode(),
+                //    UserId = bookingRequest.CandidateId,
+                //    BookingRequestId = bookingRequestId,
+                //    Amount = refundAmount,
+                //    Type = TransactionType.Refund,
+                //    Status = TransactionStatus.Created
+                //});
+
             }
 
             // Cancel all related interview rooms

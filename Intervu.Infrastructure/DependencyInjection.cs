@@ -174,11 +174,12 @@ namespace Intervu.Infrastructure
             {
                 var paymentClient = sp.GetRequiredService<PaymentClient>();
                 var payoutClient = sp.GetRequiredService<PayoutClient>();
+                var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<PayOSPaymentService>>();
 
                 string returnUrl = configuration["PayOS:Payment:ReturnEndpoint"]!;
                 string cancelUrl = configuration["PayOS:Payment:CancelEndpoint"]!;
 
-                return new PayOSPaymentService(paymentClient, payoutClient, returnUrl, cancelUrl);
+                return new PayOSPaymentService(paymentClient, payoutClient, returnUrl, cancelUrl, logger);
             });
 
             services.AddScoped<CodeExecutionService>();
