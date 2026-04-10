@@ -182,7 +182,8 @@ namespace Intervu.API.Controllers.v1
 
         [HttpPost("upload")]
         [Authorize(Policy = AuthorizationPolicies.AllRoles)]
-        public async Task<IActionResult> UploadMedia([FromForm] IFormFile file, [FromQuery] string? folder = "general")
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadMedia(IFormFile file, [FromQuery] string? folder = "general")
         {
             if (file == null || file.Length == 0)
             {

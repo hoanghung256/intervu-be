@@ -71,6 +71,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                     .Include(p => p.Industries)
                     .Include(p => p.WorkExperiences)
                     .Include(p => p.Certificates)
+                    .Include(p => p.User)
                     .FirstOrDefaultAsync();
 
             return profile;
