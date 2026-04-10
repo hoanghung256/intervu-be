@@ -1,10 +1,13 @@
 ﻿using AutoMapper;
+using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.ExternalServices.Email;
 using Intervu.Application.DTOs.User;
 using Intervu.Application.Interfaces.UseCases.Authentication;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Application.Utils;
 using Intervu.Domain.Repositories;
+using Microsoft.Extensions.Configuration;
 using System.Net.Mail;
 
 namespace Intervu.Application.UseCases.Authentication
@@ -14,12 +17,21 @@ namespace Intervu.Application.UseCases.Authentication
         private readonly IUserRepository _userRepository;
         private readonly ICandidateProfileRepository _candidateProfileRepository;
         private readonly IMapper _mapper;
+        private readonly IBackgroundService _backgroundService;
+        private readonly IConfiguration _configuration;
 
-        public RegisterUseCase(IUserRepository userRepository, ICandidateProfileRepository candidateProfileRepository, IMapper mapper)
+        public RegisterUseCase(
+            IUserRepository userRepository,
+            ICandidateProfileRepository candidateProfileRepository,
+            IMapper mapper,
+            IBackgroundService backgroundService,
+            IConfiguration configuration)
         {
             _userRepository = userRepository;
             _candidateProfileRepository = candidateProfileRepository;
             _mapper = mapper;
+            _backgroundService = backgroundService;
+            _configuration = configuration;
         }
 
         public async Task<Intervu.Application.DTOs.User.RegisterResult> ExecuteAsync(RegisterRequest request)
@@ -88,6 +100,25 @@ namespace Intervu.Application.UseCases.Authentication
 
                 await _candidateProfileRepository.AddAsync(profile);
                 await _candidateProfileRepository.SaveChangesAsync();
+            }
+
+            var frontendUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:5173";
+            var welcomePlaceholders = new Dictionary<string, string>
+            {
+                ["FullName"] = user.FullName,
+                ["LoginLink"] = $"{frontendUrl.TrimEnd('/')}/login"
+            };
+
+            try
+            {
+                _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                    user.Email,
+                    "Welcome",
+                    welcomePlaceholders));
+            }
+            catch
+            {
+                // Do not fail registration if background email enqueue fails.
             }
 
             return new Intervu.Application.DTOs.User.RegisterResult { Success = true, Message = "Registration successful" };

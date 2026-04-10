@@ -2,6 +2,7 @@ using AutoMapper;
 using Intervu.Application.DTOs.BookingRequest;
 using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.ExternalServices.Email;
 using Intervu.Application.Interfaces.UseCases.BookingRequest;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Intervu.Application.Interfaces.UseCases.Notification;
@@ -20,9 +21,13 @@ namespace Intervu.Application.UseCases.BookingRequest
         private readonly ICreateEvaluationResultsUseCase _createEvaluationResultsUseCase;
         private readonly IBackgroundService _backgroundService;
         private readonly IMapper _mapper;
+        private readonly IBackgroundService _backgroundService;
+        private readonly IUserRepository _userRepository;
 
         public RespondToBookingRequest(
             IBookingRequestRepository bookingRepo,
+            IMapper mapper,
+            IUserRepository userRepository,
             ITransactionRepository transactionRepo,
             ICoachAvailabilitiesRepository availabilityRepo,
             ICreateEvaluationResultsUseCase createEvaluationResultsUseCase,
@@ -33,8 +38,9 @@ namespace Intervu.Application.UseCases.BookingRequest
             _transactionRepo = transactionRepo;
             _availabilityRepo = availabilityRepo;
             _createEvaluationResultsUseCase = createEvaluationResultsUseCase;
-            _backgroundService = backgroundService;
             _mapper = mapper;
+            _backgroundService = backgroundService;
+            _userRepository = userRepository;
         }
 
         public async Task<BookingRequestDto> ExecuteAsync(Guid coachId, Guid bookingRequestId, RespondToBookingRequestDto dto)
@@ -76,6 +82,34 @@ namespace Intervu.Application.UseCases.BookingRequest
 
             _bookingRepo.UpdateAsync(bookingRequest);
             await _bookingRepo.SaveChangesAsync();
+
+            if (!dto.IsApproved)
+            {
+                try
+                {
+                    var candidate = await _userRepository.GetByIdAsync(bookingRequest.CandidateId);
+                    var coach = await _userRepository.GetByIdAsync(bookingRequest.CoachId);
+
+                    if (candidate != null)
+                    {
+                        var placeholders = new Dictionary<string, string>
+                        {
+                            ["CandidateName"] = candidate.FullName,
+                            ["CoachName"] = coach?.FullName ?? "Coach",
+                            ["RejectionReason"] = bookingRequest.RejectionReason ?? "The coach declined this request."
+                        };
+
+                        _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                            candidate.Email,
+                            "BookingRequestRejected",
+                            placeholders));
+                    }
+                }
+                catch
+                {
+                    // Do not fail booking request response if email enqueue fails.
+                }
+            }
 
             var result = _mapper.Map<BookingRequestDto>(bookingRequest);
             result.CandidateName = bookingRequest.Candidate?.User?.FullName;

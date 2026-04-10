@@ -1,9 +1,12 @@
 using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.ExternalServices.Email;
+using Intervu.Application.Interfaces.UseCases.Availability;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
 using Intervu.Application.Interfaces.UseCases.Notification;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
+using Microsoft.Extensions.Configuration;
 
 namespace Intervu.Application.UseCases.InterviewBooking
 {
@@ -14,19 +17,25 @@ namespace Intervu.Application.UseCases.InterviewBooking
         private readonly ICoachProfileRepository _coachProfileRepository;
         private readonly IPaymentService _paymentService;
         private readonly IBackgroundService _jobService;
+        private readonly IUserRepository _userRepository;
+        private readonly IConfiguration _configuration;
 
         public PayoutForCoachAfterInterview(
             IInterviewRoomRepository interviewRoomRepository,
             ITransactionRepository transactionRepository,
             ICoachProfileRepository coachProfileRepository,
             IPaymentService paymentService,
-            IBackgroundService jobService)
+            IBackgroundService jobService,
+            IUserRepository userRepository,
+            IConfiguration configuration)
         {
             _interviewRoomRepository = interviewRoomRepository;
             _transactionRepository = transactionRepository;
             _coachProfileRepository = coachProfileRepository;
             _paymentService = paymentService;
             _jobService = jobService;
+            _userRepository = userRepository;
+            _configuration = configuration;
         }
 
         public async Task ExecuteAsync(Guid interviewRoomId)
@@ -66,8 +75,23 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 "/dashboard/wallet",
                 null
             ));
-            
-            // TODO: Send email notification to coach about successful payout with details and link to interview history
+
+            var coachUser = await _userRepository.GetByIdAsync(interviewerId);
+            if (coachUser != null)
+            {
+                var frontendUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:5173";
+                var placeholders = new Dictionary<string, string>
+                {
+                    ["CoachName"] = coachUser.FullName,
+                    ["Amount"] = amount.ToString("N0"),
+                    ["DashboardLink"] = $"{frontendUrl.TrimEnd('/')}/dashboard/wallet"
+                };
+
+                _jobService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                    coachUser.Email,
+                    "PayoutConfirmation",
+                    placeholders));
+            }
         }
     }
 }

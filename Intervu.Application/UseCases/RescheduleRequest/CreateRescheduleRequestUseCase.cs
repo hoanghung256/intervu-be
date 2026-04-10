@@ -1,5 +1,6 @@
 using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.ExternalServices.Email;
 using Intervu.Application.Interfaces.UseCases.Notification;
 using Intervu.Application.Interfaces.UseCases.RescheduleRequest;
 using Intervu.Application.Services;
@@ -7,6 +8,7 @@ using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Intervu.Application.UseCases.RescheduleRequest
@@ -22,6 +24,7 @@ namespace Intervu.Application.UseCases.RescheduleRequest
         private readonly IBookingRequestRepository _bookingRequestRepository;
         private readonly IUserRepository _userRepository;
         private readonly IBackgroundService _backgroundService;
+        private readonly IConfiguration _configuration;
 
         public CreateRescheduleRequestUseCase(
             ILogger<CreateRescheduleRequestUseCase> logger,
@@ -31,7 +34,8 @@ namespace Intervu.Application.UseCases.RescheduleRequest
             ICoachAvailabilitiesRepository coachAvailabilitiesRepository,
             IBookingRequestRepository bookingRequestRepository,
             IUserRepository userRepository,
-            IBackgroundService backgroundService)
+            IBackgroundService backgroundService,
+            IConfiguration configuration)
         {
             _logger = logger;
             _rescheduleRequestRepository = rescheduleRequestRepository;
@@ -41,6 +45,7 @@ namespace Intervu.Application.UseCases.RescheduleRequest
             _bookingRequestRepository = bookingRequestRepository;
             _userRepository = userRepository;
             _backgroundService = backgroundService;
+            _configuration = configuration;
         }
 
         public async Task<Guid> ExecuteAsync(Guid roomId, DateTime newStartTime, Guid requestedBy, string reason)
@@ -185,6 +190,33 @@ namespace Intervu.Application.UseCases.RescheduleRequest
                     "/interview?tab=upcoming",
                     rescheduleRequest.Id));
 
+            var recipient = await _userRepository.GetByIdAsync(otherPartyId);
+            if (recipient != null)
+            {
+                try
+                {
+                    var frontendUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:5173";
+                    var placeholders = new Dictionary<string, string>
+                    {
+                        ["RecipientName"] = recipient.FullName,
+                        ["RequesterName"] = requester.FullName,
+                        ["Reason"] = reason,
+                        ["ProposedTime"] = rescheduleRequest.ProposedStartTime.ToString("dd MMM yyyy HH:mm"),
+                        ["DashboardLink"] = $"{frontendUrl.TrimEnd('/')}/interview?tab=upcoming"
+                    };
+
+                    _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                        recipient.Email,
+                        "RescheduleProposal",
+                        placeholders));
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to enqueue reschedule proposal email for request {RequestId}", rescheduleRequest.Id);
+                }
+            }
+
+            _logger.LogInformation("Created reschedule request {RequestId} for room {RoomId}", rescheduleRequest.Id, roomId);
             _backgroundService.Enqueue<INotificationUseCase>(
                 uc => uc.CreateAsync(
                     requestedBy,

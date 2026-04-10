@@ -1,5 +1,6 @@
 using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.ExternalServices.Email;
 using Intervu.Application.Interfaces.UseCases.BookingRequest;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
@@ -9,6 +10,7 @@ using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Intervu.Application.UseCases.InterviewBooking
@@ -27,12 +29,16 @@ namespace Intervu.Application.UseCases.InterviewBooking
         private readonly ICoachInterviewServiceRepository _coachInterviewServiceRepository;
         private readonly ICreateEvaluationResultsUseCase _createEvaluationResults;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IUserRepository _userRepository;
+        private readonly IConfiguration _configuration;
 
         public CreateBookingCheckoutUrl(
             ILogger<CreateBookingCheckoutUrl> logger,
             IPaymentService paymentService,
             IBackgroundService jobService,
             ICoachInterviewServiceRepository coachInterviewServiceRepository,
+            IUserRepository userRepository,
+            IConfiguration configuration)
             ICreateEvaluationResultsUseCase createEvaluationResults,
             IUnitOfWork unitOfWork)
         {
@@ -42,6 +48,8 @@ namespace Intervu.Application.UseCases.InterviewBooking
             _coachInterviewServiceRepository = coachInterviewServiceRepository;
             _createEvaluationResults = createEvaluationResults;
             _unitOfWork = unitOfWork;
+            _userRepository = userRepository;
+            _configuration = configuration;
         }
 
         public async Task<string?> ExecuteAsync(
@@ -188,10 +196,12 @@ namespace Intervu.Application.UseCases.InterviewBooking
 
                 // 8. Payment gateway or immediate finalization
                 string? checkoutUrl = null;
+                var shouldSendBookingEmails = false;
                 if (t.Amount == 0)
                 {
                     t.Status = TransactionStatus.Paid;
                     t2.Status = TransactionStatus.Paid;
+                    shouldSendBookingEmails = true;
 
                     // Free booking: payment confirmed immediately — upgrade blocks from Reserved to Booked
                     foreach (var block in roundBlocks)
@@ -257,6 +267,65 @@ namespace Intervu.Application.UseCases.InterviewBooking
 
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
+
+                if (shouldSendBookingEmails)
+                {
+                    try
+                    {
+                        var candidate = await _userRepository.GetByIdAsync(candidateId);
+                        var coachUser = await _userRepository.GetByIdAsync(coachId);
+                        var frontendUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:5173";
+                        var interviewDate = startTime.ToString("dd MMM yyyy");
+                        var interviewTime = startTime.ToString("HH:mm");
+
+                        if (candidate != null)
+                        {
+                            var bookingPlaceholders = new Dictionary<string, string>
+                            {
+                                ["CandidateName"] = candidate.FullName,
+                                ["BookingID"] = br.Id.ToString()[..8].ToUpperInvariant(),
+                                ["InterviewDate"] = interviewDate,
+                                ["InterviewTime"] = interviewTime,
+                                ["Position"] = service.InterviewType.Name,
+                                ["InterviewerName"] = coachUser?.FullName ?? "Coach",
+                                ["Duration"] = duration.ToString(),
+                                ["JoinLink"] = $"{frontendUrl.TrimEnd('/')}/interview/{br.Id}",
+                                ["RescheduleLink"] = $"{frontendUrl.TrimEnd('/')}/interview?tab=upcoming",
+                                ["FAQLink"] = $"{frontendUrl.TrimEnd('/')}/faq",
+                                ["SupportLink"] = $"{frontendUrl.TrimEnd('/')}/support",
+                                ["TermsLink"] = $"{frontendUrl.TrimEnd('/')}/terms",
+                                ["PrivacyLink"] = $"{frontendUrl.TrimEnd('/')}/privacy"
+                            };
+
+                            _jobService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                                candidate.Email,
+                                "BookingConfirmation",
+                                bookingPlaceholders));
+                        }
+
+                        if (coachUser != null)
+                        {
+                            var coachPlaceholders = new Dictionary<string, string>
+                            {
+                                ["CoachName"] = coachUser.FullName,
+                                ["CandidateName"] = candidate?.FullName ?? "Candidate",
+                                ["InterviewDate"] = interviewDate,
+                                ["InterviewTime"] = interviewTime,
+                                ["Duration"] = duration.ToString(),
+                                ["DashboardLink"] = $"{frontendUrl.TrimEnd('/')}/dashboard/interviews"
+                            };
+
+                            _jobService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                                coachUser.Email,
+                                "BookingConfirmationCoach",
+                                coachPlaceholders));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to enqueue booking confirmation emails for booking request {BookingRequestId}", br.Id);
+                    }
+                }
 
                 return checkoutUrl;
             }

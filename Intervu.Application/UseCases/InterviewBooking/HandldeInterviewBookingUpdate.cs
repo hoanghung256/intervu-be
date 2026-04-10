@@ -1,5 +1,6 @@
 using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.ExternalServices.Email;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Intervu.Application.Interfaces.UseCases.Notification;
@@ -7,6 +8,7 @@ using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Intervu.Application.UseCases.InterviewBooking
@@ -17,12 +19,18 @@ namespace Intervu.Application.UseCases.InterviewBooking
         private readonly IBackgroundService _backgroundService;
         private readonly Intervu.Application.Interfaces.UseCases.BookingRequest.ICreateEvaluationResultsUseCase _createEvaluationResults;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ICoachInterviewServiceRepository _coachInterviewServiceRepository;
+        private readonly IUserRepository _userRepository;
+        private readonly IConfiguration _configuration;
         private readonly ILogger<HandldeInterviewBookingUpdate> _logger;
 
         public HandldeInterviewBookingUpdate(
             IPaymentService paymentService,
             IBackgroundService backgroundService,
             IUnitOfWork unitOfWork,
+            ICoachInterviewServiceRepository coachInterviewServiceRepository,
+            IUserRepository userRepository,
+            IConfiguration configuration,
             Intervu.Application.Interfaces.UseCases.BookingRequest.ICreateEvaluationResultsUseCase createEvaluationResults,
             ILogger<HandldeInterviewBookingUpdate> logger)
         {
@@ -30,6 +38,9 @@ namespace Intervu.Application.UseCases.InterviewBooking
             _backgroundService = backgroundService;
             _createEvaluationResults = createEvaluationResults;
             _unitOfWork = unitOfWork;
+            _coachInterviewServiceRepository = coachInterviewServiceRepository;
+            _userRepository = userRepository;
+            _configuration = configuration;
             _logger = logger;
         }
 
@@ -62,8 +73,97 @@ namespace Intervu.Application.UseCases.InterviewBooking
 
                 await HandleBookingRequestPayment(transaction);
 
+                var candidateId = transaction.UserId;
+                var frontendUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:5173";
+
+                var bookingRepo = _unitOfWork.GetRepository<IBookingRequestRepository>();
+                var bookingRequest = await bookingRepo.GetByIdWithDetailsAsync(transaction.BookingRequestId.Value)
+                    ?? throw new NotFoundException("Booking request not found");
+
+                Guid? coachId = bookingRequest.CoachId;
+                DateTime? scheduledAt = bookingRequest.RequestedStartTime
+                    ?? bookingRequest.Rounds.OrderBy(r => r.RoundNumber).FirstOrDefault()?.StartTime;
+                int? durationMinutes = bookingRequest.CoachInterviewService?.DurationMinutes
+                    ?? (bookingRequest.Rounds.Count > 0
+                        ? (int)(bookingRequest.Rounds.First().EndTime - bookingRequest.Rounds.First().StartTime).TotalMinutes
+                        : null);
+
+                // Notify candidate — booking confirmed
+                _backgroundService.Enqueue<INotificationUseCase>(
+                    uc => uc.CreateAsync(
+                        candidateId,
+                        NotificationType.BookingAccepted,
+                        "Booking confirmed",
+                        "Your interview has been booked successfully.",
+                        "/interview?tab=upcoming",
+                        null));
+
+                if (coachId.HasValue)
+                {
+                    // Notify coach — new booking
+                    _backgroundService.Enqueue<INotificationUseCase>(
+                        uc => uc.CreateAsync(
+                            coachId.Value,
+                            NotificationType.BookingNew,
+                            "New interview booking",
+                            "A candidate has booked an interview with you.",
+                            "/interview?tab=upcoming",
+                            null));
+                }
+
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
+
+                try
+                {
+                    var candidate = await _userRepository.GetByIdAsync(candidateId);
+                    if (candidate != null)
+                    {
+                        var receiptPlaceholders = new Dictionary<string, string>
+                        {
+                            ["CandidateName"] = candidate.FullName,
+                            ["CoachName"] = "Coach",
+                            ["Amount"] = transaction.Amount.ToString("N0"),
+                            ["OrderCode"] = transaction.OrderCode.ToString(),
+                            ["InterviewDate"] = (scheduledAt ?? DateTime.UtcNow).ToString("dd MMM yyyy"),
+                            ["InterviewTime"] = (scheduledAt ?? DateTime.UtcNow).ToString("HH:mm"),
+                            ["Duration"] = (durationMinutes ?? 60).ToString()
+                        };
+
+                        if (coachId.HasValue)
+                        {
+                            var coachUser = await _userRepository.GetByIdAsync(coachId.Value);
+                            receiptPlaceholders["CoachName"] = coachUser?.FullName ?? "Coach";
+
+                            if (coachUser != null)
+                            {
+                                var coachPlaceholders = new Dictionary<string, string>
+                                {
+                                    ["CoachName"] = coachUser.FullName,
+                                    ["CandidateName"] = candidate.FullName,
+                                    ["InterviewDate"] = (scheduledAt ?? DateTime.UtcNow).ToString("dd MMM yyyy"),
+                                    ["InterviewTime"] = (scheduledAt ?? DateTime.UtcNow).ToString("HH:mm"),
+                                    ["Duration"] = (durationMinutes ?? 60).ToString(),
+                                    ["DashboardLink"] = $"{frontendUrl.TrimEnd('/')}/dashboard/interviews"
+                                };
+
+                                _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                                    coachUser.Email,
+                                    "BookingConfirmationCoach",
+                                    coachPlaceholders));
+                            }
+                        }
+
+                        _backgroundService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                            candidate.Email,
+                            "PaymentReceipt",
+                            receiptPlaceholders));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to enqueue payment receipt emails for transaction {TransactionId}", transaction.Id);
+                }
             }
             catch
             {

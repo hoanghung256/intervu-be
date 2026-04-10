@@ -1,5 +1,6 @@
 using Intervu.Application.DTOs.InterviewRoom;
 using Intervu.Application.Exceptions;
+using Intervu.Application.Interfaces.ExternalServices.Email;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Intervu.Domain.Entities;
@@ -12,7 +13,8 @@ namespace Intervu.Application.UseCases.InterviewRoom
 {
     public class ReportInterviewProblem(
         IUnitOfWork unitOfWork,
-        IBackgroundService jobService) : IReportInterviewProblem
+        IBackgroundService jobService,
+        IUserRepository userRepository) : IReportInterviewProblem
     {
         private const int MaxReasonLength = 500;
         private const int MaxDetailsLength = 4000;
@@ -95,7 +97,28 @@ namespace Intervu.Application.UseCases.InterviewRoom
                 null
             ));
 
-            // TODO: Send email to candidate confirming report receipt
+            var reporter = await userRepository.GetByIdAsync(userId);
+            if (reporter != null)
+            {
+                try
+                {
+                    var placeholders = new Dictionary<string, string>
+                    {
+                        ["RecipientName"] = reporter.FullName,
+                        ["RoomId"] = interviewRoomId.ToString()[..8].ToUpperInvariant(),
+                        ["Reason"] = reason
+                    };
+
+                    jobService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                        reporter.Email,
+                        "ReportReceipt",
+                        placeholders));
+                }
+                catch
+                {
+                    // Do not fail report submission if email enqueue fails.
+                }
+            }
 
 
             return new CreateRoomReportResult

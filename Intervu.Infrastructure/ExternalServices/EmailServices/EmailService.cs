@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -22,7 +22,7 @@ namespace Intervu.Infrastructure.ExternalServices.EmailServices
             _emailTemplateService = emailTemplateService;
             _appEmail = configuration["EmailSettings:GmailEmail"];
             _appPassword = configuration["EmailSettings:GmailAppPassword"];
-            
+
             if (string.IsNullOrEmpty(_appEmail) || string.IsNullOrEmpty(_appPassword))
                 throw new InvalidOperationException("Email configuration is missing. Please check EmailSettings in appsettings.");
         }
@@ -65,31 +65,33 @@ namespace Intervu.Infrastructure.ExternalServices.EmailServices
 
         public async Task SendEmailWithTemplateAsync(string to, string templateName, Dictionary<string, string> placeholders)
         {
-            // Load the template content
             string templateContent = await _emailTemplateService.LoadTemplateAsync(templateName, placeholders);
-            
-            // Replace placeholders in the template
-            if (placeholders != null)
-            {
-                foreach (var placeholder in placeholders)
-                {
-                    if (!string.IsNullOrEmpty(placeholder.Value))
-                        templateContent = templateContent.Replace($"{{{{{placeholder.Key}}}}}", placeholder.Value);
-                }
-            }
-            
-            // Generate a proper email subject based on template name
             string subject = GenerateSubject(templateName);
-            
-            // Send the email using the populated template
             await SendEmailAsync(to, subject, templateContent, isHtml: true);
         }
-        
+
         private string GenerateSubject(string templateName)
         {
             return templateName switch
             {
-                "BookingConfirmation" => "Your Interview Booking Confirmation",
+                "BookingConfirmation" => "Your Interview Booking Confirmation - Intervu",
+                "BookingConfirmationCoach" => "New Interview Booked With You - Intervu",
+                "Welcome" => "Welcome to Intervu!",
+                "ForgotPassword" => "Reset Your Password - Intervu",
+                "PasswordChanged" => "Your Password Has Been Changed - Intervu",
+                "PaymentReceipt" => "Payment Receipt - Intervu",
+                "InterviewCancellation" => "Interview Cancelled - Intervu",
+                "ReportResolution" => "Your Report Has Been Reviewed - Intervu",
+                "NewBookingRequest" => "New Booking Request Received - Intervu",
+                "BookingRequestRejected" => "Booking Request Update - Intervu",
+                "BookingRequestCancelled" => "Booking Cancelled - Intervu",
+                "RescheduleProposal" => "Reschedule Request Received - Intervu",
+                "RescheduleResponse" => "Reschedule Request Update - Intervu",
+                "EvaluationReady" => "Your Interview Evaluation Is Ready - Intervu",
+                "ReportReceipt" => "Report Received - Intervu",
+                "PayoutConfirmation" => "Payout Processed - Intervu",
+                "InterviewReminder" => "Interview Reminder - Intervu",
+                "JDRescheduleNotification" => "Interview Schedule Updated - Intervu",
                 _ => "Intervu Notification"
             };
         }

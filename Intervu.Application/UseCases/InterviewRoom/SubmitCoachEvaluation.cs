@@ -1,5 +1,6 @@
 using Intervu.Application.DTOs.InterviewRoom;
 using Intervu.Application.Exceptions;
+using Intervu.Application.Interfaces.ExternalServices.Email;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
@@ -7,6 +8,7 @@ using Intervu.Domain.Repositories;
 using Microsoft.Extensions.Logging;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.UseCases.Notification;
+using Microsoft.Extensions.Configuration;
 
 namespace Intervu.Application.UseCases.InterviewRoom
 {
@@ -14,12 +16,21 @@ namespace Intervu.Application.UseCases.InterviewRoom
     {
         private readonly IInterviewRoomRepository _roomRepo;
         private readonly IBackgroundService _jobService;
+        private readonly IUserRepository _userRepository;
+        private readonly IConfiguration _configuration;
         private readonly ILogger<SubmitCoachEvaluation> _logger;
 
-        public SubmitCoachEvaluation(IInterviewRoomRepository roomRepo, IBackgroundService jobService, ILogger<SubmitCoachEvaluation> logger)
+        public SubmitCoachEvaluation(
+            IInterviewRoomRepository roomRepo,
+            IBackgroundService jobService,
+            IUserRepository userRepository,
+            IConfiguration configuration,
+            ILogger<SubmitCoachEvaluation> logger)
         {
             _roomRepo = roomRepo;
             _jobService = jobService;
+            _userRepository = userRepository;
+            _configuration = configuration;
             _logger = logger;
         }
 
@@ -62,6 +73,11 @@ namespace Intervu.Application.UseCases.InterviewRoom
 
             if (room.CandidateId.HasValue)
             {
+                var candidate = await _userRepository.GetByIdAsync(room.CandidateId.Value);
+                var coach = room.CoachId.HasValue
+                    ? await _userRepository.GetByIdAsync(room.CoachId.Value)
+                    : null;
+
                 _jobService.Enqueue<INotificationUseCase>(uc => uc.CreateAsync(
                     room.CandidateId.Value,
                     NotificationType.FeedbackReceived,
@@ -70,9 +86,30 @@ namespace Intervu.Application.UseCases.InterviewRoom
                     "/interview?tab=past",
                     null
                 ));
-            }
 
-            // TODO: Send email notification to both parties with evaluation summary
+                if (candidate != null)
+                {
+                    try
+                    {
+                        var frontendUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:5173";
+                        var placeholders = new Dictionary<string, string>
+                        {
+                            ["CandidateName"] = candidate.FullName,
+                            ["CoachName"] = coach?.FullName ?? "Coach",
+                            ["DashboardLink"] = $"{frontendUrl.TrimEnd('/')}/interview?tab=past"
+                        };
+
+                        _jobService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(
+                            candidate.Email,
+                            "EvaluationReady",
+                            placeholders));
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to enqueue EvaluationReady email for room {RoomId}", interviewRoomId);
+                    }
+                }
+            }
 
             _logger.LogInformation("Coach {CoachId} submitted evaluation for interview room {RoomId}", coachId, interviewRoomId);
         }

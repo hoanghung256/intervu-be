@@ -158,6 +158,7 @@ namespace Intervu.Application
             services.AddScoped<IUpdateCoachAvailability, UpdateCoachAvailability>();
             // ----- Email ----
             services.AddScoped<ISendBookingConfirmationEmail, SendBookingConfirmationEmail>();
+            services.AddScoped<ISendInterviewReminderEmail, SendInterviewReminderEmail>();
 
             // ----- UserProfile ----
             services.AddScoped<IGetUserProfile, GetUserProfile>();
