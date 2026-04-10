@@ -1,6 +1,7 @@
 using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
+using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Intervu.Application.Interfaces.UseCases.Notification;
 using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Intervu.Domain.Entities;
@@ -123,6 +124,27 @@ namespace Intervu.Application.UseCases.InterviewBooking
             bookingRequest.ExpiresAt = DateTime.UtcNow.AddHours(48);
             bookingRequest.UpdatedAt = DateTime.UtcNow;
             bookingRepo.UpdateAsync(bookingRequest);
+
+            foreach (var round in bookingRequest.Rounds)
+            {
+                var availabilityId = round.AvailabilityBlocks.FirstOrDefault()?.Id ?? Guid.Empty;
+                var duration = (int)(round.EndTime - round.StartTime).TotalMinutes;
+
+                // Create room(s) only for accepted bookings
+                if (bookingRequest.Status == BookingRequestStatus.Accepted)
+                {
+                    _backgroundService.Enqueue<ICreateInterviewRoom>(
+                        uc => uc.ExecuteAsync(
+                            bookingRequest.CandidateId,
+                            bookingRequest.CoachId,
+                            availabilityId,
+                            round.StartTime,
+                            transaction.Id,
+                            duration,
+                            bookingRequest.Id
+                    ));
+                }
+            }
 
             // Upgrade all reserved availability blocks to Booked now that payment is confirmed
             var availabilityRepo = _unitOfWork.GetRepository<ICoachAvailabilitiesRepository>();
