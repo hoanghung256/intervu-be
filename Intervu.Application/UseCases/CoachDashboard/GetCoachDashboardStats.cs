@@ -39,7 +39,7 @@ namespace Intervu.Application.UseCases.CoachDashboard
 
             // Acceptance rate: accepted / (accepted + rejected) for current period
             var (acceptedItems, _) = await _bookingRepo.GetPagedByCoachIdAsync(
-                coachId, null, new List<BookingRequestStatus> { BookingRequestStatus.Accepted, BookingRequestStatus.Paid }, 1, int.MaxValue);
+                coachId, null, new List<BookingRequestStatus> { BookingRequestStatus.Accepted }, 1, int.MaxValue);
             var (rejectedItems, _) = await _bookingRepo.GetPagedByCoachIdAsync(
                 coachId, null, new List<BookingRequestStatus> { BookingRequestStatus.Rejected }, 1, int.MaxValue);
 

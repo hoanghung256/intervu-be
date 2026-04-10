@@ -41,7 +41,6 @@ namespace Intervu.Application.UseCases.CoachDashboard
 
             return bookingStatus switch
             {
-                nameof(BookingRequestStatus.Paid) => "Confirmed",
                 nameof(BookingRequestStatus.Accepted) => "Upcoming",
                 nameof(BookingRequestStatus.Pending) => "Pending Payment",
                 _ => "Upcoming"
