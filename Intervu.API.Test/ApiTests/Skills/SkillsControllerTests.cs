@@ -7,6 +7,7 @@ using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.Skills
 {
+    // TODO: split into multiple test classes if it grows too large; consider adding more edge cases and error scenarios as needed
     public class SkillsControllerTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         private readonly ApiHelper _api;
@@ -79,6 +80,30 @@ namespace Intervu.API.Test.ApiTests.Skills
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
             var apiResponse = await _api.LogDeserializeJson<PagedResult<SkillDto>>(response);
             await AssertHelper.AssertTrue(apiResponse.Success, "Request was successful");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Skills")]
+        public async Task GetAllSkills_ReturnsBadRequest_WhenPageSizeIsZero()
+        {
+            // Act
+            var response = await _api.GetAsync("/api/v1/skills?page=1&pageSize=0", logBody: true);
+
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "PageSize 0 should return 400 Bad Request");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Skills")]
+        public async Task GetAllSkills_ReturnsBadRequest_WhenPageIsZero()
+        {
+            // Act
+            var response = await _api.GetAsync("/api/v1/skills?page=0&pageSize=10", logBody: true);
+
+            // Assert
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Page 0 should return 400 Bad Request");
         }
     }
 }

@@ -18,5 +18,10 @@ namespace Intervu.Domain.Repositories
         Task<Dictionary<Guid, double?>> GetRatingsByInterviewRoomIdsAsync(IEnumerable<Guid> interviewRoomIds);
         Task CreateFeedbackAsync(Feedback feedback);
         Task UpdateFeedbackAsync(Feedback updatedFeedback);
+
+        /// <summary>
+        /// Get recent feedbacks for a coach with candidate name, ordered by interview scheduled time descending.
+        /// </summary>
+        Task<List<(Feedback Feedback, string CandidateName)>> GetRecentFeedbacksByCoachIdAsync(Guid coachId, int limit);
     }
 }

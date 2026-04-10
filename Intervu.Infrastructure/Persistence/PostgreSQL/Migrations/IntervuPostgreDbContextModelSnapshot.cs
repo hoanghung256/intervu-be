@@ -578,6 +578,46 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             EndTime = new DateTime(2026, 4, 1, 11, 0, 0, 0, DateTimeKind.Utc),
                             StartTime = new DateTime(2026, 4, 1, 10, 0, 0, 0, DateTimeKind.Utc),
                             Status = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("d1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c60"),
+                            CoachId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            EndTime = new DateTime(2026, 5, 1, 10, 0, 0, 0, DateTimeKind.Utc),
+                            StartTime = new DateTime(2026, 5, 1, 9, 0, 0, 0, DateTimeKind.Utc),
+                            Status = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("e1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c61"),
+                            CoachId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            EndTime = new DateTime(2026, 5, 2, 10, 0, 0, 0, DateTimeKind.Utc),
+                            StartTime = new DateTime(2026, 5, 2, 9, 0, 0, 0, DateTimeKind.Utc),
+                            Status = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("d1d1d1d1-4444-4a1a-8a1a-444444444444"),
+                            CoachId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            EndTime = new DateTime(2026, 5, 3, 10, 0, 0, 0, DateTimeKind.Utc),
+                            StartTime = new DateTime(2026, 5, 3, 9, 0, 0, 0, DateTimeKind.Utc),
+                            Status = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("e1e1e1e1-5555-4a1a-8a1a-555555555555"),
+                            CoachId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            EndTime = new DateTime(2026, 5, 4, 10, 0, 0, 0, DateTimeKind.Utc),
+                            StartTime = new DateTime(2026, 5, 4, 9, 0, 0, 0, DateTimeKind.Utc),
+                            Status = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("f1f1f1f1-8888-4a1a-8a1a-888888888888"),
+                            CoachId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            EndTime = new DateTime(2026, 5, 5, 10, 0, 0, 0, DateTimeKind.Utc),
+                            StartTime = new DateTime(2026, 5, 5, 9, 0, 0, 0, DateTimeKind.Utc),
+                            Status = 0
                         });
                 });
 
@@ -642,7 +682,10 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_CoachInterviewServices_CoachId_InterviewTypeId");
 
-                    b.ToTable("CoachInterviewServices", (string)null);
+                    b.ToTable("CoachInterviewServices", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_CoachInterviewServices_DurationMinutes_MultipleOf30", "\"DurationMinutes\" >= 15 AND \"DurationMinutes\" <= 300 AND \"DurationMinutes\" % 30 = 0");
+                        });
 
                     b.HasData(
                         new
@@ -665,7 +708,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         {
                             Id = new Guid("019d1467-d415-79f8-9bdc-5bb25a0b25cf"),
                             CoachId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
-                            DurationMinutes = 45,
+                            DurationMinutes = 60,
                             InterviewTypeId = new Guid("5c9e2a14-73bb-4b61-b7e2-91a8f42d3c6e"),
                             Price = 2000
                         },
@@ -673,7 +716,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         {
                             Id = new Guid("019d1467-d415-79f8-9bdc-5bb25a0b25cd"),
                             CoachId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
-                            DurationMinutes = 75,
+                            DurationMinutes = 90,
                             InterviewTypeId = new Guid("f14a7c6d-88b2-4d55-a9fd-2b4e73c91a08"),
                             Price = 2000
                         });
@@ -1107,6 +1150,16 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             Comments = "Great answers and communication.",
                             InterviewRoomId = new Guid("5c5d6e7f-9a8b-4d3c-8e9b-7c6d5e4f3a66"),
                             Rating = 5
+                        },
+                        new
+                        {
+                            Id = new Guid("9a0b1c2d-e3f4-4a5b-8c9d-0e1f2a3b4c11"),
+                            AIAnalysis = "{}",
+                            CandidateId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
+                            CoachId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            Comments = "",
+                            InterviewRoomId = new Guid("f1f1f1f1-7777-4a1a-8a1a-777777777777"),
+                            Rating = 0
                         });
                 });
 
@@ -1281,6 +1334,51 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         new
                         {
                             Id = new Guid("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a00"),
+                            Amount = 2000,
+                            OrderCode = 0,
+                            Status = 1,
+                            Type = 0,
+                            UserId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11")
+                        },
+                        new
+                        {
+                            Id = new Guid("b1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5e"),
+                            Amount = 2000,
+                            OrderCode = 0,
+                            Status = 1,
+                            Type = 0,
+                            UserId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11")
+                        },
+                        new
+                        {
+                            Id = new Guid("c1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5f"),
+                            Amount = 2000,
+                            OrderCode = 0,
+                            Status = 1,
+                            Type = 0,
+                            UserId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11")
+                        },
+                        new
+                        {
+                            Id = new Guid("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a11"),
+                            Amount = 2000,
+                            OrderCode = 0,
+                            Status = 1,
+                            Type = 0,
+                            UserId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11")
+                        },
+                        new
+                        {
+                            Id = new Guid("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a22"),
+                            Amount = 2000,
+                            OrderCode = 0,
+                            Status = 1,
+                            Type = 0,
+                            UserId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11")
+                        },
+                        new
+                        {
+                            Id = new Guid("f1f1f1f1-9999-4a1a-8a1a-999999999999"),
                             Amount = 2000,
                             OrderCode = 0,
                             Status = 1,
@@ -1492,6 +1590,21 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.HasIndex("InterviewRoomId", "Status");
 
                     b.ToTable("InterviewRescheduleRequests", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("f1f1f1f1-6666-4a1a-8a1a-666666666666"),
+                            CurrentAvailabilityId = new Guid("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77"),
+                            ExpiresAt = new DateTime(2026, 6, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            InterviewRoomId = new Guid("c1c1c1c1-3333-4a1a-8a1a-333333333333"),
+                            ProposedAvailabilityId = new Guid("e1e1e1e1-5555-4a1a-8a1a-555555555555"),
+                            ProposedEndTime = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            ProposedStartTime = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Reason = "Seed reason for testing response",
+                            RequestedBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
+                            Status = 0
+                        });
                 });
 
             modelBuilder.Entity("Intervu.Domain.Entities.InterviewRoom", b =>
@@ -1572,6 +1685,10 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<string>("Transcript")
                         .HasColumnType("text");
 
+                    b.Property<string>("WhiteboardElements")
+                        .HasColumnType("text")
+                        .HasColumnName("WhiteboardElements");
+
                     b.Property<int>("Type")
                         .HasColumnType("integer");
 
@@ -1639,6 +1756,66 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             TransactionId = new Guid("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a00"),
                             Type = 0,
                             VideoCallRoomUrl = "https://meet.example/room3"
+                        },
+                        new
+                        {
+                            Id = new Guid("f47ac10b-58cc-4372-a567-0e02b2c3d479"),
+                            CandidateId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
+                            CoachId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            CurrentAvailabilityId = new Guid("d1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c60"),
+                            DurationMinutes = 60,
+                            IsEvaluationCompleted = false,
+                            RescheduleAttemptCount = 0,
+                            ScheduledTime = new DateTime(2026, 5, 1, 9, 0, 0, 0, DateTimeKind.Utc),
+                            Status = 1,
+                            TransactionId = new Guid("b1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5e"),
+                            Type = 0,
+                            VideoCallRoomUrl = "https://meet.example/room-eval"
+                        },
+                        new
+                        {
+                            Id = new Guid("a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"),
+                            CandidateId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
+                            CoachId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            CurrentAvailabilityId = new Guid("e1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c61"),
+                            DurationMinutes = 60,
+                            IsEvaluationCompleted = false,
+                            RescheduleAttemptCount = 0,
+                            ScheduledTime = new DateTime(2026, 5, 2, 9, 0, 0, 0, DateTimeKind.Utc),
+                            Status = 2,
+                            TransactionId = new Guid("c1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5f"),
+                            Type = 0,
+                            VideoCallRoomUrl = "https://meet.example/room-report"
+                        },
+                        new
+                        {
+                            Id = new Guid("b1b1b1b1-2222-4a1a-8a1a-222222222222"),
+                            CandidateId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
+                            CoachId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            CurrentAvailabilityId = new Guid("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77"),
+                            DurationMinutes = 60,
+                            IsEvaluationCompleted = false,
+                            RescheduleAttemptCount = 0,
+                            ScheduledTime = new DateTime(2026, 5, 10, 9, 0, 0, 0, DateTimeKind.Utc),
+                            Status = 0,
+                            TransactionId = new Guid("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a11"),
+                            Type = 0,
+                            VideoCallRoomUrl = "https://meet.example/room-resch-create"
+                        },
+                        new
+                        {
+                            Id = new Guid("c1c1c1c1-3333-4a1a-8a1a-333333333333"),
+                            CandidateId = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
+                            CoachId = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
+                            CurrentAvailabilityId = new Guid("6d7e8f9a-b8a9-4c3d-8f9e-6d5c4b3a2a77"),
+                            DurationMinutes = 60,
+                            IsEvaluationCompleted = false,
+                            RescheduleAttemptCount = 0,
+                            ScheduledTime = new DateTime(2026, 5, 12, 9, 0, 0, 0, DateTimeKind.Utc),
+                            Status = 0,
+                            TransactionId = new Guid("7e8f9a0b-c1d2-4e3f-8a9b-0c1d2e3f4a22"),
+                            Type = 0,
+                            VideoCallRoomUrl = "https://meet.example/room-resch-respond"
                         });
                 });
 
@@ -1674,6 +1851,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1733,7 +1913,10 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("InterviewTypes", (string)null);
+                    b.ToTable("InterviewTypes", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_InterviewTypes_SuggestedDurationMinutes_MultipleOf30", "\"SuggestedDurationMinutes\" >= 15 AND \"SuggestedDurationMinutes\" <= 300 AND \"SuggestedDurationMinutes\" % 30 = 0");
+                        });
 
                     b.HasData(
                         new
@@ -1770,7 +1953,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             MinPrice = 1000,
                             Name = "Soft Skills Interview",
                             Status = 1,
-                            SuggestedDurationMinutes = 45
+                            SuggestedDurationMinutes = 60
                         },
                         new
                         {
@@ -1782,7 +1965,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             MinPrice = 1000,
                             Name = "Mock Interview",
                             Status = 1,
-                            SuggestedDurationMinutes = 75
+                            SuggestedDurationMinutes = 90
                         });
                 });
 
@@ -2474,26 +2657,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"),
-                            Email = "john.doe@example.com",
-                            FullName = "John Doe",
-                            Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
-                            Role = 1,
-                            SlugProfileUrl = "john-doe_1719000000004",
-                            Status = 0
-                        },
-                        new
-                        {
-                            Id = new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"),
-                            Email = "sarah.lee@example.com",
-                            FullName = "Sarah Lee",
-                            Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
-                            Role = 1,
-                            SlugProfileUrl = "sarah-lee_1719000000005",
-                            Status = 0
-                        },
-                        new
-                        {
                             Id = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
                             Email = "alice@example.com",
                             FullName = "Alice Candidate",
@@ -2520,6 +2683,26 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
                             Role = 2,
                             SlugProfileUrl = "admin_1719000000003",
+                            Status = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"),
+                            Email = "john.doe@example.com",
+                            FullName = "John Doe",
+                            Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
+                            Role = 1,
+                            SlugProfileUrl = "john-doe_1719000000004",
+                            Status = 0
+                        },
+                        new
+                        {
+                            Id = new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"),
+                            Email = "sarah.lee@example.com",
+                            FullName = "Sarah Lee",
+                            Password = "10000.QdMM6/umqXH7gdmWhCSo6A==.vfa//iQ7atLzzEXuLQLrQa2+MkrJeouJdN/Bxs81Blo=",
+                            Role = 1,
+                            SlugProfileUrl = "sarah-lee_1719000000005",
                             Status = 0
                         });
                 });

@@ -1,3 +1,4 @@
+using Intervu.Application.Interfaces.UseCases.BookingRequest;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Intervu.Application.Services;
 using Intervu.Domain.Entities;
@@ -11,17 +12,20 @@ namespace Intervu.Application.UseCases.InterviewRoom
         private readonly IInterviewRoomRepository _interviewRoomRepo;
         private readonly InterviewRoomCache _cache;
         private readonly ILogger<CreateInterviewRoom> _logger;
+        private readonly ICreateEvaluationResultsUseCase _createEvaluationResults;
         private readonly IScheduleInterviewReminders _scheduleReminders;
 
         public CreateInterviewRoom(
             IInterviewRoomRepository interviewRoomRepo,
             InterviewRoomCache cache,
             ILogger<CreateInterviewRoom> logger,
+            ICreateEvaluationResultsUseCase createEvaluationResults,
             IScheduleInterviewReminders scheduleReminders)
         {
             _interviewRoomRepo = interviewRoomRepo;
             _cache = cache;
             _logger = logger;
+            _createEvaluationResults = createEvaluationResults;
             _scheduleReminders = scheduleReminders;
         }
 
@@ -39,7 +43,7 @@ namespace Intervu.Application.UseCases.InterviewRoom
             return room.Id;
         }
 
-        public async Task<Guid> ExecuteAsync(Guid candidateId, Guid coachId, Guid availabilityId, DateTime startTime, Guid transactionId, int duration, Guid? bookingRequestId)
+        public async Task<Guid> ExecuteAsync(Guid candidateId, Guid coachId, Guid availabilityId, DateTime startTime, Guid transactionId, int duration, Guid coachServiceId, Guid? bookingRequestId)
         {
             // TODO: interveweeId and interviewerId are valid and exists
             Domain.Entities.InterviewRoom room = new()
@@ -51,7 +55,8 @@ namespace Intervu.Application.UseCases.InterviewRoom
                 DurationMinutes = duration,
                 CurrentAvailabilityId = availabilityId,
                 TransactionId = transactionId,
-                BookingRequestId = bookingRequestId
+                BookingRequestId = bookingRequestId,
+                EvaluationResults = await _createEvaluationResults.ExecuteAsync(coachServiceId)
             };
             await _interviewRoomRepo.AddAsync(room);
             await _interviewRoomRepo.SaveChangesAsync();

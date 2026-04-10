@@ -50,14 +50,14 @@ namespace Intervu.Application.UseCases.BookingRequest
             if (bookingRequest.CandidateId != candidateId)
                 throw new ForbiddenException("You can only cancel your own booking requests");
 
-            // Only Pending, Accepted or Paid requests can be cancelled
+            // Only Pending, PendingForApprovalAfterPayment or Accepted requests can be cancelled
             if (bookingRequest.Status != BookingRequestStatus.Pending &&
-                bookingRequest.Status != BookingRequestStatus.Accepted &&
-                bookingRequest.Status != BookingRequestStatus.Paid)
+                bookingRequest.Status != BookingRequestStatus.PendingForApprovalAfterPayment &&
+                bookingRequest.Status != BookingRequestStatus.Accepted)
             {
                 throw new BadRequestException(
                     $"Cannot cancel a booking request with status '{bookingRequest.Status}'. " +
-                    "Only Pending, Accepted or Paid requests can be cancelled.");
+                    "Only Pending, PendingForApprovalAfterPayment or Accepted requests can be cancelled.");
             }
 
             // Start cancellation

@@ -17,6 +17,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
     {
         private readonly IPaymentService _paymentService;
         private readonly IBackgroundService _backgroundService;
+        private readonly Intervu.Application.Interfaces.UseCases.BookingRequest.ICreateEvaluationResultsUseCase _createEvaluationResults;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICoachInterviewServiceRepository _coachInterviewServiceRepository;
         private readonly IUserRepository _userRepository;
@@ -30,10 +31,12 @@ namespace Intervu.Application.UseCases.InterviewBooking
             ICoachInterviewServiceRepository coachInterviewServiceRepository,
             IUserRepository userRepository,
             IConfiguration configuration,
+            Intervu.Application.Interfaces.UseCases.BookingRequest.ICreateEvaluationResultsUseCase createEvaluationResults,
             ILogger<HandldeInterviewBookingUpdate> logger)
         {
             _paymentService = paymentService;
             _backgroundService = backgroundService;
+            _createEvaluationResults = createEvaluationResults;
             _unitOfWork = unitOfWork;
             _coachInterviewServiceRepository = coachInterviewServiceRepository;
             _userRepository = userRepository;
@@ -171,7 +174,8 @@ namespace Intervu.Application.UseCases.InterviewBooking
 
         /// <summary>
         /// Unified payment handler for all booking request types (Direct, External, JD).
-        /// Marks booking as Paid and creates interview rooms from rounds.
+        /// Marks booking as Paid, transitions reserved availability blocks to Booked,
+        /// and resets expiry for the 48h coach response window.
         /// </summary>
         private async Task HandleBookingRequestPayment(InterviewBookingTransaction transaction)
         {
@@ -180,68 +184,108 @@ namespace Intervu.Application.UseCases.InterviewBooking
             var bookingRequest = await bookingRepo.GetByIdWithDetailsAsync(transaction.BookingRequestId!.Value)
                 ?? throw new NotFoundException("Booking request not found");
 
-            if (bookingRequest.Status != BookingRequestStatus.Accepted)
+            // Accept only Pending status — payment must follow booking creation
+            if (bookingRequest.Status != BookingRequestStatus.Pending)
             {
                 _logger.LogWarning(
-                    "BookingRequest {Id} is not in Accepted status (current: {Status}), skipping room creation",
+                    "BookingRequest {Id} is not in Pending status (current: {Status}), skipping payment handling",
                     bookingRequest.Id, bookingRequest.Status);
                 return;
             }
 
-            // Transition to Paid
-            bookingRequest.Status = BookingRequestStatus.Paid;
+            // Transition to PendingForApprovalAfterPayment — reset expiry for the 48h coach response window
+            // bookingRequest.Status = BookingRequestStatus.PendingForApprovalAfterPayment;
+            bookingRequest.Status = BookingRequestStatus.Accepted; // Auto-accept for zero-price bookings
+            bookingRequest.ExpiresAt = DateTime.UtcNow.AddHours(48);
             bookingRequest.UpdatedAt = DateTime.UtcNow;
             bookingRepo.UpdateAsync(bookingRequest);
 
-            // Create rooms from rounds (works for Direct with 1 round, JD with N rounds)
-            foreach (var round in bookingRequest.Rounds.OrderBy(r => r.RoundNumber))
+            foreach (var round in bookingRequest.Rounds)
             {
-                var roundDuration = round.CoachInterviewService?.DurationMinutes ?? 60;
+                var availabilityId = round.AvailabilityBlocks.FirstOrDefault()?.Id ?? Guid.Empty;
+                var duration = (int)(round.EndTime - round.StartTime).TotalMinutes;
 
-                // Use the first availability block of this round as the reference
-                var firstBlockId = round.AvailabilityBlocks?.OrderBy(b => b.StartTime).FirstOrDefault()?.Id;
-
-                var room = new Domain.Entities.InterviewRoom
+                // Create room(s) only for accepted bookings
+                if (bookingRequest.Status == BookingRequestStatus.Accepted)
                 {
-                    CandidateId = bookingRequest.CandidateId,
-                    CoachId = bookingRequest.CoachId,
-                    ScheduledTime = round.StartTime,
-                    DurationMinutes = roundDuration,
-                    CurrentAvailabilityId = firstBlockId,
-                    Status = InterviewRoomStatus.Scheduled,
-                    TransactionId = transaction.Id,
-                    BookingRequestId = bookingRequest.Id,
-                    CoachInterviewServiceId = round.CoachInterviewServiceId,
-                    AimLevel = bookingRequest.AimLevel,
-                    RoundNumber = round.RoundNumber,
-                    EvaluationResults = await CreateEvaluationResultsFromInterviewService(round.CoachInterviewServiceId),
-                    IsEvaluationCompleted = false
-                };
-                _backgroundService.Enqueue<ICreateInterviewRoom>(uc => uc.ExecuteAsync(room));
+                    var room = new Domain.Entities.InterviewRoom
+                    {
+                        CandidateId = bookingRequest.CandidateId,
+                        CoachId = bookingRequest.CoachId,
+                        ScheduledTime = round.StartTime,
+                        DurationMinutes = duration,
+                        CurrentAvailabilityId = availabilityId,
+                        Status = InterviewRoomStatus.Scheduled,
+                        TransactionId = transaction.Id,
+                        BookingRequestId = bookingRequest.Id,
+                        CoachInterviewServiceId = round.CoachInterviewServiceId,
+                        AimLevel = bookingRequest.AimLevel,
+                        RoundNumber = round.RoundNumber,
+                        EvaluationResults = await _createEvaluationResults.ExecuteAsync(round.CoachInterviewServiceId),
+                        IsEvaluationCompleted = false
+                    };
+
+                    _backgroundService.Enqueue<ICreateInterviewRoom>(uc => uc.ExecuteAsync(room));
+                }
             }
 
-            _logger.LogInformation(
-                "Queued {RoundCount} interview room(s) for BookingRequest {BookingRequestId} (Type: {Type})",
-                bookingRequest.Rounds.Count, bookingRequest.Id, bookingRequest.Type);
-        }
-
-        private async Task<List<EvaluationResult>> CreateEvaluationResultsFromInterviewService(Guid? coachInterviewServiceId)
-        {
-            if (coachInterviewServiceId == null)
-                return [];
-
-            var service = await _coachInterviewServiceRepository.GetByIdWithDetailsAsync(coachInterviewServiceId.Value);
-
-            if (service?.InterviewType?.EvaluationStructure == null)
-                return [];
-
-            return [.. service.InterviewType.EvaluationStructure.Select(c => new EvaluationResult
+            // Upgrade all reserved availability blocks to Booked now that payment is confirmed
+            var availabilityRepo = _unitOfWork.GetRepository<ICoachAvailabilitiesRepository>();
+            foreach (var round in bookingRequest.Rounds)
             {
-                Type = c.Type,
-                Question = c.Question,
-                Score = 0,
-                Answer = ""
-            })];
+                if (round.AvailabilityBlocks == null) continue;
+                foreach (var block in round.AvailabilityBlocks)
+                {
+                    if (block.Status == CoachAvailabilityStatus.Reserved)
+                    {
+                        block.Status = CoachAvailabilityStatus.Booked;
+                        availabilityRepo.UpdateAsync(block);
+                    }
+                }
+            }
+
+            // Sent notification
+            SentNotification(
+                bookingRequest.Status == BookingRequestStatus.Accepted,
+                bookingRequest.CandidateId,
+                bookingRequest.CoachId
+            );
+
+            _logger.LogInformation(
+                "BookingRequest {BookingRequestId} marked as Paid, availability blocks confirmed as Booked",
+                bookingRequest.Id);
+        }
+        
+        private void SentNotification(bool isBookingRequestAccepted, Guid candidateId, Guid coachId)
+        {
+            var candidateTitle = isBookingRequestAccepted ? "Booking confirmed" : "Payment received";
+            var candidateMessage = isBookingRequestAccepted
+                ? "Your payment was successful. Your booking has been confirmed."
+                : "Your payment was successful. The booking is awaiting coach approval.";
+
+            // Notify candidate — payment received, awaiting coach approval
+            _backgroundService.Enqueue<INotificationUseCase>(
+                uc => uc.CreateAsync(
+                    candidateId,
+                    NotificationType.BookingNew,
+                    candidateTitle,
+                    candidateMessage,
+                    "/booking?tab=pending",
+                    null));
+
+            var coachMessage = isBookingRequestAccepted
+                ? "A candidate has paid for an interview and the booking is now confirmed."
+                : "A candidate has paid for an interview. Please review and approve or reject.";
+
+            // Notify coach — new paid booking waiting for review
+            _backgroundService.Enqueue<INotificationUseCase>(
+                uc => uc.CreateAsync(
+                    coachId,
+                    NotificationType.BookingNew,
+                    "New booking request",
+                    coachMessage,
+                    "/booking?tab=pending",
+                    null));
         }
     }
 }

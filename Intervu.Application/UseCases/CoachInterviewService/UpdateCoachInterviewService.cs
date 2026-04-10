@@ -24,6 +24,11 @@ namespace Intervu.Application.UseCases.CoachInterviewService
 
         public async Task<CoachInterviewServiceDto> ExecuteAsync(Guid coachId, Guid serviceId, UpdateCoachInterviewServiceDto dto)
         {
+            if (dto.DurationMinutes % 30 != 0)
+            {
+                throw new BadRequestException("Duration must be a multiple of 30 minutes.");
+            }
+
             var service = await _serviceRepo.GetByIdWithDetailsAsync(serviceId)
                 ?? throw new NotFoundException("Coach interview service not found");
 

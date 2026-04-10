@@ -1,6 +1,7 @@
 using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.ExternalServices.Email;
+using Intervu.Application.Interfaces.UseCases.BookingRequest;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Intervu.Application.Interfaces.UseCases.Notification;
@@ -26,6 +27,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
         private readonly IPaymentService _paymentService;
         private readonly IBackgroundService _jobService;
         private readonly ICoachInterviewServiceRepository _coachInterviewServiceRepository;
+        private readonly ICreateEvaluationResultsUseCase _createEvaluationResults;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IUserRepository _userRepository;
         private readonly IConfiguration _configuration;
@@ -35,14 +37,16 @@ namespace Intervu.Application.UseCases.InterviewBooking
             IPaymentService paymentService,
             IBackgroundService jobService,
             ICoachInterviewServiceRepository coachInterviewServiceRepository,
-            IUnitOfWork unitOfWork,
             IUserRepository userRepository,
             IConfiguration configuration)
+            ICreateEvaluationResultsUseCase createEvaluationResults,
+            IUnitOfWork unitOfWork)
         {
             _logger = logger;
             _paymentService = paymentService;
             _jobService = jobService;
             _coachInterviewServiceRepository = coachInterviewServiceRepository;
+            _createEvaluationResults = createEvaluationResults;
             _unitOfWork = unitOfWork;
             _userRepository = userRepository;
             _configuration = configuration;
@@ -115,16 +119,20 @@ namespace Intervu.Application.UseCases.InterviewBooking
                         $"is not fully covered by available slots for this coach");
 
                 // 5. Create BookingRequest (Direct)
+                // Free bookings are immediately Paid; paid bookings are Reserved for 5 minutes
+                // until the PayOS webhook confirms payment and upgrades blocks to Booked.
                 Domain.Entities.BookingRequest br = new()
                 {
                     Id = Guid.NewGuid(),
                     CandidateId = candidateId,
                     CoachId = coachId,
                     Type = BookingRequestType.Direct,
-                    Status = (paymentAmount == 0) ? BookingRequestStatus.Paid : BookingRequestStatus.Accepted,
+                    Status = (paymentAmount == 0) ? BookingRequestStatus.Accepted : BookingRequestStatus.Pending,
                     CoachInterviewServiceId = coachInterviewServiceId,
                     TotalAmount = paymentAmount,
-                    ExpiresAt = DateTime.UtcNow.AddHours(24),
+                    ExpiresAt = (paymentAmount == 0)
+                        ? DateTime.UtcNow.AddHours(24)
+                        : DateTime.UtcNow.AddMinutes(5),
                     CreatedAt = DateTime.UtcNow
                 };
 
@@ -147,10 +155,12 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     Price = paymentAmount
                 };
 
-                // Mark availability blocks as Booked and link to this round
+                // Mark availability blocks as Reserved and link to this round.
+                // Free bookings will upgrade to Booked immediately below; paid bookings
+                // will transition to Booked once payment is confirmed via webhook.
                 foreach (var block in roundBlocks)
                 {
-                    block.Status = CoachAvailabilityStatus.Booked;
+                    block.Status = CoachAvailabilityStatus.Reserved;
                     block.InterviewRoundId = round.Id;
                     availabilityRepo.UpdateAsync(block);
                 }
@@ -193,11 +203,18 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     t2.Status = TransactionStatus.Paid;
                     shouldSendBookingEmails = true;
 
-                    var evaluation = await CreateEvaluationResultsFromInterviewService(coachInterviewServiceId);
+                    // Free booking: payment confirmed immediately — upgrade blocks from Reserved to Booked
+                    foreach (var block in roundBlocks)
+                    {
+                        block.Status = CoachAvailabilityStatus.Booked;
+                        availabilityRepo.UpdateAsync(block);
+                    }
 
                     // Use the first availability block as the reference
                     var firstBlockId = roundBlocks.FirstOrDefault()?.Id;
 
+                    // Create the InterviewRoom immediately for free bookings since there's no payment dependency
+                    // Get IInterviewRoomRepository from UnitOfWork to ensure it participates in the same transaction
                     var roomRepo = _unitOfWork.GetRepository<IInterviewRoomRepository>();
                     var room = new Domain.Entities.InterviewRoom()
                     {
@@ -212,7 +229,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
                         CoachInterviewServiceId = coachInterviewServiceId,
                         AimLevel = null,
                         RoundNumber = 1,
-                        EvaluationResults = evaluation,
+                        EvaluationResults = await _createEvaluationResults.ExecuteAsync(coachInterviewServiceId),
                         IsEvaluationCompleted = false
                     };
                     await roomRepo.AddAsync(room);
@@ -317,25 +334,6 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 await _unitOfWork.RollbackTransactionAsync();
                 throw;
             }
-        }
-
-        private async Task<List<EvaluationResult>> CreateEvaluationResultsFromInterviewService(Guid? coachInterviewServiceId)
-        {
-            if (coachInterviewServiceId == null)
-                return [];
-
-            var service = await _coachInterviewServiceRepository.GetByIdWithDetailsAsync(coachInterviewServiceId.Value);
-
-            if (service?.InterviewType?.EvaluationStructure == null)
-                return [];
-
-            return [.. service.InterviewType.EvaluationStructure.Select(c => new EvaluationResult
-            {
-                Type = c.Type,
-                Question = c.Question,
-                Score = 0,
-                Answer = ""
-            })];
         }
     }
 }

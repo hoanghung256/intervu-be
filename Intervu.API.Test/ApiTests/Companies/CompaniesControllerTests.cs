@@ -7,6 +7,8 @@ using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.Companies
 {
+    // TODO: split to multiple test classes - View all companies, View company details
+    // TODO: Add UCs into doc - View all companies, View company details
     public class CompaniesControllerTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         private readonly ApiHelper _api;
@@ -48,6 +50,46 @@ namespace Intervu.API.Test.ApiTests.Companies
             {
                 await AssertHelper.AssertTrue(apiResponse.Data.TotalItems >= apiResponse.Data.Items.Count, "Total count should be greater than or equal to items count");
             }
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Companies")]
+        public async Task GetAllCompanies_ReturnsEmptyList_WhenPageIsOutOfRange()
+        {
+            var response = await _api.GetAsync("/api/v1/companies?page=9999&pageSize=10", logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
+            var apiResponse = await _api.LogDeserializeJson<PagedResult<CompanyDto>>(response);
+            await AssertHelper.AssertTrue(apiResponse.Data?.Items != null && !apiResponse.Data.Items.Any(), "Items list should be empty");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Companies")]
+        public async Task GetAllCompanies_ReturnsBadRequest_WhenPageSizeIsZero()
+        {
+            var response = await _api.GetAsync("/api/v1/companies?page=1&pageSize=0", logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "PageSize 0 should return 400 Bad Request");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Companies")]
+        public async Task GetAllCompanies_ReturnsBadRequest_WhenPageIsZero()
+        {
+            var response = await _api.GetAsync("/api/v1/companies?page=0&pageSize=10", logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Page 0 should return 400 Bad Request");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Companies")]
+        public async Task GetAllCompanies_ReturnsSuccess_WhenPageSizeIsLarge()
+        {
+            var response = await _api.GetAsync("/api/v1/companies?page=1&pageSize=100", logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
+            var apiResponse = await _api.LogDeserializeJson<PagedResult<CompanyDto>>(response);
+            await AssertHelper.AssertTrue(apiResponse.Success, "Request was successful");
         }
     }
 }

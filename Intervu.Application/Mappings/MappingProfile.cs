@@ -10,6 +10,7 @@ using Intervu.Application.DTOs.Company;
 using Intervu.Application.DTOs.Feedback;
 using Intervu.Application.DTOs.Industry;
 using Intervu.Application.DTOs.InterviewExperience;
+using Intervu.Application.DTOs.InterviewRoom;
 using Intervu.Application.DTOs.InterviewType;
 using Intervu.Application.DTOs.Question;
 using Intervu.Application.DTOs.Skill;
@@ -161,15 +162,27 @@ namespace Intervu.Application.Mappings
                 .ForMember(dest => dest.ServiceDurationMinutes, opt => opt.MapFrom(src =>
                     src.CoachInterviewService != null ? src.CoachInterviewService.DurationMinutes : (int?)null));
 
+            // InterviewRoom mappings
+            CreateMap<Domain.Entities.InterviewRoom, InterviewRoomDto>()
+                .ForMember(dest => dest.InterviewTypeName, opt => opt.MapFrom(src =>
+                    src.CoachInterviewService != null && src.CoachInterviewService.InterviewType != null
+                        ? src.CoachInterviewService.InterviewType.Name
+                        : null))
+                .ForMember(dest => dest.JobDescriptionUrl, opt => opt.MapFrom(src =>
+                    src.BookingRequest != null ? src.BookingRequest.JobDescriptionUrl : null))
+                .ForMember(dest => dest.CVUrl, opt => opt.MapFrom(src =>
+                    src.BookingRequest != null ? src.BookingRequest.CVUrl : null));
+
             // InterviewRound mappings
             CreateMap<Domain.Entities.InterviewRound, InterviewRoundDto>()
                 .ForMember(dest => dest.InterviewRoomId, opt => opt.MapFrom(src => src.InterviewRoomId))
-                .ForMember(dest => dest.InterviewRoomStatus, opt => opt.MapFrom(src => 
+                .ForMember(dest => dest.InterviewRoomStatus, opt => opt.MapFrom(src =>
                     src.InterviewRoom != null ? src.InterviewRoom.Status.ToString() : null))
                 .ForMember(dest => dest.InterviewTypeName, opt => opt.MapFrom(src =>
                     src.CoachInterviewService.InterviewType.Name))
                 .ForMember(dest => dest.IsCoding, opt => opt.MapFrom(src =>
-                    src.CoachInterviewService.InterviewType.IsCoding));
+                    src.CoachInterviewService.InterviewType.IsCoding))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
         }
     }
 }

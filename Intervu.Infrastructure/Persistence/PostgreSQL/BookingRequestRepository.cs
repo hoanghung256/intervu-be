@@ -95,7 +95,27 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
         public async Task<IEnumerable<BookingRequest>> GetExpiredPendingRequestsAsync()
         {
             return await _context.BookingRequests
+                .Include(br => br.Rounds)
+                    .ThenInclude(r => r.AvailabilityBlocks)
+                .AsSplitQuery()
                 .Where(br => br.Status == BookingRequestStatus.Pending
+                    && br.ExpiresAt != null
+                    && br.ExpiresAt < DateTime.UtcNow)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<BookingRequest>> GetExpiredPaidRequestsAsync()
+        {
+            return await _context.BookingRequests
+                .Include(br => br.Candidate)
+                    .ThenInclude(c => c.User)
+                .Include(br => br.Coach)
+                    .ThenInclude(c => c.User)
+                .Include(br => br.Rounds)
+                    .ThenInclude(r => r.AvailabilityBlocks)
+                .Include(br => br.Transactions)
+                .AsSplitQuery()
+                .Where(br => br.Status == BookingRequestStatus.PendingForApprovalAfterPayment
                     && br.ExpiresAt != null
                     && br.ExpiresAt < DateTime.UtcNow)
                 .ToListAsync();
@@ -107,8 +127,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             var activeStatuses = new[]
             {
                 BookingRequestStatus.Pending,
-                BookingRequestStatus.Accepted,
-                BookingRequestStatus.Paid
+                BookingRequestStatus.PendingForApprovalAfterPayment,
+                BookingRequestStatus.Accepted
             };
 
             return await _context.BookingRequests
@@ -125,7 +145,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
         {
             var query = _context.BookingRequests
                 .Where(br => br.CoachId == coachId)
-                .Where(br => br.Status == BookingRequestStatus.Accepted || br.Status == BookingRequestStatus.Paid)
+                .Where(br => br.Status == BookingRequestStatus.Accepted || br.Status == BookingRequestStatus.PendingForApprovalAfterPayment)
                 .SelectMany(br => br.Rounds);
 
             if (month > 0 && year > 0)
@@ -149,7 +169,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Include(br => br.Candidate)
                     .ThenInclude(c => c.User)
                 .Where(br => br.CoachId == coachId)
-                .Where(br => br.Status == BookingRequestStatus.Accepted || br.Status == BookingRequestStatus.Paid);
+                .Where(br => br.Status == BookingRequestStatus.Accepted || br.Status == BookingRequestStatus.PendingForApprovalAfterPayment);
 
             // Wait, EF Core requires care with filtering included collections or we just filter the rounds
             var roundsQuery = query.SelectMany(br => br.Rounds);

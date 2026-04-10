@@ -64,5 +64,6 @@ namespace Intervu.Application.DTOs.BookingRequest
         public int Price { get; set; }
         public Guid? InterviewRoomId { get; set; }
         public string? InterviewRoomStatus { get; set; }
+        public string Status { get; set; } = "Active";
     }
 }

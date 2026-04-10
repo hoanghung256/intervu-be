@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using DomainBookingRequest = Intervu.Domain.Entities.BookingRequest;
+using DomainInterviewRoom = Intervu.Domain.Entities.InterviewRoom;
 
 namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
 {
@@ -197,9 +198,89 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
             context.BookingRepo.Verify(x => x.SaveChangesAsync(), Times.Once);
         }
 
+        [Fact]
+        [Trait("Category", "Unit")]
+        public async Task ExecuteAsync_PendingBookingWithNoTransactions_CancelsWithoutRefund()
+        {
+            var candidateId = Guid.NewGuid();
+            var coachId = Guid.NewGuid();
+            var bookingId = Guid.NewGuid();
+
+            var booking = BuildBooking(bookingId, candidateId, coachId, Guid.NewGuid(), []);
+            booking.Status = BookingRequestStatus.Pending;
+
+            var context = BuildServiceProviderForCancel(booking, [], payment: null, payout: null, refundAmount: 0);
+
+            var useCase = context.Provider.GetRequiredService<ICancelBookingRequest>();
+            var result = await useCase.ExecuteAsync(candidateId, bookingId);
+
+            Assert.Equal(BookingRequestStatus.Cancelled, result.Status);
+            context.TransactionRepo.Verify(x => x.AddAsync(It.IsAny<InterviewBookingTransaction>()), Times.Never);
+            context.BookingRepo.Verify(x => x.SaveChangesAsync(), Times.Once);
+        }
+
+        [Fact]
+        [Trait("Category", "Unit")]
+        public async Task ExecuteAsync_WrongCandidate_ThrowsForbiddenException()
+        {
+            var candidateId = Guid.NewGuid();
+            var differentCandidateId = Guid.NewGuid();
+            var bookingId = Guid.NewGuid();
+
+            var booking = BuildBooking(bookingId, candidateId, Guid.NewGuid(), Guid.NewGuid(), []);
+
+            var context = BuildServiceProviderForCancel(booking, [], null, null, 0);
+            var useCase = context.Provider.GetRequiredService<ICancelBookingRequest>();
+
+            await Assert.ThrowsAsync<Intervu.Application.Exceptions.ForbiddenException>(
+                () => useCase.ExecuteAsync(differentCandidateId, bookingId));
+        }
+
+        [Fact]
+        [Trait("Category", "Unit")]
+        public async Task ExecuteAsync_BookingNotFound_ThrowsNotFoundException()
+        {
+            var bookingRepo = new Mock<IBookingRequestRepository>();
+            bookingRepo.Setup(x => x.GetByIdWithDetailsAsync(It.IsAny<Guid>())).ReturnsAsync((DomainBookingRequest?)null);
+            bookingRepo.Setup(x => x.SaveChangesAsync()).ReturnsAsync(1);
+
+            var serviceCollection = new ServiceCollection();
+            var config = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?> { ["ApiClients:AIService"] = "https://example.com" })
+                .Build();
+            serviceCollection.AddUseCases(config);
+            serviceCollection.AddSingleton<IMapper>(new Mapper(new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>())));
+            serviceCollection.AddScoped(_ => bookingRepo.Object);
+            serviceCollection.AddScoped(_ => new Mock<IInterviewRoomRepository>().Object);
+            serviceCollection.AddScoped(_ => new Mock<ITransactionRepository>().Object);
+            serviceCollection.AddScoped(_ => new Mock<ICoachAvailabilitiesRepository>().Object);
+            serviceCollection.AddScoped(_ => new Mock<IRefundPolicy>().Object);
+
+            var useCase = serviceCollection.BuildServiceProvider().GetRequiredService<ICancelBookingRequest>();
+            await Assert.ThrowsAsync<Intervu.Application.Exceptions.NotFoundException>(
+                () => useCase.ExecuteAsync(Guid.NewGuid(), Guid.NewGuid()));
+        }
+
+        [Fact]
+        [Trait("Category", "Unit")]
+        public async Task ExecuteAsync_RejectedStatus_ThrowsBadRequestException()
+        {
+            var candidateId = Guid.NewGuid();
+            var bookingId = Guid.NewGuid();
+
+            var booking = BuildBooking(bookingId, candidateId, Guid.NewGuid(), Guid.NewGuid(), []);
+            booking.Status = BookingRequestStatus.Rejected;
+
+            var context = BuildServiceProviderForCancel(booking, [], null, null, 0);
+            var useCase = context.Provider.GetRequiredService<ICancelBookingRequest>();
+
+            await Assert.ThrowsAsync<Intervu.Application.Exceptions.BadRequestException>(
+                () => useCase.ExecuteAsync(candidateId, bookingId));
+        }
+
         private static CancelContext BuildServiceProviderForCancel(
             DomainBookingRequest booking,
-            List<InterviewRoom> rooms,
+            List<DomainInterviewRoom> rooms,
             InterviewBookingTransaction? payment,
             InterviewBookingTransaction? payout,
             int refundAmount)
@@ -279,7 +360,7 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
                 CandidateId = candidateId,
                 CoachId = coachId,
                 Type = BookingRequestType.JDInterview,
-                Status = BookingRequestStatus.Paid,
+                Status = BookingRequestStatus.PendingForApprovalAfterPayment,
                 TotalAmount = roundList.Sum(r => r.Price),
                 Rounds = roundList,
                 Candidate = new CandidateProfile

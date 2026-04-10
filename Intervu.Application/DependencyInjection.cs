@@ -1,4 +1,3 @@
-using Intervu.Application.Mappings;
 using Intervu.Application.Services;
 using Intervu.Application.UseCases.Authentication;
 using Intervu.Application.Interfaces.Services;
@@ -19,11 +18,9 @@ using AdminUseCases = Intervu.Application.UseCases.Admin;
 using Intervu.Application.Interfaces.UseCases.Availability;
 using Intervu.Application.UseCases.Availability;
 using Intervu.Application.Interfaces.ExternalServices;
-using System;
 using Intervu.Application.Interfaces.UseCases.Candidate;
 using Intervu.Application.Interfaces.UseCases.CandidateProfile;
 using Intervu.Application.Services.CodeGeneration;
-// removed duplicate using Intervu.Application.Interfaces.UseCases.InterviewRoom
 using Intervu.Application.Interfaces.UseCases.Email;
 using Intervu.Application.UseCases.Email;
 using Intervu.Application.Interfaces.UseCases.Feedbacks;
@@ -35,7 +32,6 @@ using Intervu.Application.Interfaces.UseCases.InterviewType;
 using Intervu.Application.UseCases.InterviewBooking;
 using Intervu.Application.UseCases.InterviewRoom;
 using Intervu.Application.Utils;
-using Intervu.Application.UseCases.Admin;
 using Intervu.Application.Interfaces.UseCases.PasswordReset;
 using Intervu.Application.UseCases.PasswordReset;
 using Intervu.Application.UseCases.Candidate;
@@ -66,6 +62,10 @@ using Intervu.Application.Interfaces.UseCases.GeneratedQuestion;
 using Intervu.Application.UseCases.GeneratedQuestion;
 using Intervu.Application.Interfaces.UseCases.Audit;
 using Intervu.Application.UseCases.Audit;
+using CoachDashboardInterfaces = Intervu.Application.Interfaces.UseCases.CoachDashboard;
+using CoachDashboardUseCases = Intervu.Application.UseCases.CoachDashboard;
+using Intervu.Application.Interfaces.UseCases.BookingRequest;
+using Intervu.Application.UseCases.BookingRequest;
 
 namespace Intervu.Application
 {
@@ -118,6 +118,8 @@ namespace Intervu.Application
             services.AddScoped<IReportInterviewProblem, ReportInterviewProblem>();
             services.AddScoped<IGetInterviewReports, GetInterviewReports>();
             services.AddScoped<IResolveInterviewReport, ResolveInterviewReport>();
+            services.AddScoped<ICreateEvaluationResultsUseCase, CreateEvaluationResultsUseCase>();
+
             // ----- CoachProfile ----
             services.AddScoped<ICreateCoachProfile, CreateCoachProfile>();
             services.AddScoped<IUpdateCoachProfile, UpdateCoachProfile>();
@@ -243,6 +245,7 @@ namespace Intervu.Application
             services.AddScoped<BookingRequestInterfaces.IExpireBookingRequests, BookingRequestUseCases.ExpireBookingRequests>();
             services.AddScoped<BookingRequestInterfaces.IPayBookingRequest, BookingRequestUseCases.PayBookingRequest>();
             services.AddScoped<BookingRequestInterfaces.ICancelBookingRequest, BookingRequestUseCases.CancelBookingRequest>();
+            services.AddScoped<BookingRequestInterfaces.ICancelInterviewRound, BookingRequestUseCases.CancelInterviewRound>();
             services.AddScoped<BookingRequestInterfaces.IRescheduleJDBookingRequest, BookingRequestUseCases.RescheduleJDBookingRequest>();
             
             // ----- Notification ----
@@ -264,6 +267,14 @@ namespace Intervu.Application
             // ----- Audit Log ----
             services.AddScoped<IAddAuditLogEntry, AddAuditLogEntry>();
             services.AddScoped<IGetAuditLogs, GetAuditLogs>();
+
+            // ----- Coach Dashboard ----
+            services.AddScoped<CoachDashboardInterfaces.IGetCoachDashboardStats, CoachDashboardUseCases.GetCoachDashboardStats>();
+            services.AddScoped<CoachDashboardInterfaces.IGetCoachUpcomingSessions, CoachDashboardUseCases.GetCoachUpcomingSessions>();
+            services.AddScoped<CoachDashboardInterfaces.IGetCoachPendingRequests, CoachDashboardUseCases.GetCoachPendingRequests>();
+            services.AddScoped<CoachDashboardInterfaces.IGetCoachServiceDistribution, CoachDashboardUseCases.GetCoachServiceDistribution>();
+            services.AddScoped<CoachDashboardInterfaces.IGetCoachFeedbackWall, CoachDashboardUseCases.GetCoachFeedbackWall>();
+            services.AddScoped<CoachDashboardInterfaces.IGetCoachAvailabilityOverview, CoachDashboardUseCases.GetCoachAvailabilityOverview>();
 
             return services;
         }

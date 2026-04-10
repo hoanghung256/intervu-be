@@ -1,4 +1,6 @@
 using Intervu.Domain.Abstractions.Entity;
+using Intervu.Domain.Abstractions.Validation;
+using System.ComponentModel.DataAnnotations;
 
 namespace Intervu.Domain.Entities
 {
@@ -21,6 +23,8 @@ namespace Intervu.Domain.Entities
         /// <summary>
         /// Coach's custom duration in minutes
         /// </summary>
+        [Range(15, 300)]
+        [MultipleOf(30, ErrorMessage = "Duration must be a multiple of 30 minutes.")]
         public int DurationMinutes { get; set; }
 
         // Navigation

@@ -35,6 +35,16 @@ namespace Intervu.Application.DTOs.InterviewRoom
         public Guid? BookingRequestId { get; set; }
 
         /// <summary>
+        /// Job description link from the related booking request.
+        /// </summary>
+        public string? JobDescriptionUrl { get; set; }
+
+        /// <summary>
+        /// Candidate CV link from the related booking request.
+        /// </summary>
+        public string? CVUrl { get; set; }
+
+        /// <summary>
         /// The interview service type for this room
         /// </summary>
         public string? InterviewTypeName { get; set; }
