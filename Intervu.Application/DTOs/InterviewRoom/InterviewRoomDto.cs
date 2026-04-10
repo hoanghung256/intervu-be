@@ -1,5 +1,6 @@
 using Intervu.Domain.Entities.Constants;
 using System;
+using System.Collections.Generic;
 
 namespace Intervu.Application.DTOs.InterviewRoom
 {
@@ -18,8 +19,10 @@ namespace Intervu.Application.DTOs.InterviewRoom
         public int? DurationMinutes { get; set; }
         public string? VideoCallRoomUrl { get; set; }
         public string? CurrentLanguage { get; set; }
+        public Dictionary<string, string>? LanguageCodes { get; set; }
         public string? ProblemDescription { get; set; }
         public string? ProblemShortName { get; set; }
+        public object[]? TestCases { get; set; }
         public InterviewRoomStatus Status { get; set; }
         public bool IsEvaluationCompleted { get; set; }
         public double? Score { get; set; }
