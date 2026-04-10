@@ -217,6 +217,7 @@ namespace Intervu.Application
             services.AddScoped<IGetGeneratedQuestionsByRoom, GetGeneratedQuestionsByRoom>();
             services.AddScoped<IApproveGeneratedQuestion, ApproveGeneratedQuestion>();
             services.AddScoped<IRejectGeneratedQuestion, RejectGeneratedQuestion>();
+            services.AddScoped<ICreateGeneratedQuestion, CreateGeneratedQuestion>();
 
             // --- Comments ---
             services.AddScoped<IGetComments, GetComments>();

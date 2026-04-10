@@ -2,6 +2,7 @@ using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Entities.Constants.QuestionConstants;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace Intervu.Application.DTOs.GeneratedQuestion
 {
@@ -12,6 +13,16 @@ namespace Intervu.Application.DTOs.GeneratedQuestion
         public string Title { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public GeneratedQuestionStatus Status { get; set; }
+    }
+
+    public class CreateGeneratedQuestionRequest
+    {
+        [Required, MinLength(5)]
+        public string Content { get; set; } = string.Empty;
+
+        public string Title { get; set; } = string.Empty;
+
+        public Guid InterviewRoomId { get; set; }
     }
 
     public class ApproveGeneratedQuestionRequest

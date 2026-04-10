@@ -19,15 +19,18 @@ namespace Intervu.API.Controllers.v1
         private readonly IGetGeneratedQuestionsByRoom _getByRoom;
         private readonly IApproveGeneratedQuestion _approve;
         private readonly IRejectGeneratedQuestion _reject;
+        private readonly ICreateGeneratedQuestion _create;
 
         public GeneratedQuestionController(
             IGetGeneratedQuestionsByRoom getByRoom,
             IApproveGeneratedQuestion approve,
-            IRejectGeneratedQuestion reject)
+            IRejectGeneratedQuestion reject,
+            ICreateGeneratedQuestion create)
         {
             _getByRoom = getByRoom;
             _approve = approve;
             _reject = reject;
+            _create = create;
         }
 
         [Authorize(Policy = AuthorizationPolicies.AllRoles)]
@@ -36,6 +39,15 @@ namespace Intervu.API.Controllers.v1
         {
             var result = await _getByRoom.ExecuteAsync(roomId, status);
             return Ok(new { success = true, message = "Success", data = result });
+        }
+
+        [Authorize(Policy = AuthorizationPolicies.InterviewOrAdmin)]
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] CreateGeneratedQuestionRequest request)
+        {
+            _ = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
+            var id = await _create.ExecuteAsync(request, userId);
+            return Ok(new { success = true, message = "Custom question created", data = new { id } });
         }
 
         [Authorize(Policy = AuthorizationPolicies.InterviewOrAdmin)]
