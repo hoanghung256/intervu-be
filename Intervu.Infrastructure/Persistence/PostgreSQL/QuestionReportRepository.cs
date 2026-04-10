@@ -51,5 +51,10 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
             return (items, total);
         }
+
+        public async Task<int> GetPendingCountAsync()
+        {
+            return await _context.QuestionReports.CountAsync(r => r.Status == QuestionReportStatus.Pending);
+        }
     }
 }

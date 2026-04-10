@@ -99,5 +99,35 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
             return results.Select(r => (r.Date, r.Amount)).ToList();
         }
+
+        public async Task<decimal> GetTotalRevenueAsync(DateTime from, DateTime to)
+        {
+            return await _context.InterviewBookingTransaction
+                .Where(t => t.CreatedAt >= from && t.CreatedAt <= to 
+                    && t.Type == TransactionType.Payment 
+                    && t.Status == TransactionStatus.Paid)
+                .SumAsync(t => (decimal)t.Amount);
+        }
+
+        public async Task<int> GetRefundCountAsync(DateTime from, DateTime to)
+        {
+            return await _context.InterviewBookingTransaction
+                .CountAsync(t => t.CreatedAt >= from && t.CreatedAt <= to 
+                    && t.Type == TransactionType.Refund);
+        }
+
+        public async Task<List<(DateTime Date, decimal Amount)>> GetDailyRevenueTrendAsync(DateTime from, DateTime to)
+        {
+            var results = await _context.InterviewBookingTransaction
+                .Where(t => t.CreatedAt >= from && t.CreatedAt <= to 
+                    && t.Type == TransactionType.Payment 
+                    && t.Status == TransactionStatus.Paid)
+                .GroupBy(t => t.CreatedAt.Date)
+                .Select(g => new { Date = g.Key, Amount = g.Sum(t => (decimal)t.Amount) })
+                .OrderBy(x => x.Date)
+                .ToListAsync();
+
+            return results.Select(r => (r.Date, r.Amount)).ToList();
+        }
     }
 }

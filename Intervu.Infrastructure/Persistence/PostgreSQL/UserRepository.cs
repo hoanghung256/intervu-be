@@ -1,4 +1,4 @@
-﻿using Intervu.Domain.Entities;
+using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
@@ -120,6 +120,43 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
         public Task<int> GetTotalUsersCountAsync()
         {
             return _context.Users.CountAsync();
+        }
+
+        public Task<int> GetActiveUsersCountAsync(DateTime since)
+        {
+            // Simple MAU logic: users who signed in or updated profile since 'since'
+            // In a real system, we'd have a LastActiveAt field. 
+            // For now, we'll use CreatedAt and UpdatedAt as a proxy or assume users are active if they exist and we had a login log.
+            // Since we don't have Audit Logs for every login here easily, we'll use UpdatedAt.
+            return _context.Users.CountAsync(u => u.UpdatedAt >= since || u.CreatedAt >= since);
+        }
+
+        public async Task<List<(DateTime Date, int Count)>> GetRegistrationTrendAsync(DateTime from, DateTime to, UserRole? role = null)
+        {
+            var query = _context.Users.Where(u => u.CreatedAt >= from && u.CreatedAt <= to);
+            
+            if (role.HasValue)
+            {
+                query = query.Where(u => u.Role == role.Value);
+            }
+
+            var results = await query
+                .GroupBy(u => u.CreatedAt.Date)
+                .Select(g => new { Date = g.Key, Count = g.Count() })
+                .OrderBy(x => x.Date)
+                .ToListAsync();
+
+            return results.Select(r => (r.Date, r.Count)).ToList();
+        }
+
+        public Task<int> GetRegistrationsCountAsync(DateTime start, DateTime end, UserRole? role = null)
+        {
+            var query = _context.Users.Where(u => u.CreatedAt >= start && u.CreatedAt <= end);
+            if (role.HasValue)
+            {
+                query = query.Where(u => u.Role == role.Value);
+            }
+            return query.CountAsync();
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using Intervu.Domain.Entities;
+using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 
 namespace Intervu.Domain.Repositories
@@ -28,5 +28,9 @@ namespace Intervu.Domain.Repositories
         /// Returns (Date, TotalAmount) pairs.
         /// </summary>
         Task<List<(DateTime Date, int Amount)>> GetDailyPayoutByUserAsync(Guid userId, DateTime from, DateTime to);
+
+        Task<decimal> GetTotalRevenueAsync(DateTime from, DateTime to);
+        Task<int> GetRefundCountAsync(DateTime from, DateTime to);
+        Task<List<(DateTime Date, decimal Amount)>> GetDailyRevenueTrendAsync(DateTime from, DateTime to);
     }
 }

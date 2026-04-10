@@ -1,4 +1,4 @@
-﻿using Intervu.Domain.Entities;
+using Intervu.Domain.Entities;
 using Intervu.Domain.Repositories;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Microsoft.EntityFrameworkCore;
@@ -67,7 +67,17 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
         public async Task<(IReadOnlyList<Feedback> Items, int TotalCount)> GetPagedFeedbacksAsync(int page, int pageSize)
         {
+            return await GetPagedFeedbacksByFilterAsync(page, pageSize, null);
+        }
+
+        public async Task<(IReadOnlyList<Feedback> Items, int TotalCount)> GetPagedFeedbacksByFilterAsync(int page, int pageSize, Guid? coachId = null)
+        {
             var query = _context.Feedbacks.Include(f => f.CoachProfile).ThenInclude(cp => cp.User).Include(f => f.InterviewRoom).AsQueryable();
+
+            if (coachId.HasValue)
+            {
+                query = query.Where(f => f.CoachId == coachId.Value);
+            }
 
             var totalItems = await query.CountAsync();
 
@@ -94,8 +104,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
         public async Task<double> GetAverageRatingByCoachIdAsync(Guid coachId)
         {
-            var average = await _context.Feedbacks.AverageAsync(f => f.Rating);
-            return average;
+            var average = await _context.Feedbacks
+                .Where(f => f.CoachId == coachId)
+                .Select(f => (double?)f.Rating)
+                .AverageAsync();
+
+            return average ?? 0;
         }
 
         public async Task<double> GetAverageRatingByCandidateIdAsync(Guid candidateId)

@@ -371,5 +371,18 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
         {
             return await _context.CoachProfiles.CountAsync();
         }
+
+        public async Task<List<CoachProfile>> GetTopPerformingCoachesAsync(int count)
+        {
+            // Ranking logic: Coaches with the most completed interviews and highest ratings
+            // For now, we'll join with Feedback to get average ratings and count of feedbacks as a proxy for performance
+            return await _context.CoachProfiles
+                .Include(p => p.User)
+                .Include(p => p.Companies)
+                .OrderByDescending(p => _context.Feedbacks.Where(f => f.CoachId == p.Id).Count())
+                .ThenByDescending(p => _context.Feedbacks.Where(f => f.CoachId == p.Id).Average(f => (double?)f.Rating) ?? 0)
+                .Take(count)
+                .ToListAsync();
+        }
     }
 }

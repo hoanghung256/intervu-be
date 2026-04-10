@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -17,6 +17,9 @@ namespace Intervu.Domain.Repositories
         Task<(IReadOnlyList<User> Items, int TotalCount)> GetPagedUsersAsync(int page, int pageSize);
         Task<(IReadOnlyList<User> Items, int TotalCount)> GetPagedUsersByFilterAsync(int page, int pageSize, UserRole? role, string? search);
         Task<int> GetTotalUsersCountAsync();
+        Task<int> GetActiveUsersCountAsync(DateTime since);
+        Task<List<(DateTime Date, int Count)>> GetRegistrationTrendAsync(DateTime from, DateTime to, UserRole? role = null);
+        Task<int> GetRegistrationsCountAsync(DateTime start, DateTime end, UserRole? role = null);
         Task<bool> UpdateProfileAsync(Guid userId, string fullName);
         Task<bool> UpdatePasswordAsync(Guid userId, string hashedPassword);
         Task<string?> UpdateProfilePictureAsync(Guid userId, string profilePictureUrl);
