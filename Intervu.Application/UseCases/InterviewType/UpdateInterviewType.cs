@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Intervu.Application.DTOs.InterviewType;
+using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.UseCases.InterviewType;
 using Intervu.Domain.Repositories;
 using System;
@@ -25,6 +26,11 @@ namespace Intervu.Application.UseCases.InterviewType
         {
             if (id == Guid.Empty)
                 throw new ArgumentException("Type ID must be a valid GUID");
+
+            if (interviewTypeDto.SuggestedDurationMinutes % 30 != 0)
+            {
+                throw new BadRequestException("Suggested duration must be a multiple of 30 minutes.");
+            }
 
             var interviewTypeToUpdate = await _repo.GetByIdAsync(id);
             

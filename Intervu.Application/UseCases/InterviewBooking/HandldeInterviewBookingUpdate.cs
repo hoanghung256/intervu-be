@@ -1,6 +1,7 @@
 using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
+using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Intervu.Application.Interfaces.UseCases.Notification;
 using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Intervu.Domain.Entities;
@@ -58,34 +59,6 @@ namespace Intervu.Application.UseCases.InterviewBooking
 
                 await HandleBookingRequestPayment(transaction);
 
-                var candidateId = transaction.UserId;
-
-                // Notify candidate — payment received, awaiting coach approval
-                _backgroundService.Enqueue<INotificationUseCase>(
-                    uc => uc.CreateAsync(
-                        candidateId,
-                        NotificationType.BookingNew,
-                        "Payment received",
-                        "Your payment was successful. The booking is awaiting coach approval.",
-                        "/booking?tab=pending",
-                        null));
-
-                var bookingRepo = _unitOfWork.GetRepository<IBookingRequestRepository>();
-                var bookingRequest = await bookingRepo.GetByIdAsync(transaction.BookingRequestId.Value);
-                if (bookingRequest != null)
-                {
-                    var coachId = bookingRequest.CoachId;
-                    // Notify coach — new paid booking waiting for review
-                    _backgroundService.Enqueue<INotificationUseCase>(
-                        uc => uc.CreateAsync(
-                            coachId,
-                            NotificationType.BookingNew,
-                            "New booking request",
-                            "A candidate has paid for an interview. Please review and approve or reject.",
-                            "/booking?tab=pending",
-                            null));
-                }
-
                 await _unitOfWork.SaveChangesAsync();
                 await _unitOfWork.CommitTransactionAsync();
             }
@@ -118,10 +91,32 @@ namespace Intervu.Application.UseCases.InterviewBooking
             }
 
             // Transition to PendingForApprovalAfterPayment — reset expiry for the 48h coach response window
-            bookingRequest.Status = BookingRequestStatus.PendingForApprovalAfterPayment;
+            // bookingRequest.Status = BookingRequestStatus.PendingForApprovalAfterPayment;
+            bookingRequest.Status = BookingRequestStatus.Accepted; // Auto-accept for zero-price bookings
             bookingRequest.ExpiresAt = DateTime.UtcNow.AddHours(48);
             bookingRequest.UpdatedAt = DateTime.UtcNow;
             bookingRepo.UpdateAsync(bookingRequest);
+
+            foreach (var round in bookingRequest.Rounds)
+            {
+                var availabilityId = round.AvailabilityBlocks.FirstOrDefault()?.Id ?? Guid.Empty;
+                var duration = (int)(round.EndTime - round.StartTime).TotalMinutes;
+
+                // Create room(s) only for accepted bookings
+                if (bookingRequest.Status == BookingRequestStatus.Accepted)
+                {
+                    _backgroundService.Enqueue<ICreateInterviewRoom>(
+                        uc => uc.ExecuteAsync(
+                            bookingRequest.CandidateId,
+                            bookingRequest.CoachId,
+                            availabilityId,
+                            round.StartTime,
+                            transaction.Id,
+                            duration,
+                            bookingRequest.Id
+                    ));
+                }
+            }
 
             // Upgrade all reserved availability blocks to Booked now that payment is confirmed
             var availabilityRepo = _unitOfWork.GetRepository<ICoachAvailabilitiesRepository>();
@@ -138,10 +133,48 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 }
             }
 
+            // Sent notification
+            SentNotification(
+                bookingRequest.Status == BookingRequestStatus.Accepted,
+                bookingRequest.CandidateId,
+                bookingRequest.CoachId
+            );
+
             _logger.LogInformation(
                 "BookingRequest {BookingRequestId} marked as Paid, availability blocks confirmed as Booked",
                 bookingRequest.Id);
         }
+        
+        private void SentNotification(bool isBookingRequestAccepted, Guid candidateId, Guid coachId)
+        {
+            var candidateTitle = isBookingRequestAccepted ? "Booking confirmed" : "Payment received";
+            var candidateMessage = isBookingRequestAccepted
+                ? "Your payment was successful. Your booking has been confirmed."
+                : "Your payment was successful. The booking is awaiting coach approval.";
 
+            // Notify candidate — payment received, awaiting coach approval
+            _backgroundService.Enqueue<INotificationUseCase>(
+                uc => uc.CreateAsync(
+                    candidateId,
+                    NotificationType.BookingNew,
+                    candidateTitle,
+                    candidateMessage,
+                    "/booking?tab=pending",
+                    null));
+
+            var coachMessage = isBookingRequestAccepted
+                ? "A candidate has paid for an interview and the booking is now confirmed."
+                : "A candidate has paid for an interview. Please review and approve or reject.";
+
+            // Notify coach — new paid booking waiting for review
+            _backgroundService.Enqueue<INotificationUseCase>(
+                uc => uc.CreateAsync(
+                    coachId,
+                    NotificationType.BookingNew,
+                    "New booking request",
+                    coachMessage,
+                    "/booking?tab=pending",
+                    null));
+        }
     }
 }

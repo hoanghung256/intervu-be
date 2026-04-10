@@ -66,7 +66,7 @@ namespace Intervu.API.Test.ApiTests.InterviewTypeController
                 Id = Guid.NewGuid(),
                 Name = interviewTypeName,
                 Description = "Another description",
-                SuggestedDurationMinutes = 45,
+                SuggestedDurationMinutes = 60,
                 MinPrice = 750,
                 MaxPrice = 1500
             };
@@ -98,6 +98,25 @@ namespace Intervu.API.Test.ApiTests.InterviewTypeController
 
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, createResponse.StatusCode, "Status code is 400 Bad Request for invalid data");
             await AssertHelper.AssertFalse(createPayload.Success, "Invalid data interview type creation should fail");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "InterviewType")]
+        public async Task AddInterviewType_DurationNotMultipleOf30_ReturnsBadRequest()
+        {
+            var createDto = new InterviewTypeDto
+            {
+                Id = Guid.NewGuid(),
+                Name = $"Invalid Duration {Guid.NewGuid().ToString().Substring(0, 8)}",
+                Description = "Duration validation test",
+                SuggestedDurationMinutes = 50,
+                MinPrice = 1000,
+                MaxPrice = 2000
+            };
+
+            var createResponse = await _api.PostAsync("/api/v1/interviewtype", createDto, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, createResponse.StatusCode, "Non-multiple duration returns 400 Bad Request");
         }
 
         [Fact]
