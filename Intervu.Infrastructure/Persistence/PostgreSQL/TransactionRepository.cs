@@ -81,6 +81,14 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .SumAsync(x => x.t.Amount);
         }
 
+        public async Task<List<InterviewBookingTransaction>> GetAllCreatedPaymentsAsync()
+        {
+            return await _context.InterviewBookingTransaction
+                .Where(t => t.Type == TransactionType.Payment && t.Status == TransactionStatus.Created)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
         public async Task<List<(DateTime Date, int Amount)>> GetDailyPayoutByUserAsync(Guid userId, DateTime from, DateTime to)
         {
             var results = await _context.InterviewBookingTransaction

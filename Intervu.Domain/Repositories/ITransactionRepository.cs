@@ -28,5 +28,11 @@ namespace Intervu.Domain.Repositories
         /// Returns (Date, TotalAmount) pairs.
         /// </summary>
         Task<List<(DateTime Date, int Amount)>> GetDailyPayoutByUserAsync(Guid userId, DateTime from, DateTime to);
+
+        /// <summary>
+        /// Returns all payment transactions still in Created status.
+        /// Used by PaymentVerificationJob to reconcile with PayOS when webhooks fail.
+        /// </summary>
+        Task<List<InterviewBookingTransaction>> GetAllCreatedPaymentsAsync();
     }
 }

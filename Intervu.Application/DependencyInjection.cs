@@ -169,7 +169,9 @@ namespace Intervu.Application
 
             // ----- Interview Booking ---
             services.AddScoped<ICreateBookingCheckoutUrl, CreateBookingCheckoutUrl>();
+            services.AddScoped<IProcessBookingPayment, ProcessBookingPayment>();
             services.AddScoped<IHandldeInterviewBookingUpdate, HandldeInterviewBookingUpdate>();
+            services.AddScoped<IVerifyPendingPayments, VerifyPendingPayments>();
             services.AddScoped<IGetInterviewBooking, GetInterviewBooking>();
             services.AddScoped<ICancelInterview, CancelInterview>();
             services.AddScoped<IPayoutForCoachAfterInterview, PayoutForCoachAfterInterview>();

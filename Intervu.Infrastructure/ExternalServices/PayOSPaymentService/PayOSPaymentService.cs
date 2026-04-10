@@ -86,5 +86,11 @@ namespace Intervu.Infrastructure.ExternalServices.PayOSPaymentService
         {
             await _paymentClient.Client.Webhooks.ConfirmAsync("https://pn3tc7bj-7118.asse.devtunnels.ms/api/v1/interview-booking/webhook");
         }
+
+        public async Task<bool> IsPaymentPaidAsync(int orderCode)
+        {
+            PaymentLink link = await _paymentClient.Client.PaymentRequests.GetAsync(orderCode);
+            return link.Status == PaymentLinkStatus.Paid;
+        }
     }
 }

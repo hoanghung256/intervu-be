@@ -18,5 +18,12 @@
         Task<bool> CreateSpendOrderAsync(int amount, string description, string targetBankId, string targetBankAccountNumber);
 
         Task RegisterWebhooks();
+
+        /// <summary>
+        /// Queries PayOS to check if the payment link has been paid.
+        /// Returns true only when PayOS status is PAID.
+        /// Throws on network or API failure — callers must catch per-transaction.
+        /// </summary>
+        Task<bool> IsPaymentPaidAsync(int orderCode);
     }
 }
