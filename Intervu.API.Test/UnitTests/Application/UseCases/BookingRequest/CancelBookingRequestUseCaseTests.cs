@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using DomainBookingRequest = Intervu.Domain.Entities.BookingRequest;
+using DomainInterviewRoom = Intervu.Domain.Entities.InterviewRoom;
 
 namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
 {
@@ -279,7 +280,7 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
 
         private static CancelContext BuildServiceProviderForCancel(
             DomainBookingRequest booking,
-            List<InterviewRoom> rooms,
+            List<DomainInterviewRoom> rooms,
             InterviewBookingTransaction? payment,
             InterviewBookingTransaction? payout,
             int refundAmount)

@@ -1,3 +1,5 @@
+using AutoMapper;
+using Intervu.Application.DTOs.InterviewRoom;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Intervu.Domain.Repositories;
 using System;
@@ -11,15 +13,23 @@ namespace Intervu.Application.UseCases.InterviewRoom
     public class GetCurrentRoom : IGetCurrentRoom
     {
         private readonly IInterviewRoomRepository _repo;
+        private readonly IMapper _mapper;
 
-        public GetCurrentRoom(IInterviewRoomRepository repo)
+        public GetCurrentRoom(IInterviewRoomRepository repo, IMapper mapper)
         {
             _repo = repo;
+            _mapper = mapper;
         }
 
-        public async Task<Domain.Entities.InterviewRoom> ExecuteAsync(Guid roomId)
+        public async Task<InterviewRoomDto?> ExecuteAsync(Guid roomId)
         {
-            return await _repo.GetByIdAsync(roomId);
+            var room = await _repo.GetByIdWithDetailsAsync(roomId);
+            if (room == null)
+            {
+                return null;
+            }
+
+            return _mapper.Map<InterviewRoomDto>(room);
         }
     }
 }
