@@ -8,8 +8,8 @@ namespace Intervu.Application.DTOs.Assessment
     public class SurveyResponsesDto
     {
         public Guid UserId { get; set; }
-        public string AssessmentName { get; set; } = string.Empty;
-        public List<ResponseItem> Responses { get; set; } = new();
+        public string? AssessmentName { get; set; } = string.Empty;
+        public List<ResponseItem>? Responses { get; set; } = new();
         public SurveyTargetDto? Target { get; set; }
         public SurveyCurrentDto? Current { get; set; }
         public SurveyGapDto? Gap { get; set; }
