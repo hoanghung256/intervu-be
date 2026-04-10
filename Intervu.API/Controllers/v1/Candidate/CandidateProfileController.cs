@@ -376,7 +376,8 @@ namespace Intervu.API.Controllers.v1.Candidate
         // [POST] api/candidate-profile/evaluate-cv
         [Authorize(Policy = AuthorizationPolicies.Candidate)]
         [HttpPost("evaluate-cv")]
-        public async Task<IActionResult> EvaluateCv([FromForm] IFormFile? file = null)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> EvaluateCv(IFormFile? file = null)
         {
             try
             {
