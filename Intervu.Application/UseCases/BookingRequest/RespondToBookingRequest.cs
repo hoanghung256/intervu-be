@@ -21,12 +21,10 @@ namespace Intervu.Application.UseCases.BookingRequest
         private readonly ICreateEvaluationResultsUseCase _createEvaluationResultsUseCase;
         private readonly IBackgroundService _backgroundService;
         private readonly IMapper _mapper;
-        private readonly IBackgroundService _backgroundService;
         private readonly IUserRepository _userRepository;
 
         public RespondToBookingRequest(
             IBookingRequestRepository bookingRepo,
-            IMapper mapper,
             IUserRepository userRepository,
             ITransactionRepository transactionRepo,
             ICoachAvailabilitiesRepository availabilityRepo,

@@ -32,5 +32,11 @@ namespace Intervu.Domain.Entities
         /// JSON list of saved question snapshots. Nullable.
         /// </summary>
         public List<QuestionSnapshot>? SavedQuestions { get; set; }
+
+        /// <summary>
+        /// AI Evaluation result of the candidate's CV.
+        /// Stored as JSONB in DB.
+        /// </summary>
+        public string? AIEvaluation { get; set; }
     }
 }

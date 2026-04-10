@@ -15,5 +15,6 @@ namespace Intervu.Application.Interfaces.ExternalServices
         Task<bool> StoreCvUrlAsync(Guid roomId, string cvUrl, IFormFile? file);
         Task<string?> GetLastCvPdfUrlAsync(Guid roomId);
         Task<AiQuestionExtractionResponse> GetNewQuestionsFromTranscriptAsync(byte[] audioData, Guid roomId);
+        Task<AiCvEvaluationResponseDto?> EvaluateCvAsync(System.IO.Stream stream, string fileName, string contentType);
     }
 }

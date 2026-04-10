@@ -38,7 +38,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
             IBackgroundService jobService,
             ICoachInterviewServiceRepository coachInterviewServiceRepository,
             IUserRepository userRepository,
-            IConfiguration configuration)
+            IConfiguration configuration,
             ICreateEvaluationResultsUseCase createEvaluationResults,
             IUnitOfWork unitOfWork)
         {
