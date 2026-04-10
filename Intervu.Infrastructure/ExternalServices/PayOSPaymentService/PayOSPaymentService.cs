@@ -1,4 +1,5 @@
 ﻿using Intervu.Application.Interfaces.ExternalServices;
+using Microsoft.Extensions.Logging;
 using PayOS.Models.V1.Payouts;
 using PayOS.Models.V2.PaymentRequests;
 using PayOS.Models.Webhooks;
@@ -11,13 +12,20 @@ namespace Intervu.Infrastructure.ExternalServices.PayOSPaymentService
         private readonly PayoutClient _payoutClient;
         private readonly string _returnUrl;
         private readonly string _cancelUrl;
+        private readonly ILogger<PayOSPaymentService> _logger;
 
-        public PayOSPaymentService(PaymentClient paymentClient, PayoutClient payoutClient, string returnUrl, string cancelUrl) 
+        public PayOSPaymentService(
+            PaymentClient paymentClient,
+            PayoutClient payoutClient,
+            string returnUrl,
+            string cancelUrl,
+            ILogger<PayOSPaymentService> logger)
         {
             _paymentClient = paymentClient;
             _payoutClient = payoutClient;
             _returnUrl = returnUrl;
             _cancelUrl = cancelUrl;
+            _logger = logger;
         }
 
         public async Task<string> CreatePaymentOrderAsync(int orderCode, int ammount, string description, string returnUrl, long expiredAfter = 4)
@@ -42,8 +50,22 @@ namespace Intervu.Infrastructure.ExternalServices.PayOSPaymentService
             // Guard: Do not call external API with non-positive amounts
             if (amount <= 0)
             {
+                _logger.LogWarning("Skip payout because amount is invalid. Amount: {Amount}", amount);
                 return false;
             }
+
+            var maskedAccount = string.IsNullOrWhiteSpace(targetBankAccountNumber)
+                ? string.Empty
+                : (targetBankAccountNumber.Length <= 4
+                    ? "****"
+                    : $"****{targetBankAccountNumber[^4..]}");
+
+            _logger.LogInformation(
+                "Creating payout order. Amount: {Amount}, Description: {Description}, TargetBankId: {TargetBankId}, TargetAccount: {MaskedAccount}",
+                amount,
+                description,
+                targetBankId,
+                maskedAccount);
 
             var payoutRequest = new PayoutRequest
             {
@@ -56,13 +78,13 @@ namespace Intervu.Infrastructure.ExternalServices.PayOSPaymentService
             try
             {
                 await _payoutClient.Client.Payouts.CreateAsync(payoutRequest);
+                _logger.LogInformation("Payout order created successfully.");
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Swallow external API exception here so background services don't crash the host.
-                // Higher-level code can react to a `false` return value if needed.
-                return false;
+                _logger.LogError(ex, "Failed to create payout order. Amount: {Amount}, TargetBankId: {TargetBankId}, TargetAccount: {MaskedAccount}", amount, targetBankId, maskedAccount);
+                throw new Exception("PAYMENT Failed", ex);
             }
         }
 

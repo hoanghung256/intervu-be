@@ -13,6 +13,8 @@ namespace Intervu.Application.DTOs.Candidate
         public List<CandidateCertificateDto>? Certificates { get; set; }
         public string? Bio { get; set; }
         public int CurrentAmount { get; set; }
+        public string? BankBinNumber { get; set; }
+        public string? BankAccountNumber { get; set; }
         //public UserStatus UserStatus { get; set; }
     }
 }
