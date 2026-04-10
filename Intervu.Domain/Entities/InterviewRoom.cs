@@ -88,6 +88,12 @@ namespace Intervu.Domain.Entities
 
         public string? Transcript { get; set; }
 
+        /// <summary>
+        /// Serialized JSON string of Excalidraw whiteboard elements.
+        /// Persisted so late-joiners and server restarts can restore the board.
+        /// </summary>
+        public string? WhiteboardElements { get; set; }
+
         public List<QuestionItem>? QuestionList { get; set; }
 
         // Navigation Properties
