@@ -146,6 +146,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.CVUrl).HasMaxLength(1000);
                 b.Property(x => x.PortfolioUrl).HasMaxLength(1000);
                 b.Property(x => x.Bio).HasColumnType("text");
+                b.Property(x => x.AIEvaluation).HasColumnName("AIEvaluation").HasColumnType("jsonb").IsRequired(false);
 
                 var savedQuestionComparer = new Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer<System.Collections.Generic.List<Intervu.Domain.Entities.QuestionSnapshot>>(
                     (c1, c2) => System.Text.Json.JsonSerializer.Serialize(c1, (System.Text.Json.JsonSerializerOptions?)null) == System.Text.Json.JsonSerializer.Serialize(c2, (System.Text.Json.JsonSerializerOptions?)null),

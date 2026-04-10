@@ -15,5 +15,6 @@ namespace Intervu.Application.DTOs.Candidate
         public ICollection<CandidateCertificateDto>? CertificationLinks { get; set; }
         public ICollection<CandidateWorkExperienceDto> WorkExperiences { get; set; } = new List<CandidateWorkExperienceDto>();
         public string? Bio { get; set; }
+        public string? AIEvaluation { get; set; }
     }
 }

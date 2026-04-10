@@ -1,4 +1,4 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
 using AutoMapper;
 using Intervu.API.Utils.Constant;
 using Intervu.Application.DTOs.Candidate;
@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Security.Claims;
 
 namespace Intervu.API.Controllers.v1.Candidate
 {
@@ -24,6 +25,7 @@ namespace Intervu.API.Controllers.v1.Candidate
         private readonly IViewCandidateProfile _getCandidateProfile;
         private readonly IDeleteCandidateProfile _deleteCandidateProfile;
         private readonly IGetCandidateRating _getCandidateRating;
+        private readonly IEvaluateCandidateCv _evaluateCandidateCv;
         private readonly ICandidateProfileRepository _repo;
 
         public CandidateProfileController(
@@ -32,6 +34,7 @@ namespace Intervu.API.Controllers.v1.Candidate
             IViewCandidateProfile getCandidateProfile,
             IDeleteCandidateProfile deleteCandidateProfile,
             IGetCandidateRating getCandidateRating,
+            IEvaluateCandidateCv evaluateCandidateCv,
             ICandidateProfileRepository repo)
         {
             _createCandidateProfile = createCandidateProfile;
@@ -39,6 +42,7 @@ namespace Intervu.API.Controllers.v1.Candidate
             _getCandidateProfile = getCandidateProfile;
             _deleteCandidateProfile = deleteCandidateProfile;
             _getCandidateRating = getCandidateRating;
+            _evaluateCandidateCv = evaluateCandidateCv;
             _repo = repo;
         }
 
@@ -369,5 +373,38 @@ namespace Intervu.API.Controllers.v1.Candidate
             return Ok(new { success = true });
         }
 
+        // [POST] api/candidate-profile/evaluate-cv
+        [Authorize(Policy = AuthorizationPolicies.Candidate)]
+        [HttpPost("evaluate-cv")]
+        public async Task<IActionResult> EvaluateCv([FromForm] IFormFile? file = null)
+        {
+            try
+            {
+                var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrEmpty(userIdString))
+                {
+                    return Unauthorized(new { success = false, message = "User not identified" });
+                }
+
+                var userId = Guid.Parse(userIdString);
+
+                var result = await _evaluateCandidateCv.ExecuteAsync(userId, file);
+                if (result == null)
+                {
+                    return BadRequest(new { success = false, message = "Failed to evaluate CV" });
+                }
+
+                if (!string.IsNullOrEmpty(result.Error))
+                {
+                    return BadRequest(new { success = false, message = result.Error });
+                }
+
+                return Ok(new { success = true, data = result });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
     }
 }
