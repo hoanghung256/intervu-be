@@ -228,6 +228,8 @@ namespace Intervu.Infrastructure
                 services.AddScoped<IRecurringJob>(sp => sp.GetRequiredService<InterviewMonitorJob>());
                 services.AddScoped<BookingExpireJob>();
                 services.AddScoped<IRecurringJob>(sp => sp.GetRequiredService<BookingExpireJob>());
+                services.AddScoped<TokenCleanupJob>();
+                services.AddScoped<IRecurringJob>(sp => sp.GetRequiredService<TokenCleanupJob>());
 
                 // HANGFIRE
                 services.AddHangfire(config => config

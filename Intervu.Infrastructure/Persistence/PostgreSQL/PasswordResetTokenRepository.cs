@@ -77,6 +77,15 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             await _context.SaveChangesAsync();
         }
 
+        public async Task DeleteExpiredTokensAsync()
+        {
+            var expiredTokens = await _context.PasswordResetTokens
+                .Where(t => t.ExpiresAt <= DateTime.UtcNow)
+                .ToListAsync();
+            _context.PasswordResetTokens.RemoveRange(expiredTokens);
+            await _context.SaveChangesAsync();
+        }
+
         public async Task<bool> MarkAsUsedAsync(Guid tokenId)
         {
             var token = await _context.PasswordResetTokens.FindAsync(tokenId);
