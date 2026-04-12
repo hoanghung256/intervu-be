@@ -55,7 +55,6 @@ using Intervu.Application.Interfaces.UseCases.Industry;
 using Intervu.Application.UseCases.Industry;
 using Intervu.Application.Interfaces.UseCases.AudioChunk;
 using AudioChunk = Intervu.Application.UseCases.AudioChunk;
-using Intervu.Application.Interfaces.Services;
 using Intervu.Application.Interfaces.UseCases.SmartSearch;
 using Intervu.Application.UseCases.SmartSearch;
 using Intervu.Application.Interfaces.UseCases.GeneratedQuestion;
@@ -66,6 +65,8 @@ using CoachDashboardInterfaces = Intervu.Application.Interfaces.UseCases.CoachDa
 using CoachDashboardUseCases = Intervu.Application.UseCases.CoachDashboard;
 using Intervu.Application.Interfaces.UseCases.BookingRequest;
 using Intervu.Application.UseCases.BookingRequest;
+using Intervu.Application.Interfaces.UseCases.Assessment;
+using Intervu.Application.UseCases.Assessment;
 
 namespace Intervu.Application
 {
@@ -85,6 +86,7 @@ namespace Intervu.Application
             services.AddSingleton<ICodeGenerationService, JavaCodeGenerationService>();
             services.AddScoped<IAssessmentService, AssessmentService>();
             services.AddScoped<IGenerateAssessmentCatalogService, GenerateAssessmentCatalogService>();
+            services.AddScoped<ISaveAssessmentAnswersUseCase, SaveAssessmentAnswersUseCase>();
 
             // AI Service HttpClient and registration
             services.AddHttpClient("AiServiceClient", client =>

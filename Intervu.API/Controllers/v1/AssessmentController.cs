@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using Intervu.Application.DTOs.Assessment;
 using Intervu.Application.Interfaces.Services;
+using Intervu.Application.Interfaces.UseCases.Assessment;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -15,10 +16,14 @@ namespace Intervu.API.Controllers.v1
     public class AssessmentController : ControllerBase
     {
         private readonly IAssessmentService _service;
+        private readonly ISaveAssessmentAnswersUseCase _saveAssessmentAnswersUseCase;
 
-        public AssessmentController(IAssessmentService service)
+        public AssessmentController(
+            IAssessmentService service,
+            ISaveAssessmentAnswersUseCase saveAssessmentAnswersUseCase)
         {
             _service = service;
+            _saveAssessmentAnswersUseCase = saveAssessmentAnswersUseCase;
         }
 
         [HttpPost("process")]
@@ -86,6 +91,28 @@ namespace Intervu.API.Controllers.v1
                 Status = "success",
                 Roadmap = roadmap
             });
+        }
+
+        [HttpPost("answers")]
+        public async Task<IActionResult> SaveAnswers([FromBody] SaveAssessmentAnswersRequestDto request)
+        {
+            try
+            {
+                var result = await _saveAssessmentAnswersUseCase.ExecuteAsync(request);
+                return Ok(new
+                {
+                    success = true,
+                    data = result
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
+            }
         }
     }
 }

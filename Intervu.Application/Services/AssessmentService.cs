@@ -25,8 +25,6 @@ namespace Intervu.Application.Services
             _aiService = aiService;
         }
 
-        // Raw answers are not stored; only processed survey summaries are saved.
-
         private static object? DeserializeJson(string? json)
         {
             if (string.IsNullOrWhiteSpace(json))
@@ -156,6 +154,9 @@ namespace Intervu.Application.Services
                 Current = current,
                 Gap = gap,
                 Roadmap = MapRoadmap(request.Roadmap),
+                AnswerJson = request.Answer == null
+                    ? null
+                    : JsonSerializer.Serialize(request.Answer),
             };
 
             if (request.UserId != Guid.Empty)
@@ -182,7 +183,8 @@ namespace Intervu.Application.Services
                 UserId = userSkillAssessment.UserId,
                 Target = JsonSerializer.Serialize(userSkillAssessment.Target),
                 Current = JsonSerializer.Serialize(userSkillAssessment.Current),
-                Gap = JsonSerializer.Serialize(userSkillAssessment.Gap)
+                Gap = JsonSerializer.Serialize(userSkillAssessment.Gap),
+                AnswerJson = userSkillAssessment.AnswerJson
             };
         }
         

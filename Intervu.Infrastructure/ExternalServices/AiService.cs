@@ -1,4 +1,4 @@
-using Intervu.Application.Interfaces.ExternalServices;
+﻿using Intervu.Application.Interfaces.ExternalServices;
 using System.Net.Http.Json;
 using System;
 using System.Text.Json;
@@ -12,6 +12,8 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using Intervu.Application.DTOs;
 using Intervu.Application.DTOs.Assessment;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.Text.Json.Serialization;
 
 namespace Intervu.Infrastructure.ExternalServices
@@ -161,7 +163,7 @@ namespace Intervu.Infrastructure.ExternalServices
                     {
                         PropertyNameCaseInsensitive = true
                     };
-                    var result = JsonSerializer.Deserialize<AiQuestionExtractionResponse>(jsonResponse, options);
+                    var result = System.Text.Json.JsonSerializer.Deserialize<AiQuestionExtractionResponse>(jsonResponse, options);
 
                     if (result == null)
                     {
@@ -310,18 +312,19 @@ namespace Intervu.Infrastructure.ExternalServices
 
             if (!string.IsNullOrWhiteSpace(rawContent))
             {
-                var options = new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true,
-                    ReadCommentHandling = JsonCommentHandling.Skip,
-                    AllowTrailingCommas = true
-                };
-
                 try
                 {
-                    result = System.Text.Json.JsonSerializer.Deserialize<GenerateAssessmentResponse>(rawContent, options);
+                    result = JsonConvert.DeserializeObject<GenerateAssessmentResponse>(rawContent);
+
+                    if (result != null && string.IsNullOrWhiteSpace(result.ContextQuestion))
+                    {
+                        var root = JObject.Parse(rawContent);
+                        result.ContextQuestion = root.Value<string>("context_question")
+                            ?? root.Value<string>("contextQuestion")
+                            ?? string.Empty;
+                    }
                 }
-                catch (System.Text.Json.JsonException)
+                catch (Newtonsoft.Json.JsonException)
                 {
                     result = null;
                 }
@@ -332,18 +335,8 @@ namespace Intervu.Infrastructure.ExternalServices
                 result = new GenerateAssessmentResponse();
             }
 
-            result.PhaseA ??= new System.Collections.Generic.List<AssessmentQuestionItemDto>();
-            result.PhaseB ??= new System.Collections.Generic.List<AssessmentQuestionItemDto>();
-
-            foreach (var item in result.PhaseA)
-            {
-                item.Options ??= new System.Collections.Generic.List<OptionDto>();
-            }
-
-            foreach (var item in result.PhaseB)
-            {
-                item.Options ??= new System.Collections.Generic.List<OptionDto>();
-            }
+            result.PhaseA ??= new JArray();
+            result.PhaseB ??= new JArray();
 
             return result;
         }
@@ -383,10 +376,10 @@ namespace Intervu.Infrastructure.ExternalServices
 
             try
             {
-                var result = JsonSerializer.Deserialize<AiGenerateRoadmapResponseDto>(rawContent, options);
+                var result = System.Text.Json.JsonSerializer.Deserialize<AiGenerateRoadmapResponseDto>(rawContent, options);
                 return result;
             }
-            catch (JsonException ex)
+            catch (System.Text.Json.JsonException ex)
             {
                 _logger.LogError(ex, "Failed to deserialize AI roadmap response: {RawContent}", rawContent);
                 return new AiGenerateRoadmapResponseDto
@@ -430,7 +423,7 @@ namespace Intervu.Infrastructure.ExternalServices
                     AllowTrailingCommas = true
                 };
 
-                return JsonSerializer.Deserialize<AiCvEvaluationResponseDto>(rawContent, options);
+                return System.Text.Json.JsonSerializer.Deserialize<AiCvEvaluationResponseDto>(rawContent, options);
             }
             catch (Exception ex)
             {
