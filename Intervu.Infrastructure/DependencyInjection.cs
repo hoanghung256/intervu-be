@@ -190,7 +190,16 @@ namespace Intervu.Infrastructure
             services.AddHttpClient<IVectorStoreService, PineconeVectorStoreService>();
             
             // AI Reasoning Services
-            services.AddHttpClient<Application.Interfaces.ExternalServices.AI.ISmartSearchReasoningService, ExternalServices.AI.GeminiReasoningService>();
+            services.AddHttpClient<ExternalServices.AI.HuggingFaceReasoningService>();
+            services.AddHttpClient<ExternalServices.AI.GeminiNativeReasoningService>();
+            services.AddScoped<Application.Interfaces.ExternalServices.AI.ISmartSearchReasoningService>(sp =>
+            {
+                var config = sp.GetRequiredService<IConfiguration>();
+                var provider = (config["ReasoningApi:Provider"] ?? "huggingface").Trim().ToLowerInvariant();
+                return provider == "gemini"
+                    ? sp.GetRequiredService<ExternalServices.AI.GeminiNativeReasoningService>()
+                    : sp.GetRequiredService<ExternalServices.AI.HuggingFaceReasoningService>();
+            });
             services.AddHttpClient<IPythonAiService, ExternalServices.AI.PythonAiService>();
 
 

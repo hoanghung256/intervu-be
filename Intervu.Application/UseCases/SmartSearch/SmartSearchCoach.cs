@@ -33,6 +33,9 @@ namespace Intervu.Application.UseCases.SmartSearch
 
         public async Task<List<SmartSearchResultDto>> ExecuteAsync(SmartSearchRequest request)
         {
+            const int reasoningCandidateTopK = 10;
+            const int finalOutputTopN = 3;
+
             if (string.IsNullOrWhiteSpace(request.Query) && string.IsNullOrWhiteSpace(request.ExtractedProfileContext))
                 throw new ArgumentException("Search query and profile context cannot both be empty.");
 
@@ -47,9 +50,10 @@ namespace Intervu.Application.UseCases.SmartSearch
             var queryVector = await _embeddingService.GetEmbeddingAsync(searchContext, "query");
 
             // Search only in coach vectors.
+            var vectorTopK = Math.Max(request.TopK, reasoningCandidateTopK);
             var vectorMatches = await _vectorStoreService.SearchAsync(
                 queryVector,
-                request.TopK,
+                vectorTopK,
                 request.Namespace,
                 new Dictionary<string, string> { ["entityType"] = "coach" });
 
@@ -110,35 +114,63 @@ namespace Intervu.Application.UseCases.SmartSearch
 
                 if (reasoningResults.Any())
                 {
-                    // Apply new scores and reasoning
-                    var reasoningMap = reasoningResults.ToDictionary(r => r.Id, r => r);
-                    foreach (var result in results)
+                    // Case-insensitive dictionary to handle LLM returning IDs in different casing
+                    var reasoningMap = new Dictionary<string, ReasoningResult>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var r in reasoningResults)
                     {
-                        if (reasoningMap.TryGetValue(result.CoachId.ToString(), out var aiResult))
+                        // Normalize: strip whitespace, use first match if LLM duplicates an ID
+                        var normalizedId = r.Id?.Trim() ?? "";
+                        if (!string.IsNullOrEmpty(normalizedId) && !reasoningMap.ContainsKey(normalizedId))
                         {
-                            result.RerankScore = aiResult.Score;
-                            result.FinalScore = aiResult.Score; // AI score overrides final score
-                            result.Reasoning = aiResult.Reasoning;
-                            result.RerankSource = "Gemini";
-                        }
-                        else
-                        {
-                            result.RerankScore = 0; // Penalize if AI dropped it entirely
-                            result.FinalScore = 0;
+                            reasoningMap[normalizedId] = r;
                         }
                     }
 
-                    // Re-sort by AI score
+                    // Build a lookup from coach ID to their candidate summary for fallback reasoning
+                    var candidateMap = reasoningCandidates.ToDictionary(
+                        c => c.Id, c => c, StringComparer.OrdinalIgnoreCase);
+
+                    foreach (var result in results)
+                    {
+                        var coachIdStr = result.CoachId.ToString();
+                        if (reasoningMap.TryGetValue(coachIdStr, out var aiResult))
+                        {
+                            result.RerankScore = aiResult.Score;
+                            result.FinalScore = aiResult.Score;
+                            result.Reasoning = aiResult.Reasoning;
+                            result.RerankSource = "AI";
+                        }
+                        else
+                        {
+                            // Backfill: demote using vector score but don't zero out.
+                            // Build fallback reasoning from the coach's actual profile data.
+                            result.RerankScore = result.MatchScore * 0.5;
+                            result.FinalScore = result.MatchScore * 0.5;
+                            result.RerankSource = "Pinecone-Fallback";
+
+                            var skills = result.TopSkills != null && result.TopSkills.Any()
+                                ? string.Join(", ", result.TopSkills)
+                                : "general coaching";
+                            var exp = result.ExperienceYears > 0
+                                ? $"{result.ExperienceYears} years of experience"
+                                : "relevant experience";
+                            result.Reasoning = $"Matched by profile similarity. This coach brings {exp} in {skills}, which may help strengthen your preparation for the target role.";
+                        }
+                    }
+
                     results = results.OrderByDescending(r => r.FinalScore).ToList();
                 }
                 else
                 {
-                    // Fallback to Pinecone sorting
+                    // Full fallback to Pinecone sorting (LLM returned nothing)
                     results = results.OrderByDescending(r => r.FinalScore).ToList();
                 }
             }
 
-            return results;
+            return results
+                .OrderByDescending(r => r.FinalScore)
+                .Take(finalOutputTopN)
+                .ToList();
         }
 
         private static bool IsValidCoachMatch(VectorMatch match)
