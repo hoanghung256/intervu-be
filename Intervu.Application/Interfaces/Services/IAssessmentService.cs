@@ -11,5 +11,6 @@ namespace Intervu.Application.Interfaces.Services
         Task<UserSkillAssessmentSnapshotDto?> GetUserSkillAssessmentSnapshotAsync(Guid userId);
         Task<GenerateRoadmapResultDto> GenerateRoadmapFromSurveyAsync(Guid userId, bool forceRegenerate = false);
         Task<SurveyRoadmapDto?> GetRoadmapByUserIdAsync(Guid userId);
+        Task UpdateRoadmapAfterInterviewAsync(Guid candidateId, Guid interviewRoomId, string coachName);
     }
 }

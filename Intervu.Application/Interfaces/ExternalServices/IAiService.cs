@@ -12,6 +12,7 @@ namespace Intervu.Application.Interfaces.ExternalServices
     {
         Task<GenerateAssessmentResponse> GenerateAssessmentAsync(GenerateAssessmentRequest request);
         Task<AiGenerateRoadmapResponseDto?> GenerateRoadmapAsync(AiGenerateRoadmapRequestDto request);
+        Task<AiUpdateRoadmapProgressResponseDto?> UpdateRoadmapProgressAsync(AiUpdateRoadmapProgressRequestDto request);
         Task<bool> StoreCvUrlAsync(Guid roomId, string cvUrl, IFormFile? file);
         Task<string?> GetLastCvPdfUrlAsync(Guid roomId);
         Task<AiQuestionExtractionResponse> GetNewQuestionsFromTranscriptAsync(byte[] audioData, Guid roomId, IEnumerable<string>? availableTags = null);

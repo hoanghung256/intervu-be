@@ -396,6 +396,59 @@ namespace Intervu.Infrastructure.ExternalServices
             }
         }
 
+        public async Task<AiUpdateRoadmapProgressResponseDto?> UpdateRoadmapProgressAsync(AiUpdateRoadmapProgressRequestDto request)
+        {
+            if (_httpClient.BaseAddress == null)
+            {
+                return null;
+            }
+
+            var response = await _httpClient.PostAsJsonAsync("api/update-roadmap-progress", request);
+            var rawContent = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogError("AI update-roadmap-progress failed with status {StatusCode}: {Body}", response.StatusCode, rawContent);
+                return new AiUpdateRoadmapProgressResponseDto
+                {
+                    Status = "failed",
+                    Error = $"AI service error: {response.StatusCode}"
+                };
+            }
+
+            if (string.IsNullOrWhiteSpace(rawContent))
+            {
+                return new AiUpdateRoadmapProgressResponseDto
+                {
+                    Status = "failed",
+                    Error = "Empty response from AI roadmap progress service"
+                };
+            }
+
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                ReadCommentHandling = JsonCommentHandling.Skip,
+                AllowTrailingCommas = true,
+                NumberHandling = JsonNumberHandling.AllowReadingFromString
+            };
+
+            try
+            {
+                var result = JsonSerializer.Deserialize<AiUpdateRoadmapProgressResponseDto>(rawContent, options);
+                return result;
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogError(ex, "Failed to deserialize roadmap progress response: {RawContent}", rawContent);
+                return new AiUpdateRoadmapProgressResponseDto
+                {
+                    Status = "failed",
+                    Error = "Invalid payload format from AI roadmap progress service"
+                };
+            }
+        }
+
         public async Task<AiCvEvaluationResponseDto?> EvaluateCvAsync(System.IO.Stream stream, string fileName, string contentType)
         {
             if (_httpClient.BaseAddress == null || stream == null)

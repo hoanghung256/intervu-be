@@ -9,21 +9,31 @@ using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.Services;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Repositories;
+using Microsoft.Extensions.Logging;
 
 namespace Intervu.Application.Services
 {
     public class AssessmentService : IAssessmentService
     {
         private readonly IUserSkillAssessmentSnapshotRepository _snapshotRepository;
+        private readonly IInterviewRoomRepository _roomRepository;
         private readonly IAiService _aiService;
+        private readonly ILogger<AssessmentService> _logger;
 
         public AssessmentService(
             IUserSkillAssessmentSnapshotRepository snapshotRepository,
-            IAiService aiService)
+            IInterviewRoomRepository roomRepository,
+            IAiService aiService,
+            ILogger<AssessmentService> logger)
         {
             _snapshotRepository = snapshotRepository;
+            _roomRepository = roomRepository;
             _aiService = aiService;
+            _logger = logger;
         }
+
+
+        // Raw answers are not stored; only processed survey summaries are saved.
 
         private static object? DeserializeJson(string? json)
         {
@@ -288,6 +298,109 @@ namespace Intervu.Application.Services
             }
 
             return MapRoadmapToSurveyDto(snapshot.Roadmap);
+        }
+
+        public async Task UpdateRoadmapAfterInterviewAsync(Guid candidateId, Guid interviewRoomId, string coachName)
+        {
+            if (candidateId == Guid.Empty || interviewRoomId == Guid.Empty)
+            {
+                return;
+            }
+
+            var snapshot = await _snapshotRepository.GetUserSkillAssessmentById(candidateId);
+            if (snapshot?.Roadmap == null || !snapshot.Roadmap.Phases.Any())
+            {
+                _logger.LogWarning("UpdateRoadmapAfterInterview: no roadmap snapshot found for candidate {CandidateId}", candidateId);
+                return;
+            }
+
+            var room = await _roomRepository.GetByIdWithDetailsAsync(interviewRoomId);
+            if (room == null || room.EvaluationResults == null || !room.EvaluationResults.Any())
+            {
+                _logger.LogWarning("UpdateRoadmapAfterInterview: room {RoomId} not found or has no evaluation", interviewRoomId);
+                return;
+            }
+
+            // Resolve interview type name and aim level
+            var interviewTypeName = room.CoachInterviewService?.InterviewType?.Name ?? "General";
+            var aimLevel = room.AimLevel?.ToString() ?? string.Empty;
+
+            // Build mock history entry
+            var mockEntry = new SurveyRoadmapMockHistoryDto
+            {
+                MockId = interviewRoomId.ToString(),
+                MockTitle = $"{interviewTypeName} Interview",
+                InterviewType = interviewTypeName,
+                CoachName = coachName,
+                InterviewedAt = (room.ScheduledTime ?? DateTime.UtcNow).ToString("o"),
+                Evaluation = room.EvaluationResults.Select(e => new SurveyRoadmapEvaluationDto
+                {
+                    Type = e.Type,
+                    Score = e.Score,
+                    Question = e.Question,
+                    Answer = e.Answer
+                }).ToList()
+            };
+
+            // Append mock history to the first phase that still has incomplete nodes (the active phase)
+            var currentRoadmap = MapRoadmapToSurveyDto(snapshot.Roadmap)!;
+            var activePhase = currentRoadmap.Phases
+                .FirstOrDefault(p => p.Nodes.Any(n => n.Assessment.Status != "Complete"))
+                ?? currentRoadmap.Phases.Last();
+
+            // Avoid duplicates: skip if this room was already recorded
+            if (!activePhase.MockHistory.Any(m => m.MockId == mockEntry.MockId))
+            {
+                activePhase.MockHistory.Add(mockEntry);
+            }
+
+            // Ask AI to recalculate node progress based on evaluation scores
+            var aiRequest = new AiUpdateRoadmapProgressRequestDto
+            {
+                CurrentRoadmap = currentRoadmap,
+                InterviewType = interviewTypeName,
+                AimLevel = aimLevel,
+                Evaluation = room.EvaluationResults.Select(e => new AiEvaluationItemDto
+                {
+                    Type = e.Type,
+                    Score = e.Score,
+                    Question = e.Question,
+                    Answer = e.Answer
+                }).ToList()
+            };
+
+            var aiResponse = await _aiService.UpdateRoadmapProgressAsync(aiRequest);
+
+            SurveyRoadmapDto updatedRoadmap;
+
+            if (aiResponse != null
+                && string.Equals(aiResponse.Status, "success", StringComparison.OrdinalIgnoreCase)
+                && aiResponse.Roadmap?.Phases?.Any() == true)
+            {
+                // Merge the mock history we built into the AI-returned roadmap
+                // so the AI doesn't accidentally drop entries it didn't know about
+                foreach (var phase in currentRoadmap.Phases)
+                {
+                    var aiPhase = aiResponse.Roadmap.Phases.FirstOrDefault(p => p.PhaseId == phase.PhaseId);
+                    if (aiPhase != null)
+                    {
+                        aiPhase.MockHistory = phase.MockHistory;
+                        aiPhase.RecommendedCoaches = phase.RecommendedCoaches;
+                    }
+                }
+
+                updatedRoadmap = aiResponse.Roadmap;
+            }
+            else
+            {
+                _logger.LogWarning("UpdateRoadmapAfterInterview: AI progress update failed or returned empty for candidate {CandidateId}; keeping current roadmap with mock history only", candidateId);
+                updatedRoadmap = currentRoadmap;
+            }
+
+            snapshot.Roadmap = MapRoadmap(updatedRoadmap);
+            await _snapshotRepository.UpsertSnapshotAsync(snapshot);
+
+            _logger.LogInformation("UpdateRoadmapAfterInterview: roadmap updated for candidate {CandidateId} after room {RoomId}", candidateId, interviewRoomId);
         }
 
         private static RoadmapSnapshot? MapRoadmap(SurveyRoadmapDto? roadmap)
