@@ -222,7 +222,7 @@ namespace Intervu.API.Controllers.v1
 
         /// <summary>
         /// Backward-compatible endpoint for existing FE:
-        /// POST /interviewroom/report with { interviewRoomId, reason, details }
+        /// POST /interviewroom/report with { interviewRoomId, reason, details, expectTo }
         /// </summary>
         [Authorize(Policy = AuthorizationPolicies.Candidate)]
         [HttpPost("report")]
@@ -242,7 +242,8 @@ namespace Intervu.API.Controllers.v1
             var mappedRequest = new CreateRoomReportRequest
             {
                 Reason = request?.Reason ?? string.Empty,
-                Details = request?.Details
+                Details = request?.Details,
+                ExpectTo = request?.ExpectTo
             };
 
             var result = await _reportInterviewProblem.ExecuteAsync(request.InterviewRoomId, mappedRequest, userId);

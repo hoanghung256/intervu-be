@@ -17,22 +17,52 @@ namespace Intervu.Application.UseCases.GeneratedQuestion
     public class StoreGeneratedQuestions(
         IGeneratedQuestionRepository generatedQuestionRepository,
         IInterviewRoomRepository interviewRoomRepository,
+        ITagRepository tagRepository,
         IBackgroundService backgroundService) : IStoreGeneratedQuestions
     {
         public async Task<int> ExecuteAsync(Guid interviewRoomId, IEnumerable<AiQuestionDto> questions, string? transcript = null)
         {
+            var dbTags = await tagRepository.GetAllAsync();
+            var tagMap = dbTags.ToDictionary(t => t.Name, t => t.Id, StringComparer.OrdinalIgnoreCase);
+
             var questionList = questions.ToList();
-            var items = questionList
-                .Where(q => !string.IsNullOrWhiteSpace(q.Title) || !string.IsNullOrWhiteSpace(q.Content))
-                .Select(q => new Domain.Entities.GeneratedQuestion
+            var items = new List<Domain.Entities.GeneratedQuestion>();
+            foreach (var q in questionList.Where(q => !string.IsNullOrWhiteSpace(q.Title) || !string.IsNullOrWhiteSpace(q.Content)))
+            {
+                var gq = new Domain.Entities.GeneratedQuestion
                 {
                     Id = Guid.NewGuid(),
                     InterviewRoomId = interviewRoomId,
                     Title = q.Title?.Trim() ?? string.Empty,
                     Content = q.Content?.Trim() ?? string.Empty,
                     Status = GeneratedQuestionStatus.PendingReview
-                })
-                .ToList();
+                };
+
+                if (q.Tags != null && q.Tags.Any())
+                {
+                    var matchingTagIds = new List<Guid>();
+                    foreach (var tagName in q.Tags)
+                    {
+                        if (!string.IsNullOrWhiteSpace(tagName))
+                        {
+                            var normalizedName = tagName.Trim();
+                            if (tagMap.TryGetValue(normalizedName, out var existingId))
+                            {
+                                matchingTagIds.Add(existingId);
+                            }
+                            else
+                            {
+                                var newTag = new Intervu.Domain.Entities.Tag { Id = Guid.NewGuid(), Name = normalizedName };
+                                await tagRepository.AddAsync(newTag);
+                                matchingTagIds.Add(newTag.Id);
+                                tagMap[normalizedName] = newTag.Id;
+                            }
+                        }
+                    }
+                    gq.TagIds = matchingTagIds;
+                }
+                items.Add(gq);
+            }
 
             foreach (var item in items)
             {

@@ -67,6 +67,8 @@ using Intervu.Application.Interfaces.UseCases.BookingRequest;
 using Intervu.Application.UseCases.BookingRequest;
 using Intervu.Application.Interfaces.UseCases.Assessment;
 using Intervu.Application.UseCases.Assessment;
+using Intervu.Application.UseCases.Tag;
+using Intervu.Application.Interfaces.UseCases.Tag;
 
 namespace Intervu.Application
 {
@@ -131,6 +133,8 @@ namespace Intervu.Application
             services.AddScoped<CompanyInterfaces.IGetAllCompanies, CompanyUseCases.GetAllCompanies>();
             services.AddScoped<IGetAllSkills, GetAllSkills>();
             services.AddScoped<IGetAllIndustries, GetAllIndustries>();
+            services.AddScoped<IGetAllTags, GetAllTags>();
+
             // ----- Admin ----
             services.AddScoped<IGetDashboardStats, AdminUseCases.GetDashboardStats>();
             services.AddScoped<IGetAllUsersForAdmin, AdminUseCases.GetAllUsers>();

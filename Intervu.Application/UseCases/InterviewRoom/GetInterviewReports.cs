@@ -28,6 +28,7 @@ namespace Intervu.Application.UseCases.InterviewRoom
                 UserId = x.ReporterId,
                 Reason = x.Reason,
                 Details = x.Details,
+                ExpectTo = x.ExpectTo,
                 Status = x.Status,
                 AdminNote = x.AdminNote,
                 ResolvedAt = x.ResolvedAt,
