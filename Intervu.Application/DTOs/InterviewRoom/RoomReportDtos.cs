@@ -6,6 +6,7 @@ namespace Intervu.Application.DTOs.InterviewRoom
     {
         public string Reason { get; set; } = string.Empty;
         public string? Details { get; set; }
+        public string? ExpectTo { get; set; }
     }
 
     // Backward-compatible payload used by existing FE modal
@@ -14,6 +15,7 @@ namespace Intervu.Application.DTOs.InterviewRoom
         public Guid InterviewRoomId { get; set; }
         public string Reason { get; set; } = string.Empty;
         public string? Details { get; set; }
+        public string? ExpectTo { get; set; }
     }
 
     public class CreateRoomReportResult
@@ -39,6 +41,7 @@ namespace Intervu.Application.DTOs.InterviewRoom
         public Guid? UserId { get; set; }
         public string Reason { get; set; } = string.Empty;
         public string? Details { get; set; }
+        public string? ExpectTo { get; set; }
         public InterviewReportStatus Status { get; set; }
         public string? AdminNote { get; set; }
         public DateTime? ResolvedAt { get; set; }

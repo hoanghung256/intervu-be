@@ -18,6 +18,7 @@ namespace Intervu.Application.UseCases.InterviewRoom
     {
         private const int MaxReasonLength = 500;
         private const int MaxDetailsLength = 4000;
+        private const int MaxExpectToLength = 1000;
 
         public async Task<CreateRoomReportResult> ExecuteAsync(Guid interviewRoomId, CreateRoomReportRequest request, Guid userId)
         {
@@ -41,6 +42,12 @@ namespace Intervu.Application.UseCases.InterviewRoom
             if (!string.IsNullOrEmpty(details) && details.Length > MaxDetailsLength)
             {
                 throw new BadRequestException($"Report details must be less than or equal to {MaxDetailsLength} characters");
+            }
+
+            var expectTo = request?.ExpectTo?.Trim();
+            if (!string.IsNullOrEmpty(expectTo) && expectTo.Length > MaxExpectToLength)
+            {
+                throw new BadRequestException($"Report expectation must be less than or equal to {MaxExpectToLength} characters");
             }
 
             var roomRepository = unitOfWork.GetRepository<IInterviewRoomRepository>();
@@ -72,6 +79,7 @@ namespace Intervu.Application.UseCases.InterviewRoom
                 ReporterId = userId,
                 Reason = reason,
                 Details = details ?? string.Empty,
+                ExpectTo = string.IsNullOrEmpty(expectTo) ? null : expectTo,
                 Status = InterviewReportStatus.Pending,
                 CreatedAt = now,
                 UpdatedAt = now

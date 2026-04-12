@@ -555,6 +555,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.ReporterId).IsRequired(false);
                 b.Property(x => x.Reason).HasColumnType("text").IsRequired();
                 b.Property(x => x.Details).HasColumnType("text").IsRequired(false);
+                b.Property(x => x.ExpectTo).HasColumnType("text").IsRequired(false);
                 b.Property(x => x.Status)
                     .HasConversion<int>()
                     .IsRequired()

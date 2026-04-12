@@ -39,6 +39,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 query = query.Where(x =>
                     x.Reason.Contains(search) ||
                     (x.Details != null && x.Details.Contains(search)) ||
+                    (x.ExpectTo != null && x.ExpectTo.Contains(search)) ||
                     (x.Reporter != null && x.Reporter.FullName.Contains(search)));
             }
 

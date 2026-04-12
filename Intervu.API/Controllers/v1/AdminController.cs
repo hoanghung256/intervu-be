@@ -608,6 +608,7 @@ namespace Intervu.API.Controllers.v1
                     },
                     reason = r.Reason,
                     details = r.Details,
+                    expectTo = r.ExpectTo,
                     content = r.Details,
                     reportType = r.Reason, // Mapping for FE compatibility
                     status = (int)r.Status,
