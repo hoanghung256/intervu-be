@@ -17,6 +17,7 @@ namespace Intervu.Domain.Entities
         public string CurrentJson { get; set; } = "{}";
         public string GapJson { get; set; } = "{}";
         public string RoadMapJson { get; set; } = "{}";
+        public string? AnswerJson { get; set; } = "{}";
 
         [NotMapped]
         public Target? Target
@@ -46,6 +47,13 @@ namespace Intervu.Domain.Entities
             set => RoadMapJson = Serialize(value);
         }
 
+        [NotMapped]
+        public AnswerSnapshot? Answer
+        {
+            get => Deserialize<AnswerSnapshot>(AnswerJson);
+            set => AnswerJson = Serialize(value);
+        }
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
@@ -58,6 +66,7 @@ namespace Intervu.Domain.Entities
             CurrentJson = Normalize(CurrentJson);
             GapJson = Normalize(GapJson);
             RoadMapJson = Normalize(RoadMapJson);
+            AnswerJson = Normalize(AnswerJson);
         }
 
         private static T? Deserialize<T>(string? json)
@@ -270,6 +279,54 @@ namespace Intervu.Domain.Entities
 
         [JsonPropertyName("difficulty")]
         public string Difficulty { get; set; } = string.Empty;
+    }
+
+    public class AnswerSnapshot
+    {
+        [JsonPropertyName("profile")]
+        public AnswerProfileSnapshot Profile { get; set; } = new();
+
+        [JsonPropertyName("responses")]
+        public List<AnswerResponseSnapshot> Responses { get; set; } = new();
+    }
+
+    public class AnswerProfileSnapshot
+    {
+        [JsonPropertyName("role")]
+        public string Role { get; set; } = string.Empty;
+
+        [JsonPropertyName("level")]
+        public string Level { get; set; } = string.Empty;
+
+        [JsonPropertyName("techstack")]
+        public List<string> Techstack { get; set; } = new();
+
+        [JsonPropertyName("domain")]
+        public List<string> Domain { get; set; } = new();
+
+        [JsonPropertyName("freeText")]
+        public string FreeText { get; set; } = string.Empty;
+    }
+
+    public class AnswerResponseSnapshot
+    {
+        [JsonPropertyName("questionId")]
+        public string QuestionId { get; set; } = string.Empty;
+
+        [JsonPropertyName("question")]
+        public string Question { get; set; } = string.Empty;
+
+        [JsonPropertyName("phase")]
+        public string Phase { get; set; } = string.Empty;
+
+        [JsonPropertyName("skill")]
+        public string Skill { get; set; } = string.Empty;
+
+        [JsonPropertyName("answer")]
+        public string Answer { get; set; } = string.Empty;
+
+        [JsonPropertyName("selectedLevel")]
+        public string SelectedLevel { get; set; } = string.Empty;
     }
 
 }

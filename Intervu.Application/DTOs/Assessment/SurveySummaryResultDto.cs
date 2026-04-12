@@ -16,5 +16,6 @@ namespace Intervu.Application.DTOs.Assessment
         public string? Target { get; set; }
         public string? Current { get; set; }
         public string? Gap { get; set; }
+        public string? AnswerJson { get; set; }
     }
 }

@@ -8,5 +8,6 @@ namespace Intervu.Domain.Repositories
     {
         Task<UserSkillAssessmentSnapshot?> GetUserSkillAssessmentById(Guid userId);
         Task UpsertSnapshotAsync(UserSkillAssessmentSnapshot snapshot);
+        Task SaveAnswerJsonAsync(Guid userId, string answerJson);
     }
 }

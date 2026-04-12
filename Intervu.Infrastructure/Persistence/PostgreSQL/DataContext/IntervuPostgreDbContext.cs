@@ -825,6 +825,10 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                  .IsRequired()
                  .HasColumnType("jsonb");
 
+                b.Property(x => x.AnswerJson)
+                 .IsRequired(false)
+                 .HasColumnType("jsonb");
+
                 b.Property(x => x.CreatedAt)
                  .IsRequired()
                  .HasColumnType("timestamp with time zone")
