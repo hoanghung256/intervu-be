@@ -5,9 +5,12 @@ using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.Services;
 using Intervu.Application.Interfaces.UseCases.AudioChunk;
 using Intervu.Application.Interfaces.UseCases.GeneratedQuestion;
+using Intervu.Application.Interfaces.UseCases.Industry;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
+using Intervu.Application.Interfaces.UseCases.Skill;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
+using Intervu.Domain.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -30,6 +33,7 @@ namespace Intervu.API.Controllers.v1
         private readonly IAudioProcessingService _audioProcessingService;
         private readonly IStoreGeneratedQuestions _storeGeneratedQuestions;
         private readonly IGetCurrentRoom _getCurrentRoom;
+        private readonly ITagRepository _tagRepository;
 
         public AiController(
             IAiService aiService,
@@ -38,7 +42,8 @@ namespace Intervu.API.Controllers.v1
             IGetAudioChunk getAudioChunk,
             IAudioProcessingService audioProcessingService,
             IStoreGeneratedQuestions storeGeneratedQuestions,
-            IGetCurrentRoom getCurrentRoom
+            IGetCurrentRoom getCurrentRoom,
+            ITagRepository tagRepository
             )
         {
             _aiService = aiService;
@@ -48,6 +53,7 @@ namespace Intervu.API.Controllers.v1
             _audioProcessingService = audioProcessingService;
             _storeGeneratedQuestions = storeGeneratedQuestions;
             _getCurrentRoom = getCurrentRoom;
+            _tagRepository = tagRepository;
         }
 
         [Authorize(Policy = AuthorizationPolicies.AllRoles)]
@@ -69,8 +75,10 @@ namespace Intervu.API.Controllers.v1
 
             _logger.LogInformation("Processing transcript for session ID: {SessionId}, Total chunks: {ChunkCount}, Merged size: {Size}", 
                 request.RecordingSessionId, audioChunks.Count, mergeResult.Data.Length);
-            
-            var result = await _aiService.GetNewQuestionsFromTranscriptAsync(mergeResult.Data, request.RecordingSessionId);
+            var dbTags = await _tagRepository.GetAllAsync();
+            var availableTags = dbTags.Select(t => t.Name).Distinct().ToList();
+
+            var result = await _aiService.GetNewQuestionsFromTranscriptAsync(mergeResult.Data, request.RecordingSessionId, availableTags);
             
             if (result.Status == "failed")
             {

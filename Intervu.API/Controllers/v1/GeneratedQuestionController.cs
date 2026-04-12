@@ -50,6 +50,8 @@ namespace Intervu.API.Controllers.v1
             return Ok(new { success = true, message = "Custom question created", data = new { id } });
         }
 
+
+
         [Authorize(Policy = AuthorizationPolicies.InterviewOrAdmin)]
         [HttpPut("{generatedQuestionId:guid}/approve")]
         public async Task<IActionResult> Approve(Guid generatedQuestionId, [FromBody] ApproveGeneratedQuestionRequest request)

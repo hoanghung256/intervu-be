@@ -126,7 +126,7 @@ namespace Intervu.Infrastructure.ExternalServices
             return raw;
         }
 
-        public async Task<AiQuestionExtractionResponse> GetNewQuestionsFromTranscriptAsync(byte[] audioData, Guid roomId)
+        public async Task<AiQuestionExtractionResponse> GetNewQuestionsFromTranscriptAsync(byte[] audioData, Guid roomId, IEnumerable<string>? availableTags = null)
         {
             if (_httpClient.BaseAddress == null)
             {
@@ -140,6 +140,12 @@ namespace Intervu.Infrastructure.ExternalServices
             
             var endpoint = $"api/transcript?id={roomId}";
             using var form = new MultipartFormDataContent();
+
+            if (availableTags != null && availableTags.Any())
+            {
+                var tagsJson = JsonSerializer.Serialize(availableTags);
+                form.Add(new StringContent(tagsJson), "tags");
+            }
 
             var fileContent = new ByteArrayContent(audioData);
             fileContent.Headers.ContentType = new MediaTypeHeaderValue("audio/wav");

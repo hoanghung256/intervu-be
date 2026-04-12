@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
@@ -27,6 +27,9 @@ namespace Intervu.Application.DTOs.Ai
 
         [JsonPropertyName("content")]
         public string Content { get; set; } = string.Empty;
+
+        [JsonPropertyName("tags")]
+        public List<string> Tags { get; set; } = new();
     }
 
     public class NewQuestionsFromTranscriptRequest
