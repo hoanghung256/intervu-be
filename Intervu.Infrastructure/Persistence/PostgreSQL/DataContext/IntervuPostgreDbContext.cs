@@ -589,6 +589,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.Title).HasMaxLength(500).IsRequired();
                 b.Property(x => x.Content).HasColumnType("text").IsRequired();
                 b.Property(x => x.Status).HasConversion<int>().IsRequired();
+                b.Property(x => x.TagIdsJson).HasColumnType("jsonb").IsRequired(false);
 
                 b.HasOne(x => x.InterviewRoom)
                  .WithMany(r => r.GeneratedQuestions)

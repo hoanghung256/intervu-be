@@ -210,6 +210,7 @@ namespace Intervu.Application.Services
                 var audioProcessingService = scope.ServiceProvider.GetRequiredService<IAudioProcessingService>();
                 var aiService = scope.ServiceProvider.GetRequiredService<IAiService>();
                 var storeGeneratedQuestions = scope.ServiceProvider.GetRequiredService<IStoreGeneratedQuestions>();
+                var tagRepo = scope.ServiceProvider.GetRequiredService<ITagRepository>();
 
                 var roomGuid = Guid.Parse(roomId);
 
@@ -262,7 +263,10 @@ namespace Intervu.Application.Services
                             var mergeResult = audioProcessingService.MergeAllTakesAsWav(audioChunks);
                             if (mergeResult.Success && mergeResult.Data.Length > 0)
                             {
-                                var extractionResult = await aiService.GetNewQuestionsFromTranscriptAsync(mergeResult.Data, roomGuid);
+                                var dbTags = await tagRepo.GetAllAsync();
+                                var availableTags = dbTags.Select(t => t.Name).Distinct().ToList();
+
+                                var extractionResult = await aiService.GetNewQuestionsFromTranscriptAsync(mergeResult.Data, roomGuid, availableTags);
                                 if (extractionResult.Status != "failed" && extractionResult.QuestionList?.Count > 0)
                                 {
                                     await storeGeneratedQuestions.ExecuteAsync(roomGuid, extractionResult.QuestionList, extractionResult.Transcript);
