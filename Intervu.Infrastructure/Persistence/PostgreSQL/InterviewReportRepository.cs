@@ -58,6 +58,15 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             return await _context.InterviewReports.AnyAsync(x => x.InterviewRoomId == interviewRoomId);
         }
 
+        public async Task<InterviewReport?> GetByRoomIdAsync(Guid interviewRoomId)
+        {
+            return await _context.InterviewReports
+                .Include(x => x.Reporter)
+                .Where(x => x.InterviewRoomId == interviewRoomId)
+                .OrderByDescending(x => x.CreatedAt)
+                .FirstOrDefaultAsync();
+        }
+
         public async Task<int> GetPendingCountAsync()
         {
             return await _context.InterviewReports.CountAsync(x => x.Status == InterviewReportStatus.Pending);

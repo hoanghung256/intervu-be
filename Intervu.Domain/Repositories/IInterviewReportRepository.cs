@@ -13,6 +13,7 @@ namespace Intervu.Domain.Repositories
             Guid? reporterId = null);
 
         Task<bool> ExistsByRoomIdAsync(Guid interviewRoomId);
+        Task<InterviewReport?> GetByRoomIdAsync(Guid interviewRoomId);
         Task<int> GetPendingCountAsync();
     }
 }

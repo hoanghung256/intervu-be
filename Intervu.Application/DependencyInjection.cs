@@ -121,6 +121,7 @@ namespace Intervu.Application
             services.AddScoped<ISaveCoachEvaluationDraft, SaveCoachEvaluationDraft>();
             services.AddScoped<IReportInterviewProblem, ReportInterviewProblem>();
             services.AddScoped<IGetInterviewReports, GetInterviewReports>();
+            services.AddScoped<IGetInterviewReportDetail, GetInterviewReportDetail>();
             services.AddScoped<IResolveInterviewReport, ResolveInterviewReport>();
             services.AddScoped<ICreateEvaluationResultsUseCase, CreateEvaluationResultsUseCase>();
 

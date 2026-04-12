@@ -48,4 +48,34 @@ namespace Intervu.Application.DTOs.InterviewRoom
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }
+
+    public class InterviewRoomReportDetailDto
+    {
+        public Guid ReportId { get; set; }
+        public Guid InterviewRoomId { get; set; }
+        public Guid ReporterId { get; set; }
+        public string ReporterName { get; set; } = string.Empty;
+        public string Reason { get; set; } = string.Empty;
+        public string? Details { get; set; }
+        public string? ExpectTo { get; set; }
+        public InterviewReportStatus Status { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public RoomReportBookingContextDto BookingContext { get; set; } = new();
+        public RoomReportFinancialStatusDto FinancialStatus { get; set; } = new();
+    }
+
+    public class RoomReportBookingContextDto
+    {
+        public string? CoachName { get; set; }
+        public string? CandidateName { get; set; }
+        public string? ServiceName { get; set; }
+        public DateTime? OriginalTime { get; set; }
+    }
+
+    public class RoomReportFinancialStatusDto
+    {
+        public string? PaymentStatus { get; set; }
+        public string? PayOsOrderCode { get; set; }
+        public bool PayoutLocked { get; set; }
+    }
 }

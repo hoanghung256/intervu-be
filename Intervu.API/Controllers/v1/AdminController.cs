@@ -34,6 +34,7 @@ namespace Intervu.API.Controllers.v1
         private readonly IActivateUserForAdmin _activateUserForAdmin;
         private readonly IGetAuditLogs _getAuditLogs;
         private readonly IGetInterviewReports _getInterviewReports;
+        private readonly IGetInterviewReportDetail _getInterviewReportDetail;
         private readonly IResolveInterviewReport _resolveInterviewReport;
         private readonly IGetAdminDashboardCharts _getAdminDashboardCharts;
         private readonly IGetTopCoachesLeaderboard _getTopCoachesLeaderboard;
@@ -54,6 +55,7 @@ namespace Intervu.API.Controllers.v1
             IActivateUserForAdmin activateUserForAdmin,
             IGetAuditLogs getAuditLogs,
             IGetInterviewReports getInterviewReports,
+            IGetInterviewReportDetail getInterviewReportDetail,
             IResolveInterviewReport resolveInterviewReport,
             IGetAdminDashboardCharts getAdminDashboardCharts,
             IGetTopCoachesLeaderboard getTopCoachesLeaderboard,
@@ -73,6 +75,7 @@ namespace Intervu.API.Controllers.v1
             _activateUserForAdmin = activateUserForAdmin;
             _getAuditLogs = getAuditLogs;
             _getInterviewReports = getInterviewReports;
+            _getInterviewReportDetail = getInterviewReportDetail;
             _resolveInterviewReport = resolveInterviewReport;
             _getAdminDashboardCharts = getAdminDashboardCharts;
             _getTopCoachesLeaderboard = getTopCoachesLeaderboard;
@@ -627,6 +630,34 @@ namespace Intervu.API.Controllers.v1
                         reports.PageSize,
                         reports.CurrentPage
                     }
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = ex.Message,
+                    data = (object?)null
+                });
+            }
+        }
+
+        /// <summary>
+        /// Admin gets room report detail for a specific interview room.
+        /// </summary>
+        [HttpGet("room-reports/{roomId:guid}/detail")]
+        [Authorize(Policy = AuthorizationPolicies.Admin)]
+        public async Task<IActionResult> GetRoomReportDetail([FromRoute] Guid roomId)
+        {
+            try
+            {
+                var detail = await _getInterviewReportDetail.ExecuteAsync(roomId);
+                return Ok(new
+                {
+                    success = true,
+                    message = "Success",
+                    data = detail
                 });
             }
             catch (Exception ex)
