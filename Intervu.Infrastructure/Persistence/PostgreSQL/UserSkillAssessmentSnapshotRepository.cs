@@ -27,7 +27,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Repositories
         {
             var now = DateTime.UtcNow;
             snapshot.EnsureJsonPayloads();
-            var hasIncomingAnswerJson = HasMeaningfulJsonPayload(snapshot.AnswerJson);
+            snapshot.AnswerJson = NormalizeJsonPayload(snapshot.AnswerJson);
 
             var existing = await _context.UserSkillAssessments
                 .FirstOrDefaultAsync(x => x.UserId == snapshot.UserId);
@@ -35,7 +35,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Repositories
             if (existing == null)
             {
                 snapshot.Id = snapshot.Id == Guid.Empty ? Guid.NewGuid() : snapshot.Id;
-                snapshot.AnswerJson = hasIncomingAnswerJson ? snapshot.AnswerJson : null;
                 snapshot.CreatedAt = now;
                 snapshot.UpdatedAt = now;
                 await _context.UserSkillAssessments.AddAsync(snapshot);
@@ -47,10 +46,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Repositories
                 existing.CurrentJson = snapshot.CurrentJson;
                 existing.GapJson = snapshot.GapJson;
                 existing.RoadMapJson = snapshot.RoadMapJson;
-                if (hasIncomingAnswerJson)
-                {
-                    existing.AnswerJson = snapshot.AnswerJson;
-                }
+                existing.AnswerJson = snapshot.AnswerJson;
                 existing.UpdatedAt = now;
             }
 
@@ -60,6 +56,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Repositories
         public async Task SaveAnswerJsonAsync(Guid userId, string answerJson)
         {
             var now = DateTime.UtcNow;
+            var normalizedAnswerJson = NormalizeJsonPayload(answerJson);
             var existing = await _context.UserSkillAssessments
                 .FirstOrDefaultAsync(x => x.UserId == userId);
 
@@ -69,7 +66,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Repositories
                 {
                     Id = Guid.NewGuid(),
                     UserId = userId,
-                    AnswerJson = answerJson,
+                    AnswerJson = normalizedAnswerJson,
                     TargetJson = "{}",
                     CurrentJson = "{}",
                     GapJson = "{}",
@@ -80,22 +77,24 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Repositories
             }
             else
             {
-                existing.AnswerJson = answerJson;
+                existing.AnswerJson = normalizedAnswerJson;
                 existing.UpdatedAt = now;
             }
 
             await _context.SaveChangesAsync();
         }
 
-        private static bool HasMeaningfulJsonPayload(string? json)
+        private static string NormalizeJsonPayload(string? json)
         {
             if (string.IsNullOrWhiteSpace(json))
             {
-                return false;
+                return "{}";
             }
 
             var trimmed = json.Trim();
-            return trimmed != "{}" && !string.Equals(trimmed, "null", StringComparison.OrdinalIgnoreCase);
+            return string.Equals(trimmed, "null", StringComparison.OrdinalIgnoreCase)
+                ? "{}"
+                : trimmed;
         }
     }
 }
