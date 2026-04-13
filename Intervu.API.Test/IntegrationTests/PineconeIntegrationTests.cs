@@ -53,7 +53,7 @@ namespace Intervu.API.Test.IntegrationTests
             
             var testId = "test-coach-id-" + System.Guid.NewGuid().ToString();
             var vector = await embeddingService.GetEmbeddingAsync("Specialist in React and .NET with 10 years experience");
-            var metadata = new Dictionary<string, string>
+            var metadata = new Dictionary<string, object>
             {
                 { "name", "Test Coach" },
                 { "bio", "Senior .NET Developer" }
