@@ -145,7 +145,7 @@ namespace Intervu.Infrastructure.ExternalServices
 
             if (availableTags != null && availableTags.Any())
             {
-                var tagsJson = JsonSerializer.Serialize(availableTags);
+                var tagsJson = System.Text.Json.JsonSerializer.Serialize(availableTags);
                 form.Add(new StringContent(tagsJson), "tags");
             }
 
