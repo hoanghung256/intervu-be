@@ -33,7 +33,7 @@ namespace Intervu.Application.UseCases.SmartSearch
 
         public async Task<List<SmartSearchResultDto>> ExecuteAsync(SmartSearchRequest request)
         {
-            const int reasoningCandidateTopK = 10;
+            const int reasoningCandidateTopK = 5;
             const int finalOutputTopN = 3;
 
             if (string.IsNullOrWhiteSpace(request.Query) && string.IsNullOrWhiteSpace(request.ExtractedProfileContext))

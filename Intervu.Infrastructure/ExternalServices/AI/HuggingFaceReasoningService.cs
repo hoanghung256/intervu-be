@@ -52,8 +52,7 @@ namespace Intervu.Infrastructure.ExternalServices.AI
                 model,
                 messages = new[] { new { role = "user", content = ReasoningShared.BuildPrompt(query, candidates) } },
                 temperature,
-                max_tokens = maxTokens,
-                response_format = new { type = "json_object" }
+                max_tokens = maxTokens
             };
 
             try
