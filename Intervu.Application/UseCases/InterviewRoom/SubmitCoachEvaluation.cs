@@ -1,3 +1,4 @@
+using System.Threading;
 using Intervu.Application.DTOs.InterviewRoom;
 using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.ExternalServices.Email;
@@ -117,7 +118,7 @@ namespace Intervu.Application.UseCases.InterviewRoom
                 var candidateId = room.CandidateId.Value;
                 var roomId = interviewRoomId;
                 _jobService.Enqueue<IAssessmentService>(svc =>
-                    svc.UpdateRoadmapAfterInterviewAsync(candidateId, roomId, coachFullName));
+                    svc.UpdateRoadmapAfterInterviewAsync(candidateId, roomId, coachFullName, CancellationToken.None));
             }
 
             _logger.LogInformation("Coach {CoachId} submitted evaluation for interview room {RoomId}", coachId, interviewRoomId);
