@@ -1,4 +1,6 @@
 using Firebase.Storage;
+using Polly;
+using Polly.Extensions.Http;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Storage.V1;
@@ -27,6 +29,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using PayOS;
 using System;
 
@@ -212,7 +215,21 @@ namespace Intervu.Infrastructure
                 {
                     client.BaseAddress = new Uri(baseUrl);
                 }
-            });
+
+                client.Timeout = TimeSpan.FromSeconds(60);
+            })
+            .AddPolicyHandler((sp, _) => HttpPolicyExtensions
+                .HandleTransientHttpError()
+                .WaitAndRetryAsync(
+                    retryCount: 2,
+                    sleepDurationProvider: attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)),
+                    onRetry: (outcome, timespan, attempt, _) =>
+                    {
+                        var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("AiServiceClient");
+                        logger.LogWarning(
+                            "AI service call failed (attempt {Attempt}), retrying in {Delay}s. Reason: {Reason}",
+                            attempt, timespan.TotalSeconds, outcome.Exception?.Message ?? outcome.Result?.ReasonPhrase);
+                    }));
 
             services.AddHostedService<InterviewRoomCacheLoader>();
 

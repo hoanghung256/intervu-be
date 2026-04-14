@@ -8,6 +8,7 @@ using Intervu.Domain.Repositories;
 using Microsoft.Extensions.Logging;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.UseCases.Notification;
+using Intervu.Application.Interfaces.Services;
 using Microsoft.Extensions.Configuration;
 
 namespace Intervu.Application.UseCases.InterviewRoom
@@ -33,6 +34,7 @@ namespace Intervu.Application.UseCases.InterviewRoom
             _configuration = configuration;
             _logger = logger;
         }
+
 
         public async Task ExecuteAsync(Guid interviewRoomId, Guid coachId, List<EvaluationResultDto> results)
         {
@@ -109,6 +111,13 @@ namespace Intervu.Application.UseCases.InterviewRoom
                         _logger.LogWarning(ex, "Failed to enqueue EvaluationReady email for room {RoomId}", interviewRoomId);
                     }
                 }
+
+                // Trigger roadmap progress update for the candidate in the background
+                var coachFullName = coach?.FullName ?? string.Empty;
+                var candidateId = room.CandidateId.Value;
+                var roomId = interviewRoomId;
+                _jobService.Enqueue<IAssessmentService>(svc =>
+                    svc.UpdateRoadmapAfterInterviewAsync(candidateId, roomId, coachFullName));
             }
 
             _logger.LogInformation("Coach {CoachId} submitted evaluation for interview room {RoomId}", coachId, interviewRoomId);

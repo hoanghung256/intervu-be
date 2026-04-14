@@ -347,24 +347,31 @@ namespace Intervu.Infrastructure.ExternalServices
             return result;
         }
 
-        public async Task<AiGenerateRoadmapResponseDto?> GenerateRoadmapAsync(AiGenerateRoadmapRequestDto request)
+        public async Task<AiGenerateRoadmapResponseDto?> GenerateRoadmapAsync(AiGenerateRoadmapRequestDto request, CancellationToken cancellationToken = default)
         {
             if (_httpClient.BaseAddress == null)
             {
                 return null;
             }
 
-            var response = await _httpClient.PostAsJsonAsync("api/generate-roadmap", request);
-            var rawContent = await response.Content.ReadAsStringAsync();
+            _logger.LogInformation("Calling AI generate-roadmap");
+
+            var response = await _httpClient.PostAsJsonAsync("api/generate-roadmap", request, cancellationToken);
+            var rawContent = await response.Content.ReadAsStringAsync(cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
-                throw new HttpRequestException(
-                    $"AI roadmap request failed with status code {(int)response.StatusCode}: {rawContent}");
+                _logger.LogError("AI generate-roadmap failed with status {StatusCode}: {Body}", response.StatusCode, rawContent);
+                return new AiGenerateRoadmapResponseDto
+                {
+                    Status = "failed",
+                    Error = $"AI service error: {(int)response.StatusCode}"
+                };
             }
 
             if (string.IsNullOrWhiteSpace(rawContent))
             {
+                _logger.LogWarning("AI generate-roadmap returned an empty body");
                 return new AiGenerateRoadmapResponseDto
                 {
                     Status = "failed",
@@ -383,15 +390,73 @@ namespace Intervu.Infrastructure.ExternalServices
             try
             {
                 var result = System.Text.Json.JsonSerializer.Deserialize<AiGenerateRoadmapResponseDto>(rawContent, options);
+                _logger.LogInformation("AI generate-roadmap returned status {Status}", result?.Status);
                 return result;
             }
             catch (System.Text.Json.JsonException ex)
             {
-                _logger.LogError(ex, "Failed to deserialize AI roadmap response: {RawContent}", rawContent);
+                _logger.LogError(ex, "Failed to deserialize AI roadmap response");
                 return new AiGenerateRoadmapResponseDto
                 {
                     Status = "failed",
                     Error = "Invalid roadmap payload format from AI roadmap service"
+                };
+            }
+        }
+
+        public async Task<AiUpdateRoadmapProgressResponseDto?> UpdateRoadmapProgressAsync(AiUpdateRoadmapProgressRequestDto request, CancellationToken cancellationToken = default)
+        {
+            if (_httpClient.BaseAddress == null)
+            {
+                return null;
+            }
+
+            _logger.LogInformation("Calling AI update-roadmap-progress");
+
+            var response = await _httpClient.PostAsJsonAsync("api/update-roadmap-progress", request, cancellationToken);
+            var rawContent = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogError("AI update-roadmap-progress failed with status {StatusCode}: {Body}", response.StatusCode, rawContent);
+                return new AiUpdateRoadmapProgressResponseDto
+                {
+                    Status = "failed",
+                    Error = $"AI service error: {(int)response.StatusCode}"
+                };
+            }
+
+            if (string.IsNullOrWhiteSpace(rawContent))
+            {
+                _logger.LogWarning("AI update-roadmap-progress returned an empty body");
+                return new AiUpdateRoadmapProgressResponseDto
+                {
+                    Status = "failed",
+                    Error = "Empty response from AI roadmap progress service"
+                };
+            }
+
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                ReadCommentHandling = JsonCommentHandling.Skip,
+                AllowTrailingCommas = true,
+                NumberHandling = JsonNumberHandling.AllowReadingFromString
+            };
+
+            try
+            {
+                var result = System.Text.Json.JsonSerializer.Deserialize<AiUpdateRoadmapProgressResponseDto>(rawContent, options);
+                _logger.LogInformation("AI update-roadmap-progress returned status {Status}", result?.Status);
+                return result;
+            }
+            catch (System.Text.Json.JsonException ex)
+            {
+                _logger.LogError(ex, "Failed to deserialize roadmap progress response");
+                return new AiUpdateRoadmapProgressResponseDto
+                {
+                    Status = "failed",
+                    Error = "Invalid payload format from AI roadmap progress service"
                 };
             }
         }

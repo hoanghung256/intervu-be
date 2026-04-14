@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.DTOs.Assessment;
@@ -9,21 +10,31 @@ using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.Services;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Repositories;
+using Microsoft.Extensions.Logging;
 
 namespace Intervu.Application.Services
 {
     public class AssessmentService : IAssessmentService
     {
         private readonly IUserSkillAssessmentSnapshotRepository _snapshotRepository;
+        private readonly IInterviewRoomRepository _roomRepository;
         private readonly IAiService _aiService;
+        private readonly ILogger<AssessmentService> _logger;
 
         public AssessmentService(
             IUserSkillAssessmentSnapshotRepository snapshotRepository,
-            IAiService aiService)
+            IInterviewRoomRepository roomRepository,
+            IAiService aiService,
+            ILogger<AssessmentService> logger)
         {
             _snapshotRepository = snapshotRepository;
+            _roomRepository = roomRepository;
             _aiService = aiService;
+            _logger = logger;
         }
+
+
+        // Raw answers are not stored; only processed survey summaries are saved.
 
         private static object? DeserializeJson(string? json)
         {
@@ -42,7 +53,7 @@ namespace Intervu.Application.Services
             }
         }
 
-        public async Task<SurveySummaryResultDto> ProcessSurveyResponsesAsync(SurveyResponsesDto request)
+        public async Task<SurveySummaryResultDto> ProcessSurveyResponsesAsync(SurveyResponsesDto request, CancellationToken cancellationToken = default)
         {
             int MapLevel(string lvl) => lvl?.ToLowerInvariant() switch
             {
@@ -161,7 +172,7 @@ namespace Intervu.Application.Services
 
             if (request.UserId != Guid.Empty)
             {
-                await _snapshotRepository.UpsertSnapshotAsync(snapshot);
+                await _snapshotRepository.UpsertSnapshotAsync(snapshot, cancellationToken);
             }
 
             return new SurveySummaryResultDto
@@ -172,9 +183,9 @@ namespace Intervu.Application.Services
             };
         }
 
-        public async Task<UserSkillAssessmentSnapshotDto?> GetUserSkillAssessmentSnapshotAsync(Guid userId)
+        public async Task<UserSkillAssessmentSnapshotDto?> GetUserSkillAssessmentSnapshotAsync(Guid userId, CancellationToken cancellationToken = default)
         {
-            var userSkillAssessment = await _snapshotRepository.GetUserSkillAssessmentById(userId);
+            var userSkillAssessment = await _snapshotRepository.GetUserSkillAssessmentById(userId, cancellationToken);
 
             if (userSkillAssessment == null) return null;
 
@@ -188,14 +199,14 @@ namespace Intervu.Application.Services
             };
         }
         
-        public async Task<GenerateRoadmapResultDto> GenerateRoadmapFromSurveyAsync(Guid userId, bool forceRegenerate = false)
+        public async Task<GenerateRoadmapResultDto> GenerateRoadmapFromSurveyAsync(Guid userId, bool forceRegenerate = false, CancellationToken cancellationToken = default)
         {
             if (userId == Guid.Empty)
             {
                 throw new InvalidOperationException("UserId is required.");
             }
 
-            var snapshot = await _snapshotRepository.GetUserSkillAssessmentById(userId);
+            var snapshot = await _snapshotRepository.GetUserSkillAssessmentById(userId, cancellationToken);
             if (snapshot == null)
             {
                 throw new InvalidOperationException("No survey snapshot found for this user.");
@@ -245,7 +256,7 @@ namespace Intervu.Application.Services
                 },
             };
 
-            var aiResponse = await _aiService.GenerateRoadmapAsync(roadmapRequest);
+            var aiResponse = await _aiService.GenerateRoadmapAsync(roadmapRequest, cancellationToken);
             if (aiResponse == null)
             {
                 return new GenerateRoadmapResultDto
@@ -265,7 +276,7 @@ namespace Intervu.Application.Services
             }
 
             snapshot.Roadmap = MapRoadmap(aiResponse.Roadmap);
-            await _snapshotRepository.UpsertSnapshotAsync(snapshot);
+            await _snapshotRepository.UpsertSnapshotAsync(snapshot, cancellationToken);
 
             return new GenerateRoadmapResultDto
             {
@@ -274,20 +285,143 @@ namespace Intervu.Application.Services
             };
         }
 
-        public async Task<SurveyRoadmapDto?> GetRoadmapByUserIdAsync(Guid userId)
+        public async Task<SurveyRoadmapDto?> GetRoadmapByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
         {
             if (userId == Guid.Empty)
             {
+                _logger.LogDebug("GetRoadmapByUserId called with empty userId; returning null");
                 return null;
             }
 
-            var snapshot = await _snapshotRepository.GetUserSkillAssessmentById(userId);
-            if (snapshot?.Roadmap == null)
+            var snapshot = await _snapshotRepository.GetUserSkillAssessmentById(userId, cancellationToken);
+            if (snapshot == null)
             {
+                _logger.LogDebug("GetRoadmapByUserId: no snapshot found for user {UserId}", userId);
+                return null;
+            }
+
+            if (snapshot.Roadmap == null)
+            {
+                _logger.LogDebug("GetRoadmapByUserId: snapshot exists but roadmap is null for user {UserId}", userId);
                 return null;
             }
 
             return MapRoadmapToSurveyDto(snapshot.Roadmap);
+        }
+
+        public async Task UpdateRoadmapAfterInterviewAsync(Guid candidateId, Guid interviewRoomId, string coachName, CancellationToken cancellationToken = default)
+        {
+            if (candidateId == Guid.Empty || interviewRoomId == Guid.Empty)
+            {
+                return;
+            }
+
+            var snapshot = await _snapshotRepository.GetUserSkillAssessmentById(candidateId, cancellationToken);
+            if (snapshot?.Roadmap == null || !snapshot.Roadmap.Phases.Any())
+            {
+                _logger.LogWarning("UpdateRoadmapAfterInterview: no roadmap snapshot found for candidate {CandidateId}", candidateId);
+                return;
+            }
+
+            var room = await _roomRepository.GetByIdWithDetailsAsync(interviewRoomId);
+            if (room == null || room.EvaluationResults == null || !room.EvaluationResults.Any())
+            {
+                _logger.LogWarning("UpdateRoadmapAfterInterview: room {RoomId} not found or has no evaluation", interviewRoomId);
+                return;
+            }
+
+            // Resolve interview type name and aim level
+            var interviewTypeName = room.CoachInterviewService?.InterviewType?.Name ?? "General";
+            var aimLevel = room.AimLevel?.ToString() ?? string.Empty;
+
+            // Build mock history entry
+            var mockEntry = new SurveyRoadmapMockHistoryDto
+            {
+                MockId = interviewRoomId.ToString(),
+                MockTitle = $"{interviewTypeName} Interview",
+                InterviewType = interviewTypeName,
+                CoachName = coachName,
+                InterviewedAt = (room.ScheduledTime ?? DateTime.UtcNow).ToString("o"),
+                Evaluation = room.EvaluationResults.Select(e => new SurveyRoadmapEvaluationDto
+                {
+                    Type = e.Type,
+                    Score = e.Score,
+                    Question = e.Question,
+                    Answer = e.Answer
+                }).ToList()
+            };
+
+            // Append mock history to the first phase that still has incomplete nodes (the active phase)
+            var currentRoadmap = MapRoadmapToSurveyDto(snapshot.Roadmap)!;
+            var activePhase = currentRoadmap.Phases
+                .FirstOrDefault(p => p.Nodes.Any(n => n.Assessment.Status != "Complete"))
+                ?? currentRoadmap.Phases.Last();
+
+            // Avoid duplicates: skip if this room was already recorded
+            if (!activePhase.MockHistory.Any(m => m.MockId == mockEntry.MockId))
+            {
+                activePhase.MockHistory.Add(mockEntry);
+            }
+
+            // Ask AI to recalculate node progress based on evaluation scores
+            var aiRequest = new AiUpdateRoadmapProgressRequestDto
+            {
+                CurrentRoadmap = currentRoadmap,
+                InterviewType = interviewTypeName,
+                AimLevel = aimLevel,
+                Evaluation = room.EvaluationResults.Select(e => new AiEvaluationItemDto
+                {
+                    Type = e.Type,
+                    Score = e.Score,
+                    Question = e.Question,
+                    Answer = e.Answer
+                }).ToList()
+            };
+
+            var aiResponse = await _aiService.UpdateRoadmapProgressAsync(aiRequest, cancellationToken);
+
+            SurveyRoadmapDto updatedRoadmap;
+
+            var aiPhaseCount = aiResponse?.Roadmap?.Phases?.Count ?? 0;
+            var currentPhaseCount = currentRoadmap.Phases.Count;
+            var aiStructureValid = aiResponse != null
+                && string.Equals(aiResponse.Status, "success", StringComparison.OrdinalIgnoreCase)
+                && aiPhaseCount > 0
+                && aiPhaseCount == currentPhaseCount;
+
+            if (!aiStructureValid && aiResponse != null && aiPhaseCount != currentPhaseCount)
+            {
+                _logger.LogWarning(
+                    "UpdateRoadmapAfterInterview: AI response phase count mismatch for candidate {CandidateId} — expected {Expected}, got {Actual}; falling back to current roadmap",
+                    candidateId, currentPhaseCount, aiPhaseCount);
+            }
+
+            if (aiStructureValid)
+            {
+                // Merge the mock history we built into the AI-returned roadmap
+                // so the AI doesn't accidentally drop entries it didn't know about
+                foreach (var phase in currentRoadmap.Phases)
+                {
+                    var aiPhase = aiResponse!.Roadmap!.Phases.FirstOrDefault(p => p.PhaseId == phase.PhaseId);
+                    if (aiPhase != null)
+                    {
+                        aiPhase.MockHistory = phase.MockHistory;
+                        aiPhase.RecommendedCoaches = phase.RecommendedCoaches;
+                    }
+                }
+
+                updatedRoadmap = aiResponse!.Roadmap!;
+            }
+            else
+            {
+                _logger.LogWarning("UpdateRoadmapAfterInterview: AI progress update failed or returned empty for candidate {CandidateId}; keeping current roadmap with mock history only", candidateId);
+                updatedRoadmap = currentRoadmap;
+            }
+
+            snapshot.Roadmap = MapRoadmap(updatedRoadmap);
+            await _snapshotRepository.UpsertSnapshotAsync(snapshot, cancellationToken);
+
+            _logger.LogInformation("UpdateRoadmapAfterInterview: roadmap updated for candidate {CandidateId} after room {RoomId}", candidateId, interviewRoomId);
         }
 
         private static RoadmapSnapshot? MapRoadmap(SurveyRoadmapDto? roadmap)

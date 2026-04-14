@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Repositories;
@@ -16,28 +17,28 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Repositories
             _context = context;
         }
 
-        public async Task<UserSkillAssessmentSnapshot?> GetUserSkillAssessmentById(Guid userId)
+        public async Task<UserSkillAssessmentSnapshot?> GetUserSkillAssessmentById(Guid userId, CancellationToken cancellationToken = default)
         {
             return await _context.UserSkillAssessments
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.UserId == userId);
+                .FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
         }
 
-        public async Task UpsertSnapshotAsync(UserSkillAssessmentSnapshot snapshot)
+        public async Task UpsertSnapshotAsync(UserSkillAssessmentSnapshot snapshot, CancellationToken cancellationToken = default)
         {
             var now = DateTime.UtcNow;
             snapshot.EnsureJsonPayloads();
             snapshot.AnswerJson = NormalizeJsonPayload(snapshot.AnswerJson);
 
             var existing = await _context.UserSkillAssessments
-                .FirstOrDefaultAsync(x => x.UserId == snapshot.UserId);
+                .FirstOrDefaultAsync(x => x.UserId == snapshot.UserId, cancellationToken);
 
             if (existing == null)
             {
                 snapshot.Id = snapshot.Id == Guid.Empty ? Guid.NewGuid() : snapshot.Id;
                 snapshot.CreatedAt = now;
                 snapshot.UpdatedAt = now;
-                await _context.UserSkillAssessments.AddAsync(snapshot);
+                await _context.UserSkillAssessments.AddAsync(snapshot, cancellationToken);
             }
             else
             {
@@ -50,19 +51,42 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Repositories
                 existing.UpdatedAt = now;
             }
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateException) when (existing == null)
+            {
+                // A concurrent request inserted a record for the same UserId between
+                // our check and our insert. Detach the failed entity and retry as update.
+                _context.Entry(snapshot).State = EntityState.Detached;
+                var conflicting = await _context.UserSkillAssessments
+                    .FirstOrDefaultAsync(x => x.UserId == snapshot.UserId, cancellationToken);
+                if (conflicting != null)
+                {
+                    conflicting.TargetJson = snapshot.TargetJson;
+                    conflicting.CurrentJson = snapshot.CurrentJson;
+                    conflicting.GapJson = snapshot.GapJson;
+                    conflicting.RoadMapJson = snapshot.RoadMapJson;
+                    conflicting.AnswerJson = snapshot.AnswerJson;
+                    conflicting.UpdatedAt = now;
+                    await _context.SaveChangesAsync(cancellationToken);
+                }
+            }
         }
 
-        public async Task SaveAnswerJsonAsync(Guid userId, string answerJson)
+        public async Task SaveAnswerJsonAsync(Guid userId, string answerJson, CancellationToken cancellationToken = default)
         {
             var now = DateTime.UtcNow;
             var normalizedAnswerJson = NormalizeJsonPayload(answerJson);
             var existing = await _context.UserSkillAssessments
-                .FirstOrDefaultAsync(x => x.UserId == userId);
+                .FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
+
+            UserSkillAssessmentSnapshot? added = null;
 
             if (existing == null)
             {
-                await _context.UserSkillAssessments.AddAsync(new UserSkillAssessmentSnapshot
+                added = new UserSkillAssessmentSnapshot
                 {
                     Id = Guid.NewGuid(),
                     UserId = userId,
@@ -73,7 +97,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Repositories
                     RoadMapJson = "{}",
                     CreatedAt = now,
                     UpdatedAt = now,
-                });
+                };
+                await _context.UserSkillAssessments.AddAsync(added, cancellationToken);
             }
             else
             {
@@ -81,7 +106,26 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Repositories
                 existing.UpdatedAt = now;
             }
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateException) when (existing == null)
+            {
+                // Concurrent insert conflict — detach and retry as update.
+                if (added != null)
+                {
+                    _context.Entry(added).State = EntityState.Detached;
+                }
+                var conflicting = await _context.UserSkillAssessments
+                    .FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
+                if (conflicting != null)
+                {
+                    conflicting.AnswerJson = normalizedAnswerJson;
+                    conflicting.UpdatedAt = now;
+                    await _context.SaveChangesAsync(cancellationToken);
+                }
+            }
         }
 
         private static string NormalizeJsonPayload(string? json)

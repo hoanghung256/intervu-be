@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Intervu.API.Controllers.v1
@@ -27,16 +29,16 @@ namespace Intervu.API.Controllers.v1
         }
 
         [HttpPost("process")]
-        public async Task<IActionResult> ProcessSurvey([FromBody] SurveyResponsesDto request)
+        public async Task<IActionResult> ProcessSurvey([FromBody] SurveyResponsesDto request, CancellationToken cancellationToken)
         {
-            var result = await _service.ProcessSurveyResponsesAsync(request);
+            var result = await _service.ProcessSurveyResponsesAsync(request, cancellationToken);
             return Ok(result);
         }
 
         [HttpGet("{userId}")]
-        public async Task<IActionResult> GetUserAssessment([FromRoute] Guid userId)
+        public async Task<IActionResult> GetUserAssessment([FromRoute] Guid userId, CancellationToken cancellationToken)
         {
-            var snapshot = await _service.GetUserSkillAssessmentSnapshotAsync(userId);
+            var snapshot = await _service.GetUserSkillAssessmentSnapshotAsync(userId, cancellationToken);
             if (snapshot == null)
             {
                 return NotFound();
@@ -49,11 +51,11 @@ namespace Intervu.API.Controllers.v1
         }
 
         [HttpPost("roadmap/generate")]
-        public async Task<IActionResult> GenerateRoadmap([FromBody] GenerateRoadmapFromSurveyRequestDto request)
+        public async Task<IActionResult> GenerateRoadmap([FromBody] GenerateRoadmapFromSurveyRequestDto request, CancellationToken cancellationToken)
         {
             try
             {
-                var result = await _service.GenerateRoadmapFromSurveyAsync(request.UserId, request.ForceRegenerate);
+                var result = await _service.GenerateRoadmapFromSurveyAsync(request.UserId, request.ForceRegenerate, cancellationToken);
 
                 if (!string.Equals(result.Status, "success", StringComparison.OrdinalIgnoreCase))
                 {
@@ -70,31 +72,50 @@ namespace Intervu.API.Controllers.v1
                     Error = ex.Message
                 });
             }
+            catch (HttpRequestException)
+            {
+                return StatusCode(502, new GenerateRoadmapResultDto
+                {
+                    Status = "failed",
+                    Error = "AI service is temporarily unavailable. Please try again later."
+                });
+            }
         }
 
         [HttpGet("roadmap/{userId:guid}")]
-        public async Task<IActionResult> GetRoadmap(Guid userId)
+        public async Task<IActionResult> GetRoadmap(Guid userId, CancellationToken cancellationToken)
         {
-            var roadmap = await _service.GetRoadmapByUserIdAsync(userId);
-
-            if (roadmap == null)
+            try
             {
-                return NotFound(new GenerateRoadmapResultDto
+                var roadmap = await _service.GetRoadmapByUserIdAsync(userId, cancellationToken);
+
+                if (roadmap == null)
                 {
-                    Status = "failed",
-                    Error = "Roadmap not found. Please generate roadmap after finishing survey."
+                    return NotFound(new GenerateRoadmapResultDto
+                    {
+                        Status = "failed",
+                        Error = "Roadmap not found. Please generate roadmap after finishing survey."
+                    });
+                }
+
+                return Ok(new GenerateRoadmapResultDto
+                {
+                    Status = "success",
+                    Roadmap = roadmap
                 });
             }
-
-            return Ok(new GenerateRoadmapResultDto
+            catch (HttpRequestException)
             {
-                Status = "success",
-                Roadmap = roadmap
-            });
+                return StatusCode(502, new GenerateRoadmapResultDto
+                {
+                    Status = "failed",
+                    Error = "AI service is temporarily unavailable. Please try again later."
+                });
+            }
         }
 
         [HttpPost("answers")]
-        public async Task<IActionResult> SaveAnswers([FromBody] SaveAssessmentAnswersRequestDto request)
+        public async Task<IActionResult> SaveAnswers([FromBody] SaveAssessmentAnswersRequestDto request, CancellationToken cancellationToken)
         {
             try
             {
