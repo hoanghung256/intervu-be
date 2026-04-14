@@ -3,6 +3,7 @@ using System;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 {
     [DbContext(typeof(IntervuPostgreDbContext))]
-    partial class IntervuPostgreDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260411174615_AddAnswerJsonAssessment")]
+    partial class AddAnswerJsonAssessment
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1193,9 +1196,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
-                    b.Property<string>("TagIdsJson")
-                        .HasColumnType("jsonb");
-
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -1526,9 +1526,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Details")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ExpectTo")
                         .HasColumnType("text");
 
                     b.Property<Guid>("InterviewRoomId")

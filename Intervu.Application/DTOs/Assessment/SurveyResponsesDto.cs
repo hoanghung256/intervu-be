@@ -14,6 +14,56 @@ namespace Intervu.Application.DTOs.Assessment
         public SurveyCurrentDto? Current { get; set; }
         public SurveyGapDto? Gap { get; set; }
         public SurveyRoadmapDto? Roadmap { get; set; }
+        public SurveyAnswerJsonDto? Answer { get; set; }
+
+    }
+
+    public class SurveyAnswerJsonDto
+    {
+        [JsonPropertyName("profile")]
+        public SurveyAnswerProfileDto Profile { get; set; } = new();
+
+        [JsonPropertyName("responses")]
+        public List<SurveyAnswerResponseDto> Responses { get; set; } = new();
+    }
+
+    public class SurveyAnswerProfileDto
+    {
+        [JsonPropertyName("role")]
+        public string Role { get; set; } = string.Empty;
+
+        [JsonPropertyName("level")]
+        public string Level { get; set; } = string.Empty;
+
+        [JsonPropertyName("techstack")]
+        public List<string> TechStack { get; set; } = new();
+
+        [JsonPropertyName("domain")]
+        public List<string> Domain { get; set; } = new();
+
+        [JsonPropertyName("freeText")]
+        public string FreeText { get; set; } = string.Empty;
+    }
+
+    public class SurveyAnswerResponseDto
+    {
+        [JsonPropertyName("questionId")]
+        public string QuestionId { get; set; } = string.Empty;
+
+        [JsonPropertyName("question")]
+        public string Question { get; set; } = string.Empty;
+
+        [JsonPropertyName("phase")]
+        public string Phase { get; set; } = string.Empty;
+
+        [JsonPropertyName("skill")]
+        public string Skill { get; set; } = string.Empty;
+
+        [JsonPropertyName("answer")]
+        public string Answer { get; set; } = string.Empty;
+
+        [JsonPropertyName("selectedLevel")]
+        public string SelectedLevel { get; set; } = string.Empty;
     }
 
     public class ResponseItem

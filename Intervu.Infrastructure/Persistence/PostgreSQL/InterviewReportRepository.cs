@@ -39,6 +39,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 query = query.Where(x =>
                     x.Reason.Contains(search) ||
                     (x.Details != null && x.Details.Contains(search)) ||
+                    (x.ExpectTo != null && x.ExpectTo.Contains(search)) ||
                     (x.Reporter != null && x.Reporter.FullName.Contains(search)));
             }
 
@@ -55,6 +56,15 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
         public async Task<bool> ExistsByRoomIdAsync(Guid interviewRoomId)
         {
             return await _context.InterviewReports.AnyAsync(x => x.InterviewRoomId == interviewRoomId);
+        }
+
+        public async Task<InterviewReport?> GetByRoomIdAsync(Guid interviewRoomId)
+        {
+            return await _context.InterviewReports
+                .Include(x => x.Reporter)
+                .Where(x => x.InterviewRoomId == interviewRoomId)
+                .OrderByDescending(x => x.CreatedAt)
+                .FirstOrDefaultAsync();
         }
 
         public async Task<int> GetPendingCountAsync()

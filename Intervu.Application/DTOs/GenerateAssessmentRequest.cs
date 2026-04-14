@@ -28,7 +28,7 @@ namespace Intervu.Application.DTOs
         public List<string> Domain { get; set; } = new List<string>();
 
         [JsonProperty("freeText")]
-        [JsonPropertyName("free_text")]
+        [JsonPropertyName("freeText")]
         public string FreeText { get; set; } = string.Empty;
     }
 }

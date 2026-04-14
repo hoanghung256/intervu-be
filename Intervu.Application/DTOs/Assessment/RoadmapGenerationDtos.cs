@@ -79,4 +79,48 @@ namespace Intervu.Application.DTOs.Assessment
         [JsonPropertyName("error")]
         public string? Error { get; set; }
     }
+
+    // ── Roadmap progress update (post-interview) ────────────────────────────
+
+    public class AiUpdateRoadmapProgressRequestDto
+    {
+        [JsonPropertyName("current_roadmap")]
+        public SurveyRoadmapDto CurrentRoadmap { get; set; } = new();
+
+        [JsonPropertyName("interview_type")]
+        public string InterviewType { get; set; } = string.Empty;
+
+        [JsonPropertyName("aim_level")]
+        public string AimLevel { get; set; } = string.Empty;
+
+        [JsonPropertyName("evaluation")]
+        public List<AiEvaluationItemDto> Evaluation { get; set; } = new();
+    }
+
+    public class AiEvaluationItemDto
+    {
+        [JsonPropertyName("type")]
+        public string Type { get; set; } = string.Empty;
+
+        [JsonPropertyName("score")]
+        public int Score { get; set; }
+
+        [JsonPropertyName("question")]
+        public string Question { get; set; } = string.Empty;
+
+        [JsonPropertyName("answer")]
+        public string Answer { get; set; } = string.Empty;
+    }
+
+    public class AiUpdateRoadmapProgressResponseDto
+    {
+        [JsonPropertyName("status")]
+        public string Status { get; set; } = string.Empty;
+
+        [JsonPropertyName("roadmap")]
+        public SurveyRoadmapDto? Roadmap { get; set; }
+
+        [JsonPropertyName("error")]
+        public string? Error { get; set; }
+    }
 }

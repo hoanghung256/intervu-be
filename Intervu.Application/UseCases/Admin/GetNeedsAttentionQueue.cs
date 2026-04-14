@@ -39,7 +39,7 @@ namespace Intervu.Application.UseCases.Admin
                     EntityName = $"Room {r.InterviewRoomId.ToString()[..8]}...",
                     Severity = "High",
                     TimeOffset = GetTimeOffset(r.CreatedAt),
-                    ActionLink = $"/admin/room-reports?id={r.Id}"
+                    ActionLink = $"/admin/reports/room/{r.Id}"
                 });
             }
 
@@ -52,7 +52,7 @@ namespace Intervu.Application.UseCases.Admin
                     EntityName = r.Question?.Title ?? "Unknown Question",
                     Severity = "Medium",
                     TimeOffset = GetTimeOffset(r.CreatedAt),
-                    ActionLink = $"/admin/question-reports?id={r.Id}"
+                    ActionLink = $"/admin/question-reports?id={r.Id}"   // TODO: replace with real link
                 });
             }
 
