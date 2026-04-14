@@ -81,9 +81,9 @@ namespace Intervu.Application.UseCases.SmartSearch
             return string.Join(". ", parts);
         }
 
-        private static Dictionary<string, string> BuildMetadata(CoachProfileEntity coach)
+        private static Dictionary<string, object> BuildMetadata(CoachProfileEntity coach)
         {
-            var metadata = new Dictionary<string, string>
+            var metadata = new Dictionary<string, object>
             {
                 { "entityType", "coach" },
                 { "entityId", coach.Id.ToString() },
@@ -93,17 +93,19 @@ namespace Intervu.Application.UseCases.SmartSearch
                 { "currentJobTitle", coach.CurrentJobTitle ?? "" }
             };
 
+            // Store as string arrays → enables Pinecone $in operator
             if (coach.Skills.Any())
-                metadata["skills"] = string.Join(", ", coach.Skills.Select(s => s.Name));
+                metadata["skills"] = coach.Skills.Select(s => s.Name).ToArray();
 
             if (coach.Companies.Any())
-                metadata["companies"] = string.Join(", ", coach.Companies.Select(c => c.Name));
+                metadata["companies"] = coach.Companies.Select(c => c.Name).ToArray();
 
             if (coach.Industries.Any())
-                metadata["industries"] = string.Join(", ", coach.Industries.Select(i => i.Name));
+                metadata["industries"] = coach.Industries.Select(i => i.Name).ToArray();
 
+            // Store as numeric → enables Pinecone $gte/$lte operator
             if (coach.ExperienceYears.HasValue)
-                metadata["experienceYears"] = coach.ExperienceYears.Value.ToString();
+                metadata["experienceYears"] = (double)coach.ExperienceYears.Value;
 
             return metadata;
         }

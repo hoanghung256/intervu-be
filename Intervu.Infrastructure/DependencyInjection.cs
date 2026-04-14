@@ -191,7 +191,7 @@ namespace Intervu.Infrastructure
             // Pinecone Services
             services.AddHttpClient<IEmbeddingService, PineconeInferenceService>();
             services.AddHttpClient<IVectorStoreService, PineconeVectorStoreService>();
-            
+
             // AI Reasoning Services
             services.AddHttpClient<ExternalServices.AI.HuggingFaceReasoningService>();
             services.AddHttpClient<ExternalServices.AI.GeminiNativeReasoningService>();

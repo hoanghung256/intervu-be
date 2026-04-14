@@ -7,11 +7,12 @@ namespace Intervu.Infrastructure.ExternalServices.AI
 {
     internal static class ReasoningShared
     {
-        internal static string BuildPrompt(string query, List<ReasoningCandidate> candidates)
+        /// <summary>
+        /// Static instruction block for the LLM — evaluation criteria, scoring rules, output rules.
+        /// Intended as the SYSTEM message in OpenAI-compatible APIs, or systemInstruction in Gemini native.
+        /// </summary>
+        internal static string BuildSystemPrompt(int candidateCount, string idList)
         {
-            var candidatesJson = JsonConvert.SerializeObject(candidates);
-            var idList = string.Join(", ", candidates.Select(c => c.Id));
-
             return $@"You are an expert AI mentor-matching assistant.
 
 IMPORTANT CONTEXT:
@@ -24,12 +25,6 @@ IMPORTANT CONTEXT:
 
 TASK:
 Re-rank coach candidates by coaching suitability for the user's TARGET ROLE and interview goal.
-
-USER CONTEXT:
-""{query}""
-
-COACH CANDIDATES (JSON format):
-{candidatesJson}
 
 TARGET ROLE PRIORITY (STRICT):
 1. Identify the primary target role from explicit user goal first.
@@ -55,22 +50,49 @@ SCORING RULES:
 - If no coach is truly suitable, score all candidates low instead of forcing a high match.
 
 MANDATORY OUTPUT RULES:
-1. You MUST return EXACTLY {candidates.Count} items — one for EVERY coach ID listed below. Do NOT skip or omit any ID.
+1. You MUST return EXACTLY {candidateCount} items — one for EVERY coach ID listed below. Do NOT skip or omit any ID.
 2. Required IDs: {idList}
 3. Copy each ""id"" value exactly as shown above (lowercase, with hyphens). Do NOT change ID casing or format.
 4. Reasoning must be concise (max 3 sentences), direct, and in third-person style (use ""you""/""your"").
-5. Mention the coach's key matching skills by name, and briefly explain how the coach can help fill your 
-gaps toward the target role.
+5. Mention the coach's key matching skills by name, and briefly explain how the coach can help fill your gaps toward the target role.
 6. Each reasoning must reference at least two concrete signals from input (skills/domain/seniority/role requirements).
 7. If mismatch is large, explicitly name the key skill or domain gaps.
 8. Do not invent facts not present in the input.
-9. Return ONLY a raw JSON array. No markdown code fences, no wrapper object.
-10.NEVER include or reveal any identifier in reasoning text: coach ID, user ID, UUID, slug, email, or internal key.
+9. Output ONLY valid JSON. No text before or after the array. No markdown code fences. No wrapper object.
+10. Your output must start with [ and end with ].
+11. NEVER include or reveal any identifier in reasoning text: coach ID, user ID, UUID, slug, email, or internal key.
 
 Required JSON schema:
 [
   {{ ""id"": ""string"", ""score"": 0.0, ""reasoning"": ""string"" }}
 ]";
+        }
+
+        /// <summary>
+        /// Dynamic data block — the user's search context and coach candidates.
+        /// Intended as the USER message.
+        /// </summary>
+        internal static string BuildUserPrompt(string query, List<ReasoningCandidate> candidates)
+        {
+            var candidatesJson = JsonConvert.SerializeObject(candidates);
+
+            return $@"USER CONTEXT:
+""{query}""
+
+COACH CANDIDATES (JSON format):
+{candidatesJson}";
+        }
+
+        /// <summary>
+        /// Legacy single-prompt method. Kept for backward compatibility with APIs
+        /// that don't support system/user message split (e.g. Gemini native).
+        /// </summary>
+        internal static string BuildPrompt(string query, List<ReasoningCandidate> candidates)
+        {
+            var idList = string.Join(", ", candidates.Select(c => c.Id));
+            return BuildSystemPrompt(candidates.Count, idList)
+                + "\n\n"
+                + BuildUserPrompt(query, candidates);
         }
 
         internal static List<ReasoningResult> ParseResults(string? json)

@@ -17,7 +17,7 @@ namespace Intervu.Infrastructure.ExternalServices.AI
         private const string HF_REASONING_URL = "https://router.huggingface.co/v1/chat/completions";
 
         public GeminiReasoningService(
-            HttpClient httpClient, 
+            HttpClient httpClient,
             IConfiguration configuration,
             ILogger<GeminiReasoningService> logger)
         {
@@ -59,70 +59,14 @@ namespace Intervu.Infrastructure.ExternalServices.AI
             var reasoningUrl = _configuration["ReasoningApi:BaseUrl"] ?? HF_REASONING_URL;
             var reasoningModel = _configuration["ReasoningApi:ModelId"] ?? HF_REASONING_MODEL;
 
-            var CandidatesJson = JsonConvert.SerializeObject(candidates);
-
-                        var systemInstruction = $@"You are an expert AI mentor-matching assistant.
-
-IMPORTANT CONTEXT:
-- This is NOT a hiring/recruitment ranking.
-- You are selecting interview coaches for the user (candidate), not evaluating candidates for a company.
-- Input text may include:
-    1) user natural-language goal,
-    2) extracted CV context,
-    3) extracted JD context.
-
-TASK:
-Re-rank coach candidates by coaching suitability for the user's TARGET ROLE and interview goal.
-
-USER CONTEXT:
-""{query}""
-
-COACH CANDIDATES (JSON format):
-{CandidatesJson}
-
-TARGET ROLE PRIORITY (STRICT):
-1. Identify the primary target role from explicit user goal first.
-2. If unclear, infer from JD role/title and requirements.
-3. If still unclear, infer from CV target role (not incidental past stacks).
-4. Treat past internship/legacy stacks in CV as secondary unless directly required by the target role/JD.
-
-EVALUATION CRITERIA:
-1. Target-role alignment: coach expertise is relevant to the user's target role.
-2. JD alignment (if present): coach can train the skills/responsibilities required by that JD.
-3. Gap-closing value: coach can help close the user's current gaps from CV context toward the target role.
-4. Seniority fit: coach level is appropriate for the user's goal.
-5. Practical interview value: coach profile suggests concrete interview preparation guidance.
-
-SCORING RULES:
-- Be strict and uncompromising. Do NOT inflate scores.
-- If evidence is weak, missing, or ambiguous, score lower.
-- 0.85-1.00: strong fit for the target role and likely high coaching value.
-- 0.60-0.84: reasonable fit with notable gaps.
-- 0.30-0.59: weak fit.
-- below 0.30: irrelevant or off-track.
-- If coach is off-track from target role/JD, score <= 0.20.
-- If no coach is truly suitable, score all candidates low instead of forcing a high match.
-
-OUTPUT STYLE RULES:
-1. Return one item per relevant coach ID from the input list.
-2. Reasoning must be concise (max 2 sentences), direct, and in second-person style (use ""you""/""your"").
-3. Explain why this coach is or is not a fit for your target role (not generic recruiting language).
-4. If mismatch is large, explicitly name the key gaps.
-5. Do not invent facts not present in the input.
-6. Return ONLY JSON that matches the required schema.
-7. Return raw JSON only. No markdown code fences.
-";
-
+            var idList = string.Join(", ", candidates.Select(c => c.Id));
             var requestBody = new
             {
                 model = reasoningModel,
                 messages = new[]
                 {
-                    new
-                    {
-                        role = "user",
-                        content = systemInstruction
-                    }
+                    new { role = "system", content = ReasoningShared.BuildSystemPrompt(candidates.Count, idList) },
+                    new { role = "user", content = ReasoningShared.BuildUserPrompt(query, candidates) }
                 },
                 temperature = 0.2
             };
@@ -142,7 +86,7 @@ OUTPUT STYLE RULES:
                     var errorBody = await response.Content.ReadAsStringAsync();
                     _logger.LogError("Reasoning API rejected request. Status: {StatusCode}. Model: {Model}. Body: {ErrorBody}", response.StatusCode, reasoningModel, errorBody);
                 }
-                
+
                 response.EnsureSuccessStatusCode();
 
                 var responseBody = await response.Content.ReadAsStringAsync();

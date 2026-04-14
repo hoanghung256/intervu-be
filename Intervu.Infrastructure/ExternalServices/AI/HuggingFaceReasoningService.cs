@@ -47,12 +47,18 @@ namespace Intervu.Infrastructure.ExternalServices.AI
             var maxTokens = _configuration.GetValue<int>("ReasoningApi:MaxTokens", 1024);
             var temperature = _configuration.GetValue<double>("ReasoningApi:Temperature", 0.2);
 
+            var idList = string.Join(", ", candidates.Select(c => c.Id));
             var requestBody = new
             {
                 model,
-                messages = new[] { new { role = "user", content = ReasoningShared.BuildPrompt(query, candidates) } },
+                messages = new[]
+                {
+                    new { role = "system", content = ReasoningShared.BuildSystemPrompt(candidates.Count, idList) },
+                    new { role = "user", content = ReasoningShared.BuildUserPrompt(query, candidates) }
+                },
                 temperature,
-                max_tokens = maxTokens
+                max_tokens = maxTokens,
+                stream = false
             };
 
             try

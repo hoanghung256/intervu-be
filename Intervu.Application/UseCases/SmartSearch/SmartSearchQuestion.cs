@@ -49,7 +49,7 @@ namespace Intervu.Application.UseCases.SmartSearch
                 queryVector,
                 request.TopK,
                 string.IsNullOrWhiteSpace(request.Namespace) ? _questionNamespace : request.Namespace,
-                new Dictionary<string, string> { ["entityType"] = "question" });
+                new Dictionary<string, object> { ["entityType"] = "question" });
 
             if (!vectorMatches.Any())
                 return new List<QuestionSmartSearchResultDto>();
