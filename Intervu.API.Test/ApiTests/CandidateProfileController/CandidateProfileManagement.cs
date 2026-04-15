@@ -284,11 +284,6 @@ namespace Intervu.API.Test.ApiTests.CandidateProfileController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "CandidateProfile")]
-        
-
-        [Fact]
-        [Trait("Category", "API")]
-        [Trait("Category", "CandidateProfile")]
         public async Task UpdateCandidateStatus_ReturnsForbidden_WhenCandidateAccesses()
         {
             // Arrange - Status update requires Admin policy
