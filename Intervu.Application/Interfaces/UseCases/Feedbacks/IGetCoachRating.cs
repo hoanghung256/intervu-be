@@ -5,6 +5,6 @@ namespace Intervu.Application.Interfaces.UseCases.Feedbacks
 {
     public interface IGetCoachRating
     {
-        Task<double> ExecuteAsync(Guid coachId);
+        Task<(double AverageRating, int TotalRatings)> ExecuteAsync(Guid coachId);
     }
 }

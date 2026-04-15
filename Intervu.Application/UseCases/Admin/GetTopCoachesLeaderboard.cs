@@ -32,7 +32,7 @@ namespace Intervu.Application.UseCases.Admin
                 // In a real system, we'd have these metrics stored or cached. 
                 // Using feedback repository to get session count (approximated by feedback count)
                 var feedbacks = await _feedbackRepository.GetPagedFeedbacksByFilterAsync(1, 1000, coach.Id);
-                var avgRating = await _feedbackRepository.GetAverageRatingByCoachIdAsync(coach.Id);
+                var (avgRating, _) = await _feedbackRepository.GetAverageRatingByCoachIdAsync(coach.Id);
 
                 result.Add(new CoachPerformanceDto
                 {

@@ -14,7 +14,7 @@ namespace Intervu.Application.UseCases.Feedbacks
             _repository = repository;
         }
 
-        public Task<double> ExecuteAsync(Guid coachId)
+        public Task<(double AverageRating, int TotalRatings)> ExecuteAsync(Guid coachId)
         {
             return _repository.GetAverageRatingByCoachIdAsync(coachId);
         }

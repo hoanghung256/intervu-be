@@ -79,7 +79,7 @@ namespace Intervu.API.Controllers.v1.Candidate
         {
             try
             {
-                var rating = await _getCandidateRating.ExecuteAsync(id);
+                var (averageRating, totalRatings) = await _getCandidateRating.ExecuteAsync(id);
                 return Ok(new
                 {
                     success = true,
@@ -87,7 +87,8 @@ namespace Intervu.API.Controllers.v1.Candidate
                     data = new
                     {
                         candidateId = id,
-                        rating
+                        rating = averageRating,
+                        totalRatings
                     }
                 });
             }

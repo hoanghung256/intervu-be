@@ -226,7 +226,7 @@ namespace Intervu.API.Controllers.v1.Interviewer
         {
             try
             {
-                var rating = await _getCoachRating.ExecuteAsync(id);
+                var (averageRating, totalRatings) = await _getCoachRating.ExecuteAsync(id);
                 return Ok(new
                 {
                     success = true,
@@ -234,7 +234,8 @@ namespace Intervu.API.Controllers.v1.Interviewer
                     data = new
                     {
                         coachId = id,
-                        rating
+                        rating = averageRating,
+                        totalRatings
                     }
                 });
             }
