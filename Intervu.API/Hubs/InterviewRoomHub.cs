@@ -459,6 +459,15 @@ namespace Intervu.API.Hubs
             await Clients.OthersInGroup(roomId).SendAsync("ReceiveMicState", Context.ConnectionId, isOn);
         }
 
+        /// <summary>
+        /// Broadcasts live transcript updates (final or interim) to other participants.
+        /// </summary>
+        public async Task SendTranscript(string roomId, string? final, string? interim, UserRole role)
+        {
+            //if (await isRoomCompleted(roomId)) return;
+            await Clients.OthersInGroup(roomId).SendAsync("ReceiveTranscript", Context.ConnectionId, final, interim, role);
+        }
+
         public async Task<bool> isRoomCompleted(string roomId)
         {
             var room = _cache.Rooms.SingleOrDefault(r => r.Id == Guid.Parse(roomId));
