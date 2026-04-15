@@ -7,7 +7,6 @@ using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
 namespace Intervu.Application.UseCases.InterviewBooking
@@ -95,7 +94,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
                         await _unitOfWork.CommitTransactionAsync();
                         break; // success
                     }
-                    catch (DbUpdateConcurrencyException) when (attempt < maxRetries - 1)
+                    catch (Exception ex) when (attempt < maxRetries - 1 && _unitOfWork.IsConcurrencyException(ex))
                     {
                         await _unitOfWork.RollbackTransactionAsync();
                         // Retry with fresh entity state

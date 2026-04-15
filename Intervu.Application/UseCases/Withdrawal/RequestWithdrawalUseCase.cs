@@ -1,4 +1,5 @@
 using Intervu.Application.DTOs.Withdrawal;
+using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.UseCases.Notification;
 using Intervu.Application.Interfaces.UseCases.Withdrawal;
@@ -6,7 +7,6 @@ using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
-using Microsoft.EntityFrameworkCore;
 
 namespace Intervu.Application.UseCases.Withdrawal
 {
@@ -37,8 +37,8 @@ namespace Intervu.Application.UseCases.Withdrawal
 
         public async Task<WithdrawalResponseDto> ExecuteAsync(Guid userId, RequestWithdrawalDto request)
         {
-            if (request.Amount <= 0)
-                throw new ArgumentException("Withdrawal amount must be greater than zero.");
+            if (request.Amount <= 2000)
+                throw new ArgumentException("Withdrawal amount must be greater than 2000.");
 
             var withdrawalRequest = new WithdrawalRequest { Id = Guid.NewGuid() };
             InterviewBookingTransaction? withdrawalTransaction = null;
@@ -53,6 +53,12 @@ namespace Intervu.Application.UseCases.Withdrawal
 
                     var coach = await _coachProfileRepository.GetProfileByIdAsync(userId)
                         ?? throw new Exception("Coach profile not found.");
+
+                    if (string.IsNullOrWhiteSpace(coach.BankBinNumber) ||
+                        string.IsNullOrWhiteSpace(coach.BankAccountNumber))
+                    {
+                        throw new BadRequestException("Please update your bank information before requesting a withdrawal.");
+                    }
 
                     var currentBalance = coach.CurrentAmount ?? 0;
                     if (currentBalance < request.Amount)
@@ -89,7 +95,7 @@ namespace Intervu.Application.UseCases.Withdrawal
                     await _unitOfWork.CommitTransactionAsync();
                     break; // success
                 }
-                catch (DbUpdateConcurrencyException) when (attempt < maxRetries - 1)
+                catch (Exception ex) when (attempt < maxRetries - 1 && _unitOfWork.IsConcurrencyException(ex))
                 {
                     await _unitOfWork.RollbackTransactionAsync();
                     // Retry with fresh entity state
@@ -184,7 +190,7 @@ namespace Intervu.Application.UseCases.Withdrawal
                     await _unitOfWork.CommitTransactionAsync();
                     break;
                 }
-                catch (DbUpdateConcurrencyException) when (attempt < maxRetries - 1)
+                catch (Exception ex) when (attempt < maxRetries - 1 && _unitOfWork.IsConcurrencyException(ex))
                 {
                     await _unitOfWork.RollbackTransactionAsync();
                 }

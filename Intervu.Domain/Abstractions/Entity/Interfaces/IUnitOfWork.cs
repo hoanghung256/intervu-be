@@ -14,5 +14,6 @@ namespace Intervu.Domain.Abstractions.Entity.Interfaces
         Task BeginTransactionAsync();
         Task CommitTransactionAsync();
         Task RollbackTransactionAsync();
+        bool IsConcurrencyException(Exception exception);
     }
 }
