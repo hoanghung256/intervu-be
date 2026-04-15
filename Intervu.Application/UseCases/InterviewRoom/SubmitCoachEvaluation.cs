@@ -1,3 +1,4 @@
+using System.Threading;
 using Intervu.Application.DTOs.InterviewRoom;
 using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.ExternalServices.Email;
@@ -113,12 +114,11 @@ namespace Intervu.Application.UseCases.InterviewRoom
                 }
 
                 // Trigger roadmap progress update for the candidate in the background
-                //var coachFullName = coach?.FullName ?? string.Empty;
-                //var candidateId = room.CandidateId.Value;
-                //var roomId = interviewRoomId;
-                //_jobService.Enqueue<IAssessmentService>(svc =>
-                //    svc.UpdateRoadmapAfterInterviewAsync(candidateId, roomId, coachFullName));
-
+                var coachFullName = coach?.FullName ?? string.Empty;
+                var candidateId = room.CandidateId.Value;
+                var roomId = interviewRoomId;
+                _jobService.Enqueue<IAssessmentService>(svc =>
+                    svc.UpdateRoadmapAfterInterviewAsync(candidateId, roomId, coachFullName, CancellationToken.None));
             }
 
             _logger.LogInformation("Coach {CoachId} submitted evaluation for interview room {RoomId}", coachId, interviewRoomId);
