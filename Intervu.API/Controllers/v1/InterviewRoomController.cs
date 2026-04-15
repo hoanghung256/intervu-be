@@ -146,10 +146,7 @@ namespace Intervu.API.Controllers.v1
                 });
             }
 
-            await _submitCoachEvaluation.ExecuteAsync(
-                interviewRoomId,
-                userId,
-                request?.Results ?? new List<EvaluationResultDto>());
+            await _submitCoachEvaluation.ExecuteAsync(interviewRoomId, userId, request ?? new SubmitCoachEvaluationRequest());
 
             return Ok(new
             {
@@ -281,3 +278,4 @@ namespace Intervu.API.Controllers.v1
         }
     }
 }
+
