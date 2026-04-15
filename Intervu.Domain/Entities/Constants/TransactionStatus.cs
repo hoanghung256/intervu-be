@@ -11,6 +11,7 @@ namespace Intervu.Domain.Entities.Constants
         Created,
         Paid,
         Cancel,
-        PendingPayout
+        PendingPayout,
+        PendingWithdrawal
     }
 }
