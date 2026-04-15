@@ -10,6 +10,8 @@ namespace Intervu.Domain.Entities.Constants
     {
         Payment,
         Payout,
-        Refund
+        Refund,
+        Earnings,
+        Withdrawal
     }
 }

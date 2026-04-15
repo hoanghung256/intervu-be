@@ -57,6 +57,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
         public DbSet<UserSkillAssessmentSnapshot> UserSkillAssessments { get; set; }
         public DbSet<AudioChunk> AudioChunks { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<WithdrawalRequest> WithdrawalRequests { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -246,6 +247,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.PortfolioUrl).HasMaxLength(4000);
                 b.Property(x => x.Bio).HasColumnType("text");
                 b.Property(x => x.CurrentAmount);
+                b.Property(x => x.Version).IsConcurrencyToken();
                 b.Property(x => x.BankBinNumber);
                 b.Property(x => x.BankAccountNumber);
                 b.Property(x => x.ExperienceYears);
@@ -1063,6 +1065,25 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.HasIndex(x => x.UserId);
                 b.HasIndex(x => x.EventType);
                 b.HasIndex(x => x.Timestamp);
+            });
+
+            modelBuilder.Entity<WithdrawalRequest>(b =>
+            {
+                b.ToTable("WithdrawalRequests");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Amount).IsRequired();
+                b.Property(x => x.Status).IsRequired();
+                b.Property(x => x.BankBinNumber).HasMaxLength(20);
+                b.Property(x => x.BankAccountNumber).HasMaxLength(50);
+                b.Property(x => x.Notes).HasMaxLength(1000);
+
+                b.HasOne(x => x.User)
+                 .WithMany()
+                 .HasForeignKey(x => x.UserId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasIndex(x => x.UserId);
+                b.HasIndex(x => x.Status);
             });
 
             /// <summary>

@@ -69,6 +69,8 @@ using Intervu.Application.Interfaces.UseCases.Assessment;
 using Intervu.Application.UseCases.Assessment;
 using Intervu.Application.UseCases.Tag;
 using Intervu.Application.Interfaces.UseCases.Tag;
+using Intervu.Application.Interfaces.UseCases.Withdrawal;
+using Intervu.Application.UseCases.Withdrawal;
 
 namespace Intervu.Application
 {
@@ -279,6 +281,10 @@ namespace Intervu.Application
             // ----- Audit Log ----
             services.AddScoped<IAddAuditLogEntry, AddAuditLogEntry>();
             services.AddScoped<IGetAuditLogs, GetAuditLogs>();
+
+            // ----- Withdrawal ----
+            services.AddScoped<IRequestWithdrawal, RequestWithdrawalUseCase>();
+            services.AddScoped<IGetWithdrawalHistory, GetWithdrawalHistoryUseCase>();
 
             // ----- Coach Dashboard ----
             services.AddScoped<CoachDashboardInterfaces.IGetCoachDashboardStats, CoachDashboardUseCases.GetCoachDashboardStats>();

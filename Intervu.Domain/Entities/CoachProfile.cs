@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Intervu.Domain.Abstractions.Entity;
 using Intervu.Domain.Entities.Constants;
 using System;
@@ -17,6 +18,9 @@ namespace Intervu.Domain.Entities
         public string? PortfolioUrl { get; set; } = string.Empty;
 
         public int? CurrentAmount { get; set; }
+
+        [ConcurrencyCheck]
+        public int Version { get; set; }
 
         public int? ExperienceYears { get; set; }
 
