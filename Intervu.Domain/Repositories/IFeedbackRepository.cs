@@ -12,7 +12,7 @@ namespace Intervu.Domain.Repositories
         Task<int> GetTotalFeedbacksCountAsync();
         Task<double> GetAverageRatingAsync();
         Task<(double AverageRating, int TotalRatings)> GetAverageRatingByCoachIdAsync(Guid coachId);
-        Task<(double AverageRating, int TotalRatings)> GetAverageRatingByCandidateIdAsync(Guid candidateId);
+        
         Task<(IReadOnlyList<Feedback> Items, int TotalCount)> GetFeedbacksByCandidateIdAsync(Guid candidateId, int page, int pageSize);
         Task<Feedback?> GetFeedbackByIdAsync(Guid id);
         Task<List<Feedback>> GetFeedbacksByInterviewRoomIdAsync(Guid interviewRoomId);

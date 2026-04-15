@@ -3,7 +3,6 @@ using AutoMapper;
 using Intervu.API.Utils.Constant;
 using Intervu.Application.DTOs.Candidate;
 using Intervu.Application.Interfaces.UseCases.CandidateProfile;
-using Intervu.Application.Interfaces.UseCases.Feedbacks;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 using Intervu.Domain.Entities;
@@ -24,7 +23,6 @@ namespace Intervu.API.Controllers.v1.Candidate
         private readonly IUpdateCandidateProfile _updateCandidateProfile;
         private readonly IViewCandidateProfile _getCandidateProfile;
         private readonly IDeleteCandidateProfile _deleteCandidateProfile;
-        private readonly IGetCandidateRating _getCandidateRating;
         private readonly IEvaluateCandidateCv _evaluateCandidateCv;
         private readonly ICandidateProfileRepository _repo;
 
@@ -33,7 +31,6 @@ namespace Intervu.API.Controllers.v1.Candidate
             IUpdateCandidateProfile updateCandidateProfile,
             IViewCandidateProfile getCandidateProfile,
             IDeleteCandidateProfile deleteCandidateProfile,
-            IGetCandidateRating getCandidateRating,
             IEvaluateCandidateCv evaluateCandidateCv,
             ICandidateProfileRepository repo)
         {
@@ -41,7 +38,6 @@ namespace Intervu.API.Controllers.v1.Candidate
             _updateCandidateProfile = updateCandidateProfile;
             _getCandidateProfile = getCandidateProfile;
             _deleteCandidateProfile = deleteCandidateProfile;
-            _getCandidateRating = getCandidateRating;
             _evaluateCandidateCv = evaluateCandidateCv;
             _repo = repo;
         }
@@ -73,34 +69,7 @@ namespace Intervu.API.Controllers.v1.Candidate
             });
         }
 
-        [Authorize(Policy = AuthorizationPolicies.CandidateOrInterviewer)]
-        [HttpGet("{id}/rating")]
-        public async Task<IActionResult> GetCandidateRating([FromRoute] Guid id)
-        {
-            try
-            {
-                var (averageRating, totalRatings) = await _getCandidateRating.ExecuteAsync(id);
-                return Ok(new
-                {
-                    success = true,
-                    message = "Candidate rating retrieved successfully",
-                    data = new
-                    {
-                        candidateId = id,
-                        rating = averageRating,
-                        totalRatings
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = ex.Message
-                });
-            }
-        }
+        
 
         //[GET] api/Candidateprofile/candidate/{id}/profile
         //[Authorize(Policy = AuthorizationPolicies.Candidate)]

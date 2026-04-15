@@ -88,19 +88,7 @@ namespace Intervu.API.Test.ApiTests.CandidateProfileController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "CandidateProfile")]
-        public async Task GetCandidateRating_ReturnsSuccess_WhenAuthenticated()
-        {
-            // Arrange
-            var (token, userId) = await RegisterAndLoginCandidateAsync();
-
-            // Act
-            var response = await _api.GetAsync($"/api/v1/candidate-profile/{userId}/rating", jwtToken: token, logBody: true);
-
-            // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
-            var apiResponse = await _api.LogDeserializeJson<object>(response);
-            await AssertHelper.AssertTrue(apiResponse.Success, "Rating request was successful");
-        }
+        
 
         [Fact]
         [Trait("Category", "API")]
@@ -296,17 +284,7 @@ namespace Intervu.API.Test.ApiTests.CandidateProfileController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "CandidateProfile")]
-        public async Task GetCandidateRating_ReturnsUnauthorized_WhenNoToken()
-        {
-            // Arrange
-            var (_, userId) = await RegisterAndLoginCandidateAsync();
-
-            // Act
-            var response = await _api.GetAsync($"/api/v1/candidate-profile/{userId}/rating", logBody: true);
-
-            // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "No token rating returns 401 Unauthorized");
-        }
+        
 
         [Fact]
         [Trait("Category", "API")]
