@@ -193,9 +193,8 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 return;
             }
 
-            // Transition to PendingForApprovalAfterPayment — reset expiry for the 48h coach response window
-            // bookingRequest.Status = BookingRequestStatus.PendingForApprovalAfterPayment;
-            bookingRequest.Status = BookingRequestStatus.Accepted; // Auto-accept for zero-price bookings
+            // Auto-accept after payment — create rooms immediately
+            bookingRequest.Status = BookingRequestStatus.Accepted;
             bookingRequest.ExpiresAt = DateTime.UtcNow.AddHours(48);
             bookingRequest.UpdatedAt = DateTime.UtcNow;
             bookingRepo.UpdateAsync(bookingRequest);
