@@ -21,7 +21,7 @@ namespace Intervu.Infrastructure.ExternalServices.Pinecone
             _apiKey = configuration["PineCone:PINECONE_API_KEY"] ?? throw new ArgumentNullException("Pinecone API Key is missing");
             _apiVersion = configuration["PineCone:PINECONE_API_VERSION"] ?? "2025-10";
 
-            var configuredNamespace = configuration["PineCone:PINECONE_NAMESPACE"];
+            var configuredNamespace = configuration["PineCone:PINECONE_COACH_NAMESPACE"];
             _namespace = string.IsNullOrWhiteSpace(configuredNamespace)
                 ? "__default__"
                 : configuredNamespace.Trim();
