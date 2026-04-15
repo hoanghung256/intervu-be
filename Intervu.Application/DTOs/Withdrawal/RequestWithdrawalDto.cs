@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Intervu.Application.DTOs.Withdrawal
 {
     public class RequestWithdrawalDto
