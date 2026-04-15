@@ -157,7 +157,6 @@ namespace Intervu.Application
             services.AddScoped<ICreateFeedback, CreateFeedback>();
             services.AddScoped<IUpdateFeedback, UpdateFeedback>();
             services.AddScoped<IGetCoachRating, GetCoachRating>();
-            services.AddScoped<IGetCandidateRating, GetCandidateRating>();
 
             // ----- Coach Availability ----
             services.AddScoped<IGetCoachAvailabilities, GetCoachAvailabilities>();

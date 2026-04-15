@@ -102,24 +102,38 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             return await _context.Feedbacks.AverageAsync(f => f.Rating);
         }
 
-        public async Task<double> GetAverageRatingByCoachIdAsync(Guid coachId)
+        public async Task<(double AverageRating, int TotalRatings)> GetAverageRatingByCoachIdAsync(Guid coachId)
         {
-            var average = await _context.Feedbacks
+            var ratingsByRoom = await _context.Feedbacks
                 .Where(f => f.CoachId == coachId)
-                .Select(f => (double?)f.Rating)
-                .AverageAsync();
+                .GroupBy(f => f.InterviewRoomId)
+                .Select(g => g.Max(f => f.Rating))
+                .ToListAsync();
 
-            return average ?? 0;
+            if (ratingsByRoom.Count == 0)
+            {
+                return (0, 0);
+            }
+
+            var averageRating = ratingsByRoom.Average();
+            return (averageRating, ratingsByRoom.Count);
         }
 
-        public async Task<double> GetAverageRatingByCandidateIdAsync(Guid candidateId)
+        public async Task<(double AverageRating, int TotalRatings)> GetAverageRatingByCandidateIdAsync(Guid candidateId)
         {
-            var average = await _context.Feedbacks
+            var ratingsByRoom = await _context.Feedbacks
                 .Where(f => f.CandidateId == candidateId)
-                .Select(f => (double?)f.Rating)
-                .AverageAsync();
+                .GroupBy(f => f.InterviewRoomId)
+                .Select(g => g.Max(f => f.Rating))
+                .ToListAsync();
 
-            return average ?? 0;
+            if (ratingsByRoom.Count == 0)
+            {
+                return (0, 0);
+            }
+
+            var averageRating = ratingsByRoom.Average();
+            return (averageRating, ratingsByRoom.Count);
         }
 
         public async Task<List<(Feedback Feedback, string CandidateName)>> GetRecentFeedbacksByCoachIdAsync(Guid coachId, int limit)
