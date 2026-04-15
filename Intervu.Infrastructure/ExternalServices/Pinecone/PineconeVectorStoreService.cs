@@ -21,7 +21,7 @@ namespace Intervu.Infrastructure.ExternalServices.Pinecone
             _apiKey = configuration["PineCone:PINECONE_API_KEY"] ?? throw new ArgumentNullException("Pinecone API Key is missing");
             _apiVersion = configuration["PineCone:PINECONE_API_VERSION"] ?? "2025-10";
 
-            var configuredNamespace = configuration["PineCone:PINECONE_NAMESPACE"];
+            var configuredNamespace = configuration["PineCone:PINECONE_COACH_NAMESPACE"];
             _namespace = string.IsNullOrWhiteSpace(configuredNamespace)
                 ? "__default__"
                 : configuredNamespace.Trim();
@@ -33,7 +33,7 @@ namespace Intervu.Infrastructure.ExternalServices.Pinecone
                 : $"https://{rawHost}";
         }
 
-        public async Task UpsertAsync(string id, float[] vector, Dictionary<string, string> metadata, string? @namespace = null)
+        public async Task UpsertAsync(string id, float[] vector, Dictionary<string, object> metadata, string? @namespace = null)
         {
             var body = new
             {
@@ -43,7 +43,7 @@ namespace Intervu.Infrastructure.ExternalServices.Pinecone
                     {
                         id,
                         values = vector,
-                        metadata = metadata ?? new Dictionary<string, string>()
+                        metadata = metadata ?? new Dictionary<string, object>()
                     }
                 },
                 @namespace = ResolveNamespace(@namespace)
@@ -56,7 +56,7 @@ namespace Intervu.Infrastructure.ExternalServices.Pinecone
             float[] queryVector,
             int topK = 5,
             string? @namespace = null,
-            Dictionary<string, string>? metadataFilter = null)
+            Dictionary<string, object>? metadataFilter = null)
         {
             // Build Pinecone metadata filter (if provided).
             var filter = BuildFilter(metadataFilter);
@@ -125,21 +125,43 @@ namespace Intervu.Infrastructure.ExternalServices.Pinecone
                 : namespaceOverride.Trim();
         }
 
-        private static JObject? BuildFilter(Dictionary<string, string>? metadataFilter)
+        private static JObject? BuildFilter(Dictionary<string, object>? metadataFilter)
         {
             if (metadataFilter == null || metadataFilter.Count == 0)
             {
                 return null;
             }
 
-            // Convert key/value filters to Pinecone $eq format.
             var filter = new JObject();
             foreach (var kvp in metadataFilter)
             {
-                filter[kvp.Key] = new JObject
+                switch (kvp.Value)
                 {
-                    ["$eq"] = kvp.Value
-                };
+                    // string → $eq (existing behavior)
+                    case string s:
+                        filter[kvp.Key] = new JObject { ["$eq"] = s };
+                        break;
+
+                    // string[] or List<string> → $in (array metadata matching)
+                    case IEnumerable<string> list:
+                        var arr = new JArray(list);
+                        if (arr.Count > 0)
+                            filter[kvp.Key] = new JObject { ["$in"] = arr };
+                        break;
+
+                    // NumericFilter → $gte / $lte (numeric range metadata)
+                    case NumericFilter nf:
+                        var numObj = new JObject();
+                        if (nf.Gte.HasValue) numObj["$gte"] = nf.Gte.Value;
+                        if (nf.Lte.HasValue) numObj["$lte"] = nf.Lte.Value;
+                        if (numObj.Count > 0) filter[kvp.Key] = numObj;
+                        break;
+
+                    // Fallback: treat as string
+                    default:
+                        filter[kvp.Key] = new JObject { ["$eq"] = kvp.Value?.ToString() ?? "" };
+                        break;
+                }
             }
 
             return filter;

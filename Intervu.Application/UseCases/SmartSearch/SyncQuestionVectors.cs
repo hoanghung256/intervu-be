@@ -114,9 +114,9 @@ namespace Intervu.Application.UseCases.SmartSearch
         /// <summary>
         /// Store minimal identity and filterable fields in vector metadata.
         /// </summary>
-        private static Dictionary<string, string> BuildMetadata(QuestionEntity question)
+        private static Dictionary<string, object> BuildMetadata(QuestionEntity question)
         {
-            var metadata = new Dictionary<string, string>
+            var metadata = new Dictionary<string, object>
             {
                 ["entityType"] = "question",
                 ["entityId"] = question.Id.ToString(),
