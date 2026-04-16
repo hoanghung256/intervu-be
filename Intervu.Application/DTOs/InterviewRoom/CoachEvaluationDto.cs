@@ -19,10 +19,15 @@ namespace Intervu.Application.DTOs.InterviewRoom
         public InterviewRoomStatus Status { get; set; }
         public bool IsEvaluationCompleted { get; set; }
         public List<EvaluationResultDto> EvaluationResults { get; set; } = new();
+        public string? Others { get; set; }
+        public string? HireDecision { get; set; }
+        public string? EvaluationStructureJson { get; set; }
     }
 
     public class SubmitCoachEvaluationRequest
     {
         public List<EvaluationResultDto> Results { get; set; } = new();
+        public string? EvaluationStructure { get; set; }
+        public string? EvaluationStructureJson { get; set; }
     }
 }

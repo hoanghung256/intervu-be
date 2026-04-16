@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Threading;
 using Intervu.Application.DTOs.InterviewRoom;
 using Intervu.Application.Exceptions;
@@ -36,8 +37,7 @@ namespace Intervu.Application.UseCases.InterviewRoom
             _logger = logger;
         }
 
-
-        public async Task ExecuteAsync(Guid interviewRoomId, Guid coachId, List<EvaluationResultDto> results)
+        public async Task ExecuteAsync(Guid interviewRoomId, Guid coachId, SubmitCoachEvaluationRequest request)
         {
             var room = await _roomRepo.GetByIdWithDetailsAsync(interviewRoomId)
                 ?? throw new NotFoundException("Interview room not found");
@@ -52,23 +52,19 @@ namespace Intervu.Application.UseCases.InterviewRoom
                 throw new ConflictException("Evaluation is only allowed while the interview is ongoing or after it is completed");
             }
 
-            if (results == null || results.Count == 0)
+            var merged = BuildPayload(request ?? new SubmitCoachEvaluationRequest());
+
+            if (merged.Results == null || merged.Results.Count == 0)
             {
                 throw new BadRequestException("Evaluation results are required");
             }
 
-            if (results.Any(r => r.Score < 0 || r.Score > 10))
+            if (merged.Results.Any(r => r.Score < 0 || r.Score > 10))
             {
                 throw new BadRequestException("Scores must be between 0 and 10");
             }
 
-            room.EvaluationResults = results.Select(r => new EvaluationResult
-            {
-                Type = r.Type,
-                Question = r.Question,
-                Answer = r.Answer,
-                Score = r.Score
-            }).ToList();
+            room.EvaluationResultsJson = JsonSerializer.Serialize(merged);
             room.IsEvaluationCompleted = true;
 
             _roomRepo.UpdateAsync(room);
@@ -113,7 +109,6 @@ namespace Intervu.Application.UseCases.InterviewRoom
                     }
                 }
 
-                // Trigger roadmap progress update for the candidate in the background
                 var coachFullName = coach?.FullName ?? string.Empty;
                 var candidateId = room.CandidateId.Value;
                 var roomId = interviewRoomId;
@@ -122,6 +117,170 @@ namespace Intervu.Application.UseCases.InterviewRoom
             }
 
             _logger.LogInformation("Coach {CoachId} submitted evaluation for interview room {RoomId}", coachId, interviewRoomId);
+        }
+
+        private static SubmitEvaluationStructurePayload BuildPayload(SubmitCoachEvaluationRequest request)
+        {
+            var payload = new SubmitEvaluationStructurePayload();
+
+            var rawJson = string.IsNullOrWhiteSpace(request.EvaluationStructureJson)
+                ? request.EvaluationStructure
+                : request.EvaluationStructureJson;
+
+            if (!string.IsNullOrWhiteSpace(rawJson))
+            {
+                TryMergeFromEvaluationStructureJson(payload, rawJson!);
+            }
+
+            if (request.Results != null && request.Results.Count > 0)
+            {
+                payload.Results = request.Results.Select(ToDomainResult).ToList();
+            }
+
+            payload.HireDecision = NormalizeHireDecision(payload.HireDecision);
+            return payload;
+        }
+
+        private static void TryMergeFromEvaluationStructureJson(SubmitEvaluationStructurePayload payload, string rawJson)
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(rawJson);
+                var root = doc.RootElement;
+
+                if (root.ValueKind != JsonValueKind.Object)
+                {
+                    return;
+                }
+
+                if (TryGetString(root, "others", out var others))
+                {
+                    payload.Others = others;
+                }
+
+                if (TryGetString(root, "hireDecision", out var hireDecision) || TryGetString(root, "hideDecision", out hireDecision))
+                {
+                    payload.HireDecision = hireDecision;
+                }
+
+                if (TryGetProperty(root, "results", out var resultsElement) || TryGetProperty(root, "evaluationResults", out resultsElement))
+                {
+                    var parsed = ParseResults(resultsElement);
+                    if (parsed.Count > 0)
+                    {
+                        payload.Results = parsed;
+                    }
+                }
+            }
+            catch
+            {
+                // ignore malformed JSON from client and fallback to request.Results
+            }
+        }
+
+        private static bool TryGetString(JsonElement root, string propertyName, out string? value)
+        {
+            value = null;
+            if (!TryGetProperty(root, propertyName, out var element))
+            {
+                return false;
+            }
+
+            if (element.ValueKind == JsonValueKind.String)
+            {
+                value = element.GetString();
+                return true;
+            }
+
+            if (element.ValueKind == JsonValueKind.True)
+            {
+                value = "yes";
+                return true;
+            }
+
+            if (element.ValueKind == JsonValueKind.False)
+            {
+                value = "no";
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool TryGetProperty(JsonElement root, string propertyName, out JsonElement value)
+        {
+            foreach (var property in root.EnumerateObject())
+            {
+                if (string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
+                {
+                    value = property.Value;
+                    return true;
+                }
+            }
+
+            value = default;
+            return false;
+        }
+
+        private static List<EvaluationResult> ParseResults(JsonElement element)
+        {
+            if (element.ValueKind != JsonValueKind.Array)
+            {
+                return new List<EvaluationResult>();
+            }
+
+            try
+            {
+                var dtos = JsonSerializer.Deserialize<List<EvaluationResultDto>>(element.GetRawText(), new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                }) ?? new List<EvaluationResultDto>();
+
+                return dtos.Select(ToDomainResult).ToList();
+            }
+            catch
+            {
+                return new List<EvaluationResult>();
+            }
+        }
+
+        private static EvaluationResult ToDomainResult(EvaluationResultDto dto)
+        {
+            return new EvaluationResult
+            {
+                Type = dto.Type,
+                Question = dto.Question,
+                Answer = dto.Answer,
+                Score = dto.Score
+            };
+        }
+
+        private static string? NormalizeHireDecision(string? hireDecision)
+        {
+            if (string.IsNullOrWhiteSpace(hireDecision))
+            {
+                return null;
+            }
+
+            var normalized = hireDecision.Trim().ToLowerInvariant();
+            if (normalized == "yes" || normalized == "true")
+            {
+                return "yes";
+            }
+
+            if (normalized == "no" || normalized == "false")
+            {
+                return "no";
+            }
+
+            return hireDecision;
+        }
+
+        private sealed class SubmitEvaluationStructurePayload
+        {
+            public List<EvaluationResult> Results { get; set; } = new();
+            public string? Others { get; set; }
+            public string? HireDecision { get; set; }
         }
     }
 }

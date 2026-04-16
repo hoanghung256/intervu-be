@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Intervu.Application.DTOs.InterviewRoom;
 using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
@@ -45,6 +46,8 @@ namespace Intervu.Application.UseCases.InterviewRoom
                     .ToList();
             }
 
+            var (others, hireDecision) = ParseMetadata(room.EvaluationResultsJson);
+
             return new CoachEvaluationResponseDto
             {
                 InterviewRoomId = room.Id,
@@ -59,8 +62,63 @@ namespace Intervu.Application.UseCases.InterviewRoom
                     Question = r.Question,
                     Answer = r.Answer,
                     Score = r.Score
-                }).ToList()
+                }).ToList(),
+                Others = others,
+                HireDecision = hireDecision,
+                EvaluationStructureJson = room.EvaluationResultsJson
             };
+        }
+
+        private static (string? others, string? hireDecision) ParseMetadata(string? rawJson)
+        {
+            if (string.IsNullOrWhiteSpace(rawJson))
+            {
+                return (null, null);
+            }
+
+            try
+            {
+                using var doc = JsonDocument.Parse(rawJson);
+                var root = doc.RootElement;
+                if (root.ValueKind != JsonValueKind.Object)
+                {
+                    return (null, null);
+                }
+
+                var others = TryGetString(root, "others");
+                var hireDecision = TryGetString(root, "hireDecision") ?? TryGetString(root, "hideDecision");
+                return (others, hireDecision);
+            }
+            catch
+            {
+                return (null, null);
+            }
+        }
+
+        private static string? TryGetString(JsonElement root, string propertyName)
+        {
+            foreach (var property in root.EnumerateObject())
+            {
+                if (string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (property.Value.ValueKind == JsonValueKind.String)
+                    {
+                        return property.Value.GetString();
+                    }
+
+                    if (property.Value.ValueKind == JsonValueKind.True)
+                    {
+                        return "yes";
+                    }
+
+                    if (property.Value.ValueKind == JsonValueKind.False)
+                    {
+                        return "no";
+                    }
+                }
+            }
+
+            return null;
         }
     }
 }
