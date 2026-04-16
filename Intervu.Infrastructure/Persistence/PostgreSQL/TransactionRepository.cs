@@ -129,5 +129,41 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
             return results.Select(r => (r.Date, r.Amount)).ToList();
         }
+
+        public async Task<(IReadOnlyList<InterviewBookingTransaction> Items, int TotalCount)> GetPagedForAdminAsync(
+            int page,
+            int pageSize,
+            TransactionType? type = null,
+            TransactionStatus? status = null)
+        {
+            var query = _context.InterviewBookingTransaction
+                .AsNoTracking()
+                // Actor: the user who owns the transaction (Candidate for Payment/Refund, Coach for Payout)
+                .Include(t => t.User)
+                // Booking context: gives us which candidate and coach are involved
+                .Include(t => t.BookingRequest)
+                    .ThenInclude(br => br!.Candidate)
+                        .ThenInclude(cp => cp.User)
+                .Include(t => t.BookingRequest)
+                    .ThenInclude(br => br!.Coach)
+                        .ThenInclude(cp => cp.User)
+                .AsQueryable();
+
+            if (type.HasValue)
+                query = query.Where(t => t.Type == type.Value);
+
+            if (status.HasValue)
+                query = query.Where(t => t.Status == status.Value);
+
+            var total = await query.CountAsync();
+
+            var items = await query
+                .OrderByDescending(t => t.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (items, total);
+        }
     }
 }

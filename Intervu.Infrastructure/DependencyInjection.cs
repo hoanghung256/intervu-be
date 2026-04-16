@@ -185,13 +185,21 @@ namespace Intervu.Infrastructure
             services.AddScoped<CodeExecutionService>();
             services.AddScoped<IAiService, AiService>();
 
+            // Request metrics (singleton in-memory counters, resets on restart)
+            services.AddSingleton<ServiceMetricsStore>();
+            services.AddTransient<ServiceMetricsHandler>();
+
             // Pinecone Services
-            services.AddHttpClient<IEmbeddingService, PineconeInferenceService>();
-            services.AddHttpClient<IVectorStoreService, PineconeVectorStoreService>();
-            
+            services.AddHttpClient<IEmbeddingService, PineconeInferenceService>()
+                .AddHttpMessageHandler<ServiceMetricsHandler>();
+            services.AddHttpClient<IVectorStoreService, PineconeVectorStoreService>()
+                .AddHttpMessageHandler<ServiceMetricsHandler>();
+
             // AI Reasoning Services
-            services.AddHttpClient<Application.Interfaces.ExternalServices.AI.ISmartSearchReasoningService, ExternalServices.AI.GeminiReasoningService>();
-            services.AddHttpClient<IPythonAiService, ExternalServices.AI.PythonAiService>();
+            services.AddHttpClient<Application.Interfaces.ExternalServices.AI.ISmartSearchReasoningService, ExternalServices.AI.GeminiReasoningService>()
+                .AddHttpMessageHandler<ServiceMetricsHandler>();
+            services.AddHttpClient<IPythonAiService, ExternalServices.AI.PythonAiService>()
+                .AddHttpMessageHandler<ServiceMetricsHandler>();
 
 
             //Add HttpClient to call from API

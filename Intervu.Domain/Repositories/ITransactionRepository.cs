@@ -32,5 +32,16 @@ namespace Intervu.Domain.Repositories
         Task<decimal> GetTotalRevenueAsync(DateTime from, DateTime to);
         Task<int> GetRefundCountAsync(DateTime from, DateTime to);
         Task<List<(DateTime Date, decimal Amount)>> GetDailyRevenueTrendAsync(DateTime from, DateTime to);
+
+        /// <summary>
+        /// Get all transactions platform-wide for admin monitoring.
+        /// Includes User navigation for both the transaction actor
+        /// and the counterpart (candidate or coach) via BookingRequest.
+        /// </summary>
+        Task<(IReadOnlyList<InterviewBookingTransaction> Items, int TotalCount)> GetPagedForAdminAsync(
+            int page,
+            int pageSize,
+            TransactionType? type = null,
+            TransactionStatus? status = null);
     }
 }
