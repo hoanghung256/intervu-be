@@ -84,12 +84,7 @@ namespace Intervu.API.Test.ApiTests.CandidateProfileController
             var apiResponse = await _api.LogDeserializeJson<object>(response);
             await AssertHelper.AssertTrue(apiResponse.Success, "Update was successful");
         }
-
-        [Fact]
-        [Trait("Category", "API")]
-        [Trait("Category", "CandidateProfile")]
         
-
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "CandidateProfile")]
