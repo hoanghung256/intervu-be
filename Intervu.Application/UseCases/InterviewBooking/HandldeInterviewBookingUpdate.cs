@@ -20,15 +20,17 @@ namespace Intervu.Application.UseCases.InterviewBooking
         private readonly Intervu.Application.Interfaces.UseCases.BookingRequest.ICreateEvaluationResultsUseCase _createEvaluationResults;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICoachInterviewServiceRepository _coachInterviewServiceRepository;
+        private readonly IScheduleInterviewReminders _scheduleInterviewReminders;
         private readonly IUserRepository _userRepository;
         private readonly IConfiguration _configuration;
         private readonly ILogger<HandldeInterviewBookingUpdate> _logger;
 
         public HandldeInterviewBookingUpdate(
-            IPaymentService paymentService,
+        IPaymentService paymentService,
             IBackgroundService backgroundService,
             IUnitOfWork unitOfWork,
             ICoachInterviewServiceRepository coachInterviewServiceRepository,
+            IScheduleInterviewReminders scheduleInterviewReminders,
             IUserRepository userRepository,
             IConfiguration configuration,
             Intervu.Application.Interfaces.UseCases.BookingRequest.ICreateEvaluationResultsUseCase createEvaluationResults,
@@ -39,6 +41,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
             _createEvaluationResults = createEvaluationResults;
             _unitOfWork = unitOfWork;
             _coachInterviewServiceRepository = coachInterviewServiceRepository;
+            _scheduleInterviewReminders = scheduleInterviewReminders;
             _userRepository = userRepository;
             _configuration = configuration;
             _logger = logger;
@@ -199,6 +202,8 @@ namespace Intervu.Application.UseCases.InterviewBooking
             bookingRequest.UpdatedAt = DateTime.UtcNow;
             bookingRepo.UpdateAsync(bookingRequest);
 
+            var roomRepo = _unitOfWork.GetRepository<IInterviewRoomRepository>();
+
             foreach (var round in bookingRequest.Rounds)
             {
                 var availabilityId = round.AvailabilityBlocks.FirstOrDefault()?.Id ?? Guid.Empty;
@@ -224,7 +229,11 @@ namespace Intervu.Application.UseCases.InterviewBooking
                         IsEvaluationCompleted = false
                     };
 
-                    _backgroundService.Enqueue<ICreateInterviewRoom>(uc => uc.ExecuteAsync(room));
+                    await roomRepo.AddAsync(room);
+                    round.InterviewRoomId = room.Id;
+
+                    // Schedule reminder notifications at 1 day, 12h, 1h, and 5min before.
+                    _scheduleInterviewReminders.Schedule(room.Id, round.StartTime);
                 }
             }
 

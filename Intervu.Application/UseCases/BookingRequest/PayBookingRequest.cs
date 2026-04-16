@@ -102,7 +102,9 @@ namespace Intervu.Application.UseCases.BookingRequest
                         }
                     }
 
-                    // Create interview rooms for each round
+                    // Create interview rooms for each round and persist them inside the same
+                    // transaction so the InterviewRound.InterviewRoomId FK is valid at SaveChanges.
+                    var roomRepo = _unitOfWork.GetRepository<IInterviewRoomRepository>();
                     foreach (var round in bookingRequest.Rounds)
                     {
                         var availabilityId = round.AvailabilityBlocks?.FirstOrDefault()?.Id ?? Guid.Empty;
@@ -110,6 +112,7 @@ namespace Intervu.Application.UseCases.BookingRequest
 
                         var room = new Domain.Entities.InterviewRoom
                         {
+                            Id = Guid.NewGuid(),
                             CandidateId = bookingRequest.CandidateId,
                             CoachId = bookingRequest.CoachId,
                             ScheduledTime = round.StartTime,
@@ -125,7 +128,8 @@ namespace Intervu.Application.UseCases.BookingRequest
                             IsEvaluationCompleted = false
                         };
 
-                        _backgroundService.Enqueue<ICreateInterviewRoom>(uc => uc.ExecuteAsync(room));
+                        await roomRepo.AddAsync(room);
+                        round.InterviewRoomId = room.Id;
                     }
                 }
                 else
