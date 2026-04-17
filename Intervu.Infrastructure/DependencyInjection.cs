@@ -15,6 +15,8 @@ using Intervu.Infrastructure.ExternalServices.EmailServices;
 using Intervu.Infrastructure.ExternalServices.FirebaseStorageService;
 using Intervu.Infrastructure.ExternalServices.PayOSPaymentService;
 using Intervu.Infrastructure.ExternalServices.Pinecone;
+using Intervu.Infrastructure.Configuration;
+using Intervu.Infrastructure.Security;
 using Intervu.Application.Interfaces.ExternalServices.Pinecone;
 
 using Intervu.Infrastructure.Persistence.PostgreSQL;
@@ -149,6 +151,9 @@ namespace Intervu.Infrastructure
             //services.AddSingleton(bucketName);
             services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<IEmailTemplateService, EmailTemplateService>();
+
+            services.Configure<EncryptionOptions>(configuration.GetSection(EncryptionOptions.SectionName));
+            services.AddSingleton<IBankFieldProtector, AesGcmBankFieldProtector>();
             //services.AddSingleton<IMailService, EmailService>();
             //services.AddSingleton<IMailService, ExternalServices.EmailService>();
 
@@ -179,11 +184,12 @@ namespace Intervu.Infrastructure
                 var paymentClient = sp.GetRequiredService<PaymentClient>();
                 var payoutClient = sp.GetRequiredService<PayoutClient>();
                 var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<PayOSPaymentService>>();
+                var bankFieldProtector = sp.GetRequiredService<IBankFieldProtector>();
 
                 string returnUrl = configuration["PayOS:Payment:ReturnEndpoint"]!;
                 string cancelUrl = configuration["PayOS:Payment:CancelEndpoint"]!;
 
-                return new PayOSPaymentService(paymentClient, payoutClient, returnUrl, cancelUrl, logger);
+                return new PayOSPaymentService(paymentClient, payoutClient, returnUrl, cancelUrl, bankFieldProtector, logger);
             });
 
             services.AddScoped<CodeExecutionService>();

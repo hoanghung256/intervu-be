@@ -46,10 +46,17 @@ namespace Intervu.Application.Mappings
                 .ForMember(dest => dest.Status, opt => opt.Ignore());
 
             // Coach mappings
+            // BankAccountNumber on DTOs is ALWAYS the masked form read from entity.BankAccountNumberMasked.
+            // The entity's BankAccountNumber column holds the AES-GCM ciphertext and must never
+            // be surfaced to the FE. Reverse mappings ignore the bank field — use cases set the
+            // encrypted value + masked value explicitly via IBankFieldProtector.
             CreateMap<CoachProfile, CoachProfileDto>()
                 .ForMember(dest => dest.User, opt => opt.Ignore())
                 .ForMember(dest => dest.Certifications, opt => opt.MapFrom(src => src.Certificates))
-                .ReverseMap();
+                .ForMember(dest => dest.BankAccountNumber, opt => opt.MapFrom(src => src.BankAccountNumberMasked))
+                .ReverseMap()
+                .ForMember(dest => dest.BankAccountNumber, opt => opt.Ignore())
+                .ForMember(dest => dest.BankAccountNumberMasked, opt => opt.Ignore());
 
             CreateMap<CoachProfile, CoachViewDto>()
                 .ForMember(dest => dest.User, opt => opt.Ignore())
@@ -58,8 +65,11 @@ namespace Intervu.Application.Mappings
 
             CreateMap<CoachCreateDto, CoachProfile>().ReverseMap();
 
-            CreateMap<CoachUpdateDto, CoachProfile>();
-            CreateMap<CoachProfile, CoachUpdateDto>();
+            CreateMap<CoachUpdateDto, CoachProfile>()
+                .ForMember(dest => dest.BankAccountNumber, opt => opt.Ignore())
+                .ForMember(dest => dest.BankAccountNumberMasked, opt => opt.Ignore());
+            CreateMap<CoachProfile, CoachUpdateDto>()
+                .ForMember(dest => dest.BankAccountNumber, opt => opt.MapFrom(src => src.BankAccountNumberMasked));
             CreateMap<CoachWorkExperience, CoachWorkExperienceDto>().ReverseMap();
             CreateMap<User, CoachCreateDto>().ReverseMap();
             CreateMap<Company, DTOs.Company.CompanyDto>().ReverseMap();
@@ -69,7 +79,13 @@ namespace Intervu.Application.Mappings
 
 
             // Candidate mappings
-            CreateMap<CandidateProfile, CandidateProfileDto>().ForMember(dest => dest.User, opt => opt.Ignore()).ReverseMap();
+            // See Coach block above for the BankAccountNumber/masked rule — same applies here.
+            CreateMap<CandidateProfile, CandidateProfileDto>()
+                .ForMember(dest => dest.User, opt => opt.Ignore())
+                .ForMember(dest => dest.BankAccountNumber, opt => opt.MapFrom(src => src.BankAccountNumberMasked))
+                .ReverseMap()
+                .ForMember(dest => dest.BankAccountNumber, opt => opt.Ignore())
+                .ForMember(dest => dest.BankAccountNumberMasked, opt => opt.Ignore());
             CreateMap<CandidateProfile, CandidateViewDto>()
                 .ForMember(dest => dest.User, opt => opt.Ignore())
                 .ForMember(dest => dest.CertificationLinks, opt => opt.MapFrom(src => src.Certificates))
@@ -78,9 +94,12 @@ namespace Intervu.Application.Mappings
                 .ForMember(dest => dest.User, opt => opt.Ignore())
                 .ForMember(dest => dest.Skills, opt => opt.Ignore());
             CreateMap<CandidateProfile, CandidateCreateDto>();
-            CreateMap<CandidateProfile, CandidateUpdateDto>().ReverseMap();
+            CreateMap<CandidateProfile, CandidateUpdateDto>()
+                .ForMember(dest => dest.BankAccountNumber, opt => opt.MapFrom(src => src.BankAccountNumberMasked));
             CreateMap<CandidateUpdateDto, CandidateProfile>()
                 .ForMember(dest => dest.User, opt => opt.Ignore())
+                .ForMember(dest => dest.BankAccountNumber, opt => opt.Ignore())
+                .ForMember(dest => dest.BankAccountNumberMasked, opt => opt.Ignore())
                 .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
             CreateMap<CandidateWorkExperience, CandidateWorkExperienceDto>().ReverseMap();
             CreateMap<CandidateCertificate, CandidateCertificateDto>().ReverseMap();

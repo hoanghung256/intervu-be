@@ -24,7 +24,7 @@ namespace Intervu.Application.UseCases.Withdrawal
                 Amount = x.Amount,
                 Status = x.Status,
                 BankBinNumber = x.BankBinNumber,
-                BankAccountNumber = x.BankAccountNumber,
+                BankAccountNumber = x.BankAccountNumberMasked,
                 Notes = x.Notes,
                 CreatedAt = x.CreatedAt,
                 ProcessedAt = x.ProcessedAt

@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Intervu.Application.DTOs.Coach;
+using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.UseCases.CoachProfile;
 using Intervu.Application.Utils;
 using Intervu.Domain.Entities;
@@ -19,14 +20,16 @@ namespace Intervu.Application.UseCases.CoachProfile
         private readonly ISkillRepository _skillRepository;
         private readonly IIndustryRepository _industryRepository;
         private readonly IMapper _mapper;
+        private readonly IBankFieldProtector _bankFieldProtector;
 
-        public UpdateCoachProfile(ICoachProfileRepository repo, ICompanyRepository companyRepository, ISkillRepository skillRepository, IIndustryRepository industryRepository, IMapper mapper)
+        public UpdateCoachProfile(ICoachProfileRepository repo, ICompanyRepository companyRepository, ISkillRepository skillRepository, IIndustryRepository industryRepository, IMapper mapper, IBankFieldProtector bankFieldProtector)
         {
             _repo = repo;
             _companyRepository = companyRepository;
             _skillRepository = skillRepository;
             _industryRepository = industryRepository;
             _mapper = mapper;
+            _bankFieldProtector = bankFieldProtector;
         }
 
         public async Task<CoachProfileDto> ExecuteAsync(Guid id, CoachUpdateDto request)
@@ -37,6 +40,21 @@ namespace Intervu.Application.UseCases.CoachProfile
 
             _mapper.Map(request, existingProfile);
             existingProfile.Id = id;
+
+            if (request.BankAccountNumber != null)
+            {
+                var plain = request.BankAccountNumber.Trim();
+                if (plain.Length == 0)
+                {
+                    existingProfile.BankAccountNumber = string.Empty;
+                    existingProfile.BankAccountNumberMasked = string.Empty;
+                }
+                else
+                {
+                    existingProfile.BankAccountNumber = _bankFieldProtector.Encrypt(plain);
+                    existingProfile.BankAccountNumberMasked = _bankFieldProtector.Mask(plain);
+                }
+            }
 
             if (request.SkillIds != null)
             {

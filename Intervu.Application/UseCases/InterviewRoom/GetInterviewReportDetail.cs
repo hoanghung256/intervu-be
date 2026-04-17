@@ -15,6 +15,7 @@ namespace Intervu.Application.UseCases.InterviewRoom
             var roomRepo = unitOfWork.GetRepository<IInterviewRoomRepository>();
             var transactionRepo = unitOfWork.GetRepository<ITransactionRepository>();
             var userRepo = unitOfWork.GetRepository<IUserRepository>();
+            var candidateProfileRepo = unitOfWork.GetRepository<ICandidateProfileRepository>();
 
             var report = await reportRepo.GetByRoomIdAsync(interviewRoomId)
                 ?? throw new NotFoundException("Report not found for this room");
@@ -24,6 +25,9 @@ namespace Intervu.Application.UseCases.InterviewRoom
 
             var candidate = room.CandidateId.HasValue ? await userRepo.GetByIdAsync(room.CandidateId.Value) : null;
             var coach = room.CoachId.HasValue ? await userRepo.GetByIdAsync(room.CoachId.Value) : null;
+            var candidateProfile = room.CandidateId.HasValue
+                ? await candidateProfileRepo.GetProfileByIdAsync(room.CandidateId.Value)
+                : null;
 
             var paymentTx = room.BookingRequestId.HasValue
                 ? await transactionRepo.GetByBookingRequestId(room.BookingRequestId.Value, TransactionType.Payment)
@@ -53,6 +57,8 @@ namespace Intervu.Application.UseCases.InterviewRoom
                     CandidateName = candidate?.FullName,
                     ServiceName = room.CoachInterviewService?.InterviewType?.Name,
                     OriginalTime = room.ScheduledTime,
+                    CandidateBankBinNumber = candidateProfile?.BankBinNumber,
+                    CandidateBankAccountNumber = candidateProfile?.BankAccountNumberMasked,
                 },
                 FinancialStatus = new RoomReportFinancialStatusDto
                 {

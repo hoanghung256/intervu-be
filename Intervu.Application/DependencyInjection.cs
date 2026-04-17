@@ -173,6 +173,7 @@ namespace Intervu.Application
 
             // ----- UserProfile ----
             services.AddScoped<IGetUserProfile, GetUserProfile>();
+            services.AddScoped<IGetCurrentUserProfile, GetCurrentUserProfile>();
             services.AddScoped<IUpdateUserProfile, UpdateUserProfile>();
             services.AddScoped<IChangePassword, ChangePassword>();
             services.AddScoped<IUploadAvatar, UploadAvatar>();

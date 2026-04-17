@@ -70,6 +70,8 @@ namespace Intervu.Application.DTOs.InterviewRoom
         public string? CandidateName { get; set; }
         public string? ServiceName { get; set; }
         public DateTime? OriginalTime { get; set; }
+        public string? CandidateBankBinNumber { get; set; }
+        public string? CandidateBankAccountNumber { get; set; }
     }
 
     public class RoomReportFinancialStatusDto

@@ -12,6 +12,7 @@ namespace Intervu.Infrastructure.ExternalServices.PayOSPaymentService
         private readonly PayoutClient _payoutClient;
         private readonly string _returnUrl;
         private readonly string _cancelUrl;
+        private readonly IBankFieldProtector _bankFieldProtector;
         private readonly ILogger<PayOSPaymentService> _logger;
 
         public PayOSPaymentService(
@@ -19,12 +20,14 @@ namespace Intervu.Infrastructure.ExternalServices.PayOSPaymentService
             PayoutClient payoutClient,
             string returnUrl,
             string cancelUrl,
+            IBankFieldProtector bankFieldProtector,
             ILogger<PayOSPaymentService> logger)
         {
             _paymentClient = paymentClient;
             _payoutClient = payoutClient;
             _returnUrl = returnUrl;
             _cancelUrl = cancelUrl;
+            _bankFieldProtector = bankFieldProtector;
             _logger = logger;
         }
 
@@ -54,11 +57,13 @@ namespace Intervu.Infrastructure.ExternalServices.PayOSPaymentService
                 return false;
             }
 
-            var maskedAccount = string.IsNullOrWhiteSpace(targetBankAccountNumber)
+            var decryptBankAccountNumber = _bankFieldProtector.Decrypt(targetBankAccountNumber);
+
+            var maskedAccount = string.IsNullOrWhiteSpace(decryptBankAccountNumber)
                 ? string.Empty
-                : (targetBankAccountNumber.Length <= 4
+                : (decryptBankAccountNumber.Length <= 4
                     ? "****"
-                    : $"****{targetBankAccountNumber[^4..]}");
+                    : $"****{decryptBankAccountNumber[^4..]}");
 
             _logger.LogInformation(
                 "Creating payout order. Amount: {Amount}, Description: {Description}, TargetBankId: {TargetBankId}, TargetAccount: {MaskedAccount}",
@@ -71,7 +76,7 @@ namespace Intervu.Infrastructure.ExternalServices.PayOSPaymentService
             {
                 Amount = amount,
                 Description = description,
-                ToAccountNumber = targetBankAccountNumber,
+                ToAccountNumber = decryptBankAccountNumber,
                 ToBin = targetBankId
             };
 

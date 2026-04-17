@@ -1,6 +1,7 @@
 using AutoMapper;
 using Intervu.Application.DTOs.BookingRequest;
 using Intervu.Application.Exceptions;
+using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.UseCases.BookingRequest;
 using Intervu.Application.Utils;
 using Intervu.Domain.Abstractions.Policies.Interfaces;
@@ -17,6 +18,8 @@ namespace Intervu.Application.UseCases.BookingRequest
         private readonly ITransactionRepository _transactionRepo;
         private readonly ICoachAvailabilitiesRepository _availabilityRepo;
         private readonly IRefundPolicy _refundPolicy;
+        private readonly IPaymentService _paymentService;
+        private readonly IBankFieldProtector _bankFieldProtector;
         private readonly IMapper _mapper;
 
         public CancelInterviewRound(
@@ -25,6 +28,8 @@ namespace Intervu.Application.UseCases.BookingRequest
             ITransactionRepository transactionRepo,
             ICoachAvailabilitiesRepository availabilityRepo,
             IRefundPolicy refundPolicy,
+            IPaymentService paymentService,
+            IBankFieldProtector bankFieldProtector,
             IMapper mapper)
         {
             _bookingRepo = bookingRepo;
@@ -32,6 +37,8 @@ namespace Intervu.Application.UseCases.BookingRequest
             _transactionRepo = transactionRepo;
             _availabilityRepo = availabilityRepo;
             _refundPolicy = refundPolicy;
+            _paymentService = paymentService;
+            _bankFieldProtector = bankFieldProtector;
             _mapper = mapper;
         }
 
@@ -88,7 +95,7 @@ namespace Intervu.Application.UseCases.BookingRequest
                 var refundAmount = _refundPolicy.CalculateRefundAmount(round.Price, round.StartTime, DateTime.UtcNow);
                 if (refundAmount > 0)
                 {
-                    await _transactionRepo.AddAsync(new InterviewBookingTransaction
+                    var refundTx = new InterviewBookingTransaction
                     {
                         OrderCode = RandomGenerator.GenerateOrderCode(),
                         UserId = candidateId,
@@ -96,7 +103,26 @@ namespace Intervu.Application.UseCases.BookingRequest
                         Amount = refundAmount,
                         Type = TransactionType.Refund,
                         Status = TransactionStatus.Created
-                    });
+                    };
+
+                    await _transactionRepo.AddAsync(refundTx);
+
+                    var bankBin = bookingRequest.Candidate?.BankBinNumber;
+                    var bankAccountNumber = bookingRequest.Candidate?.BankAccountNumber;
+                    if (string.IsNullOrWhiteSpace(bankBin) || string.IsNullOrWhiteSpace(bankAccountNumber))
+                        throw new BadRequestException("Candidate bank information is missing");
+
+                    var isRefundSent = await _paymentService.CreateSpendOrderAsync(
+                        refundAmount,
+                        "REFUND",
+                        bankBin,
+                        bankAccountNumber);
+
+                    if (isRefundSent)
+                    {
+                        refundTx.Status = TransactionStatus.Paid;
+                        _transactionRepo.UpdateAsync(refundTx);
+                    }
                 }
             }
 
