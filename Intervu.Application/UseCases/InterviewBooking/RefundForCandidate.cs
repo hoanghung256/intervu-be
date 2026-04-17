@@ -66,6 +66,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 _logger.LogInformation("Processing payout to BankBin: {BankBin}, Account: {Account}", candidate.BankBinNumber, candidate.BankAccountNumberMasked);
 
                 var plainAccount = _bankFieldProtector.Decrypt(candidate.BankAccountNumber);
+                _logger.LogInformation("Decrypted bank account: {bankAccount}", plainAccount);
                 await _paymentService.CreateSpendOrderAsync(
                     t.Amount,
                     $"REFUND",

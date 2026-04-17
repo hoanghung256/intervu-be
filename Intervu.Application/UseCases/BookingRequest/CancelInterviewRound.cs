@@ -108,26 +108,15 @@ namespace Intervu.Application.UseCases.BookingRequest
                     await _transactionRepo.AddAsync(refundTx);
 
                     var bankBin = bookingRequest.Candidate?.BankBinNumber;
-                    var encryptedAccountNumber = bookingRequest.Candidate?.BankAccountNumber;
-                    if (string.IsNullOrWhiteSpace(bankBin) || string.IsNullOrWhiteSpace(encryptedAccountNumber))
+                    var bankAccountNumber = bookingRequest.Candidate?.BankAccountNumber;
+                    if (string.IsNullOrWhiteSpace(bankBin) || string.IsNullOrWhiteSpace(bankAccountNumber))
                         throw new BadRequestException("Candidate bank information is missing");
-
-                    string accountNumber;
-                    try
-                    {
-                        accountNumber = _bankFieldProtector.Decrypt(encryptedAccountNumber);
-                    }
-                    catch
-                    {
-                        // Backward compatibility: fallback for legacy plain-text account values.
-                        accountNumber = encryptedAccountNumber;
-                    }
 
                     var isRefundSent = await _paymentService.CreateSpendOrderAsync(
                         refundAmount,
                         "REFUND",
                         bankBin,
-                        accountNumber);
+                        bankAccountNumber);
 
                     if (isRefundSent)
                     {
