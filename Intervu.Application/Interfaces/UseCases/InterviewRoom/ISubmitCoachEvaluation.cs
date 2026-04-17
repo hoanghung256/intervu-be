@@ -4,6 +4,6 @@ namespace Intervu.Application.Interfaces.UseCases.InterviewRoom
 {
     public interface ISubmitCoachEvaluation
     {
-        Task ExecuteAsync(Guid interviewRoomId, Guid coachId, List<EvaluationResultDto> results);
+        Task ExecuteAsync(Guid interviewRoomId, Guid coachId, SubmitCoachEvaluationRequest request);
     }
 }

@@ -71,9 +71,23 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                     .Include(p => p.Industries)
                     .Include(p => p.WorkExperiences)
                     .Include(p => p.Certificates)
+                    .Include(p => p.User)
                     .FirstOrDefaultAsync();
 
             return profile;
+        }
+
+        public async Task<List<CoachProfile>> GetProfilesByIdsAsync(IEnumerable<Guid> ids)
+        {
+            var idList = ids.ToList();
+            if (idList.Count == 0) return new List<CoachProfile>();
+
+            return await _context.CoachProfiles
+                .Where(p => idList.Contains(p.Id))
+                .Include(p => p.Companies)
+                .Include(p => p.Skills)
+                .Include(p => p.User)
+                .ToListAsync();
         }
 
         public async Task<(IReadOnlyList<CoachProfile> Items, int TotalCount)> GetPagedCoachProfilesAsync(

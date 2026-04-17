@@ -10,6 +10,7 @@ namespace Intervu.Domain.Entities.Constants
         ProblemUpdate = 5,
         CameraToggle = 6,
         MicToggle = 7,
-        InterviewProblemReport = 8
+        InterviewProblemReport = 8,
+        GeneratedQuestionApprove = 9
     }
 }

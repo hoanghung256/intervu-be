@@ -84,8 +84,7 @@ namespace Intervu.Infrastructure.ExternalServices.PayOSPaymentService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to create payout order. Amount: {Amount}, TargetBankId: {TargetBankId}, TargetAccount: {MaskedAccount}", amount, targetBankId, maskedAccount);
-                //throw new Exception("PAYMENT Failed", ex);
-                return false;
+                throw;
             }
         }
 

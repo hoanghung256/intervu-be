@@ -27,12 +27,8 @@ namespace Intervu.Application.DTOs
         [System.Text.Json.Serialization.JsonConverter(typeof(SingleOrArraySystemTextJsonConverter<string>))]
         public List<string> Domain { get; set; } = new List<string>();
 
-        [JsonProperty("selected_options")]
-        [JsonPropertyName("selected_options")]
-        public List<string> SelectedOptions { get; set; } = new List<string>();
-
-        [JsonProperty("free_text")]
-        [JsonPropertyName("free_text")]
+        [JsonProperty("freeText")]
+        [JsonPropertyName("freeText")]
         public string FreeText { get; set; } = string.Empty;
     }
 }

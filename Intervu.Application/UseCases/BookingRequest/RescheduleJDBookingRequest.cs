@@ -362,17 +362,17 @@ namespace Intervu.Application.UseCases.BookingRequest
 
         private static void ValidateRoundSequence(List<RoundTimelineItem> finalTimeline)
         {
-            for (int i = 1; i < finalTimeline.Count; i++)
-            {
-                var prev = finalTimeline[i - 1];
-                var current = finalTimeline[i];
+            // for (int i = 1; i < finalTimeline.Count; i++)
+            // {
+            //     var prev = finalTimeline[i - 1];
+            //     var current = finalTimeline[i];
 
-                if (current.NewStartTime < prev.NewEndTime.Add(MinGapBetweenRounds))
-                {
-                    throw new ConflictException(
-                        $"Round {current.RoundNumber} must start at least 15 minutes after round {prev.RoundNumber} ends");
-                }
-            }
+            //     if (current.NewStartTime < prev.NewEndTime.Add(MinGapBetweenRounds))
+            //     {
+            //         throw new ConflictException(
+            //             $"Round {current.RoundNumber} must start at least 15 minutes after round {prev.RoundNumber} ends");
+            //     }
+            // }
         }
 
         private static DateTime EnsureUtc(DateTime value)

@@ -9,15 +9,20 @@ namespace Intervu.Application.Interfaces.ExternalServices.Pinecone
 {
     public interface IVectorStoreService
     {
-        Task UpsertAsync(string id, float[] vector, Dictionary<string, string> metadata, string? @namespace = null);
+        Task UpsertAsync(string id, float[] vector, Dictionary<string, object> metadata, string? @namespace = null);
         Task<List<VectorMatch>> SearchAsync(
             float[] queryVector,
             int topK = 5,
             string? @namespace = null,
-            Dictionary<string, string>? metadataFilter = null);
+            Dictionary<string, object>? metadataFilter = null);
         Task DeleteAsync(string id, string? @namespace = null);
         Task<PineconeIndexStatsDto> DescribeIndexStatsAsync();
     }
 
     public record VectorMatch(string Id, double Score, Dictionary<string, string>? Metadata);
+
+    /// <summary>
+    /// Wrapper for numeric range filters ($gte / $lte) in Pinecone metadata queries.
+    /// </summary>
+    public record NumericFilter(double? Gte = null, double? Lte = null);
 }

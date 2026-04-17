@@ -1,5 +1,6 @@
 ﻿using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -49,6 +50,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             await _currentTransaction.RollbackAsync();
             await _currentTransaction.DisposeAsync();
             _currentTransaction = null;
+        }
+
+        public bool IsConcurrencyException(Exception exception)
+        {
+            return exception is DbUpdateConcurrencyException;
         }
 
         public void Dispose() => _context.Dispose();

@@ -35,7 +35,7 @@ namespace Intervu.Application.UseCases.CoachDashboard
             var currentInterviews = await _roomRepo.GetCompletedCountByCoachIdAsync(coachId, currentStart, currentEnd);
             var previousInterviews = await _roomRepo.GetCompletedCountByCoachIdAsync(coachId, previousStart, previousEnd);
 
-            var averageRating = await _feedbackRepo.GetAverageRatingByCoachIdAsync(coachId);
+            var (averageRating, _) = await _feedbackRepo.GetAverageRatingByCoachIdAsync(coachId);
 
             // Acceptance rate: accepted / (accepted + rejected) for current period
             var (acceptedItems, _) = await _bookingRepo.GetPagedByCoachIdAsync(

@@ -3,6 +3,7 @@ using Intervu.Application.Interfaces.ExternalServices.Email;
 using Intervu.Application.Interfaces.UseCases.Availability;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
 using Intervu.Application.Interfaces.UseCases.Notification;
+using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
@@ -15,27 +16,27 @@ namespace Intervu.Application.UseCases.InterviewBooking
         private readonly IInterviewRoomRepository _interviewRoomRepository;
         private readonly ITransactionRepository _transactionRepository;
         private readonly ICoachProfileRepository _coachProfileRepository;
-        private readonly IPaymentService _paymentService;
         private readonly IBackgroundService _jobService;
         private readonly IUserRepository _userRepository;
         private readonly IConfiguration _configuration;
+        private readonly IUnitOfWork _unitOfWork;
 
         public PayoutForCoachAfterInterview(
             IInterviewRoomRepository interviewRoomRepository,
             ITransactionRepository transactionRepository,
             ICoachProfileRepository coachProfileRepository,
-            IPaymentService paymentService,
             IBackgroundService jobService,
             IUserRepository userRepository,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IUnitOfWork unitOfWork)
         {
             _interviewRoomRepository = interviewRoomRepository;
             _transactionRepository = transactionRepository;
             _coachProfileRepository = coachProfileRepository;
-            _paymentService = paymentService;
             _jobService = jobService;
             _userRepository = userRepository;
             _configuration = configuration;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task ExecuteAsync(Guid interviewRoomId)
@@ -57,15 +58,50 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 // Skip payouts with non-positive amount
                 if (t.Amount <= 0) return;
 
-                await _paymentService.CreateSpendOrderAsync(
-                    t.Amount,
-                    $"PAYOUT",
-                    coach.BankBinNumber,
-                    coach.BankAccountNumber
-                );
+                // Credit earnings to coach's internal balance with optimistic concurrency
+                const int maxRetries = 3;
+                for (int attempt = 0; attempt < maxRetries; attempt++)
+                {
+                    try
+                    {
+                        await _unitOfWork.BeginTransactionAsync();
+
+                        // Reload coach profile to get fresh state
+                        coach = await _coachProfileRepository.GetProfileByIdAsync(interviewerId);
+
+                        coach.CurrentAmount = (coach.CurrentAmount ?? 0) + t.Amount;
+                        coach.Version++;
+                        await _coachProfileRepository.UpdateCoachProfileAsync(coach);
+
+                        // Create earnings transaction record
+                        var earningsTransaction = new InterviewBookingTransaction
+                        {
+                            Id = Guid.NewGuid(),
+                            UserId = interviewerId,
+                            BookingRequestId = room.BookingRequestId,
+                            Amount = t.Amount,
+                            Type = TransactionType.Earnings,
+                            Status = TransactionStatus.Paid,
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        await _transactionRepository.AddAsync(earningsTransaction);
+
+                        // Mark original payout transaction as processed
+                        t.Status = TransactionStatus.Paid;
+                        _transactionRepository.UpdateAsync(t);
+
+                        await _unitOfWork.SaveChangesAsync();
+                        await _unitOfWork.CommitTransactionAsync();
+                        break; // success
+                    }
+                    catch (Exception ex) when (attempt < maxRetries - 1 && _unitOfWork.IsConcurrencyException(ex))
+                    {
+                        await _unitOfWork.RollbackTransactionAsync();
+                        // Retry with fresh entity state
+                    }
+                }
             }
-            // TODO: Refactor payout logic to use in-app balance instead of payout directly to bank account.
-            // TODO: Implement retry logic and error handling for payment failures, and consider edge cases such as refunds or disputes that may arise after payout.
+
             var amount = t.Amount;
             _jobService.Enqueue<INotificationUseCase>(uc => uc.CreateAsync(
                 interviewerId,

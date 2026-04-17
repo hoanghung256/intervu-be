@@ -55,7 +55,6 @@ using Intervu.Application.Interfaces.UseCases.Industry;
 using Intervu.Application.UseCases.Industry;
 using Intervu.Application.Interfaces.UseCases.AudioChunk;
 using AudioChunk = Intervu.Application.UseCases.AudioChunk;
-using Intervu.Application.Interfaces.Services;
 using Intervu.Application.Interfaces.UseCases.SmartSearch;
 using Intervu.Application.UseCases.SmartSearch;
 using Intervu.Application.Interfaces.UseCases.GeneratedQuestion;
@@ -66,6 +65,12 @@ using CoachDashboardInterfaces = Intervu.Application.Interfaces.UseCases.CoachDa
 using CoachDashboardUseCases = Intervu.Application.UseCases.CoachDashboard;
 using Intervu.Application.Interfaces.UseCases.BookingRequest;
 using Intervu.Application.UseCases.BookingRequest;
+using Intervu.Application.Interfaces.UseCases.Assessment;
+using Intervu.Application.UseCases.Assessment;
+using Intervu.Application.UseCases.Tag;
+using Intervu.Application.Interfaces.UseCases.Tag;
+using Intervu.Application.Interfaces.UseCases.Withdrawal;
+using Intervu.Application.UseCases.Withdrawal;
 
 namespace Intervu.Application
 {
@@ -85,6 +90,7 @@ namespace Intervu.Application
             services.AddSingleton<ICodeGenerationService, JavaCodeGenerationService>();
             services.AddScoped<IAssessmentService, AssessmentService>();
             services.AddScoped<IGenerateAssessmentCatalogService, GenerateAssessmentCatalogService>();
+            services.AddScoped<ISaveAssessmentAnswersUseCase, SaveAssessmentAnswersUseCase>();
 
             // AI Service HttpClient and registration
             services.AddHttpClient("AiServiceClient", client =>
@@ -117,6 +123,7 @@ namespace Intervu.Application
             services.AddScoped<ISaveCoachEvaluationDraft, SaveCoachEvaluationDraft>();
             services.AddScoped<IReportInterviewProblem, ReportInterviewProblem>();
             services.AddScoped<IGetInterviewReports, GetInterviewReports>();
+            services.AddScoped<IGetInterviewReportDetail, GetInterviewReportDetail>();
             services.AddScoped<IResolveInterviewReport, ResolveInterviewReport>();
             services.AddScoped<ICreateEvaluationResultsUseCase, CreateEvaluationResultsUseCase>();
 
@@ -129,6 +136,8 @@ namespace Intervu.Application
             services.AddScoped<CompanyInterfaces.IGetAllCompanies, CompanyUseCases.GetAllCompanies>();
             services.AddScoped<IGetAllSkills, GetAllSkills>();
             services.AddScoped<IGetAllIndustries, GetAllIndustries>();
+            services.AddScoped<IGetAllTags, GetAllTags>();
+
             // ----- Admin ----
             services.AddScoped<IGetDashboardStats, AdminUseCases.GetDashboardStats>();
             services.AddScoped<IGetAllUsersForAdmin, AdminUseCases.GetAllUsers>();
@@ -155,7 +164,6 @@ namespace Intervu.Application
             services.AddScoped<ICreateFeedback, CreateFeedback>();
             services.AddScoped<IUpdateFeedback, UpdateFeedback>();
             services.AddScoped<IGetCoachRating, GetCoachRating>();
-            services.AddScoped<IGetCandidateRating, GetCandidateRating>();
 
             // ----- Coach Availability ----
             services.AddScoped<IGetCoachAvailabilities, GetCoachAvailabilities>();
@@ -278,6 +286,10 @@ namespace Intervu.Application
             // ----- Audit Log ----
             services.AddScoped<IAddAuditLogEntry, AddAuditLogEntry>();
             services.AddScoped<IGetAuditLogs, GetAuditLogs>();
+
+            // ----- Withdrawal ----
+            services.AddScoped<IRequestWithdrawal, RequestWithdrawalUseCase>();
+            services.AddScoped<IGetWithdrawalHistory, GetWithdrawalHistoryUseCase>();
 
             // ----- Coach Dashboard ----
             services.AddScoped<CoachDashboardInterfaces.IGetCoachDashboardStats, CoachDashboardUseCases.GetCoachDashboardStats>();

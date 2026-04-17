@@ -70,6 +70,7 @@ namespace Intervu.Infrastructure.ExternalServices
                         room.Status = InterviewRoomStatus.Completed;
                         db.InterviewRooms.Update(room);
 
+                        // Payout immediately for coach after interview completed
                         await payout.ExecuteAsync(room.Id);
 
                         // Update status in cache

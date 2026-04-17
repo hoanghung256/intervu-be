@@ -1,6 +1,7 @@
 using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.UseCases.BookingRequest;
+using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Intervu.Application.Utils;
 using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Intervu.Domain.Entities;
@@ -14,15 +15,21 @@ namespace Intervu.Application.UseCases.BookingRequest
     {
         private readonly ILogger<PayBookingRequest> _logger;
         private readonly IPaymentService _paymentService;
+        private readonly IBackgroundService _backgroundService;
+        private readonly ICreateEvaluationResultsUseCase _createEvaluationResults;
         private readonly IUnitOfWork _unitOfWork;
 
         public PayBookingRequest(
             ILogger<PayBookingRequest> logger,
             IPaymentService paymentService,
+            IBackgroundService backgroundService,
+            ICreateEvaluationResultsUseCase createEvaluationResults,
             IUnitOfWork unitOfWork)
         {
             _logger = logger;
             _paymentService = paymentService;
+            _backgroundService = backgroundService;
+            _createEvaluationResults = createEvaluationResults;
             _unitOfWork = unitOfWork;
         }
 
@@ -77,12 +84,10 @@ namespace Intervu.Application.UseCases.BookingRequest
                 string? checkoutUrl = null;
                 if (paymentAmount == 0)
                 {
-                    // Free booking — payment confirmed immediately, upgrade blocks from Reserved to Booked,
-                    // then reset expiry for the 48h coach response window
+                    // Free booking — auto-accept immediately, upgrade blocks and create rooms
                     paymentTx.Status = TransactionStatus.Paid;
                     payoutTx.Status = TransactionStatus.Paid;
-                    // bookingRequest.Status = BookingRequestStatus.PendingForApprovalAfterPayment;
-                    bookingRequest.Status = BookingRequestStatus.Accepted; // Auto-accept for zero-price bookings
+                    bookingRequest.Status = BookingRequestStatus.Accepted;
                     bookingRequest.ExpiresAt = DateTime.UtcNow.AddHours(48);
                     bookingRequest.UpdatedAt = DateTime.UtcNow;
 
@@ -97,7 +102,35 @@ namespace Intervu.Application.UseCases.BookingRequest
                         }
                     }
 
-                    // Rooms are created only after coach approves
+                    // Create interview rooms for each round and persist them inside the same
+                    // transaction so the InterviewRound.InterviewRoomId FK is valid at SaveChanges.
+                    var roomRepo = _unitOfWork.GetRepository<IInterviewRoomRepository>();
+                    foreach (var round in bookingRequest.Rounds)
+                    {
+                        var availabilityId = round.AvailabilityBlocks?.FirstOrDefault()?.Id ?? Guid.Empty;
+                        var duration = (int)(round.EndTime - round.StartTime).TotalMinutes;
+
+                        var room = new Domain.Entities.InterviewRoom
+                        {
+                            Id = Guid.NewGuid(),
+                            CandidateId = bookingRequest.CandidateId,
+                            CoachId = bookingRequest.CoachId,
+                            ScheduledTime = round.StartTime,
+                            DurationMinutes = duration,
+                            CurrentAvailabilityId = availabilityId,
+                            Status = InterviewRoomStatus.Scheduled,
+                            TransactionId = paymentTx.Id,
+                            BookingRequestId = bookingRequest.Id,
+                            CoachInterviewServiceId = round.CoachInterviewServiceId,
+                            AimLevel = bookingRequest.AimLevel,
+                            RoundNumber = round.RoundNumber,
+                            EvaluationResults = await _createEvaluationResults.ExecuteAsync(round.CoachInterviewServiceId),
+                            IsEvaluationCompleted = false
+                        };
+
+                        await roomRepo.AddAsync(room);
+                        round.InterviewRoomId = room.Id;
+                    }
                 }
                 else
                 {

@@ -13,6 +13,7 @@ namespace Intervu.Application.DTOs.GeneratedQuestion
         public string Title { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public GeneratedQuestionStatus Status { get; set; }
+        public List<string> Tags { get; set; } = new();
     }
 
     public class CreateGeneratedQuestionRequest
@@ -23,6 +24,8 @@ namespace Intervu.Application.DTOs.GeneratedQuestion
         public string Title { get; set; } = string.Empty;
 
         public Guid InterviewRoomId { get; set; }
+
+        public List<string> Tags { get; set; } = new();
     }
 
     public class ApproveGeneratedQuestionRequest
@@ -36,5 +39,6 @@ namespace Intervu.Application.DTOs.GeneratedQuestion
         public List<Guid> CompanyIds { get; set; } = new();
         public List<Role> Roles { get; set; } = new();
         public List<Guid>? TagIds { get; set; } = new();
+        public List<string>? Tags { get; set; } = new();
     }
 }

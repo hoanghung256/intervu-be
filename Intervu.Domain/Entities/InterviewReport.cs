@@ -12,6 +12,7 @@ namespace Intervu.Domain.Entities
         public User? Reporter { get; set; }
         public string Reason { get; set; } = string.Empty;
         public string? Details { get; set; }
+        public string? ExpectTo { get; set; }
         public InterviewReportStatus Status { get; set; } = InterviewReportStatus.Pending;
         public string? AdminNote { get; set; }
         public DateTime? ResolvedAt { get; set; }

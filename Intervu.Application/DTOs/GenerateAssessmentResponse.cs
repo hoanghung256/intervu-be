@@ -1,5 +1,5 @@
-using Intervu.Application.DTOs.Assessment;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
@@ -11,6 +11,10 @@ namespace Intervu.Application.DTOs
         [JsonPropertyName("status")]
         public string Status { get; set; } = string.Empty;
 
+        [JsonProperty("assessment")]
+        [JsonPropertyName("assessment")]
+        public JToken? Assessment { get; set; }
+
         [JsonProperty("question")]
         [JsonPropertyName("question")]
         public string Question { get; set; } = string.Empty;
@@ -19,44 +23,26 @@ namespace Intervu.Application.DTOs
         [JsonPropertyName("context_question")]
         public string ContextQuestion { get; set; } = string.Empty;
 
-        // Matches example: "phaseA"
+        [JsonProperty("contextQuestion")]
+        [Newtonsoft.Json.JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        public string ContextQuestionCamelCase
+        {
+            set
+            {
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    ContextQuestion = value;
+                }
+            }
+        }
+
         [JsonProperty("phaseA")]
         [JsonPropertyName("phaseA")]
-        public List<AssessmentQuestionItemDto> PhaseA { get; set; } = new List<AssessmentQuestionItemDto>();
+        public JArray PhaseA { get; set; } = new JArray();
 
-        // Matches example: "phaseB"
         [JsonProperty("phaseB")]
         [JsonPropertyName("phaseB")]
-        public List<AssessmentQuestionItemDto> PhaseB { get; set; } = new List<AssessmentQuestionItemDto>();
-    }
-
-    public class AssessmentQuestionItemDto
-    {
-        [JsonProperty("questionId")]
-        [JsonPropertyName("questionId")]
-        public string QuestionId { get; set; } = string.Empty;
-
-        [JsonProperty("skill")]
-        [JsonPropertyName("skill")]
-        public string Skill { get; set; } = string.Empty;
-
-        [JsonProperty("question")]
-        [JsonPropertyName("question")]
-        public string Question { get; set; } = string.Empty;
-
-        [JsonProperty("options")]
-        [JsonPropertyName("options")]
-        public List<OptionDto> Options { get; set; } = new List<OptionDto>();
-    }
-
-    public class OptionDto
-    {
-        [JsonProperty("text")]
-        [JsonPropertyName("text")]
-        public string Text { get; set; } = string.Empty;
-
-        [JsonProperty("level")]
-        [JsonPropertyName("level")]
-        public string Level { get; set; } = string.Empty;
+        public JArray PhaseB { get; set; } = new JArray();
     }
 }

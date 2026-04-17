@@ -54,7 +54,7 @@ namespace Intervu.Domain.Entities
         public Guid? BookingRequestId { get; set; }
 
         /// <summary>
-        /// FK to CoachInterviewService â€” the service type for this room
+        /// FK to CoachInterviewService — the service type for this room
         /// </summary>
         public Guid? CoachInterviewServiceId { get; set; }
 
@@ -76,9 +76,66 @@ namespace Intervu.Domain.Entities
         [NotMapped]
         public List<EvaluationResult>? EvaluationResults
         {
-            get => string.IsNullOrEmpty(EvaluationResultsJson)
-                   ? null
-                   : JsonSerializer.Deserialize<List<EvaluationResult>>(EvaluationResultsJson);
+            get
+            {
+                if (string.IsNullOrEmpty(EvaluationResultsJson))
+                {
+                    return null;
+                }
+
+                try
+                {
+                    // Legacy format: raw JSON array of evaluation results
+                    var asArray = JsonSerializer.Deserialize<List<EvaluationResult>>(EvaluationResultsJson, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+                    if (asArray != null)
+                    {
+                        return asArray;
+                    }
+                }
+                catch
+                {
+                    // ignore and try object format below
+                }
+
+                try
+                {
+                    // New format: object containing results + metadata (others, hireDecision)
+                    using var doc = JsonDocument.Parse(EvaluationResultsJson);
+                    var root = doc.RootElement;
+                    if (root.ValueKind != JsonValueKind.Object)
+                    {
+                        return null;
+                    }
+
+                    foreach (var property in root.EnumerateObject())
+                    {
+                        if (!string.Equals(property.Name, "results", StringComparison.OrdinalIgnoreCase) &&
+                            !string.Equals(property.Name, "evaluationResults", StringComparison.OrdinalIgnoreCase))
+                        {
+                            continue;
+                        }
+
+                        if (property.Value.ValueKind != JsonValueKind.Array)
+                        {
+                            return null;
+                        }
+
+                        return JsonSerializer.Deserialize<List<EvaluationResult>>(property.Value.GetRawText(), new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+                    }
+                }
+                catch
+                {
+                    // ignore
+                }
+
+                return null;
+            }
             set => EvaluationResultsJson = value == null
                    ? null
                    : JsonSerializer.Serialize(value);
@@ -98,13 +155,13 @@ namespace Intervu.Domain.Entities
 
         // Navigation Properties
         public InterviewBookingTransaction? Transaction { get; set; }
-        
+
         public CoachAvailability? CurrentAvailability { get; set; }
 
         public BookingRequest? BookingRequest { get; set; }
 
         public CoachInterviewService? CoachInterviewService { get; set; }
-        
+
         public ICollection<InterviewRescheduleRequest>? RescheduleRequests { get; set; }
 
         public ICollection<GeneratedQuestion> GeneratedQuestions { get; set; } = new List<GeneratedQuestion>();

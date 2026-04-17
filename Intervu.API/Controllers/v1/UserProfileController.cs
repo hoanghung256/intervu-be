@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using Intervu.Application.Interfaces.UseCases.CandidateProfile;
 using static Intervu.API.Controllers.v1.InterviewRoomController;
+using Intervu.API.Utils.Constant;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Intervu.API.Controllers.v1
 {
@@ -174,6 +176,33 @@ namespace Intervu.API.Controllers.v1
             {
                 success = true,
                 message = "Success",
+                data = fileUrl
+            });
+        }
+
+        [HttpPost("upload")]
+        [Authorize(Policy = AuthorizationPolicies.AllRoles)]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadMedia(IFormFile file, [FromQuery] string? folder = "general")
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(new { success = false, message = "File is required" });
+            }
+
+            using var stream = file.OpenReadStream();
+            string fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+            
+            // Build object name with folder
+            string cleanFolder = folder?.Trim('/') ?? "general";
+            string objectName = $"{cleanFolder}/{fileName}";
+
+            var fileUrl = await _fileService.UploadFileAsync(stream, objectName, file.ContentType);
+
+            return Ok(new
+            {
+                success = true,
+                message = "File uploaded successfully",
                 data = fileUrl
             });
         }
