@@ -10,6 +10,7 @@ namespace Intervu.Domain.Entities
         public WithdrawalStatus Status { get; set; }
         public string BankBinNumber { get; set; } = string.Empty;
         public string BankAccountNumber { get; set; } = string.Empty;
+        public string BankAccountNumberMasked { get; set; } = string.Empty;
         public string? Notes { get; set; }
         public DateTime? ProcessedAt { get; set; }
 

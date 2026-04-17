@@ -32,6 +32,8 @@ namespace Intervu.Domain.Entities
 
         public string BankAccountNumber { get; set; } = string.Empty;
 
+        public string BankAccountNumberMasked { get; set; } = string.Empty;
+
         /// <summary>
         /// JSON list of saved question snapshots. Nullable.
         /// </summary>

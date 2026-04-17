@@ -1,5 +1,6 @@
 using AutoMapper;
 using Intervu.Application.DTOs.Candidate;
+using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.UseCases.CandidateProfile;
 using Intervu.Application.Utils;
 using Intervu.Domain.Entities;
@@ -14,17 +15,20 @@ namespace Intervu.Application.UseCases.CandidateProfile
         private readonly IMapper _mapper;
         private readonly ISkillRepository _skillRepository;
         private readonly IIndustryRepository _industryRepository;
+        private readonly IBankFieldProtector _bankFieldProtector;
 
         public UpdateCandidateProfile(
             ICandidateProfileRepository repo,
             ISkillRepository skillRepository,
             IIndustryRepository industryRepository,
-            IMapper mapper)
+            IMapper mapper,
+            IBankFieldProtector bankFieldProtector)
         {
             _repo = repo;
             _skillRepository = skillRepository;
             _industryRepository = industryRepository;
             _mapper = mapper;
+            _bankFieldProtector = bankFieldProtector;
         }
 
         public async Task<CandidateProfileDto> UpdateCandidateProfileAsync(Guid id, CandidateUpdateDto updateDto)
@@ -37,6 +41,21 @@ namespace Intervu.Application.UseCases.CandidateProfile
 
             // Always keep profile id from route to avoid accidental Guid.Empty from payload
             existing.Id = id;
+
+            if (updateDto.BankAccountNumber != null)
+            {
+                var plain = updateDto.BankAccountNumber.Trim();
+                if (plain.Length == 0)
+                {
+                    existing.BankAccountNumber = string.Empty;
+                    existing.BankAccountNumberMasked = string.Empty;
+                }
+                else
+                {
+                    existing.BankAccountNumber = _bankFieldProtector.Encrypt(plain);
+                    existing.BankAccountNumberMasked = _bankFieldProtector.Mask(plain);
+                }
+            }
 
             if (existing.User != null)
             {

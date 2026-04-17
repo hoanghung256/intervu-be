@@ -15,19 +15,22 @@ namespace Intervu.Application.UseCases.InterviewBooking
         private readonly IPaymentService _paymentService;
         private readonly IBackgroundService _jobService;
         private readonly ILogger<RefundForCandidate> _logger;
+        private readonly IBankFieldProtector _bankFieldProtector;
 
         public RefundForCandidate(
             ITransactionRepository transactionRepository,
             ICandidateProfileRepository candidateProfileRepository,
             IPaymentService paymentService,
             IBackgroundService jobService,
-            ILogger<RefundForCandidate> logger)
+            ILogger<RefundForCandidate> logger,
+            IBankFieldProtector bankFieldProtector)
         {
             _transactionRepository = transactionRepository;
             _candidateProfileRepository = candidateProfileRepository;
             _paymentService = paymentService;
             _jobService = jobService;
             _logger = logger;
+            _bankFieldProtector = bankFieldProtector;
         }
 
         public async Task ExecuteAsync(Guid bookingRequestId)
@@ -60,13 +63,14 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     return;
                 }
 
-                _logger.LogInformation("Processing payout to BankBin: {BankBin}, Account: {Account}", candidate.BankBinNumber, candidate.BankAccountNumber);
+                _logger.LogInformation("Processing payout to BankBin: {BankBin}, Account: {Account}", candidate.BankBinNumber, candidate.BankAccountNumberMasked);
 
+                var plainAccount = _bankFieldProtector.Decrypt(candidate.BankAccountNumber);
                 await _paymentService.CreateSpendOrderAsync(
                     t.Amount,
                     $"REFUND",
                     candidate.BankBinNumber,
-                    candidate.BankAccountNumber
+                    plainAccount
                 );
                 
                 _logger.LogInformation("Refund successfully sent to PaymentService for transaction: {TransactionId}", t.Id);

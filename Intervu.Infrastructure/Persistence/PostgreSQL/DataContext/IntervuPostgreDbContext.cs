@@ -148,6 +148,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.PortfolioUrl).HasMaxLength(1000);
                 b.Property(x => x.Bio).HasColumnType("text");
                 b.Property(x => x.AIEvaluation).HasColumnName("AIEvaluation").HasColumnType("jsonb").IsRequired(false);
+                b.Property(x => x.BankAccountNumberMasked).HasMaxLength(20);
 
                 var savedQuestionComparer = new Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer<System.Collections.Generic.List<Intervu.Domain.Entities.QuestionSnapshot>>(
                     (c1, c2) => System.Text.Json.JsonSerializer.Serialize(c1, (System.Text.Json.JsonSerializerOptions?)null) == System.Text.Json.JsonSerializer.Serialize(c2, (System.Text.Json.JsonSerializerOptions?)null),
@@ -250,6 +251,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.Version).IsConcurrencyToken();
                 b.Property(x => x.BankBinNumber);
                 b.Property(x => x.BankAccountNumber);
+                b.Property(x => x.BankAccountNumberMasked).HasMaxLength(20);
                 b.Property(x => x.ExperienceYears);
                 b.Property(x => x.CurrentJobTitle).HasMaxLength(200);
                 b.Property(x => x.Status).IsRequired();
@@ -1074,7 +1076,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.Amount).IsRequired();
                 b.Property(x => x.Status).IsRequired();
                 b.Property(x => x.BankBinNumber).HasMaxLength(20);
-                b.Property(x => x.BankAccountNumber).HasMaxLength(50);
+                b.Property(x => x.BankAccountNumber).HasMaxLength(512);
+                b.Property(x => x.BankAccountNumberMasked).HasMaxLength(20);
                 b.Property(x => x.Notes).HasMaxLength(1000);
 
                 b.HasOne(x => x.User)

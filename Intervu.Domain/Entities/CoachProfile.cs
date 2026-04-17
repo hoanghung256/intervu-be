@@ -32,6 +32,8 @@ namespace Intervu.Domain.Entities
 
         public string BankAccountNumber { get; set; } = string.Empty;
 
+        public string BankAccountNumberMasked { get; set; } = string.Empty;
+
         public CoachProfileStatus Status { get; set; }
 
         public ICollection<Company> Companies { get; set; } = new List<Company>();
