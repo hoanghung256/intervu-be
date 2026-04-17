@@ -6,6 +6,7 @@ using Intervu.Application.Interfaces.ExternalServices.Pinecone;
 using Intervu.Application.Interfaces.ExternalServices.AI;
 using Intervu.Application.Interfaces.UseCases.SmartSearch;
 using Intervu.Domain.Repositories;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -18,24 +19,29 @@ namespace Intervu.Application.UseCases.SmartSearch
         private readonly ICoachProfileRepository _coachProfileRepository;
         private readonly ISmartSearchReasoningService _reasoningService;
         private readonly IMapper _mapper;
+        private readonly ILogger<SmartSearchCoach> _logger;
 
         public SmartSearchCoach(
             IEmbeddingService embeddingService,
             IVectorStoreService vectorStoreService,
             ICoachProfileRepository coachProfileRepository,
             ISmartSearchReasoningService reasoningService,
-            IMapper mapper)
+            IMapper mapper,
+            ILogger<SmartSearchCoach> logger)
         {
             _embeddingService = embeddingService;
             _vectorStoreService = vectorStoreService;
             _coachProfileRepository = coachProfileRepository;
             _reasoningService = reasoningService;
             _mapper = mapper;
+            _logger = logger;
         }
 
         public async Task<List<SmartSearchResultDto>> ExecuteAsync(SmartSearchRequest request)
         {
-            const int reasoningCandidateTopK = 5;
+            // Widened pool so filter cascade (validity check + DB profile match) still leaves enough
+            // candidates for the LLM reranker to pick finalOutputTopN winners from.
+            const int reasoningCandidateTopK = 10;
             const int finalOutputTopN = 3;
 
             if (string.IsNullOrWhiteSpace(request.Query) && string.IsNullOrWhiteSpace(request.ExtractedProfileContext))
@@ -51,6 +57,8 @@ namespace Intervu.Application.UseCases.SmartSearch
             var vectorMatches = await _vectorStoreService.SearchAsync(
                 queryVector, vectorTopK, request.Namespace, metadataFilters);
 
+            _logger.LogInformation("SmartSearch: Pinecone returned {Count} matches (topK={TopK})", vectorMatches.Count, vectorTopK);
+
             if (!vectorMatches.Any())
                 return new List<SmartSearchResultDto>();
 
@@ -62,6 +70,8 @@ namespace Intervu.Application.UseCases.SmartSearch
                 if (Guid.TryParse(match.Id, out var coachId))
                     validMatches.Add((coachId, match.Score));
             }
+
+            _logger.LogInformation("SmartSearch: {Valid}/{Total} matches passed entity validation", validMatches.Count, vectorMatches.Count);
 
             if (!validMatches.Any())
                 return new List<SmartSearchResultDto>();
@@ -81,14 +91,23 @@ namespace Intervu.Application.UseCases.SmartSearch
             var coachProfiles = await dbTask;
             var reasoningResults = await llmTask;
 
+            _logger.LogInformation(
+                "SmartSearch: DB returned {ProfileCount} profiles for {ExpectedCount} valid matches; LLM returned {ReasoningCount} reasoning results",
+                coachProfiles.Count(), validMatches.Count, reasoningResults.Count);
+
             // Step 4: Build result DTOs from DB data
             var profileMap = coachProfiles.ToDictionary(p => p.Id);
             var scoreMap = validMatches.ToDictionary(m => m.CoachId, m => m.Score);
             var results = new List<SmartSearchResultDto>();
+            var missingProfiles = new List<Guid>();
 
             foreach (var (coachId, vectorScore) in validMatches)
             {
-                if (!profileMap.TryGetValue(coachId, out var coachProfile)) continue;
+                if (!profileMap.TryGetValue(coachId, out var coachProfile))
+                {
+                    missingProfiles.Add(coachId);
+                    continue;
+                }
 
                 var topSkills = coachProfile.Skills?.Take(3).Select(s => s.Name).ToList() ?? new List<string>();
                 var companies = coachProfile.Companies?.Select(c => new CompanySummaryDto
@@ -114,7 +133,15 @@ namespace Intervu.Application.UseCases.SmartSearch
                 });
             }
 
-            // Step 5: Apply AI re-ranking scores
+            if (missingProfiles.Any())
+            {
+                _logger.LogWarning("SmartSearch: {Count} coach vectors had no matching DB profile (likely stale vectors): {Ids}",
+                    missingProfiles.Count, string.Join(", ", missingProfiles));
+            }
+
+            // Step 5: Apply AI re-ranking scores.
+            // Unmatched coaches keep their original vector score (no halving) — mixing scores on different
+            // scales (LLM 0–1 vs halved vector) corrupts ordering when the LLM returns partial results.
             if (reasoningResults.Any())
             {
                 var reasoningMap = new Dictionary<string, ReasoningResult>(StringComparer.OrdinalIgnoreCase);
@@ -137,8 +164,8 @@ namespace Intervu.Application.UseCases.SmartSearch
                     }
                     else
                     {
-                        result.RerankScore = result.MatchScore * 0.5;
-                        result.FinalScore = result.MatchScore * 0.5;
+                        result.RerankScore = result.MatchScore;
+                        result.FinalScore = result.MatchScore;
                         result.RerankSource = "Pinecone-Fallback";
 
                         var skills = result.TopSkills != null && result.TopSkills.Any()
@@ -152,10 +179,19 @@ namespace Intervu.Application.UseCases.SmartSearch
                 }
             }
 
-            return results
-                .OrderByDescending(r => r.FinalScore)
+            // Two-tier ordering: AI-reranked coaches first (ordered by LLM score),
+            // then vector-fallback coaches (ordered by vector score). This guarantees
+            // AI-validated matches are never outranked by unreranked fallbacks.
+            var ordered = results
+                .OrderByDescending(r => r.RerankSource == "AI")
+                .ThenByDescending(r => r.RerankSource == "AI" ? r.RerankScore : r.MatchScore)
                 .Take(finalOutputTopN)
                 .ToList();
+
+            _logger.LogInformation("SmartSearch: returning {Count}/{Expected} results (AI-reranked: {AiCount})",
+                ordered.Count, finalOutputTopN, ordered.Count(r => r.RerankSource == "AI"));
+
+            return ordered;
         }
 
         /// <summary>

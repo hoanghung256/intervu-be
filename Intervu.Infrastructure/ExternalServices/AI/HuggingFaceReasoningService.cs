@@ -44,7 +44,9 @@ namespace Intervu.Infrastructure.ExternalServices.AI
             var model = _configuration["ReasoningApi:ModelId"] ?? DEFAULT_MODEL;
             var apiKeyHeader = _configuration["ReasoningApi:ApiKeyHeader"] ?? "Authorization";
             var apiKeyPrefix = _configuration["ReasoningApi:ApiKeyPrefix"] ?? "Bearer";
-            var maxTokens = _configuration.GetValue<int>("ReasoningApi:MaxTokens", 1024);
+            // 3072 tokens fits ~10 candidates with reasoning strings without truncation.
+            // Prior default (1024) truncated responses when candidate count grew, causing empty parses.
+            var maxTokens = _configuration.GetValue<int>("ReasoningApi:MaxTokens", 3072);
             var temperature = _configuration.GetValue<double>("ReasoningApi:Temperature", 0.2);
 
             var idList = string.Join(", ", candidates.Select(c => c.Id));
@@ -79,7 +81,20 @@ namespace Intervu.Infrastructure.ExternalServices.AI
                 }
 
                 var chatResponse = JsonConvert.DeserializeObject<HfChatResponse>(responseBody);
-                return ReasoningShared.ParseResults(chatResponse?.Choices?.FirstOrDefault()?.Message?.Content);
+                var rawContent = chatResponse?.Choices?.FirstOrDefault()?.Message?.Content;
+                var parsed = ReasoningShared.ParseResults(rawContent);
+
+                _logger.LogInformation(
+                    "HF reasoning parsed {ParsedCount}/{ExpectedCount} results (model={Model}, rawLen={RawLen})",
+                    parsed.Count, candidates.Count, model, rawContent?.Length ?? 0);
+
+                if (parsed.Count == 0 && !string.IsNullOrWhiteSpace(rawContent))
+                {
+                    _logger.LogWarning("HF reasoning returned non-empty content but parser found 0 results. First 500 chars: {Snippet}",
+                        rawContent.Length > 500 ? rawContent[..500] : rawContent);
+                }
+
+                return parsed;
             }
             catch (TaskCanceledException)
             {

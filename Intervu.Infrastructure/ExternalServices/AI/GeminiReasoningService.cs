@@ -1,8 +1,13 @@
 using Intervu.Application.Interfaces.ExternalServices.AI;
+using Intervu.Domain.Abstractions.Entity.Interfaces;
+using Intervu.Domain.Entities;
+using Intervu.Domain.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System;
+using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Text;
 
@@ -13,17 +18,23 @@ namespace Intervu.Infrastructure.ExternalServices.AI
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
         private readonly ILogger<GeminiReasoningService> _logger;
+        private readonly IAiTrafficLogRepository _aiTrafficLogRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private const string HF_REASONING_MODEL = "meta-llama/Llama-3.1-8B-Instruct:novita";
         private const string HF_REASONING_URL = "https://router.huggingface.co/v1/chat/completions";
 
         public GeminiReasoningService(
             HttpClient httpClient,
             IConfiguration configuration,
-            ILogger<GeminiReasoningService> logger)
+            ILogger<GeminiReasoningService> logger,
+            IAiTrafficLogRepository aiTrafficLogRepository,
+            IUnitOfWork unitOfWork)
         {
             _httpClient = httpClient;
             _configuration = configuration;
             _logger = logger;
+            _aiTrafficLogRepository = aiTrafficLogRepository;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<List<ReasoningResult>> RerankAndReasonAsync(string query, List<ReasoningCandidate> candidates)
@@ -79,7 +90,10 @@ namespace Intervu.Infrastructure.ExternalServices.AI
                 using var request = new HttpRequestMessage(HttpMethod.Post, reasoningUrl);
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
                 request.Content = jsonContent;
+
+                var sw = Stopwatch.StartNew();
                 var response = await _httpClient.SendAsync(request, cts.Token);
+                sw.Stop();
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -91,6 +105,7 @@ namespace Intervu.Infrastructure.ExternalServices.AI
 
                 var responseBody = await response.Content.ReadAsStringAsync();
                 var aiResponse = JsonConvert.DeserializeObject<HuggingFaceChatResponse>(responseBody);
+                _ = TryLogUsageAsync(aiResponse?.Usage, sw.ElapsedMilliseconds);
 
                 var rawText = aiResponse?.Choices?.FirstOrDefault()?.Message?.Content;
                 var jsonResultText = ExtractJsonPayload(rawText) ?? rawText;
@@ -202,6 +217,29 @@ namespace Intervu.Infrastructure.ExternalServices.AI
             return null;
         }
 
+        private async Task TryLogUsageAsync(HuggingFaceUsage? usage, long latencyMs)
+        {
+            try
+            {
+                var log = new AiTrafficLog
+                {
+                    Id = Guid.NewGuid(),
+                    Timestamp = DateTime.UtcNow,
+                    EndpointName = "gemini-rerank",
+                    Provider = "HuggingFace",
+                    PromptTokens = usage?.PromptTokens ?? 0,
+                    CompletionTokens = usage?.CompletionTokens ?? 0,
+                    LatencyMs = latencyMs,
+                };
+                await _aiTrafficLogRepository.AddAsync(log);
+                await _unitOfWork.SaveChangesAsync();
+            }
+            catch
+            {
+                // Logging must never break the main flow
+            }
+        }
+
         private static List<ReasoningResult> ParseReasoningResults(string json)
         {
             var token = JToken.Parse(json);
@@ -234,6 +272,9 @@ namespace Intervu.Infrastructure.ExternalServices.AI
         private class HuggingFaceChatResponse
         {
             public List<HuggingFaceChoice>? Choices { get; set; }
+
+            [JsonProperty("usage")]
+            public HuggingFaceUsage? Usage { get; set; }
         }
 
         private class HuggingFaceChoice
@@ -244,6 +285,18 @@ namespace Intervu.Infrastructure.ExternalServices.AI
         private class HuggingFaceMessage
         {
             public string? Content { get; set; }
+        }
+
+        private class HuggingFaceUsage
+        {
+            [JsonProperty("prompt_tokens")]
+            public int PromptTokens { get; set; }
+
+            [JsonProperty("completion_tokens")]
+            public int CompletionTokens { get; set; }
+
+            [JsonProperty("total_tokens")]
+            public int TotalTokens { get; set; }
         }
     }
 }
