@@ -1,7 +1,11 @@
 using Intervu.Application.Interfaces.ExternalServices.AI;
+using Intervu.Domain.Abstractions.Entity.Interfaces;
+using Intervu.Domain.Entities;
+using Intervu.Domain.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System.Diagnostics;
 using System.Text;
 
 namespace Intervu.Infrastructure.ExternalServices.AI
@@ -11,17 +15,23 @@ namespace Intervu.Infrastructure.ExternalServices.AI
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
         private readonly ILogger<HuggingFaceReasoningService> _logger;
+        private readonly IAiTrafficLogRepository _aiTrafficLogRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private const string DEFAULT_MODEL = "meta-llama/Llama-3.1-8B-Instruct:novita";
         private const string DEFAULT_URL = "https://router.huggingface.co/v1/chat/completions";
 
         public HuggingFaceReasoningService(
             HttpClient httpClient,
             IConfiguration configuration,
-            ILogger<HuggingFaceReasoningService> logger)
+            ILogger<HuggingFaceReasoningService> logger,
+            IAiTrafficLogRepository aiTrafficLogRepository,
+            IUnitOfWork unitOfWork)
         {
             _httpClient = httpClient;
             _configuration = configuration;
             _logger = logger;
+            _aiTrafficLogRepository = aiTrafficLogRepository;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<List<ReasoningResult>> RerankAndReasonAsync(string query, List<ReasoningCandidate> candidates)
@@ -71,7 +81,9 @@ namespace Intervu.Infrastructure.ExternalServices.AI
                 request.Headers.TryAddWithoutValidation(apiKeyHeader, headerValue);
                 request.Content = new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8, "application/json");
 
+                var sw = Stopwatch.StartNew();
                 var response = await _httpClient.SendAsync(request, cts.Token);
+                sw.Stop();
                 var responseBody = await response.Content.ReadAsStringAsync();
 
                 if (!response.IsSuccessStatusCode)
@@ -81,6 +93,9 @@ namespace Intervu.Infrastructure.ExternalServices.AI
                 }
 
                 var chatResponse = JsonConvert.DeserializeObject<HfChatResponse>(responseBody);
+
+                _ = TryLogUsageAsync(chatResponse?.Usage, sw.ElapsedMilliseconds);
+
                 var rawContent = chatResponse?.Choices?.FirstOrDefault()?.Message?.Content;
                 var parsed = ReasoningShared.ParseResults(rawContent);
 
@@ -108,9 +123,35 @@ namespace Intervu.Infrastructure.ExternalServices.AI
             }
         }
 
+        private async Task TryLogUsageAsync(HfUsage? usage, long latencyMs)
+        {
+            try
+            {
+                var log = new AiTrafficLog
+                {
+                    Id = Guid.NewGuid(),
+                    Timestamp = DateTime.UtcNow,
+                    EndpointName = "smart-search-rerank",
+                    Provider = "HuggingFace",
+                    PromptTokens = usage?.PromptTokens ?? 0,
+                    CompletionTokens = usage?.CompletionTokens ?? 0,
+                    LatencyMs = latencyMs,
+                };
+                await _aiTrafficLogRepository.AddAsync(log);
+                await _unitOfWork.SaveChangesAsync();
+            }
+            catch
+            {
+                // Logging must never break the main flow
+            }
+        }
+
         private class HfChatResponse
         {
             public List<HfChoice>? Choices { get; set; }
+
+            [JsonProperty("usage")]
+            public HfUsage? Usage { get; set; }
         }
 
         private class HfChoice
@@ -121,6 +162,18 @@ namespace Intervu.Infrastructure.ExternalServices.AI
         private class HfMessage
         {
             public string? Content { get; set; }
+        }
+
+        private class HfUsage
+        {
+            [JsonProperty("prompt_tokens")]
+            public int PromptTokens { get; set; }
+
+            [JsonProperty("completion_tokens")]
+            public int CompletionTokens { get; set; }
+
+            [JsonProperty("total_tokens")]
+            public int TotalTokens { get; set; }
         }
     }
 }

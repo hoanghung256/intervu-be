@@ -3,6 +3,7 @@ using System;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 {
     [DbContext(typeof(IntervuPostgreDbContext))]
-    partial class IntervuPostgreDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260417050826_AddAiTrafficLog")]
+    partial class AddAiTrafficLog
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -806,10 +809,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
-                    b.Property<int>("Version")
-                        .IsConcurrencyToken()
-                        .HasColumnType("integer");
-
                     b.HasKey("Id");
 
                     b.ToTable("CoachProfiles", (string)null);
@@ -825,8 +824,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             CurrentJobTitle = "Senior Backend Engineer",
                             ExperienceYears = 8,
                             PortfolioUrl = "https://portfolio.example.com/bob",
-                            Status = 0,
-                            Version = 0
+                            Status = 0
                         },
                         new
                         {
@@ -838,8 +836,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             CurrentJobTitle = "Technical Lead",
                             ExperienceYears = 6,
                             PortfolioUrl = "https://portfolio.example.com/john",
-                            Status = 0,
-                            Version = 0
+                            Status = 0
                         },
                         new
                         {
@@ -851,8 +848,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             CurrentJobTitle = "Senior Frontend Engineer",
                             ExperienceYears = 7,
                             PortfolioUrl = "https://portfolio.example.com/sarah",
-                            Status = 0,
-                            Version = 0
+                            Status = 0
                         });
                 });
 
@@ -1231,9 +1227,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
-                    b.Property<string>("TagIdsJson")
-                        .HasColumnType("jsonb");
-
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -1564,9 +1557,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Details")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ExpectTo")
                         .HasColumnType("text");
 
                     b.Property<Guid>("InterviewRoomId")
@@ -2896,9 +2886,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("AnswerJson")
-                        .HasColumnType("jsonb");
-
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
@@ -2934,56 +2921,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .IsUnique();
 
                     b.ToTable("UserSkillAssessmentSnapshots", (string)null);
-                });
-
-            modelBuilder.Entity("Intervu.Domain.Entities.WithdrawalRequest", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Amount")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("BankAccountNumber")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("BankBinNumber")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<DateTime?>("ProcessedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Status");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("WithdrawalRequests", (string)null);
                 });
 
             modelBuilder.Entity("CandidateIndustries", b =>
@@ -3610,17 +3547,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Intervu.Domain.Entities.WithdrawalRequest", b =>
-                {
-                    b.HasOne("Intervu.Domain.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("User");

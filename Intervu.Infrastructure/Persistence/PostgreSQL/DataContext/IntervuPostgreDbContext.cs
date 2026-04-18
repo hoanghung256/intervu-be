@@ -58,6 +58,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
         public DbSet<AudioChunk> AudioChunks { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<WithdrawalRequest> WithdrawalRequests { get; set; }
+        public DbSet<AiTrafficLog> AiTrafficLogs { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {

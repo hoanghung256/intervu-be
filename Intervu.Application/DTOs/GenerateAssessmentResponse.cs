@@ -1,3 +1,5 @@
+using Intervu.Application.DTOs.Assessment;
+using Intervu.Application.DTOs.Ai;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
@@ -44,5 +46,39 @@ namespace Intervu.Application.DTOs
         [JsonProperty("phaseB")]
         [JsonPropertyName("phaseB")]
         public JArray PhaseB { get; set; } = new JArray();
+
+        [JsonProperty("usage")]
+        [JsonPropertyName("usage")]
+        public LlmTokenUsageDto? Usage { get; set; }
+    }
+
+    public class AssessmentQuestionItemDto
+    {
+        [JsonProperty("questionId")]
+        [JsonPropertyName("questionId")]
+        public string QuestionId { get; set; } = string.Empty;
+
+        [JsonProperty("skill")]
+        [JsonPropertyName("skill")]
+        public string Skill { get; set; } = string.Empty;
+
+        [JsonProperty("question")]
+        [JsonPropertyName("question")]
+        public string Question { get; set; } = string.Empty;
+
+        [JsonProperty("options")]
+        [JsonPropertyName("options")]
+        public List<OptionDto> Options { get; set; } = new List<OptionDto>();
+    }
+
+    public class OptionDto
+    {
+        [JsonProperty("text")]
+        [JsonPropertyName("text")]
+        public string Text { get; set; } = string.Empty;
+
+        [JsonProperty("level")]
+        [JsonPropertyName("level")]
+        public string Level { get; set; } = string.Empty;
     }
 }

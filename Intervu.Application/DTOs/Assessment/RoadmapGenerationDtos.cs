@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
+using Intervu.Application.DTOs.Ai;
 
 namespace Intervu.Application.DTOs.Assessment
 {
@@ -78,6 +79,9 @@ namespace Intervu.Application.DTOs.Assessment
 
         [JsonPropertyName("error")]
         public string? Error { get; set; }
+
+        [JsonPropertyName("usage")]
+        public LlmTokenUsageDto? Usage { get; set; }
     }
 
     // ── Roadmap progress update (post-interview) ────────────────────────────

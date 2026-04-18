@@ -44,6 +44,7 @@ namespace Intervu.API.Controllers.v1
         private readonly IGetAiServicesHealth _getAiServicesHealth;
         private readonly IGetAiConfiguration _getAiConfiguration;
         private readonly IAdminTriggerVectorSync _triggerVectorSync;
+        private readonly IGetPythonAiMetrics _getPythonAiMetrics;
 
         public AdminController(
             IGetDashboardStats getDashboardStats,
@@ -69,7 +70,8 @@ namespace Intervu.API.Controllers.v1
             IGetPineconeIndexStats getPineconeIndexStats,
             IGetAiServicesHealth getAiServicesHealth,
             IGetAiConfiguration getAiConfiguration,
-            IAdminTriggerVectorSync triggerVectorSync)
+            IAdminTriggerVectorSync triggerVectorSync,
+            IGetPythonAiMetrics getPythonAiMetrics)
         {
             _getDashboardStats = getDashboardStats;
             _getAllUsers = getAllUsers;
@@ -95,6 +97,7 @@ namespace Intervu.API.Controllers.v1
             _getAiServicesHealth = getAiServicesHealth;
             _getAiConfiguration = getAiConfiguration;
             _triggerVectorSync = triggerVectorSync;
+            _getPythonAiMetrics = getPythonAiMetrics;
         }
 
         /// <summary>
@@ -785,6 +788,23 @@ namespace Intervu.API.Controllers.v1
             {
                 var config = await _getAiConfiguration.ExecuteAsync();
                 return Ok(new { success = true, message = "Success", data = config });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message, data = (object?)null });
+            }
+        }
+
+        /// <summary>
+        /// Get AI traffic metrics (token usage, latency) for all AI providers
+        /// </summary>
+        [HttpGet("system/python-ai-metrics")]
+        public async Task<IActionResult> GetPythonAiMetrics([FromQuery] PythonAiMetricsQueryDto query)
+        {
+            try
+            {
+                var metrics = await _getPythonAiMetrics.ExecuteAsync(query ?? new PythonAiMetricsQueryDto());
+                return Ok(new { success = true, message = "Success", data = metrics });
             }
             catch (Exception ex)
             {
