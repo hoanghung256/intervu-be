@@ -12,6 +12,7 @@ namespace Intervu.Application.Interfaces.ExternalServices
     public interface IAiService
     {
         Task<GenerateAssessmentResponse> GenerateAssessmentAsync(GenerateAssessmentRequest request, string? useCase = null);
+        Task<string> EvaluateAssessmentRawAsync(EvaluateAssessmentRequestDto request, CancellationToken cancellationToken = default, string? useCase = null);
         Task<AiGenerateRoadmapResponseDto?> GenerateRoadmapAsync(AiGenerateRoadmapRequestDto request, CancellationToken cancellationToken = default, string? useCase = null);
         Task<AiUpdateRoadmapProgressResponseDto?> UpdateRoadmapProgressAsync(AiUpdateRoadmapProgressRequestDto request, CancellationToken cancellationToken = default, string? useCase = null);
         Task<bool> StoreCvUrlAsync(Guid roomId, string cvUrl, IFormFile? file, string? useCase = null);

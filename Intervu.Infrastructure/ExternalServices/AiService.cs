@@ -19,6 +19,7 @@ using System.Text.Json.Serialization;
 using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Repositories;
+using System.Text.RegularExpressions;
 
 namespace Intervu.Infrastructure.ExternalServices
 {
@@ -368,10 +369,78 @@ namespace Intervu.Infrastructure.ExternalServices
 
             result.PhaseA ??= new JArray();
             result.PhaseB ??= new JArray();
+            NormalizeOptionLevels(result.PhaseA);
+            NormalizeOptionLevels(result.PhaseB);
 
             var usage = result.Usage ?? ExtractUsage(rawContent);
             await LogUsageAsync(usage, "api/generate-assessment", "HuggingFace", sw.ElapsedMilliseconds, useCase);
             return result;
+        }
+
+        public async Task<string> EvaluateAssessmentRawAsync(EvaluateAssessmentRequestDto request, CancellationToken cancellationToken = default, string? useCase = null)
+        {
+            var sw = Stopwatch.StartNew();
+            var response = await _httpClient.PostAsJsonAsync("api/evaluate-assessment", request, cancellationToken);
+            sw.Stop();
+
+            var rawContent = await response.Content.ReadAsStringAsync(cancellationToken);
+            await LogUsageAsync(ExtractUsage(rawContent), "api/evaluate-assessment", "HuggingFace", sw.ElapsedMilliseconds, useCase);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new HttpRequestException(
+                    $"AI service request failed with status code {(int)response.StatusCode}: {rawContent}");
+            }
+
+            return string.IsNullOrWhiteSpace(rawContent) ? "{}" : rawContent;
+        }
+
+        private static void NormalizeOptionLevels(JArray phase)
+        {
+            foreach (var question in phase.OfType<JObject>())
+            {
+                if (question["options"] is not JArray options)
+                {
+                    continue;
+                }
+
+                foreach (var option in options.OfType<JObject>())
+                {
+                    var raw = option.Value<string>("level") ?? string.Empty;
+                    option["level"] = NormalizeLevel(raw);
+                }
+            }
+        }
+
+        private static string NormalizeLevel(string input)
+        {
+            var raw = input.Trim();
+            if (raw is "1" or "2" or "3" or "4")
+            {
+                return raw;
+            }
+
+            if (int.TryParse(raw, out var numeric))
+            {
+                return Math.Clamp(numeric, 1, 4).ToString();
+            }
+
+            var normalized = Regex.Replace(raw, @"\s+", " ").Trim().ToLowerInvariant();
+            return normalized switch
+            {
+                "none" => "1",
+                "beginner" => "1",
+                "basic" => "1",
+                "comfortable" => "2",
+                "intermediate" => "2",
+                "confident" => "3",
+                "advanced" => "3",
+                "expert" => "4",
+                "lead" => "4",
+                "principal" => "4",
+                "senior" => "4",
+                _ => "1"
+            };
         }
 
         public async Task<AiGenerateRoadmapResponseDto?> GenerateRoadmapAsync(AiGenerateRoadmapRequestDto request, CancellationToken cancellationToken = default, string? useCase = null)

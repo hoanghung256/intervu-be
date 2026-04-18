@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.DTOs.Assessment;
-using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.Services;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Repositories;
@@ -16,10 +15,59 @@ namespace Intervu.Application.Services
 {
     public class AssessmentService : IAssessmentService
     {
+        private sealed class EvaluatedResponseItem
+        {
+            public string QuestionId { get; set; } = string.Empty;
+            public string Question { get; set; } = string.Empty;
+            public string Phase { get; set; } = string.Empty;
+            public string Skill { get; set; } = string.Empty;
+            public string Answer { get; set; } = string.Empty;
+            public string SelectedLevel { get; set; } = string.Empty;
+            public decimal Score { get; set; }
+            public bool IsMissing { get; set; }
+            public int EffectiveLevel { get; set; }
+        }
+
         private readonly IUserSkillAssessmentSnapshotRepository _snapshotRepository;
         private readonly IInterviewRoomRepository _roomRepository;
         private readonly IAiService _aiService;
         private readonly ILogger<AssessmentService> _logger;
+        private static readonly string[] BackendFrameworkSkills =
+        {
+            "REST API Development",
+            "Database Design",
+            "ORM and Data Access",
+            "Authentication and Authorization",
+            "Caching",
+            "Message Queue Processing",
+            "Background Job Development",
+            "System Integration",
+            "Microservices Architecture",
+            "Performance Optimization",
+            "Logging and Monitoring",
+            "Automated Backend Testing",
+            "CI/CD for Backend Services",
+            "Containerization and Deployment",
+            "Secure Coding for Backend",
+            "Concurrency and Scalability"
+        };
+
+        private static readonly string[] FrontendFrameworkSkills =
+        {
+            "HTML and Semantic Markup",
+            "CSS and Styling Architecture",
+            "JavaScript and TypeScript Development",
+            "Frontend Framework Development",
+            "State Management",
+            "Responsive UI Development",
+            "Web Accessibility",
+            "API Integration in Frontend",
+            "Frontend Testing",
+            "Frontend Performance Optimization",
+            "Build Tools and Bundling",
+            "UI Component Design",
+            "Browser Debugging and Troubleshooting"
+        };
 
         public AssessmentService(
             IUserSkillAssessmentSnapshotRepository snapshotRepository,
@@ -34,152 +82,227 @@ namespace Intervu.Application.Services
         }
 
 
-        // Raw answers are not stored; only processed survey summaries are saved.
-
-        private static object? DeserializeJson(string? json)
+        private static int ParseLevel(string? rawLevel)
         {
-            if (string.IsNullOrWhiteSpace(json))
+            var normalized = (rawLevel ?? string.Empty).Trim().ToLowerInvariant();
+            if (normalized is "0" or "1" or "2" or "3" or "4")
             {
-                return null;
+                return int.Parse(normalized);
             }
 
-            try
+            return normalized switch
             {
-                return JsonSerializer.Deserialize<object>(json);
-            }
-            catch (JsonException)
+                "none" => 0,
+                "basic" => 1,
+                "beginner" => 1,
+                "intermediate" => 2,
+                "comfortable" => 2,
+                "advanced" => 3,
+                "confident" => 3,
+                "expert" => 4,
+                "lead" => 4,
+                "principal" => 4,
+                "senior" => 4,
+                _ => 0
+            };
+        }
+
+        private static int MapToSfia(int level)
+        {
+            return level switch
             {
-                return null;
+                <= 0 => 0,
+                1 => 2,
+                2 => 3,
+                3 => 5,
+                _ => 6
+            };
+        }
+
+        private static string MapOverallLevel(double averageLevel)
+        {
+            return averageLevel switch
+            {
+                < 0.5 => "None",
+                < 1.5 => "Basic",
+                < 2.5 => "Intermediate",
+                < 3.5 => "Advanced",
+                _ => "Expert"
+            };
+        }
+
+        private static List<string> ResolveSkillScope(SurveyAnswerProfileDto profile, IReadOnlyCollection<SurveyAnswerResponseDto> responses)
+        {
+            var role = profile.Role?.ToLowerInvariant() ?? string.Empty;
+            var baseSkills = role.Contains("front", StringComparison.OrdinalIgnoreCase)
+                ? FrontendFrameworkSkills.ToList()
+                : role.Contains("full", StringComparison.OrdinalIgnoreCase)
+                    ? BackendFrameworkSkills.Concat(FrontendFrameworkSkills).ToList()
+                    : BackendFrameworkSkills.ToList();
+
+            var level = profile.Level?.ToLowerInvariant() ?? string.Empty;
+            var scopedCount = level switch
+            {
+                "intern" or "fresher" or "junior" => Math.Min(6, baseSkills.Count),
+                "middle" or "mid" => Math.Min(10, baseSkills.Count),
+                "senior" => Math.Min(14, baseSkills.Count),
+                _ => baseSkills.Count
+            };
+
+            var scoped = baseSkills.Take(scopedCount).ToList();
+            foreach (var skill in responses
+                         .Select(response => response.Skill?.Trim())
+                         .Where(skill => !string.IsNullOrWhiteSpace(skill))
+                         .Cast<string>())
+            {
+                if (!scoped.Contains(skill, StringComparer.OrdinalIgnoreCase))
+                {
+                    scoped.Add(skill);
+                }
             }
+
+            return scoped;
         }
 
         public async Task<SurveySummaryResultDto> ProcessSurveyResponsesAsync(SurveyResponsesDto request, CancellationToken cancellationToken = default)
         {
-            int MapLevel(string lvl) => lvl?.ToLowerInvariant() switch
+            return await EvaluateAnswerJsonAsync(
+                request.Answer ?? new SurveyAnswerJsonDto(),
+                request.Target,
+                request.UserId == Guid.Empty ? null : request.UserId,
+                cancellationToken);
+        }
+
+        public async Task<SurveySummaryResultDto> EvaluateAnswerJsonAsync(
+            SurveyAnswerJsonDto answer,
+            SurveyTargetDto? target = null,
+            Guid? userId = null,
+            CancellationToken cancellationToken = default)
+        {
+            var responses = answer.Responses ?? new List<SurveyAnswerResponseDto>();
+            var skillScope = ResolveSkillScope(answer.Profile, responses);
+            var evaluatedResponses = new List<EvaluatedResponseItem>();
+
+            foreach (var response in responses)
             {
-                "none" => 0,
-                "basic" => 1,
-                "intermediate" => 2,
-                "advanced" => 3,
-                "beginner" => 0,
-                "comfortable" => 1,
-                "confident" => 2,
-                "expert" => 3,
-                _ => 0
-            };
+                var selectedLevel = ParseLevel(response.SelectedLevel);
+                var effectiveLevel = response.IsMissing ? 0 : selectedLevel;
+                var skill = response.Skill?.Trim() ?? string.Empty;
 
-            var responses = request.Responses ?? new List<ResponseItem>();
-
-            var byPhase = responses
-                .GroupBy(r => r.Phase ?? string.Empty)
-                .ToDictionary(g => g.Key, g => g.ToList());
-
-            var summary = new Dictionary<string, object>();
-
-            foreach (var kv in byPhase)
-            {
-                var phase = kv.Key;
-                var items = kv.Value;
-                var scores = items.Select(i => MapLevel(i.SelectedLevel)).ToList();
-                var avg = scores.Any() ? Math.Round(scores.Average(), 2) : 0;
-                var toImprove = items.Where(i => MapLevel(i.SelectedLevel) <= 1).Select(i => i.Skill).ToList();
-
-                summary[phase] = new
+                evaluatedResponses.Add(new EvaluatedResponseItem
                 {
-                    AverageScore = avg,
-                    Questions = items.Select(i => new { i.Skill, i.SelectedLevel }).ToList(),
-                    NeedsImprovement = toImprove
-                };
+                    QuestionId = response.QuestionId,
+                    Question = response.Question,
+                    Phase = response.Phase,
+                    Skill = skill,
+                    Answer = response.Answer,
+                    SelectedLevel = response.SelectedLevel,
+                    Score = response.Score,
+                    IsMissing = response.IsMissing,
+                    EffectiveLevel = effectiveLevel
+                });
             }
 
-            var lines = new List<string>();
-            foreach (var kv in summary)
-            {
-                var obj = (dynamic)kv.Value;
-                var avg = obj.AverageScore;
-                var level = avg switch
+            var currentSkills = skillScope
+                .Select(skill =>
                 {
-                    <= 0.5 => "None",
-                    <= 1.5 => "Basic",
-                    <= 2.5 => "Intermediate",
-                    _ => "Advanced"
-                };
+                    var matched = evaluatedResponses
+                        .Where(item => string.Equals(item.Skill, skill, StringComparison.OrdinalIgnoreCase))
+                        .ToList();
 
-                var needs = ((IEnumerable<object>)obj.NeedsImprovement).Cast<string>().ToList();
-                lines.Add($"{kv.Key}: average level {level}. Consider improving: {string.Join(", ", needs)}");
-            }
+                    var bestLevel = matched.Any() ? matched.Max(item => item.EffectiveLevel) : 0;
+                    var bestScore = matched.Any() ? matched.Max(item => item.Score) : 0m;
 
-            var summaryText = string.Join("\n", lines);
+                    return new SurveyCurrentSkillDto
+                    {
+                        Skill = skill,
+                        Level = bestLevel.ToString(),
+                        Score = (int)Math.Round(bestScore)
+                    };
+                })
+                .ToList();
 
+            var missing = currentSkills
+                .Where(skill => skill.Level == "0")
+                .Select(skill => skill.Skill)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
 
-            var target = new Target
+            var averageLevel = evaluatedResponses.Any()
+                ? evaluatedResponses.Average(item => item.EffectiveLevel)
+                : 0.0;
+            var overallLevel = MapOverallLevel(averageLevel);
+
+            var summaryText = missing.Count > 0
+                ? $"Assessed {responses.Count} responses for {answer.Profile.Role}. Overall level is {overallLevel}. Missing skills: {string.Join(", ", missing)}."
+                : $"Assessed {responses.Count} responses for {answer.Profile.Role}. Overall level is {overallLevel}.";
+
+            var evaluatedAnswerJson = new
             {
-                Roles = request.Target?.Roles ?? new List<string>(),
-                Level = request.Target?.Level ?? string.Empty,
-                SkillsTarget = request.Target?.SkillsTarget ?? new List<string>()
+                profile = answer.Profile,
+                responses = responses
             };
 
-            var currentSkills = request.Current?.Skills?.Any() == true
-                ? request.Current.Skills.Select(s => new SkillLevel
-                {
-                    Skill = s.Skill,
-                    Level = s.Level,
-                    SfiaLevel = s.SfiaLevel ?? MapLevel(s.Level)
-                }).ToList()
-                : responses.Select(r => new SkillLevel
-                {
-                    Skill = r.Skill,
-                    Level = r.SelectedLevel,
-                    SfiaLevel = MapLevel(r.SelectedLevel)
-                }).ToList();
+            var normalizedTarget = target ?? new SurveyTargetDto
+            {
+                Roles = string.IsNullOrWhiteSpace(answer.Profile.Role)
+                    ? new List<string>()
+                    : new List<string> { answer.Profile.Role },
+                Level = answer.Profile.Level ?? string.Empty,
+                SkillsTarget = responses
+                    .Select(r => r.Skill?.Trim())
+                    .Where(skill => !string.IsNullOrWhiteSpace(skill))
+                    .Cast<string>()
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList()
+            };
 
-            var current = new Current
+            var snapshotTarget = new Target
+            {
+                Roles = normalizedTarget.Roles ?? new List<string>(),
+                Level = normalizedTarget.Level ?? string.Empty,
+                SkillsTarget = normalizedTarget.SkillsTarget ?? new List<string>()
+            };
+            var snapshotCurrent = new Current
             {
                 Skills = currentSkills
+                    .Select(skill => new SkillLevel
+                    {
+                        Skill = skill.Skill,
+                        Level = skill.Level
+                    })
+                    .ToList()
             };
 
-            var missing = request.Gap?.Missing?.Any() == true
-                ? request.Gap.Missing
-                : currentSkills
-                .Where(s => s.SfiaLevel == 0)
-                .Select(s => s.Skill)
-                .ToList();
-
-            var weak = request.Gap?.Weak?.Any() == true
-                ? request.Gap.Weak
-                : currentSkills
-                .Where(s => s.SfiaLevel == 1)
-                .Select(s => s.Skill)
-                .ToList();
-
-            var gap = new Gap
+            var snapshotGap = new Gap
             {
-                Missing = missing,
-                Weak = weak
+                Missing = missing
             };
 
-            var snapshot = new UserSkillAssessmentSnapshot
+            if (userId.HasValue && userId.Value != Guid.Empty)
             {
-                UserId = request.UserId,
-                Target = target,
-                Current = current,
-                Gap = gap,
-                Roadmap = MapRoadmap(request.Roadmap),
-                AnswerJson = request.Answer == null
-                    ? null
-                    : JsonSerializer.Serialize(request.Answer),
-            };
-
-            if (request.UserId != Guid.Empty)
-            {
+                var snapshot = new UserSkillAssessmentSnapshot
+                {
+                    UserId = userId.Value,
+                    Target = snapshotTarget,
+                    Current = snapshotCurrent,
+                    Gap = snapshotGap,
+                    AnswerJson = JsonSerializer.Serialize(evaluatedAnswerJson)
+                };
                 await _snapshotRepository.UpsertSnapshotAsync(snapshot, cancellationToken);
             }
 
             return new SurveySummaryResultDto
             {
-                UserId = request.UserId,
+                UserId = userId,
                 SummaryText = summaryText,
-                SummaryObject = summary
+                Answer = evaluatedAnswerJson,
+                Target = normalizedTarget,
+                Current = new SurveyCurrentResultDto
+                {
+                    Skills = currentSkills
+                },
+                Missing = missing
             };
         }
 

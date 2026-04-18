@@ -106,9 +106,17 @@ namespace Intervu.Domain.Entities
 
     public class SkillLevel
     {
+        [JsonPropertyName("skill")]
         public string Skill { get; set; } = string.Empty;
+
+        [JsonPropertyName("level")]
         public string Level { get; set; } = string.Empty;
+
+        [JsonIgnore]
         public int SfiaLevel { get; set; }
+
+        [JsonPropertyName("score")]
+        public decimal Score { get; set; }
     }
 
     public class Current
@@ -118,7 +126,10 @@ namespace Intervu.Domain.Entities
 
     public class Gap
     {
+        [JsonPropertyName("missing")]
         public List<string> Missing { get; set; } = new();
+
+        [JsonIgnore]
         public List<string> Weak { get; set; } = new();
     }
 
@@ -327,6 +338,12 @@ namespace Intervu.Domain.Entities
 
         [JsonPropertyName("selectedLevel")]
         public string SelectedLevel { get; set; } = string.Empty;
+
+        [JsonPropertyName("score")]
+        public decimal Score { get; set; }
+
+        [JsonPropertyName("isMissing")]
+        public bool IsMissing { get; set; }
     }
 
 }

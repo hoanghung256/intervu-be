@@ -9,6 +9,7 @@ namespace Intervu.API.Controllers.v1
 {
     [ApiController]
     [ApiVersion("1.0")]
+    [Route("api/generate-assessment")]
     [Route("api/v{version:apiVersion}/generate-assessment")]
     public class GenerateAssessmentController : ControllerBase
     {

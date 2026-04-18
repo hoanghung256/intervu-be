@@ -64,6 +64,12 @@ namespace Intervu.Application.DTOs.Assessment
 
         [JsonPropertyName("selectedLevel")]
         public string SelectedLevel { get; set; } = string.Empty;
+
+        [JsonPropertyName("score")]
+        public decimal Score { get; set; }
+
+        [JsonPropertyName("isMissing")]
+        public bool IsMissing { get; set; }
     }
 
     public class ResponseItem
