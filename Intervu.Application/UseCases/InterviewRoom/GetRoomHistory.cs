@@ -133,6 +133,8 @@ namespace Intervu.Application.UseCases.InterviewRoom
                             : null,
                     RescheduleAttemptCount = room.RescheduleAttemptCount,
                     BookingRequestId = room.BookingRequestId,
+                    JobDescriptionUrl = room.BookingRequest?.JobDescriptionUrl,
+                    CVUrl = room.BookingRequest?.CVUrl,
                     InterviewTypeName = room.CoachInterviewService?.InterviewType?.Name,
                     AimLevel = room.AimLevel,
                     RoundNumber = room.RoundNumber,
