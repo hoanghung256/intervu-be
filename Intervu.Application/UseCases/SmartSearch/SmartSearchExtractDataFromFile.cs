@@ -38,7 +38,8 @@ namespace Intervu.Application.UseCases.SmartSearch
             var jsonResponse = await _pythonAiService.ExtractDocumentToJsonAsync(
                 stream,
                 request.File.FileName,
-                request.DocType);
+                request.DocType,
+                useCase: "SmartSearchCvExtraction");
 
             // Strip token/usage keys before shaping the response, then inject a
             // distilled search_profile so the frontend has a compact, editable

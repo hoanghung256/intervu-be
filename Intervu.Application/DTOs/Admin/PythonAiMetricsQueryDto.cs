@@ -9,6 +9,7 @@ namespace Intervu.Application.DTOs.Admin
         public DateTime? To { get; set; }
         public string? Provider { get; set; }
         public string? Endpoint { get; set; }
+        public string? UseCase { get; set; }
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 50;
     }

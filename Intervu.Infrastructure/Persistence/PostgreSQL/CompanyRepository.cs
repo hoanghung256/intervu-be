@@ -25,7 +25,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
         public Task<int> GetTotalCompaniesCountAsync()
         {
-            throw new NotImplementedException();
+            return _context.Companies.CountAsync();
         }
 
         public async Task<Company?> GetByIdAsync(Guid id)

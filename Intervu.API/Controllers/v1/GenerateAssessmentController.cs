@@ -36,7 +36,7 @@ namespace Intervu.API.Controllers.v1
             if (request == null)
                 return BadRequest("Request body is required.");
 
-            var result = await _aiService.GenerateAssessmentAsync(request);
+            var result = await _aiService.GenerateAssessmentAsync(request, useCase: "AutoAssessment");
             return Ok(result);
         }
     }

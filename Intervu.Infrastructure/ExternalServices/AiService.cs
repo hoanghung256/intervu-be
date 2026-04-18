@@ -44,7 +44,7 @@ namespace Intervu.Infrastructure.ExternalServices
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<bool> StoreCvUrlAsync(Guid roomId, string cvUrl, IFormFile? file)
+        public async Task<bool> StoreCvUrlAsync(Guid roomId, string cvUrl, IFormFile? file, string? useCase = null)
         {
             if (_httpClient.BaseAddress == null)
             {
@@ -57,7 +57,7 @@ namespace Intervu.Infrastructure.ExternalServices
             var response = await _httpClient.PostAsJsonAsync(endpoint, cvUrl);
             swUrl.Stop();
             var urlBody = await SafeReadStringAsync(response);
-            await LogUsageAsync(ExtractUsage(urlBody), "api/last-cv-pdf-url", "HuggingFace", swUrl.ElapsedMilliseconds);
+            await LogUsageAsync(ExtractUsage(urlBody), "api/last-cv-pdf-url", "HuggingFace", swUrl.ElapsedMilliseconds, useCase);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -80,7 +80,7 @@ namespace Intervu.Infrastructure.ExternalServices
                     using var extractResponse = await _httpClient.PostAsync(extractEndpoint, form);
                     swExtract.Stop();
                     var extractBody = await SafeReadStringAsync(extractResponse);
-                    await LogUsageAsync(ExtractUsage(extractBody), "api/extract-cv", "HuggingFace", swExtract.ElapsedMilliseconds);
+                    await LogUsageAsync(ExtractUsage(extractBody), "api/extract-cv", "HuggingFace", swExtract.ElapsedMilliseconds, useCase);
 
                     if (!extractResponse.IsSuccessStatusCode)
                     {
@@ -148,7 +148,7 @@ namespace Intervu.Infrastructure.ExternalServices
             return raw;
         }
 
-        public async Task<AiQuestionExtractionResponse> GetNewQuestionsFromTranscriptAsync(byte[] audioData, Guid roomId, IEnumerable<string>? availableTags = null)
+        public async Task<AiQuestionExtractionResponse> GetNewQuestionsFromTranscriptAsync(byte[] audioData, Guid roomId, IEnumerable<string>? availableTags = null, string? useCase = null)
         {
             if (_httpClient.BaseAddress == null)
             {
@@ -305,7 +305,7 @@ namespace Intervu.Infrastructure.ExternalServices
 
                     result.QuestionList = validQuestions;
 
-                    await LogUsageAsync(result.Usage, "api/transcript", "HuggingFace", sw.ElapsedMilliseconds);
+                    await LogUsageAsync(result.Usage, "api/transcript", "HuggingFace", sw.ElapsedMilliseconds, useCase);
                     return result;
                 }
                 else
@@ -320,7 +320,7 @@ namespace Intervu.Infrastructure.ExternalServices
             }
         }
 
-        public async Task<GenerateAssessmentResponse> GenerateAssessmentAsync(GenerateAssessmentRequest request)
+        public async Task<GenerateAssessmentResponse> GenerateAssessmentAsync(GenerateAssessmentRequest request, string? useCase = null)
         {
             if (request == null)
             {
@@ -370,11 +370,11 @@ namespace Intervu.Infrastructure.ExternalServices
             result.PhaseB ??= new JArray();
 
             var usage = result.Usage ?? ExtractUsage(rawContent);
-            await LogUsageAsync(usage, "api/generate-assessment", "HuggingFace", sw.ElapsedMilliseconds);
+            await LogUsageAsync(usage, "api/generate-assessment", "HuggingFace", sw.ElapsedMilliseconds, useCase);
             return result;
         }
 
-        public async Task<AiGenerateRoadmapResponseDto?> GenerateRoadmapAsync(AiGenerateRoadmapRequestDto request, CancellationToken cancellationToken = default)
+        public async Task<AiGenerateRoadmapResponseDto?> GenerateRoadmapAsync(AiGenerateRoadmapRequestDto request, CancellationToken cancellationToken = default, string? useCase = null)
         {
             if (_httpClient.BaseAddress == null)
             {
@@ -420,7 +420,7 @@ namespace Intervu.Infrastructure.ExternalServices
             {
                 var result = System.Text.Json.JsonSerializer.Deserialize<AiGenerateRoadmapResponseDto>(rawContent, options);
                 _logger.LogInformation("AI generate-roadmap returned status {Status}", result?.Status);
-                await LogUsageAsync(result?.Usage, "api/generate-roadmap", "Gemini", sw.ElapsedMilliseconds);
+                await LogUsageAsync(result?.Usage, "api/generate-roadmap", "Gemini", sw.ElapsedMilliseconds, useCase);
                 return result;
             }
             catch (System.Text.Json.JsonException ex)
@@ -434,7 +434,7 @@ namespace Intervu.Infrastructure.ExternalServices
             }
         }
 
-        public async Task<AiUpdateRoadmapProgressResponseDto?> UpdateRoadmapProgressAsync(AiUpdateRoadmapProgressRequestDto request, CancellationToken cancellationToken = default)
+        public async Task<AiUpdateRoadmapProgressResponseDto?> UpdateRoadmapProgressAsync(AiUpdateRoadmapProgressRequestDto request, CancellationToken cancellationToken = default, string? useCase = null)
         {
             if (_httpClient.BaseAddress == null)
             {
@@ -443,7 +443,9 @@ namespace Intervu.Infrastructure.ExternalServices
 
             _logger.LogInformation("Calling AI update-roadmap-progress");
 
+            var sw = Stopwatch.StartNew();
             var response = await _httpClient.PostAsJsonAsync("api/update-roadmap-progress", request, cancellationToken);
+            sw.Stop();
             var rawContent = await response.Content.ReadAsStringAsync(cancellationToken);
 
             if (!response.IsSuccessStatusCode)
@@ -478,6 +480,7 @@ namespace Intervu.Infrastructure.ExternalServices
             {
                 var result = System.Text.Json.JsonSerializer.Deserialize<AiUpdateRoadmapProgressResponseDto>(rawContent, options);
                 _logger.LogInformation("AI update-roadmap-progress returned status {Status}", result?.Status);
+                await LogUsageAsync(ExtractUsage(rawContent), "api/update-roadmap-progress", "Gemini", sw.ElapsedMilliseconds, useCase);
                 return result;
             }
             catch (System.Text.Json.JsonException ex)
@@ -491,7 +494,7 @@ namespace Intervu.Infrastructure.ExternalServices
             }
         }
 
-        private async Task LogUsageAsync(LlmTokenUsageDto? usage, string endpointName, string provider, long latencyMs)
+        private async Task LogUsageAsync(LlmTokenUsageDto? usage, string endpointName, string provider, long latencyMs, string? useCase = null)
         {
             try
             {
@@ -500,6 +503,7 @@ namespace Intervu.Infrastructure.ExternalServices
                     Id = Guid.NewGuid(),
                     Timestamp = DateTime.UtcNow,
                     EndpointName = endpointName,
+                    UseCase = useCase ?? string.Empty,
                     Provider = provider,
                     PromptTokens = usage?.PromptTokens ?? 0,
                     CompletionTokens = usage?.CompletionTokens ?? 0,
@@ -514,7 +518,7 @@ namespace Intervu.Infrastructure.ExternalServices
             }
         }
 
-        public async Task<AiCvEvaluationResponseDto?> EvaluateCvAsync(System.IO.Stream stream, string fileName, string contentType)
+        public async Task<AiCvEvaluationResponseDto?> EvaluateCvAsync(System.IO.Stream stream, string fileName, string contentType, string? useCase = null)
         {
             if (_httpClient.BaseAddress == null || stream == null)
             {
@@ -537,7 +541,7 @@ namespace Intervu.Infrastructure.ExternalServices
                 sw.Stop();
 
                 var rawContent = await SafeReadStringAsync(response);
-                await LogUsageAsync(ExtractUsage(rawContent), endpoint, "HuggingFace", sw.ElapsedMilliseconds);
+                await LogUsageAsync(ExtractUsage(rawContent), endpoint, "HuggingFace", sw.ElapsedMilliseconds, useCase);
 
                 if (!response.IsSuccessStatusCode)
                 {

@@ -32,7 +32,7 @@ namespace Intervu.Infrastructure.ExternalServices.AI
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<string> ExtractDocumentToJsonAsync(Stream fileStream, string fileName, string docType)
+        public async Task<string> ExtractDocumentToJsonAsync(Stream fileStream, string fileName, string docType, string? useCase = null)
         {
             var url = $"{_baseUrl}/api/extract-document";
             using var request = new HttpRequestMessage(HttpMethod.Post, url);
@@ -53,12 +53,12 @@ namespace Intervu.Infrastructure.ExternalServices.AI
 
             var rawJson = await response.Content.ReadAsStringAsync();
 
-            await LogUsageAsync(rawJson, "extract-document", "HuggingFace", sw.ElapsedMilliseconds);
+            await LogUsageAsync(rawJson, "extract-document", "HuggingFace", sw.ElapsedMilliseconds, useCase);
 
             return rawJson;
         }
 
-        private async Task LogUsageAsync(string rawJson, string endpointName, string provider, long latencyMs)
+        private async Task LogUsageAsync(string rawJson, string endpointName, string provider, long latencyMs, string? useCase = null)
         {
             try
             {
@@ -78,6 +78,7 @@ namespace Intervu.Infrastructure.ExternalServices.AI
                     Id = Guid.NewGuid(),
                     Timestamp = DateTime.UtcNow,
                     EndpointName = endpointName,
+                    UseCase = useCase ?? string.Empty,
                     Provider = provider,
                     PromptTokens = promptTokens,
                     CompletionTokens = completionTokens,

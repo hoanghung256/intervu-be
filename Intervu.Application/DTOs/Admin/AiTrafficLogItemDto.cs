@@ -7,6 +7,7 @@ namespace Intervu.Application.DTOs.Admin
         public Guid Id { get; set; }
         public DateTime Timestamp { get; set; }
         public string EndpointName { get; set; } = string.Empty;
+        public string UseCase { get; set; } = string.Empty;
         public string Provider { get; set; } = string.Empty;
         public int PromptTokens { get; set; }
         public int CompletionTokens { get; set; }

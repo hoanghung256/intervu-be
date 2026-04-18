@@ -78,7 +78,7 @@ namespace Intervu.API.Controllers.v1
             var dbTags = await _tagRepository.GetAllAsync();
             var availableTags = dbTags.Select(t => t.Name).Distinct().ToList();
 
-            var result = await _aiService.GetNewQuestionsFromTranscriptAsync(mergeResult.Data, request.RecordingSessionId, availableTags);
+            var result = await _aiService.GetNewQuestionsFromTranscriptAsync(mergeResult.Data, request.RecordingSessionId, availableTags, useCase: "InterviewTranscript");
             
             if (result.Status == "failed")
             {

@@ -29,6 +29,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             DateTime to,
             string? provider,
             string? endpointContains,
+            string? useCase,
             int page,
             int pageSize)
         {
@@ -50,6 +51,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             {
                 var pattern = $"%{endpointContains.Trim()}%";
                 query = query.Where(x => EF.Functions.ILike(x.EndpointName, pattern));
+            }
+
+            if (!string.IsNullOrWhiteSpace(useCase))
+            {
+                var useCaseTrimmed = useCase.Trim();
+                query = query.Where(x => x.UseCase.ToLower() == useCaseTrimmed.ToLower());
             }
 
             var total = await query.CountAsync();
@@ -82,6 +89,17 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Where(e => e != null && e != "")
                 .Distinct()
                 .OrderBy(e => e)
+                .ToListAsync();
+        }
+
+        public async Task<IReadOnlyList<string>> GetDistinctUseCasesAsync()
+        {
+            return await _context.AiTrafficLogs
+                .AsNoTracking()
+                .Select(x => x.UseCase)
+                .Where(u => u != null && u != "")
+                .Distinct()
+                .OrderBy(u => u)
                 .ToListAsync();
         }
     }

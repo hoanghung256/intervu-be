@@ -15,9 +15,12 @@ namespace Intervu.Application.DTOs.Admin
         public int PageSize { get; set; }
         public List<string> AvailableProviders { get; set; } = new();
         public List<string> AvailableEndpoints { get; set; } = new();
+        public List<string> AvailableUseCases { get; set; } = new();
         public List<AiTrafficLogItemDto> Logs { get; set; } = new();
         public List<AiEndpointSeriesPointDto> EndpointSeries { get; set; } = new();
         public List<string> SeriesEndpoints { get; set; } = new();
+        public List<AiUseCaseSeriesPointDto> UseCaseSeries { get; set; } = new();
+        public List<string> SeriesUseCases { get; set; } = new();
         public string SeriesBucket { get; set; } = "hour";
     }
 }

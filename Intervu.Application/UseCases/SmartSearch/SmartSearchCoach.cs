@@ -83,7 +83,7 @@ namespace Intervu.Application.UseCases.SmartSearch
 
             var dbTask = _coachProfileRepository.GetProfilesByIdsAsync(validMatches.Select(m => m.CoachId));
             var llmTask = reasoningCandidates.Any()
-                ? _reasoningService.RerankAndReasonAsync(searchContext, reasoningCandidates)
+                ? _reasoningService.RerankAndReasonAsync(searchContext, reasoningCandidates, useCase: "SmartSearchCoach")
                 : Task.FromResult(new List<ReasoningResult>());
 
             await Task.WhenAll(dbTask, llmTask);

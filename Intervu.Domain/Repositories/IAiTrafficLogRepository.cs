@@ -14,11 +14,14 @@ namespace Intervu.Domain.Repositories
             DateTime to,
             string? provider,
             string? endpointContains,
+            string? useCase,
             int page,
             int pageSize);
 
         Task<IReadOnlyList<string>> GetDistinctProvidersAsync();
 
         Task<IReadOnlyList<string>> GetDistinctEndpointsAsync();
+
+        Task<IReadOnlyList<string>> GetDistinctUseCasesAsync();
     }
 }

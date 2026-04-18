@@ -9,7 +9,7 @@ namespace Intervu.Application.Interfaces.ExternalServices.AI
         /// <param name="query">The user's original search query.</param>
         /// <param name="candidates">The top K candidates retrieved from the Vector DB.</param>
         /// <returns>A list of reasoning results containing the new score and reasoning text, mapped by candidate ID.</returns>
-        Task<List<ReasoningResult>> RerankAndReasonAsync(string query, List<ReasoningCandidate> candidates);
+        Task<List<ReasoningResult>> RerankAndReasonAsync(string query, List<ReasoningCandidate> candidates, string? useCase = null);
     }
 
     public class ReasoningCandidate

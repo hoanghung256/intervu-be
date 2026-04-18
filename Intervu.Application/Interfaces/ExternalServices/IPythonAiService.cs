@@ -13,6 +13,6 @@ namespace Intervu.Application.Interfaces.ExternalServices
         /// <param name="fileName">Original file name</param>
         /// <param name="docType">"cv" or "jd"</param>
         /// <returns>JSON string containing the extracted structure</returns>
-        Task<string> ExtractDocumentToJsonAsync(Stream fileStream, string fileName, string docType);
+        Task<string> ExtractDocumentToJsonAsync(Stream fileStream, string fileName, string docType, string? useCase = null);
     }
 }

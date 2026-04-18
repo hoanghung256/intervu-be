@@ -34,7 +34,7 @@ namespace Intervu.Infrastructure.ExternalServices.AI
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<List<ReasoningResult>> RerankAndReasonAsync(string query, List<ReasoningCandidate> candidates)
+        public async Task<List<ReasoningResult>> RerankAndReasonAsync(string query, List<ReasoningCandidate> candidates, string? useCase = null)
         {
             if (!candidates.Any()) return new List<ReasoningResult>();
 
@@ -94,7 +94,7 @@ namespace Intervu.Infrastructure.ExternalServices.AI
 
                 var chatResponse = JsonConvert.DeserializeObject<HfChatResponse>(responseBody);
 
-                _ = TryLogUsageAsync(chatResponse?.Usage, sw.ElapsedMilliseconds);
+                _ = TryLogUsageAsync(chatResponse?.Usage, sw.ElapsedMilliseconds, useCase);
 
                 var rawContent = chatResponse?.Choices?.FirstOrDefault()?.Message?.Content;
                 var parsed = ReasoningShared.ParseResults(rawContent);
@@ -123,7 +123,7 @@ namespace Intervu.Infrastructure.ExternalServices.AI
             }
         }
 
-        private async Task TryLogUsageAsync(HfUsage? usage, long latencyMs)
+        private async Task TryLogUsageAsync(HfUsage? usage, long latencyMs, string? useCase = null)
         {
             try
             {
@@ -132,6 +132,7 @@ namespace Intervu.Infrastructure.ExternalServices.AI
                     Id = Guid.NewGuid(),
                     Timestamp = DateTime.UtcNow,
                     EndpointName = "smart-search-rerank",
+                    UseCase = useCase ?? string.Empty,
                     Provider = "HuggingFace",
                     PromptTokens = usage?.PromptTokens ?? 0,
                     CompletionTokens = usage?.CompletionTokens ?? 0,

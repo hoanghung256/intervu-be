@@ -37,7 +37,7 @@ namespace Intervu.Infrastructure.ExternalServices.AI
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<List<ReasoningResult>> RerankAndReasonAsync(string query, List<ReasoningCandidate> candidates)
+        public async Task<List<ReasoningResult>> RerankAndReasonAsync(string query, List<ReasoningCandidate> candidates, string? useCase = null)
         {
             if (!candidates.Any()) return new List<ReasoningResult>();
 
@@ -105,7 +105,7 @@ namespace Intervu.Infrastructure.ExternalServices.AI
 
                 var responseBody = await response.Content.ReadAsStringAsync();
                 var aiResponse = JsonConvert.DeserializeObject<HuggingFaceChatResponse>(responseBody);
-                _ = TryLogUsageAsync(aiResponse?.Usage, sw.ElapsedMilliseconds);
+                _ = TryLogUsageAsync(aiResponse?.Usage, sw.ElapsedMilliseconds, useCase);
 
                 var rawText = aiResponse?.Choices?.FirstOrDefault()?.Message?.Content;
                 var jsonResultText = ExtractJsonPayload(rawText) ?? rawText;
@@ -217,7 +217,7 @@ namespace Intervu.Infrastructure.ExternalServices.AI
             return null;
         }
 
-        private async Task TryLogUsageAsync(HuggingFaceUsage? usage, long latencyMs)
+        private async Task TryLogUsageAsync(HuggingFaceUsage? usage, long latencyMs, string? useCase = null)
         {
             try
             {
@@ -226,6 +226,7 @@ namespace Intervu.Infrastructure.ExternalServices.AI
                     Id = Guid.NewGuid(),
                     Timestamp = DateTime.UtcNow,
                     EndpointName = "gemini-rerank",
+                    UseCase = useCase ?? string.Empty,
                     Provider = "HuggingFace",
                     PromptTokens = usage?.PromptTokens ?? 0,
                     CompletionTokens = usage?.CompletionTokens ?? 0,

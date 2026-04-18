@@ -49,13 +49,14 @@ namespace Intervu.Application.UseCases.Admin
             var pageSize = query.PageSize < 1 ? 50 : query.PageSize;
 
             var (logs, totalCount) = await _aiTrafficLogRepository.QueryAsync(
-                from, to, query.Provider, query.Endpoint, page, pageSize);
+                from, to, query.Provider, query.Endpoint, query.UseCase, page, pageSize);
 
             var items = logs.Select(l => new AiTrafficLogItemDto
             {
                 Id = l.Id,
                 Timestamp = l.Timestamp,
                 EndpointName = l.EndpointName,
+                UseCase = l.UseCase,
                 Provider = l.Provider,
                 PromptTokens = l.PromptTokens,
                 CompletionTokens = l.CompletionTokens,
@@ -65,9 +66,11 @@ namespace Intervu.Application.UseCases.Admin
 
             var providers = await _aiTrafficLogRepository.GetDistinctProvidersAsync();
             var endpoints = await _aiTrafficLogRepository.GetDistinctEndpointsAsync();
+            var useCases = await _aiTrafficLogRepository.GetDistinctUseCasesAsync();
 
             var seriesLogs = await _aiTrafficLogRepository.GetByTimeframeAsync(from, to);
-            var (series, seriesEndpoints, bucketUnit) = BuildEndpointSeries(seriesLogs, from, to, query.Endpoint, query.Provider);
+            var (epSeries, seriesEndpoints, bucketUnit) = BuildEndpointSeries(seriesLogs, from, to, query.Endpoint, query.Provider, query.UseCase);
+            var (ucSeries, seriesUseCases, _) = BuildUseCaseSeries(seriesLogs, from, to, query.Endpoint, query.Provider, query.UseCase);
 
             return new PythonAiMetricsDto
             {
@@ -82,20 +85,18 @@ namespace Intervu.Application.UseCases.Admin
                 PageSize = pageSize,
                 AvailableProviders = providers.ToList(),
                 AvailableEndpoints = endpoints.ToList(),
+                AvailableUseCases = useCases.ToList(),
                 Logs = items,
-                EndpointSeries = series,
+                EndpointSeries = epSeries,
                 SeriesEndpoints = seriesEndpoints,
+                UseCaseSeries = ucSeries,
+                SeriesUseCases = seriesUseCases,
                 SeriesBucket = bucketUnit,
             };
         }
 
-        private static (List<AiEndpointSeriesPointDto> series, List<string> seriesEndpoints, string bucketUnit)
-            BuildEndpointSeries(
-                IEnumerable<Intervu.Domain.Entities.AiTrafficLog> logs,
-                DateTime from,
-                DateTime to,
-                string? endpointFilter,
-                string? providerFilter)
+        private static (List<DateTime> buckets, TimeSpan step, Func<DateTime, DateTime> truncate, string bucketUnit)
+            BuildBuckets(DateTime from, DateTime to)
         {
             var totalSpan = to - from;
             string bucketUnit;
@@ -123,18 +124,42 @@ namespace Intervu.Application.UseCases.Admin
                 buckets.Add(cursor);
                 cursor = cursor.Add(step);
             }
+            return (buckets, step, truncate, bucketUnit);
+        }
 
-            var filtered = logs.AsEnumerable();
+        private static IEnumerable<Intervu.Domain.Entities.AiTrafficLog> ApplyFilters(
+            IEnumerable<Intervu.Domain.Entities.AiTrafficLog> logs,
+            string? endpointFilter,
+            string? providerFilter,
+            string? useCaseFilter)
+        {
             if (!string.IsNullOrWhiteSpace(providerFilter))
             {
-                filtered = filtered.Where(l => string.Equals(l.Provider, providerFilter, StringComparison.OrdinalIgnoreCase));
+                logs = logs.Where(l => string.Equals(l.Provider, providerFilter, StringComparison.OrdinalIgnoreCase));
             }
             if (!string.IsNullOrWhiteSpace(endpointFilter))
             {
-                filtered = filtered.Where(l => l.EndpointName != null &&
+                logs = logs.Where(l => l.EndpointName != null &&
                     l.EndpointName.Contains(endpointFilter, StringComparison.OrdinalIgnoreCase));
             }
-            var materialized = filtered.ToList();
+            if (!string.IsNullOrWhiteSpace(useCaseFilter))
+            {
+                logs = logs.Where(l => string.Equals(l.UseCase, useCaseFilter, StringComparison.OrdinalIgnoreCase));
+            }
+            return logs;
+        }
+
+        private static (List<AiEndpointSeriesPointDto> series, List<string> seriesEndpoints, string bucketUnit)
+            BuildEndpointSeries(
+                IEnumerable<Intervu.Domain.Entities.AiTrafficLog> logs,
+                DateTime from,
+                DateTime to,
+                string? endpointFilter,
+                string? providerFilter,
+                string? useCaseFilter)
+        {
+            var (buckets, _, truncate, bucketUnit) = BuildBuckets(from, to);
+            var materialized = ApplyFilters(logs, endpointFilter, providerFilter, useCaseFilter).ToList();
 
             var topEndpoints = materialized
                 .GroupBy(l => l.EndpointName ?? string.Empty)
@@ -160,6 +185,44 @@ namespace Intervu.Application.UseCases.Admin
             }).ToList();
 
             return (series, topEndpoints, bucketUnit);
+        }
+
+        private static (List<AiUseCaseSeriesPointDto> series, List<string> seriesUseCases, string bucketUnit)
+            BuildUseCaseSeries(
+                IEnumerable<Intervu.Domain.Entities.AiTrafficLog> logs,
+                DateTime from,
+                DateTime to,
+                string? endpointFilter,
+                string? providerFilter,
+                string? useCaseFilter)
+        {
+            var (buckets, _, truncate, bucketUnit) = BuildBuckets(from, to);
+            var materialized = ApplyFilters(logs, endpointFilter, providerFilter, useCaseFilter).ToList();
+
+            var topUseCases = materialized
+                .GroupBy(l => l.UseCase ?? string.Empty)
+                .Where(g => !string.IsNullOrEmpty(g.Key))
+                .OrderByDescending(g => g.Count())
+                .Take(8)
+                .Select(g => g.Key)
+                .ToList();
+
+            var grouped = materialized
+                .Where(l => topUseCases.Contains(l.UseCase ?? string.Empty))
+                .GroupBy(l => new { Bucket = truncate(l.Timestamp.ToUniversalTime()), l.UseCase })
+                .ToDictionary(g => (g.Key.Bucket, g.Key.UseCase ?? string.Empty), g => g.Count());
+
+            var series = buckets.Select(b =>
+            {
+                var point = new AiUseCaseSeriesPointDto { Bucket = b };
+                foreach (var uc in topUseCases)
+                {
+                    point.CountByUseCase[uc] = grouped.TryGetValue((b, uc), out var c) ? c : 0;
+                }
+                return point;
+            }).ToList();
+
+            return (series, topUseCases, bucketUnit);
         }
     }
 }

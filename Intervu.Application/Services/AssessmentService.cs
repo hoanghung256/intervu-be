@@ -256,7 +256,7 @@ namespace Intervu.Application.Services
                 },
             };
 
-            var aiResponse = await _aiService.GenerateRoadmapAsync(roadmapRequest, cancellationToken);
+            var aiResponse = await _aiService.GenerateRoadmapAsync(roadmapRequest, cancellationToken, useCase: "GenerateRoadmap");
             if (aiResponse == null)
             {
                 return new GenerateRoadmapResultDto
@@ -378,7 +378,7 @@ namespace Intervu.Application.Services
                 }).ToList()
             };
 
-            var aiResponse = await _aiService.UpdateRoadmapProgressAsync(aiRequest, cancellationToken);
+            var aiResponse = await _aiService.UpdateRoadmapProgressAsync(aiRequest, cancellationToken, useCase: "UpdateRoadmapProgress");
 
             SurveyRoadmapDto updatedRoadmap;
 
