@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
@@ -10,6 +11,14 @@ namespace Intervu.Application.UseCases.SmartSearch
 {
     public class SmartSearchExtractDataFromFile : ISmartSearchExtractDataFromFile
     {
+        private static readonly HashSet<string> TokenKeys = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "usage",
+            "prompt_tokens",
+            "completion_tokens",
+            "total_tokens"
+        };
+
         private readonly IPythonAiService _pythonAiService;
 
         public SmartSearchExtractDataFromFile(IPythonAiService pythonAiService)
@@ -29,11 +38,70 @@ namespace Intervu.Application.UseCases.SmartSearch
             var jsonResponse = await _pythonAiService.ExtractDocumentToJsonAsync(
                 stream,
                 request.File.FileName,
-                request.DocType);
+                request.DocType,
+                useCase: "SmartSearchCvExtraction");
 
-            // Inject a distilled search_profile into the raw extraction result.
-            // This gives the frontend a compact, editable profile for the user to review.
-            return InjectSearchProfile(jsonResponse, request.DocType);
+            // Strip token/usage keys before shaping the response, then inject a
+            // distilled search_profile so the frontend has a compact, editable
+            // profile for the user to review.
+            var sanitized = StripTokenKeys(jsonResponse);
+            return InjectSearchProfile(sanitized, request.DocType);
+        }
+
+        private static string StripTokenKeys(string json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return json;
+            }
+
+            JsonNode? root;
+            try
+            {
+                root = JsonNode.Parse(json);
+            }
+            catch (JsonException)
+            {
+                return json;
+            }
+
+            if (root == null)
+            {
+                return json;
+            }
+
+            StripKeys(root, TokenKeys);
+            return root.ToJsonString();
+        }
+
+        private static void StripKeys(JsonNode? node, HashSet<string> keys)
+        {
+            if (node is JsonObject obj)
+            {
+                var toRemove = new List<string>();
+                foreach (var kvp in obj)
+                {
+                    if (keys.Contains(kvp.Key))
+                    {
+                        toRemove.Add(kvp.Key);
+                    }
+                    else
+                    {
+                        StripKeys(kvp.Value, keys);
+                    }
+                }
+                foreach (var k in toRemove)
+                {
+                    obj.Remove(k);
+                }
+            }
+            else if (node is JsonArray arr)
+            {
+                foreach (var item in arr)
+                {
+                    StripKeys(item, keys);
+                }
+            }
         }
 
         /// <summary>

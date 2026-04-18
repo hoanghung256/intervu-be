@@ -266,7 +266,7 @@ namespace Intervu.Application.Services
                                 var dbTags = await tagRepo.GetAllAsync();
                                 var availableTags = dbTags.Select(t => t.Name).Distinct().ToList();
 
-                                var extractionResult = await aiService.GetNewQuestionsFromTranscriptAsync(mergeResult.Data, roomGuid, availableTags);
+                                var extractionResult = await aiService.GetNewQuestionsFromTranscriptAsync(mergeResult.Data, roomGuid, availableTags, useCase: "InterviewTranscript");
                                 if (extractionResult.Status != "failed" && extractionResult.QuestionList?.Count > 0)
                                 {
                                     await storeGeneratedQuestions.ExecuteAsync(roomGuid, extractionResult.QuestionList, extractionResult.Transcript);

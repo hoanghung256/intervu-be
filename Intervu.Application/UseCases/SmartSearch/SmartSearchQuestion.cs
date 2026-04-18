@@ -108,7 +108,7 @@ namespace Intervu.Application.UseCases.SmartSearch
             // Step 4: AI Reasoning & Re-ranking
             if (reasoningCandidates.Any())
             {
-                var reasoningResults = await _reasoningService.RerankAndReasonAsync(request.Query, reasoningCandidates);
+                var reasoningResults = await _reasoningService.RerankAndReasonAsync(request.Query, reasoningCandidates, useCase: "SmartSearchQuestion");
 
                 if (reasoningResults.Any())
                 {

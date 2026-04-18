@@ -144,6 +144,7 @@ namespace Intervu.Application
             services.AddScoped<IFilterUsersForAdmin, AdminUseCases.FilterUsersForAdmin>();
             services.AddScoped<IGetAllCompaniesForAdmin, AdminUseCases.GetAllCompanies>();
             services.AddScoped<IGetAllPayments, AdminUseCases.GetAllPayments>();
+            services.AddScoped<IGetAllTransactionsForAdmin, AdminUseCases.GetAllTransactionsForAdmin>();
             services.AddScoped<IGetAllFeedbacks, AdminUseCases.GetAllFeedbacks>();
             services.AddScoped<IGetAllCoachForAdmin, AdminUseCases.GetAllCoachForAdmin>();
             services.AddScoped<ICreateUserForAdmin, AdminUseCases.CreateUserForAdmin>();
@@ -154,6 +155,11 @@ namespace Intervu.Application
             services.AddScoped<IGetAdminDashboardCharts, AdminUseCases.GetAdminDashboardCharts>();
             services.AddScoped<IGetTopCoachesLeaderboard, AdminUseCases.GetTopCoachesLeaderboard>();
             services.AddScoped<IGetNeedsAttentionQueue, AdminUseCases.GetNeedsAttentionQueue>();
+            services.AddScoped<IGetPineconeIndexStats, AdminUseCases.GetPineconeIndexStats>();
+            services.AddScoped<IGetAiServicesHealth, AdminUseCases.GetAiServicesHealth>();
+            services.AddScoped<IGetAiConfiguration, AdminUseCases.GetAiConfiguration>();
+            services.AddScoped<IAdminTriggerVectorSync, AdminUseCases.AdminTriggerVectorSync>();
+            services.AddScoped<IGetPythonAiMetrics, AdminUseCases.GetPythonAiMetrics>();
             // ----- Feedback ----
             services.AddScoped<IGetFeedbacks, GetFeedbacks>();
             services.AddScoped<ICreateFeedback, CreateFeedback>();

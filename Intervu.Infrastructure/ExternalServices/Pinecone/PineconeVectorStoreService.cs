@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Intervu.Application.DTOs.Admin;
 using Intervu.Application.Interfaces.ExternalServices.Pinecone;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -93,6 +94,31 @@ namespace Intervu.Infrastructure.ExternalServices.Pinecone
             };
 
             await SendAsync(HttpMethod.Post, "vectors/delete", body);
+        }
+
+        public async Task<PineconeIndexStatsDto> DescribeIndexStatsAsync()
+        {
+            var content = await SendAsync(HttpMethod.Post, "describe_index_stats", new { });
+            var root = JObject.Parse(content);
+
+            var namespaces = new Dictionary<string, int>();
+            var nsToken = root["namespaces"];
+            if (nsToken is JObject nsObj)
+            {
+                foreach (var prop in nsObj.Properties())
+                {
+                    var count = prop.Value["vectorCount"]?.Value<int>() ?? 0;
+                    namespaces[prop.Name] = count;
+                }
+            }
+
+            return new PineconeIndexStatsDto
+            {
+                TotalVectorCount = root["totalVectorCount"]?.Value<int>() ?? 0,
+                Dimension = root["dimension"]?.Value<int>() ?? 0,
+                Namespaces = namespaces,
+                FetchedAt = DateTime.UtcNow
+            };
         }
 
         private async Task<string> SendAsync(HttpMethod method, string path, object body)

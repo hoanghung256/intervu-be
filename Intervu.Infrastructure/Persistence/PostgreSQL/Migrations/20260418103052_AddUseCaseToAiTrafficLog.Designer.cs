@@ -3,6 +3,7 @@ using System;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 {
     [DbContext(typeof(IntervuPostgreDbContext))]
-    partial class IntervuPostgreDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260418103052_AddUseCaseToAiTrafficLog")]
+    partial class AddUseCaseToAiTrafficLog
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -481,11 +484,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("BankAccountNumberMasked")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
                     b.Property<string>("BankBinNumber")
                         .IsRequired()
                         .HasColumnType("text");
@@ -517,7 +515,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         {
                             Id = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
                             BankAccountNumber = "",
-                            BankAccountNumberMasked = "",
                             BankBinNumber = "",
                             Bio = "Aspiring backend developer.",
                             CVUrl = "https://example.com/cv-alice.pdf",
@@ -786,11 +783,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("BankAccountNumberMasked")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
                     b.Property<string>("BankBinNumber")
                         .IsRequired()
                         .HasColumnType("text");
@@ -834,7 +826,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         {
                             Id = new Guid("1e9f9d3b-5b4c-4f1d-9f3a-8b8c3e2d4c22"),
                             BankAccountNumber = "",
-                            BankAccountNumberMasked = "",
                             BankBinNumber = "",
                             Bio = "Senior Backend Engineer with real interview experience",
                             CurrentAmount = 0,
@@ -848,7 +839,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         {
                             Id = new Guid("3a7b6c5d-7e6f-4d3c-9b8a-7c6d5e4f3b44"),
                             BankAccountNumber = "",
-                            BankAccountNumberMasked = "",
                             BankBinNumber = "",
                             Bio = "Fullstack Engineer previously at Uber",
                             CurrentAmount = 0,
@@ -862,7 +852,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                         {
                             Id = new Guid("4b6c5d7e-8f7a-4c3d-9e8b-6d5c4f3e2a55"),
                             BankAccountNumber = "",
-                            BankAccountNumberMasked = "",
                             BankBinNumber = "",
                             Bio = "Senior Frontend Engineer focusing on UI/UX interviews",
                             CurrentAmount = 0,
@@ -2965,13 +2954,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
 
                     b.Property<string>("BankAccountNumber")
                         .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)");
-
-                    b.Property<string>("BankAccountNumberMasked")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("BankBinNumber")
                         .IsRequired()

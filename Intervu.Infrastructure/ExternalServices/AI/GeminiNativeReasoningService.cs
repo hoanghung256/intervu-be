@@ -24,7 +24,7 @@ namespace Intervu.Infrastructure.ExternalServices.AI
             _logger = logger;
         }
 
-        public async Task<List<ReasoningResult>> RerankAndReasonAsync(string query, List<ReasoningCandidate> candidates)
+        public async Task<List<ReasoningResult>> RerankAndReasonAsync(string query, List<ReasoningCandidate> candidates, string? useCase = null)
         {
             if (!candidates.Any()) return new List<ReasoningResult>();
 

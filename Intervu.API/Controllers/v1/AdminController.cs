@@ -39,6 +39,12 @@ namespace Intervu.API.Controllers.v1
         private readonly IGetAdminDashboardCharts _getAdminDashboardCharts;
         private readonly IGetTopCoachesLeaderboard _getTopCoachesLeaderboard;
         private readonly IGetNeedsAttentionQueue _getNeedsAttentionQueue;
+        private readonly IGetAllTransactionsForAdmin _getAllTransactions;
+        private readonly IGetPineconeIndexStats _getPineconeIndexStats;
+        private readonly IGetAiServicesHealth _getAiServicesHealth;
+        private readonly IGetAiConfiguration _getAiConfiguration;
+        private readonly IAdminTriggerVectorSync _triggerVectorSync;
+        private readonly IGetPythonAiMetrics _getPythonAiMetrics;
 
         public AdminController(
             IGetDashboardStats getDashboardStats,
@@ -59,7 +65,13 @@ namespace Intervu.API.Controllers.v1
             IResolveInterviewReport resolveInterviewReport,
             IGetAdminDashboardCharts getAdminDashboardCharts,
             IGetTopCoachesLeaderboard getTopCoachesLeaderboard,
-            IGetNeedsAttentionQueue getNeedsAttentionQueue)
+            IGetNeedsAttentionQueue getNeedsAttentionQueue,
+            IGetAllTransactionsForAdmin getAllTransactions,
+            IGetPineconeIndexStats getPineconeIndexStats,
+            IGetAiServicesHealth getAiServicesHealth,
+            IGetAiConfiguration getAiConfiguration,
+            IAdminTriggerVectorSync triggerVectorSync,
+            IGetPythonAiMetrics getPythonAiMetrics)
         {
             _getDashboardStats = getDashboardStats;
             _getAllUsers = getAllUsers;
@@ -80,6 +92,12 @@ namespace Intervu.API.Controllers.v1
             _getAdminDashboardCharts = getAdminDashboardCharts;
             _getTopCoachesLeaderboard = getTopCoachesLeaderboard;
             _getNeedsAttentionQueue = getNeedsAttentionQueue;
+            _getAllTransactions = getAllTransactions;
+            _getPineconeIndexStats = getPineconeIndexStats;
+            _getAiServicesHealth = getAiServicesHealth;
+            _getAiConfiguration = getAiConfiguration;
+            _triggerVectorSync = triggerVectorSync;
+            _getPythonAiMetrics = getPythonAiMetrics;
         }
 
         /// <summary>
@@ -261,19 +279,23 @@ namespace Intervu.API.Controllers.v1
         }
 
         /// <summary>
-        /// Get all payments with pagination
+        /// Get all transactions (Earnings, Refunds, Payouts) with pagination and filters
         /// </summary>
-        [HttpGet("payments")]
-        public async Task<IActionResult> GetAllPayments([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        [HttpGet("transactions")]
+        public async Task<IActionResult> GetAllTransactions(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] TransactionType? type = null,
+            [FromQuery] TransactionStatus? status = null)
         {
             try
             {
-                var payments = await _getAllPayments.ExecuteAsync(page, pageSize);
+                var transactions = await _getAllTransactions.ExecuteAsync(page, pageSize, type, status);
                 return Ok(new
                 {
                     success = true,
                     message = "Success",
-                    data = payments
+                    data = transactions
                 });
             }
             catch (Exception ex)
@@ -698,5 +720,98 @@ namespace Intervu.API.Controllers.v1
                 });
             }
         }
+
+        // ─── System Management ───────────────────────────────────────────────
+
+        /// <summary>
+        /// Get Pinecone index stats (vector counts per namespace)
+        /// </summary>
+        [HttpGet("system/pinecone-stats")]
+        public async Task<IActionResult> GetPineconeStats()
+        {
+            try
+            {
+                var stats = await _getPineconeIndexStats.ExecuteAsync();
+                return Ok(new { success = true, message = "Success", data = stats });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message, data = (object?)null });
+            }
+        }
+
+        /// <summary>
+        /// Trigger a full vector re-sync for the given namespace ("coaches" or "questions")
+        /// </summary>
+        [HttpPost("system/pinecone-sync")]
+        public async Task<IActionResult> TriggerVectorSync([FromBody] TriggerSyncRequest request)
+        {
+            try
+            {
+                await _triggerVectorSync.ExecuteAsync(request.Namespace);
+                return Ok(new { success = true, message = $"Sync job for '{request.Namespace}' has been queued." });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Get live health status of all configured AI services
+        /// </summary>
+        [HttpGet("system/ai-health")]
+        public async Task<IActionResult> GetAiServicesHealth()
+        {
+            try
+            {
+                var health = await _getAiServicesHealth.ExecuteAsync();
+                return Ok(new { success = true, message = "Success", data = health });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message, data = (object?)null });
+            }
+        }
+
+        /// <summary>
+        /// Get read-only AI service configuration (model names, endpoints, key presence)
+        /// </summary>
+        [HttpGet("system/ai-config")]
+        public async Task<IActionResult> GetAiConfiguration()
+        {
+            try
+            {
+                var config = await _getAiConfiguration.ExecuteAsync();
+                return Ok(new { success = true, message = "Success", data = config });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message, data = (object?)null });
+            }
+        }
+
+        /// <summary>
+        /// Get AI traffic metrics (token usage, latency) for all AI providers
+        /// </summary>
+        [HttpGet("system/python-ai-metrics")]
+        public async Task<IActionResult> GetPythonAiMetrics([FromQuery] PythonAiMetricsQueryDto query)
+        {
+            try
+            {
+                var metrics = await _getPythonAiMetrics.ExecuteAsync(query ?? new PythonAiMetricsQueryDto());
+                return Ok(new { success = true, message = "Success", data = metrics });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message, data = (object?)null });
+            }
+        }
     }
+
+    public record TriggerSyncRequest(string Namespace);
 }

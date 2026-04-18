@@ -1,10 +1,26 @@
 using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace Intervu.Application.DTOs.Ai
 {
+    public class LlmTokenUsageDto
+    {
+        [JsonPropertyName("prompt_tokens")]
+        [JsonProperty("prompt_tokens")]
+        public int PromptTokens { get; set; }
+
+        [JsonPropertyName("completion_tokens")]
+        [JsonProperty("completion_tokens")]
+        public int CompletionTokens { get; set; }
+
+        [JsonPropertyName("total_tokens")]
+        [JsonProperty("total_tokens")]
+        public int TotalTokens { get; set; }
+    }
+
     public class AiQuestionExtractionResponse
     {
         [JsonPropertyName("status")]
@@ -16,7 +32,10 @@ namespace Intervu.Application.DTOs.Ai
         [JsonPropertyName("question_list")]
         public List<AiQuestionDto> QuestionList { get; set; } = new();
 
-        [JsonIgnore]
+        [JsonPropertyName("usage")]
+        public LlmTokenUsageDto? Usage { get; set; }
+
+        [System.Text.Json.Serialization.JsonIgnore]
         public string? Error { get; set; }
     }
 

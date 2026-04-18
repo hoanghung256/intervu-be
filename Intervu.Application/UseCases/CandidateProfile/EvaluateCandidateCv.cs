@@ -47,7 +47,7 @@ namespace Intervu.Application.UseCases.CandidateProfile
                 {
                     using var stream = file.OpenReadStream();
                     var contentType = string.IsNullOrWhiteSpace(file.ContentType) ? "application/pdf" : file.ContentType;
-                    return await _aiService.EvaluateCvAsync(stream, file.FileName, contentType);
+                    return await _aiService.EvaluateCvAsync(stream, file.FileName, contentType, useCase: "CvEvaluation");
                 }
                 catch (Exception ex)
                 {
@@ -88,7 +88,7 @@ namespace Intervu.Application.UseCases.CandidateProfile
                 using var httpClient = _httpClientFactory.CreateClient();
                 using var stream = await httpClient.GetStreamAsync(profile.CVUrl);
 
-                var evaluationResult = await _aiService.EvaluateCvAsync(stream, "cv.pdf", "application/pdf");
+                var evaluationResult = await _aiService.EvaluateCvAsync(stream, "cv.pdf", "application/pdf", useCase: "CvEvaluation");
 
                 if (evaluationResult == null || !string.IsNullOrEmpty(evaluationResult.Error))
                 {

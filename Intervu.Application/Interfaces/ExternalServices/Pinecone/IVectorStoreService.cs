@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Intervu.Application.DTOs.Admin;
 
 namespace Intervu.Application.Interfaces.ExternalServices.Pinecone
 {
@@ -15,6 +16,7 @@ namespace Intervu.Application.Interfaces.ExternalServices.Pinecone
             string? @namespace = null,
             Dictionary<string, object>? metadataFilter = null);
         Task DeleteAsync(string id, string? @namespace = null);
+        Task<PineconeIndexStatsDto> DescribeIndexStatsAsync();
     }
 
     public record VectorMatch(string Id, double Score, Dictionary<string, string>? Metadata);

@@ -23,7 +23,7 @@ namespace Intervu.Application.DTOs.Ai
         [JsonPropertyName("final_verdict")]
         public string FinalVerdict { get; set; } = string.Empty;
 
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
         public string? Error { get; set; }
     }
 }
