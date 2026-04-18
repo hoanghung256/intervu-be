@@ -369,7 +369,8 @@ namespace Intervu.Infrastructure.ExternalServices
             result.PhaseA ??= new JArray();
             result.PhaseB ??= new JArray();
 
-            await LogUsageAsync(result.Usage, "api/generate-assessment", "HuggingFace", sw.ElapsedMilliseconds);
+            var usage = result.Usage ?? ExtractUsage(rawContent);
+            await LogUsageAsync(usage, "api/generate-assessment", "HuggingFace", sw.ElapsedMilliseconds);
             return result;
         }
 

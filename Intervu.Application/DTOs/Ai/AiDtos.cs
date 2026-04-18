@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
@@ -8,12 +9,15 @@ namespace Intervu.Application.DTOs.Ai
     public class LlmTokenUsageDto
     {
         [JsonPropertyName("prompt_tokens")]
+        [JsonProperty("prompt_tokens")]
         public int PromptTokens { get; set; }
 
         [JsonPropertyName("completion_tokens")]
+        [JsonProperty("completion_tokens")]
         public int CompletionTokens { get; set; }
 
         [JsonPropertyName("total_tokens")]
+        [JsonProperty("total_tokens")]
         public int TotalTokens { get; set; }
     }
 
@@ -31,7 +35,7 @@ namespace Intervu.Application.DTOs.Ai
         [JsonPropertyName("usage")]
         public LlmTokenUsageDto? Usage { get; set; }
 
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
         public string? Error { get; set; }
     }
 
