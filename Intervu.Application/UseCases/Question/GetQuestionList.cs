@@ -33,7 +33,8 @@ namespace Intervu.Application.UseCases.Question
                 filter.Round,
                 filter.SortBy,
                 filter.Page,
-                filter.PageSize);
+                filter.PageSize,
+                filter.Status);
 
             var questionIds = items.Select(q => q.Id).ToList();
 

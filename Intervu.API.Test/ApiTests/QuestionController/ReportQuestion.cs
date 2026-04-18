@@ -37,7 +37,9 @@ namespace Intervu.API.Test.ApiTests.QuestionController
                 var reportId = listReportsData.Data.Items.First().Id;
                 var updateResponse = await _api.PutAsync($"/api/v1/questions/reports/{reportId}/status", new UpdateQuestionReportStatusRequest
                 {
-                    Status = QuestionReportStatus.Reviewed
+                    Status = QuestionReportStatus.Resolved,
+                    ActionTaken = ResolutionAction.NoAction,
+                    ResolutionNote = "Reviewed by integration test"
                 }, jwtToken: adminData.Data.Token, logBody: true);
                 await AssertHelper.AssertEqual(HttpStatusCode.OK, updateResponse.StatusCode, "Update report status code is 200 OK");
             }
@@ -65,7 +67,9 @@ namespace Intervu.API.Test.ApiTests.QuestionController
 
             var response = await _api.PutAsync($"/api/v1/questions/reports/{Guid.NewGuid()}/status", new UpdateQuestionReportStatusRequest
             {
-                Status = QuestionReportStatus.Reviewed
+                Status = QuestionReportStatus.Resolved,
+                ActionTaken = ResolutionAction.NoAction,
+                ResolutionNote = "Test note"
             }, jwtToken: adminData.Data!.Token, logBody: true);
 
             await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Status 404 for non-existent report ID");

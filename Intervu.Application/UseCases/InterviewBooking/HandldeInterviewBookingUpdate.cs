@@ -278,7 +278,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     NotificationType.BookingNew,
                     candidateTitle,
                     candidateMessage,
-                    "/booking?tab=pending",
+                    "/booking-requests",
                     null));
 
             var coachMessage = isBookingRequestAccepted
@@ -292,7 +292,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     NotificationType.BookingNew,
                     "New booking request",
                     coachMessage,
-                    "/booking?tab=pending",
+                    "/booking-requests",
                     null));
         }
     }

@@ -21,7 +21,8 @@ namespace Intervu.Domain.Repositories
             Intervu.Domain.Entities.Constants.QuestionConstants.InterviewRound? round,
             SortOption? sortBy,
             int page,
-            int pageSize);
+            int pageSize,
+            QuestionStatus? status = null);
 
         Task<List<Question>> SearchAsync(string keyword, int limit = 10);
 

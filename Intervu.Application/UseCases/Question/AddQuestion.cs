@@ -1,7 +1,10 @@
 using Intervu.Application.DTOs.Question;
+using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.UseCases.Notification;
 using Intervu.Application.Interfaces.UseCases.Question;
 using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Intervu.Domain.Entities;
+using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 using System;
 using System.Linq;
@@ -9,7 +12,9 @@ using System.Threading.Tasks;
 
 namespace Intervu.Application.UseCases.Question
 {
-    public class AddQuestion(IUnitOfWork unitOfWork) : IAddQuestion
+    public class AddQuestion(
+        IUnitOfWork unitOfWork,
+        IBackgroundService jobService) : IAddQuestion
     {
         public async Task<AddQuestionResult> ExecuteAsync(Guid experienceId, CreateQuestionRequest request, Guid userId)
         {
@@ -50,6 +55,7 @@ namespace Intervu.Application.UseCases.Question
                 Level = request.Level,
                 Round = request.Round,
                 Category = request.Category,
+                Status = Domain.Entities.Constants.QuestionConstants.QuestionStatus.Pending,
                 CreatedBy = userId,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
@@ -84,6 +90,18 @@ namespace Intervu.Application.UseCases.Question
 
             await questionRepo.AddAsync(question);
             await unitOfWork.SaveChangesAsync();
+
+            var titlePreview = question.Title.Length > 40
+                ? question.Title.Substring(0, 40) + "..."
+                : question.Title;
+
+            jobService.Enqueue<INotificationUseCase>(uc => uc.BroadcastToRoleAsync(
+                "Admin",
+                NotificationType.SystemAnnouncement,
+                "New question awaiting moderation",
+                $"A new question \"{titlePreview}\" has been contributed and is pending review.",
+                "/admin/question-bank"
+            ));
 
             return new AddQuestionResult
             {

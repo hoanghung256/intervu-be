@@ -232,6 +232,7 @@ namespace Intervu.Application
             services.AddScoped<IReportQuestion, ReportQuestion>();
             services.AddScoped<IGetQuestionReports, GetQuestionReports>();
             services.AddScoped<IUpdateQuestionReportStatus, UpdateQuestionReportStatus>();
+            services.AddScoped<IModerateQuestion, ModerateQuestion>();
 
             // --- Generated Questions ---
             services.AddScoped<IStoreGeneratedQuestions, StoreGeneratedQuestions>();

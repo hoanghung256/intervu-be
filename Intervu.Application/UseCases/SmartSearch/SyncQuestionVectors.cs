@@ -56,8 +56,8 @@ namespace Intervu.Application.UseCases.SmartSearch
                     break;
                 }
 
-                // Only approved questions are searchable.
-                foreach (var question in questions.Where(q => q.Status == QuestionStatus.Approved))
+                // Only approved and visible questions are searchable.
+                foreach (var question in questions.Where(q => q.Status == QuestionStatus.Approved && !q.IsHidden))
                 {
                     var documentText = BuildQuestionDocumentText(question);
                     // Use passage embedding mode for indexed content.

@@ -36,7 +36,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             Intervu.Domain.Entities.Constants.QuestionConstants.InterviewRound? round,
             SortOption? sortBy,
             int page,
-            int pageSize)
+            int pageSize,
+            QuestionStatus? status = null)
         {
             var query = _context.Questions
                 .Include(q => q.QuestionCompanies).ThenInclude(qc => qc.Company)
@@ -44,6 +45,19 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Include(q => q.QuestionTags).ThenInclude(qt => qt.Tag)
                 .Include(q => q.Comments)
                 .AsQueryable();
+
+            // Moderation visibility:
+            // - If a status is explicitly requested (admin moderation view), filter by that status only.
+            // - Otherwise enforce the public contract: only Approved + not hidden are visible.
+            if (status.HasValue)
+            {
+                var s = status.Value;
+                query = query.Where(q => q.Status == s);
+            }
+            else
+            {
+                query = query.Where(q => q.Status == QuestionStatus.Approved && q.IsHidden == false);
+            }
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
                 query = query.Where(q =>
@@ -93,6 +107,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Include(q => q.QuestionCompanies).ThenInclude(qc => qc.Company)
                 .Include(q => q.QuestionRoles)
                 .Include(q => q.QuestionTags).ThenInclude(qt => qt.Tag)
+                .Where(q => q.Status == QuestionStatus.Approved && q.IsHidden == false)
                 .Where(q => q.Title.ToLower().Contains(keyword.ToLower()) ||
                              q.Content.ToLower().Contains(keyword.ToLower()))
                 .OrderByDescending(q => q.Comments.Count)

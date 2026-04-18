@@ -103,8 +103,8 @@ namespace Intervu.Application.UseCases.InterviewRoom
                     NotificationType.SystemAnnouncement,
                     "Room Report Result",
                     $"Room {room.Id.ToString().Substring(0, 8)}: {notificationDetail}",
-                    "/history",
-                    null
+                    null,
+                    report.Id
                 ));
 
                 await unitOfWork.SaveChangesAsync();
