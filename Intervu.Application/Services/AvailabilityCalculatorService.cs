@@ -6,7 +6,7 @@ namespace Intervu.Application.Services
     /// <summary>
     /// Represents a contiguous block of free time within a coach's availability.
     /// </summary>
-    public record TimeSlot(DateTime Start, DateTime End)
+    public record TimeSlot(DateTime Start, DateTime End, IReadOnlyCollection<Guid> AvailabilityIds)
     {
         public TimeSpan Duration => End - Start;
     }
@@ -66,7 +66,7 @@ namespace Intervu.Application.Services
                     // Gap between cursor and the next booking
                     if (booking.Start > cursor)
                     {
-                        freeSlots.Add(new TimeSlot(cursor, booking.Start));
+                        freeSlots.Add(new TimeSlot(cursor, booking.Start, new[] { avail.Id }));
                     }
 
                     // Advance cursor past this booking
@@ -77,7 +77,7 @@ namespace Intervu.Application.Services
                 // Remaining gap after last booking
                 if (cursor < windowEnd)
                 {
-                    freeSlots.Add(new TimeSlot(cursor, windowEnd));
+                    freeSlots.Add(new TimeSlot(cursor, windowEnd, new[] { avail.Id }));
                 }
             }
 
@@ -90,12 +90,50 @@ namespace Intervu.Application.Services
                 .OrderBy(s => s.Start)
                 .ToList();
 
-            var mergedFree = MergeIntervals(
-                sorted.Select(s => (s.Start, s.End)).ToList());
+            return MergeFreeSlotsWithSourceIds(sorted);
+        }
 
-            return mergedFree
-                .Select(m => new TimeSlot(m.Start, m.End))
-                .ToList();
+        /// <summary>
+        /// Merges overlapping or adjacent free slots while preserving the
+        /// list of source availability IDs that contributed to each merged slot.
+        /// </summary>
+        private static List<TimeSlot> MergeFreeSlotsWithSourceIds(List<TimeSlot> slots)
+        {
+            if (slots.Count == 0)
+                return [];
+
+            var result = new List<TimeSlot>
+            {
+                new TimeSlot(
+                    slots[0].Start,
+                    slots[0].End,
+                    slots[0].AvailabilityIds.Distinct().ToList())
+            };
+
+            for (int i = 1; i < slots.Count; i++)
+            {
+                var current = slots[i];
+                var last = result[^1];
+
+                if (current.Start <= last.End)
+                {
+                    var mergedEnd = current.End > last.End ? current.End : last.End;
+                    var mergedIds = last.AvailabilityIds
+                        .Concat(current.AvailabilityIds)
+                        .Distinct()
+                        .ToList();
+
+                    result[^1] = new TimeSlot(last.Start, mergedEnd, mergedIds);
+                    continue;
+                }
+
+                result.Add(new TimeSlot(
+                    current.Start,
+                    current.End,
+                    current.AvailabilityIds.Distinct().ToList()));
+            }
+
+            return result;
         }
 
         /// <summary>

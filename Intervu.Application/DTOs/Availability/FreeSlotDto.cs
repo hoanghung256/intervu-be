@@ -10,9 +10,16 @@ namespace Intervu.Application.DTOs.Availability
     {
         /// <summary>
         /// The original CoachAvailability Id that contains this free block.
-        /// The candidate sends this back as coachAvailabilityId when booking.
+        /// For merged slots that span multiple availability records, this is Guid.Empty
+        /// and AvailabilityIds should be used instead.
         /// </summary>
         public Guid Id { get; set; }
+
+        /// <summary>
+        /// Source CoachAvailability IDs that contributed to this free block.
+        /// Contains one item for simple slots and multiple items for merged slots.
+        /// </summary>
+        public List<Guid> AvailabilityIds { get; set; } = new();
 
         public Guid CoachId { get; set; }
 

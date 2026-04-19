@@ -35,10 +35,14 @@ namespace Intervu.Application.UseCases.Availability
             // 4. Map the resulting TimeSlots to FreeSlotDto
             var freeSlotDtos = freeTimeSlots.Select(slot =>
             {
-                var parentAvailability = availabilityList.FirstOrDefault(a => slot.Start >= a.StartTime && slot.End <= a.EndTime);
+                var availabilityIds = slot.AvailabilityIds
+                    .Distinct()
+                    .ToList();
+
                 return new FreeSlotDto
                 {
-                    Id = parentAvailability?.Id ?? Guid.Empty,
+                    Id = availabilityIds.Count == 1 ? availabilityIds[0] : Guid.Empty,
+                    AvailabilityIds = availabilityIds,
                     CoachId = coachId,
                     StartTime = slot.Start,
                     EndTime = slot.End
