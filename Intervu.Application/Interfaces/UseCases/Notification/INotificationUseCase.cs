@@ -26,6 +26,8 @@ namespace Intervu.Application.Interfaces.UseCases.Notification
 
         Task MarkAllAsReadAsync(Guid userId);
 
+        Task<AdminBroadcastLogListResponseDto> GetAdminBroadcastLogsAsync(int page = 1, int pageSize = 20);
+
         // Called by Hangfire delayed job
         Task SendInterviewReminderAsync(Guid roomId);
     }

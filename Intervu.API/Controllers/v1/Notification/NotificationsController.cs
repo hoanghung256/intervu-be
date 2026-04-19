@@ -125,5 +125,14 @@ namespace Intervu.API.Controllers.v1
 
             return Ok(new { success = true, message = $"Notification broadcast to role '{request.Role}'" });
         }
+
+        /// <summary>Admin: list broadcast logs (grouped by one broadcast event).</summary>
+        [HttpGet("admin/broadcast-logs")]
+        [Authorize(Policy = AuthorizationPolicies.Admin)]
+        public async Task<IActionResult> AdminBroadcastLogs([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        {
+            var result = await _notificationUseCase.GetAdminBroadcastLogsAsync(page, pageSize);
+            return Ok(new { success = true, message = "Success", data = result });
+        }
     }
 }
