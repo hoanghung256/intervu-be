@@ -16,5 +16,10 @@ namespace Intervu.Domain.Entities
         public QuestionReportStatus Status { get; set; } = QuestionReportStatus.Pending;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        public Guid? ResolvedBy { get; set; }
+        public DateTime? ResolvedAt { get; set; }
+        public string? ResolutionNote { get; set; }
+        public ResolutionAction? ActionTaken { get; set; }
     }
 }

@@ -101,8 +101,8 @@ namespace Intervu.Application.UseCases.InterviewRoom
                 NotificationType.SystemAnnouncement,
                 "Report Submitted",
                 $"Your report for interview room {interviewRoomId.ToString().Substring(0, 8)} has been submitted successfully and is being reviewed by our team.",
-                "/history",
-                null
+                null,
+                report.Id
             ));
 
             var reporter = await userRepository.GetByIdAsync(userId);

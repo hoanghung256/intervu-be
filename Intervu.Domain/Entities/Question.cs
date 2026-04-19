@@ -20,6 +20,8 @@ namespace Intervu.Domain.Entities
 
         public QuestionStatus Status { get; set; } = QuestionStatus.Approved;
 
+        public bool IsHidden { get; set; } = false;
+
         public int ViewCount { get; set; } = 0;
         public int Vote { get; set; } = 0;
 

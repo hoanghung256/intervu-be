@@ -47,6 +47,20 @@ namespace Intervu.API.Test.ApiTests.QuestionController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Question")]
+        public async Task ContributeQuestion_NewQuestion_StartsAsPending()
+        {
+            var (questionId, token) = await CreateTestQuestionAsync();
+
+            var detailResponse = await _api.GetAsync($"/api/v1/questions/{questionId}", jwtToken: token, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, detailResponse.StatusCode, "Fetch detail status code is 200 OK");
+
+            var detail = await _api.LogDeserializeJson<QuestionDetailDto>(detailResponse);
+            await AssertHelper.AssertEqual(QuestionStatus.Pending, detail.Data!.Status, "Newly contributed question is Pending");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "Question")]
         public async Task SaveQuestion_ReturnsUnauthorized_WhenNoToken()
         {
             var response = await _api.PostAsync($"/api/v1/questions/{Guid.NewGuid()}/save", true, logBody: true);

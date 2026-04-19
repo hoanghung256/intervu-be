@@ -19,6 +19,7 @@ namespace Intervu.Application.DTOs.Question
         public ExperienceLevel? Level { get; set; }
         public InterviewRound? Round { get; set; }
         public SortOption? SortBy { get; set; }
+        public QuestionStatus? Status { get; set; }
     }
 
     public class CreateQuestionRequest
@@ -44,6 +45,11 @@ namespace Intervu.Application.DTOs.Question
     public class ReportQuestionRequest
     {
         public string Reason { get; set; } = string.Empty;
+    }
+
+    public class ModerateQuestionRequest
+    {
+        public QuestionStatus Status { get; set; }
     }
 
     public class ReportQuestionResult
@@ -185,5 +191,7 @@ namespace Intervu.Application.DTOs.Question
     public class UpdateQuestionReportStatusRequest
     {
         public QuestionReportStatus Status { get; set; }
+        public ResolutionAction? ActionTaken { get; set; }
+        public string? ResolutionNote { get; set; }
     }
 }

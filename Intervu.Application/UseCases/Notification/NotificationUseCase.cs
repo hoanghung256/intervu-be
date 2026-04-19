@@ -120,6 +120,30 @@ namespace Intervu.Application.UseCases.Notification
             await BroadcastAsync(role: null, type, title, message, actionUrl);
         }
 
+        public async Task<AdminBroadcastLogListResponseDto> GetAdminBroadcastLogsAsync(int page = 1, int pageSize = 20)
+        {
+            var (items, totalCount) = await _notificationRepo.GetAdminBroadcastLogsAsync(page, pageSize);
+
+            return new AdminBroadcastLogListResponseDto
+            {
+                Items = items.Select(x => new AdminBroadcastLogDto
+                {
+                    CreatedAt = x.CreatedAt,
+                    Type = x.Type.ToString(),
+                    Title = x.Title,
+                    Message = x.Message,
+                    ActionUrl = x.ActionUrl,
+                    TotalRecipients = x.TotalRecipients,
+                    CandidateRecipients = x.CandidateRecipients,
+                    CoachRecipients = x.CoachRecipients,
+                    AdminRecipients = x.AdminRecipients,
+                }).ToList(),
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
+        }
+
         public async Task BroadcastToRoleAsync(string role, NotificationType type,
             string title, string message, string? actionUrl = null)
         {
@@ -142,7 +166,20 @@ namespace Intervu.Application.UseCases.Notification
             while (hasMore)
             {
                 var (users, _) = await _userRepo.GetPagedUsersByFilterAsync(page, BroadcastBatchSize, userRole, null);
-                if (!users.Any()) break;
+                var rawCount = users.Count;
+                if (rawCount == 0) break;
+
+                if (!userRole.HasValue)
+                {
+                    users = users.Where(u => u.Role != UserRole.Admin).ToList();
+                }
+
+                if (!users.Any())
+                {
+                    hasMore = rawCount == BroadcastBatchSize;
+                    page++;
+                    continue;
+                }
 
                 var notifications = users.Select(u => new Domain.Entities.Notification
                 {
@@ -159,7 +196,7 @@ namespace Intervu.Application.UseCases.Notification
                 await _notificationRepo.AddRangeAsync(notifications);
                 await _notificationRepo.SaveChangesAsync();
 
-                hasMore = users.Count == BroadcastBatchSize;
+                hasMore = rawCount == BroadcastBatchSize;
                 page++;
             }
 
@@ -176,7 +213,10 @@ namespace Intervu.Application.UseCases.Notification
             };
 
             if (role == null)
-                await _pusher.PushToAllAsync(dto);
+            {
+                await _pusher.PushToRoleGroupAsync(UserRole.Candidate.ToString(), dto);
+                await _pusher.PushToRoleGroupAsync(UserRole.Coach.ToString(), dto);
+            }
             else
                 await _pusher.PushToRoleGroupAsync(role, dto);
         }

@@ -52,7 +52,7 @@ namespace Intervu.Application.UseCases.Admin
                     EntityName = r.Question?.Title ?? "Unknown Question",
                     Severity = "Medium",
                     TimeOffset = GetTimeOffset(r.CreatedAt),
-                    ActionLink = $"/admin/question-reports?id={r.Id}"   // TODO: replace with real link
+                    ActionLink = "/admin/reports/question"
                 });
             }
 

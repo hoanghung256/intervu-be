@@ -67,8 +67,8 @@ namespace Intervu.Application.UseCases.Question
                 NotificationType.SystemAnnouncement,
                 "Question Report Submitted",
                 $"Your report for question \"{(question.Title.Length > 30 ? question.Title.Substring(0, 30) + "..." : question.Title)}\" has been submitted successfully and is being reviewed.",
-                "/history",
-                null
+                null,
+                report.Id
             ));
 
             // Notify all admins via system event
@@ -77,7 +77,7 @@ namespace Intervu.Application.UseCases.Question
                 NotificationType.SystemAnnouncement,
                 "New Question Report",
                 $"A new report has been submitted for question: {question.Title}",
-                "/admin/reports"
+                "/admin/reports/question"
             ));
 
             return new ReportQuestionResult

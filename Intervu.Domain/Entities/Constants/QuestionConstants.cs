@@ -11,8 +11,15 @@ namespace Intervu.Domain.Entities.Constants.QuestionConstants
     public enum QuestionReportStatus
     {
         Pending = 1,
-        Reviewed = 2,
+        Resolved = 2,
         Dismissed = 3
+    }
+
+    public enum ResolutionAction
+    {
+        NoAction = 0,
+        DeactivateQuestion = 1,
+        EditQuestion = 2
     }
 
     public enum Role

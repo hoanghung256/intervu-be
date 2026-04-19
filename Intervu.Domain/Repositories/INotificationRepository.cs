@@ -1,5 +1,6 @@
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
+using Intervu.Domain.Entities.Projections;
 
 namespace Intervu.Domain.Repositories
 {
@@ -11,6 +12,7 @@ namespace Intervu.Domain.Repositories
         Task MarkAllAsReadAsync(Guid userId);
         Task<bool> ExistsAsync(Guid userId, NotificationType type, Guid referenceId);
         Task AddRangeAsync(IEnumerable<Notification> notifications);
+        Task<(IReadOnlyList<AdminBroadcastLogEntry> Items, int TotalCount)> GetAdminBroadcastLogsAsync(int page, int pageSize);
     }
 }
 

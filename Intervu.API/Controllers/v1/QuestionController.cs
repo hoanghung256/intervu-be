@@ -27,6 +27,7 @@ namespace Intervu.API.Controllers.v1
         private readonly IReportQuestion _reportQuestion;
         private readonly IGetQuestionReports _getQuestionReports;
         private readonly IUpdateQuestionReportStatus _updateReportStatus;
+        private readonly IModerateQuestion _moderateQuestion;
 
         public QuestionController(
             IGetQuestionList getList,
@@ -39,7 +40,8 @@ namespace Intervu.API.Controllers.v1
             IGetSavedQuestions getSaved,
             IReportQuestion reportQuestion,
             IGetQuestionReports getQuestionReports,
-            IUpdateQuestionReportStatus updateReportStatus)
+            IUpdateQuestionReportStatus updateReportStatus,
+            IModerateQuestion moderateQuestion)
         {
             _getList = getList;
             _getDetail = getDetail;
@@ -52,6 +54,7 @@ namespace Intervu.API.Controllers.v1
             _reportQuestion = reportQuestion;
             _getQuestionReports = getQuestionReports;
             _updateReportStatus = updateReportStatus;
+            _moderateQuestion = moderateQuestion;
         }
 
         private Guid? GetOptionalUserId()
@@ -191,8 +194,24 @@ namespace Intervu.API.Controllers.v1
         [HttpPut("reports/{reportId:guid}/status")]
         public async Task<IActionResult> UpdateReportStatus(Guid reportId, [FromBody] UpdateQuestionReportStatusRequest request)
         {
-            await _updateReportStatus.ExecuteAsync(reportId, request.Status);
+            if (!TryGetRequiredUserId(out Guid adminUserId))
+            {
+                return Unauthorized(new { success = false, message = "Invalid token" });
+            }
+            await _updateReportStatus.ExecuteAsync(reportId, request, adminUserId);
             return Ok(new { success = true, message = "Report status updated" });
+        }
+
+        [Authorize(Policy = AuthorizationPolicies.Admin)]
+        [HttpPost("{questionId:guid}/moderate")]
+        public async Task<IActionResult> Moderate(Guid questionId, [FromBody] ModerateQuestionRequest request)
+        {
+            if (!TryGetRequiredUserId(out Guid adminUserId))
+            {
+                return Unauthorized(new { success = false, message = "Invalid token" });
+            }
+            await _moderateQuestion.ExecuteAsync(questionId, request.Status, adminUserId);
+            return Ok(new { success = true, message = "Question moderated" });
         }
 
         //[HttpPost("{questionId:guid}/vote")]

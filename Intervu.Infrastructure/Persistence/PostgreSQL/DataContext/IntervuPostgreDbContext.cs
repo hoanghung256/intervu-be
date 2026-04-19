@@ -1707,6 +1707,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.Level).HasConversion<int>();
                 b.Property(x => x.Round).HasConversion<int>();
                 b.Property(x => x.Status).HasConversion<int>().HasDefaultValue(QuestionStatus.Approved);
+                b.Property(x => x.IsHidden).HasDefaultValue(false);
                 b.Property(x => x.ViewCount).HasDefaultValue(0);
                 b.Property(x => x.SaveCount).HasDefaultValue(0);
                 b.Property(x => x.Vote).HasDefaultValue(0);
@@ -1736,6 +1737,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.HasIndex(x => x.Level);
                 b.HasIndex(x => x.IsHot);
                 b.HasIndex(x => x.Status);
+                b.HasIndex(x => x.IsHidden);
                 b.HasIndex(x => x.Category);
             });
 
@@ -1800,6 +1802,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.ReportedBy).IsRequired();
                 b.Property(x => x.Reason).IsRequired().HasMaxLength(1000);
                 b.Property(x => x.Status).HasConversion<int>().HasDefaultValue(QuestionReportStatus.Pending);
+                b.Property(x => x.ResolutionNote).HasMaxLength(2000);
+                b.Property(x => x.ActionTaken).HasConversion<int?>();
                 b.Property(x => x.CreatedAt).IsRequired();
                 b.Property(x => x.UpdatedAt).IsRequired();
 
@@ -1818,6 +1822,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.HasIndex(x => x.QuestionId);
                 b.HasIndex(x => x.ReportedBy);
                 b.HasIndex(x => x.Status);
+                b.HasIndex(x => x.ResolvedBy);
+                b.HasIndex(x => x.ResolvedAt);
             });
 
             // UserQuestionLike (tracks which user liked which question)

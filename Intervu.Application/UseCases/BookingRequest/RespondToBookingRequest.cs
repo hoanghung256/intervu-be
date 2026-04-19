@@ -203,8 +203,8 @@ namespace Intervu.Application.UseCases.BookingRequest
                     NotificationType.BookingRejected,
                     "Booking rejected",
                     "Your interview booking was rejected by the coach. A full refund will be processed.",
-                    "/booking?tab=history",
-                    null));
+                    $"/booking-requests/{bookingRequest.Id}",
+                    bookingRequest.Id));
         }
 
         

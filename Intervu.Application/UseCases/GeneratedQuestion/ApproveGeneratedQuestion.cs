@@ -61,6 +61,7 @@ namespace Intervu.Application.UseCases.GeneratedQuestion
                 Level = request.Level,
                 Round = request.Round,
                 Category = request.Category,
+                Status = Domain.Entities.Constants.QuestionConstants.QuestionStatus.Pending,
                 CreatedBy = reviewerUserId,
                 CreatedAt = now,
                 UpdatedAt = now
