@@ -18,6 +18,7 @@ namespace Intervu.API.Controllers.v1
     public class InterviewRoomController : Controller
     {
         private readonly IGetRoomHistory _getRoomHistory;
+        private readonly IGetSessions _getSessions;
         private readonly IGetCurrentRoom _getCurrentRoom;
         private readonly IGetCoachEvaluation _getCoachEvaluation;
         private readonly ISubmitCoachEvaluation _submitCoachEvaluation;
@@ -27,6 +28,7 @@ namespace Intervu.API.Controllers.v1
 
         public InterviewRoomController(
             IGetRoomHistory getRoomHistory,
+            IGetSessions getSessions,
             IGetCurrentRoom getCurrentRoom,
             IGetCoachEvaluation getCoachEvaluation,
             ISubmitCoachEvaluation submitCoachEvaluation,
@@ -35,6 +37,7 @@ namespace Intervu.API.Controllers.v1
             IGetInterviewReports getInterviewReports)
         {
             _getRoomHistory = getRoomHistory;
+            _getSessions = getSessions;
             _getCurrentRoom = getCurrentRoom;
             _getCoachEvaluation = getCoachEvaluation;
             _submitCoachEvaluation = submitCoachEvaluation;
@@ -63,6 +66,37 @@ namespace Intervu.API.Controllers.v1
             }
 
             var result = await _getRoomHistory.ExecuteWithPaginationAsync(role, userId, request);
+
+            return Ok(new
+            {
+                success = true,
+                message = "Success",
+                data = result
+            });
+        }
+
+        /// <summary>
+        /// Get a paginated list of interview sessions for the current user.
+        /// Multi-round bookings collapse into one session; standalone rooms appear as single-round sessions.
+        /// Response includes aggregate stats and, for interviewers, a pending coach-evaluation session when present.
+        /// </summary>
+        [Authorize(Policy = AuthorizationPolicies.CandidateOrInterviewer)]
+        [HttpGet("sessions")]
+        public async Task<IActionResult> GetSessions([FromQuery] GetSessionsRequestDto request)
+        {
+            bool isGetUserIdSuccess = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
+            bool isGetRoleSuccess = Enum.TryParse(User.FindFirstValue(ClaimTypes.Role), out UserRole role);
+
+            if (!isGetUserIdSuccess || !isGetRoleSuccess)
+            {
+                return Unauthorized(new
+                {
+                    success = false,
+                    message = "Invalid user credentials"
+                });
+            }
+
+            var result = await _getSessions.ExecuteAsync(role, userId, request);
 
             return Ok(new
             {

@@ -116,6 +116,7 @@ namespace Intervu.Application
             services.AddScoped<ICreateInterviewRoom, CreateInterviewRoom>();
             services.AddScoped<IScheduleInterviewReminders, ScheduleInterviewReminders>();
             services.AddScoped<IGetRoomHistory, GetRoomHistory>();
+            services.AddScoped<IGetSessions, GetSessions>();
             services.AddScoped<IUpdateRoom, UpdateRoom>();
             services.AddScoped<IGetCurrentRoom, GetCurrentRoom>();
             services.AddScoped<IGetCoachEvaluation, GetCoachEvaluation>();
