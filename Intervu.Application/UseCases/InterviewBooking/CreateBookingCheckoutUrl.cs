@@ -1,6 +1,7 @@
 using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.ExternalServices.Email;
+using Intervu.Application.Interfaces.Services;
 using Intervu.Application.Interfaces.UseCases.BookingRequest;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
@@ -31,6 +32,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
         private readonly IUnitOfWork _unitOfWork;
         private readonly IUserRepository _userRepository;
         private readonly IConfiguration _configuration;
+        private readonly ICommissionCalculator _commissionCalculator;
 
         public CreateBookingCheckoutUrl(
             ILogger<CreateBookingCheckoutUrl> logger,
@@ -40,6 +42,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
             IUserRepository userRepository,
             IConfiguration configuration,
             ICreateEvaluationResultsUseCase createEvaluationResults,
+            ICommissionCalculator commissionCalculator,
             IUnitOfWork unitOfWork)
         {
             _logger = logger;
@@ -50,6 +53,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
             _unitOfWork = unitOfWork;
             _userRepository = userRepository;
             _configuration = configuration;
+            _commissionCalculator = commissionCalculator;
         }
 
         public async Task<string?> ExecuteAsync(
@@ -181,11 +185,16 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     BookingRequestId = br.Id,
                 };
 
+                var split = await _commissionCalculator.ComputeAsync(paymentAmount);
+
                 InterviewBookingTransaction t2 = new()
                 {
                     OrderCode = RandomGenerator.GenerateOrderCode(),
                     UserId = coachId,
-                    Amount = paymentAmount,
+                    Amount = split.Net,
+                    GrossAmount = paymentAmount,
+                    CommissionAmount = split.Commission,
+                    CommissionRate = split.Rate,
                     Status = TransactionStatus.Created,
                     Type = TransactionType.Payout,
                     BookingRequestId = br.Id,

@@ -45,6 +45,8 @@ namespace Intervu.API.Controllers.v1
         private readonly IGetAiConfiguration _getAiConfiguration;
         private readonly IAdminTriggerVectorSync _triggerVectorSync;
         private readonly IGetPythonAiMetrics _getPythonAiMetrics;
+        private readonly IGetCommissionRate _getCommissionRate;
+        private readonly IUpdateCommissionRate _updateCommissionRate;
 
         public AdminController(
             IGetDashboardStats getDashboardStats,
@@ -71,7 +73,9 @@ namespace Intervu.API.Controllers.v1
             IGetAiServicesHealth getAiServicesHealth,
             IGetAiConfiguration getAiConfiguration,
             IAdminTriggerVectorSync triggerVectorSync,
-            IGetPythonAiMetrics getPythonAiMetrics)
+            IGetPythonAiMetrics getPythonAiMetrics,
+            IGetCommissionRate getCommissionRate,
+            IUpdateCommissionRate updateCommissionRate)
         {
             _getDashboardStats = getDashboardStats;
             _getAllUsers = getAllUsers;
@@ -98,6 +102,42 @@ namespace Intervu.API.Controllers.v1
             _getAiConfiguration = getAiConfiguration;
             _triggerVectorSync = triggerVectorSync;
             _getPythonAiMetrics = getPythonAiMetrics;
+            _getCommissionRate = getCommissionRate;
+            _updateCommissionRate = updateCommissionRate;
+        }
+
+        public class UpdateCommissionRateRequest
+        {
+            public decimal CommissionRate { get; set; }
+        }
+
+        /// <summary>
+        /// Get the current platform commission rate applied on coach payouts.
+        /// </summary>
+        [HttpGet("platform-settings/commission")]
+        [Authorize(Policy = AuthorizationPolicies.Admin)]
+        public async Task<IActionResult> GetCommissionRate()
+        {
+            var rate = await _getCommissionRate.ExecuteAsync();
+            return Ok(new { success = true, message = "Success", data = new { commissionRate = rate } });
+        }
+
+        /// <summary>
+        /// Update the platform commission rate. Accepts a decimal in [0, 1).
+        /// </summary>
+        [HttpPut("platform-settings/commission")]
+        [Authorize(Policy = AuthorizationPolicies.Admin)]
+        public async Task<IActionResult> UpdateCommissionRate([FromBody] UpdateCommissionRateRequest request)
+        {
+            try
+            {
+                var rate = await _updateCommissionRate.ExecuteAsync(request.CommissionRate);
+                return Ok(new { success = true, message = "Commission rate updated", data = new { commissionRate = rate } });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message, data = (object?)null });
+            }
         }
 
         /// <summary>

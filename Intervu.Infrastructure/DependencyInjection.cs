@@ -109,6 +109,7 @@ namespace Intervu.Infrastructure
             services.AddScoped<IAuditLogRepository, AuditLogRepository>();
             services.AddScoped<IWithdrawalRequestRepository, WithdrawalRequestRepository>();
             services.AddScoped<IAiTrafficLogRepository, AiTrafficLogRepository>();
+            services.AddScoped<IPlatformSettingRepository, PlatformSettingRepository>();
 
             return services;
         }

@@ -41,20 +41,21 @@ namespace Intervu.Application.UseCases.BookingRequest
                 count++;
             }
 
+            // Commented out: legacy logic (coach NO NEED to request booking request any more)
             // Paid bookings where coach did not respond in time — expire, refund, notify
-            var expiredPaid = (await _bookingRepo.GetExpiredPaidRequestsAsync()).ToList();
-            foreach (var request in expiredPaid)
-            {
-                request.Status = BookingRequestStatus.Expired;
-                request.UpdatedAt = DateTime.UtcNow;
-                _bookingRepo.UpdateAsync(request);
+            // var expiredPaid = (await _bookingRepo.GetExpiredPaidRequestsAsync()).ToList();
+            // foreach (var request in expiredPaid)
+            // {
+            //     request.Status = BookingRequestStatus.Expired;
+            //     request.UpdatedAt = DateTime.UtcNow;
+            //     _bookingRepo.UpdateAsync(request);
 
-                await ProcessRefundAsync(request);
-                FreeAvailabilityBlocks(request);
-                await SendExpiryNotificationEmailsAsync(request);
+            //     await ProcessRefundAsync(request);
+            //     FreeAvailabilityBlocks(request);
+            //     await SendExpiryNotificationEmailsAsync(request);
 
-                count++;
-            }
+            //     count++;
+            // }
 
             if (count > 0)
                 await _bookingRepo.SaveChangesAsync();

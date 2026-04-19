@@ -45,6 +45,9 @@ namespace Intervu.Application.UseCases.InterviewBooking
                                 t.BookingRequest.CoachInterviewService?.DurationMinutes ?? 60)
                             : null),
                     Amount = t.Amount,
+                    GrossAmount = t.GrossAmount,
+                    CommissionAmount = t.CommissionAmount,
+                    CommissionRate = t.CommissionRate,
                     Type = t.Type,
                     Status = t.Status
                 };

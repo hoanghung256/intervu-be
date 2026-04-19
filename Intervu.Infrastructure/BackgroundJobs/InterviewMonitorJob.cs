@@ -1,6 +1,7 @@
 ﻿using Hangfire;
 using Intervu.Application.Interfaces.BackgroundJobs;
 using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.UseCases.InterviewBooking;
 using Intervu.Application.Interfaces.UseCases.Notification;
 using Intervu.Application.Services;
 using Intervu.Domain.Entities.Constants;
@@ -32,12 +33,12 @@ namespace Intervu.Infrastructure.BackgroundJobs
         public string JobId => "InterviewMonitor";
         public string CronExpression => Cron.Minutely();
 
+        // Runs every minute to keep interview room status in sync with schedule.
         public async Task ExecuteAsync()
         {
             var now = DateTime.UtcNow;
 
-            // 1. Update Scheduled -> Ongoing
-            // Condition: ScheduledTime <= now + 5 mins AND ScheduledTime > now
+            // Move rooms starting within 5 minutes to Ongoing.
             var roomsToUpdate = await _db.InterviewRooms
                 .Where(room => room.Status == InterviewRoomStatus.Scheduled &&
                                room.ScheduledTime.HasValue &&
@@ -45,7 +46,7 @@ namespace Intervu.Infrastructure.BackgroundJobs
                                room.ScheduledTime.Value > now)
                 .ToListAsync();
 
-            if (roomsToUpdate.Any())
+            if (roomsToUpdate.Count != 0)
             {
                 foreach (var room in roomsToUpdate)
                 {
@@ -57,11 +58,43 @@ namespace Intervu.Infrastructure.BackgroundJobs
                 await _db.SaveChangesAsync();
                 _logger.LogInformation("Changed rooms to Ongoing: {RoomIds}", string.Join(", ", roomsToUpdate.Select(r => r.Id)));
 
-                // Send interview reminders to both parties
+                // Queue reminder notifications for both participants.
                 foreach (var room in roomsToUpdate)
                 {
                     _backgroundService.Enqueue<INotificationUseCase>(
                         uc => uc.SendInterviewReminderAsync(room.Id));
+                }
+            }
+
+            // Complete rooms that are overdue by 60 minutes after planned end.
+            var ongoingRooms = await _db.InterviewRooms
+                .Where(room => room.Status == InterviewRoomStatus.Ongoing &&
+                               room.ScheduledTime.HasValue &&
+                               room.DurationMinutes.HasValue)
+                .ToListAsync();
+
+            var roomsToComplete = ongoingRooms
+                .Where(room => room.ScheduledTime!.Value
+                    .AddMinutes(room.DurationMinutes!.Value + 60) <= now)
+                .ToList();
+
+            if (roomsToComplete.Count != 0)
+            {
+                foreach (var room in roomsToComplete)
+                {
+                    room.Status = InterviewRoomStatus.Completed;
+                    _cache.Update(room);
+                }
+
+                _db.InterviewRooms.UpdateRange(roomsToComplete);
+                await _db.SaveChangesAsync();
+                _logger.LogInformation("Changed rooms to Completed: {RoomIds}", string.Join(", ", roomsToComplete.Select(r => r.Id)));
+
+                // Queue payout processing for rooms completed in this run.
+                foreach (var room in roomsToComplete)
+                {
+                    _backgroundService.Enqueue<IPayoutForCoachAfterInterview>(
+                        uc => uc.ExecuteAsync(room.Id));
                 }
             }
         }

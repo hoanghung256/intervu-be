@@ -73,13 +73,16 @@ namespace Intervu.Application.UseCases.InterviewBooking
                         coach.Version++;
                         await _coachProfileRepository.UpdateCoachProfileAsync(coach);
 
-                        // Create earnings transaction record
+                        // Create earnings transaction record (mirrors payout breakdown)
                         var earningsTransaction = new InterviewBookingTransaction
                         {
                             Id = Guid.NewGuid(),
                             UserId = interviewerId,
                             BookingRequestId = room.BookingRequestId,
                             Amount = t.Amount,
+                            GrossAmount = t.GrossAmount,
+                            CommissionAmount = t.CommissionAmount,
+                            CommissionRate = t.CommissionRate,
                             Type = TransactionType.Earnings,
                             Status = TransactionStatus.Paid,
                             CreatedAt = DateTime.UtcNow
