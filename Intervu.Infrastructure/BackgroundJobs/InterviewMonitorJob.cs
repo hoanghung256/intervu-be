@@ -32,12 +32,15 @@ namespace Intervu.Infrastructure.BackgroundJobs
         public string JobId => "InterviewMonitor";
         public string CronExpression => Cron.Minutely();
 
+        // This job runs every minute to:
+        // 1. Move rooms from Scheduled to Ongoing if their scheduled time is within the next 5 minutes.
+        // 2. (Optional) Move rooms from Ongoing to Completed if they have been ongoing for more than 1 hour. 
+        // This part is currently not implemented to avoid edge cases with interviews that run longer than expected. 
         public async Task ExecuteAsync()
         {
             var now = DateTime.UtcNow;
 
-            // 1. Update Scheduled -> Ongoing
-            // Condition: ScheduledTime <= now + 5 mins AND ScheduledTime > now
+            // Move rooms starting within 5 minutes to Ongoing.
             var roomsToUpdate = await _db.InterviewRooms
                 .Where(room => room.Status == InterviewRoomStatus.Scheduled &&
                                room.ScheduledTime.HasValue &&
@@ -45,7 +48,7 @@ namespace Intervu.Infrastructure.BackgroundJobs
                                room.ScheduledTime.Value > now)
                 .ToListAsync();
 
-            if (roomsToUpdate.Any())
+            if (roomsToUpdate.Count != 0)
             {
                 foreach (var room in roomsToUpdate)
                 {
@@ -57,7 +60,7 @@ namespace Intervu.Infrastructure.BackgroundJobs
                 await _db.SaveChangesAsync();
                 _logger.LogInformation("Changed rooms to Ongoing: {RoomIds}", string.Join(", ", roomsToUpdate.Select(r => r.Id)));
 
-                // Send interview reminders to both parties
+                // Queue reminder notifications for both participants.
                 foreach (var room in roomsToUpdate)
                 {
                     _backgroundService.Enqueue<INotificationUseCase>(

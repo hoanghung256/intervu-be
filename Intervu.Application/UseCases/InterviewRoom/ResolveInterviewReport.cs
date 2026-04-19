@@ -80,6 +80,35 @@ namespace Intervu.Application.UseCases.InterviewRoom
                     var payout = await transactionRepo.GetByAvailabilityId(room.CurrentAvailabilityId ?? Guid.Empty, TransactionType.Payout);
                     if (payout != null)
                     {
+                        // If the coach was already credited, reverse: debit coach wallet and write a
+                        // compensating Earnings row with negative amounts so the audit trail is explicit.
+                        if (payout.Status == TransactionStatus.Paid && room.CoachId.HasValue)
+                        {
+                            var coachProfileRepo = unitOfWork.GetRepository<ICoachProfileRepository>();
+                            var coach = await coachProfileRepo.GetProfileByIdAsync(room.CoachId.Value);
+                            if (coach != null)
+                            {
+                                coach.CurrentAmount = (coach.CurrentAmount ?? 0) - payout.Amount;
+                                coach.Version++;
+                                await coachProfileRepo.UpdateCoachProfileAsync(coach);
+
+                                await transactionRepo.AddAsync(new InterviewBookingTransaction
+                                {
+                                    Id = Guid.NewGuid(),
+                                    OrderCode = RandomGenerator.GenerateOrderCode(),
+                                    UserId = room.CoachId.Value,
+                                    BookingRequestId = payout.BookingRequestId,
+                                    Amount = -payout.Amount,
+                                    GrossAmount = payout.GrossAmount.HasValue ? -payout.GrossAmount.Value : null,
+                                    CommissionAmount = payout.CommissionAmount.HasValue ? -payout.CommissionAmount.Value : null,
+                                    CommissionRate = payout.CommissionRate,
+                                    Type = TransactionType.Earnings,
+                                    Status = TransactionStatus.Paid,
+                                    CreatedAt = DateTime.UtcNow
+                                });
+                            }
+                        }
+
                         payout.Status = TransactionStatus.Cancel;
                         unitOfWork.GetRepository<ITransactionRepository>().UpdateAsync(payout);
                     }

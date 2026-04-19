@@ -59,6 +59,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<WithdrawalRequest> WithdrawalRequests { get; set; }
         public DbSet<AiTrafficLog> AiTrafficLogs { get; set; }
+        public DbSet<PlatformSetting> PlatformSettings { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -655,6 +656,23 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 .HasForeignKey(x => x.UserId)
                 .HasConstraintName("FK_InterviewBookingTransaction_Users_UserId")
                 .OnDelete(DeleteBehavior.Cascade);
+
+                b.Property(x => x.GrossAmount).IsRequired(false);
+                b.Property(x => x.CommissionAmount).IsRequired(false);
+                b.Property(x => x.CommissionRate).HasPrecision(5, 4).IsRequired(false);
+            });
+
+            modelBuilder.Entity<PlatformSetting>(b =>
+            {
+                b.ToTable("PlatformSettings");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.CommissionRate).HasPrecision(5, 4).IsRequired();
+                b.HasData(new PlatformSetting
+                {
+                    Id = Guid.Parse("019d9aa0-0000-7000-8000-000000000001"),
+                    CommissionRate = 0.30m,
+                    CreatedAt = new DateTime(2026, 4, 19, 0, 0, 0, DateTimeKind.Utc)
+                });
             });
 
             // InterviewRescheduleRequest

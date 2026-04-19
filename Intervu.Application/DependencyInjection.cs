@@ -89,6 +89,7 @@ namespace Intervu.Application
             services.AddSingleton<ICodeGenerationService, JavaScriptCodeGenerationService>();
             services.AddSingleton<ICodeGenerationService, JavaCodeGenerationService>();
             services.AddScoped<IAssessmentService, AssessmentService>();
+            services.AddScoped<ICommissionCalculator, CommissionCalculator>();
             services.AddScoped<IGenerateAssessmentCatalogService, GenerateAssessmentCatalogService>();
             services.AddScoped<ISaveAssessmentAnswersUseCase, SaveAssessmentAnswersUseCase>();
 
@@ -154,6 +155,8 @@ namespace Intervu.Application
             services.AddScoped<IActivateUserForAdmin, AdminUseCases.ActivateUserForAdmin>();
             services.AddScoped<IGetAdminDashboardCharts, AdminUseCases.GetAdminDashboardCharts>();
             services.AddScoped<IGetTopCoachesLeaderboard, AdminUseCases.GetTopCoachesLeaderboard>();
+            services.AddScoped<IGetCommissionRate, AdminUseCases.GetCommissionRate>();
+            services.AddScoped<IUpdateCommissionRate, AdminUseCases.UpdateCommissionRate>();
             services.AddScoped<IGetNeedsAttentionQueue, AdminUseCases.GetNeedsAttentionQueue>();
             services.AddScoped<IGetPineconeIndexStats, AdminUseCases.GetPineconeIndexStats>();
             services.AddScoped<IGetAiServicesHealth, AdminUseCases.GetAiServicesHealth>();

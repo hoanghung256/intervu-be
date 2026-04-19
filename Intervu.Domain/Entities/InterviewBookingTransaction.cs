@@ -17,6 +17,12 @@ namespace Intervu.Domain.Entities
 
         public int Amount { get; set; }
 
+        public int? GrossAmount { get; set; }
+
+        public int? CommissionAmount { get; set; }
+
+        public decimal? CommissionRate { get; set; }
+
         public TransactionType Type { get; set; }
 
         public TransactionStatus Status { get; set; }
