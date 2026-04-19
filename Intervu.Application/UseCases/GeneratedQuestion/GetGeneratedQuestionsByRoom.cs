@@ -1,4 +1,5 @@
 using Intervu.Application.DTOs.GeneratedQuestion;
+using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.UseCases.GeneratedQuestion;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
@@ -11,10 +12,20 @@ namespace Intervu.Application.UseCases.GeneratedQuestion
 {
     public class GetGeneratedQuestionsByRoom(
         IGeneratedQuestionRepository generatedQuestionRepository,
-        ITagRepository tagRepository) : IGetGeneratedQuestionsByRoom
+        ITagRepository tagRepository,
+        IInterviewRoomRepository interviewRoomRepository) : IGetGeneratedQuestionsByRoom
     {
-        public async Task<List<GeneratedQuestionDto>> ExecuteAsync(Guid interviewRoomId, GeneratedQuestionStatus? status)
+        public async Task<List<GeneratedQuestionDto>> ExecuteAsync(Guid interviewRoomId, Guid userId, GeneratedQuestionStatus? status)
         {
+            var room = await interviewRoomRepository.GetByIdAsync(interviewRoomId)
+                ?? throw new NotFoundException("Interview room not found");
+
+            //var isParticipant = (room.CandidateId.HasValue && room.CandidateId.Value == userId)
+            //    || (room.CoachId.HasValue && room.CoachId.Value == userId);
+
+            //if (!isParticipant)
+            //    throw new ForbiddenException("You are not allowed to access this room");
+
             var dbTags = await tagRepository.GetAllAsync();
             var tagMap = dbTags.ToDictionary(t => t.Id, t => t.Name);
 

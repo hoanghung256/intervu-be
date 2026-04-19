@@ -29,6 +29,17 @@ namespace Intervu.Application.UseCases.InterviewType
                 throw new BadRequestException("Suggested duration must be a multiple of 30 minutes.");
             }
 
+            if (interviewTypeDto.MinPrice > interviewTypeDto.MaxPrice)
+            {
+                throw new BadRequestException("MinPrice cannot be greater than MaxPrice.");
+            }
+
+            var existingType = await _repo.GetByNameAsync(interviewTypeDto.Name);
+            if (existingType != null)
+            {
+                throw new ConflictException("Interview type name already exists.");
+            }
+
             Domain.Entities.InterviewType interviewType = _mapper.Map<Domain.Entities.InterviewType>(interviewTypeDto);
             await _repo.AddAsync(interviewType);
             await _repo.SaveChangesAsync();

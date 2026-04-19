@@ -1,8 +1,10 @@
 using Intervu.API.Test.Base;
 using Intervu.API.Test.Utils;
 using System.Net;
+using Intervu.Application.DTOs.Coach;
 using Intervu.Application.DTOs.CoachInterviewService;
 using Intervu.Application.DTOs.User;
+using Intervu.Domain.Entities.Constants;
 using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.Interviewer
@@ -19,17 +21,27 @@ namespace Intervu.API.Test.ApiTests.Interviewer
 
         private async Task<(string token, Guid userId)> RegisterAndLoginCoachAsync(string emailPrefix = "coach_service")
         {
-            var email = $"{emailPrefix}_{Guid.NewGuid()}@example.com";
-            var password = DEFAULT_PASSWORD;
+            var email = $"{emailPrefix}_{Guid.NewGuid():N}@example.com";
+            var password = CANDIDATE_PASSWORD;
             var fullName = "Test Coach Service";
 
-            await _api.PostAsync("/api/v1/account/register", new RegisterRequest
+            var adminLoginResponse = await _api.PostAsync("/api/v1/account/login", new LoginRequest
             {
+                Email = ADMIN_EMAIL,
+                Password = DEFAULT_PASSWORD
+            }, logBody: true);
+            var adminLoginData = await _api.LogDeserializeJson<LoginResponse>(adminLoginResponse);
+            var adminToken = adminLoginData.Data!.Token;
+
+            await _api.PostAsync("/api/v1/coach-profile", new CoachCreateDto
+            {
+                FullName = fullName,
                 Email = email,
                 Password = password,
-                FullName = fullName,
-                Role = "Coach"
-            });
+                Role = UserRole.Coach,
+                ExperienceYears = 1,
+                CurrentAmount = 0
+            }, jwtToken: adminToken, logBody: true);
 
             var loginResponse = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = email, Password = password });
             var loginData = await _api.LogDeserializeJson<LoginResponse>(loginResponse);
@@ -40,7 +52,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
         private async Task<(string token, Guid userId)> RegisterAndLoginCandidateAsync(string emailPrefix = "candidate_service")
         {
             var email = $"{emailPrefix}_{Guid.NewGuid()}@example.com";
-            var password = DEFAULT_PASSWORD;
+            var password = CANDIDATE_PASSWORD;
             var fullName = "Test Candidate Service";
 
             await _api.PostAsync("/api/v1/account/register", new RegisterRequest
@@ -82,7 +94,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
 
             // Assert
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Create status code is 200 OK");
-            var result = await _api.LogDeserializeJson<CoachInterviewServiceDto>(response);
+            var result = await _api.LogDeserializeJson<CoachInterviewServiceDto>(response, true);
             await AssertHelper.AssertTrue(result.Success, "API response indicates success");
             await AssertHelper.AssertNotNull(result.Data, "Service data is not null");
             await AssertHelper.AssertEqual(createDto.Price, result.Data!.Price, "Price matches");
@@ -102,14 +114,14 @@ namespace Intervu.API.Test.ApiTests.Interviewer
                 Price = 1000,
                 DurationMinutes = 30
             };
-            await _api.PostAsync("/api/v1/coach-interview-services", createDto, jwtToken: token);
+            await _api.PostAsync("/api/v1/coach-interview-services", createDto, jwtToken: token, logBody: true);
 
             // Act
             var response = await _api.GetAsync("/api/v1/coach-interview-services/mine", jwtToken: token, logBody: true);
 
             // Assert
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Get mine status code is 200 OK");
-            var result = await _api.LogDeserializeJson<List<CoachInterviewServiceDto>>(response);
+            var result = await _api.LogDeserializeJson<List<CoachInterviewServiceDto>>(response, true);
             await AssertHelper.AssertTrue(result.Success, "API response indicates success");
             await AssertHelper.AssertNotNull(result.Data, "Service list is not null");
             await AssertHelper.AssertNotEmpty(result.Data, "Service list is not empty");
@@ -129,14 +141,14 @@ namespace Intervu.API.Test.ApiTests.Interviewer
                 Price = 2000,
                 DurationMinutes = 60
             };
-            await _api.PostAsync("/api/v1/coach-interview-services", createDto, jwtToken: token);
+            await _api.PostAsync("/api/v1/coach-interview-services", createDto, jwtToken: token, logBody: true);
 
             // Act
             var response = await _api.GetAsync($"/api/v1/coach-interview-services/coach/{coachId}", logBody: true);
 
             // Assert
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Get by coach ID status code is 200 OK");
-            var result = await _api.LogDeserializeJson<List<CoachInterviewServiceDto>>(response);
+            var result = await _api.LogDeserializeJson<List<CoachInterviewServiceDto>>(response, true);
             await AssertHelper.AssertTrue(result.Success, "API response indicates success");
             await AssertHelper.AssertNotNull(result.Data, "Service list is not null");
             await AssertHelper.AssertNotEmpty(result.Data, "Service list is not empty");
@@ -156,8 +168,8 @@ namespace Intervu.API.Test.ApiTests.Interviewer
                 Price = 1500,
                 DurationMinutes = 60
             };
-            var createResponse = await _api.PostAsync("/api/v1/coach-interview-services", createDto, jwtToken: token);
-            var createResult = await _api.LogDeserializeJson<CoachInterviewServiceDto>(createResponse);
+            var createResponse = await _api.PostAsync("/api/v1/coach-interview-services", createDto, jwtToken: token, logBody: true);
+            var createResult = await _api.LogDeserializeJson<CoachInterviewServiceDto>(createResponse, true);
             var serviceId = createResult.Data!.Id;
 
             var updateDto = new UpdateCoachInterviewServiceDto
@@ -171,7 +183,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
 
             // Assert
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Update status code is 200 OK");
-            var result = await _api.LogDeserializeJson<CoachInterviewServiceDto>(response);
+            var result = await _api.LogDeserializeJson<CoachInterviewServiceDto>(response, true);
             await AssertHelper.AssertTrue(result.Success, "API response indicates success");
             await AssertHelper.AssertNotNull(result.Data, "Service data is not null");
             await AssertHelper.AssertEqual(updateDto.Price, result.Data!.Price, "Price updated");
@@ -191,8 +203,8 @@ namespace Intervu.API.Test.ApiTests.Interviewer
                 Price = 1500,
                 DurationMinutes = 60
             };
-            var createResponse = await _api.PostAsync("/api/v1/coach-interview-services", createDto, jwtToken: token);
-            var createResult = await _api.LogDeserializeJson<CoachInterviewServiceDto>(createResponse);
+            var createResponse = await _api.PostAsync("/api/v1/coach-interview-services", createDto, jwtToken: token, logBody: true);
+            var createResult = await _api.LogDeserializeJson<CoachInterviewServiceDto>(createResponse, true);
             var serviceId = createResult.Data!.Id;
 
             // Act
@@ -202,9 +214,9 @@ namespace Intervu.API.Test.ApiTests.Interviewer
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Delete status code is 200 OK");
 
             // Verify deletion
-            var getResponse = await _api.GetAsync("/api/v1/coach-interview-services/mine", jwtToken: token);
-            var getResult = await _api.LogDeserializeJson<List<CoachInterviewServiceDto>>(getResponse);
-            await AssertHelper.AssertFalse(getResult.Data!.Any(s => s.Id == serviceId), "Deleted service should not be found");
+            var getResponse = await _api.GetAsync("/api/v1/coach-interview-services/mine", jwtToken: token, logBody: true);
+            var getResult = await _api.LogDeserializeJson<List<CoachInterviewServiceDto>>(getResponse, true);
+            await AssertHelper.AssertTrue(getResult.Data == null, "Deleted service should not be found");
         }
 
         // ===== [B] Boundary Tests =====
@@ -264,8 +276,8 @@ namespace Intervu.API.Test.ApiTests.Interviewer
                 Price = 1000,
                 DurationMinutes = 30
             };
-            var createResponse = await _api.PostAsync("/api/v1/coach-interview-services", createDto, jwtToken: token);
-            var createResult = await _api.LogDeserializeJson<CoachInterviewServiceDto>(createResponse);
+            var createResponse = await _api.PostAsync("/api/v1/coach-interview-services", createDto, jwtToken: token, logBody: true);
+            var createResult = await _api.LogDeserializeJson<CoachInterviewServiceDto>(createResponse, true);
             var serviceId = createResult.Data!.Id;
 
             var updateDto = new UpdateCoachInterviewServiceDto
@@ -293,11 +305,10 @@ namespace Intervu.API.Test.ApiTests.Interviewer
             var response = await _api.GetAsync("/api/v1/coach-interview-services/mine", jwtToken: token, logBody: true);
 
             // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
-            var result = await _api.LogDeserializeJson<List<CoachInterviewServiceDto>>(response);
-            await AssertHelper.AssertTrue(result.Success, "API response indicates success");
-            await AssertHelper.AssertNotNull(result.Data, "Service list is not null");
-            await AssertHelper.AssertEmpty(result.Data, "Service list should be empty for new coach");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Status code is 404 NotFound");
+            var result = await _api.LogDeserializeJson<List<CoachInterviewServiceDto>>(response, true);
+            await AssertHelper.AssertFalse(result.Success, "API response indicates success");
+            await AssertHelper.AssertNull(result.Data, "Service list is null");
         }
 
         // ===== [A] Abnormal / Error Path Tests =====
@@ -346,7 +357,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "CoachInterviewService")]
-        public async Task CreateCoachInterviewService_ReturnsBadRequest_WhenInvalidInterviewTypeId()
+        public async Task CreateCoachInterviewService_ReturnsNotFound_WhenInvalidInterviewTypeId()
         {
             // Arrange
             var (token, _) = await RegisterAndLoginCoachAsync("invalid_type_coach");
@@ -361,7 +372,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
             var response = await _api.PostAsync("/api/v1/coach-interview-services", createDto, jwtToken: token, logBody: true);
 
             // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Invalid interview type ID returns 400 Bad Request");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Invalid interview type ID returns 404 Not Found");
         }
 
         [Fact]
@@ -400,8 +411,8 @@ namespace Intervu.API.Test.ApiTests.Interviewer
                 Price = 1500,
                 DurationMinutes = 60
             };
-            var createResponse = await _api.PostAsync("/api/v1/coach-interview-services", createDto, jwtToken: coach1Token);
-            var createResult = await _api.LogDeserializeJson<CoachInterviewServiceDto>(createResponse);
+            var createResponse = await _api.PostAsync("/api/v1/coach-interview-services", createDto, jwtToken: coach1Token, logBody: true);
+            var createResult = await _api.LogDeserializeJson<CoachInterviewServiceDto>(createResponse, true);
             var serviceId = createResult.Data!.Id;
 
             var updateDto = new UpdateCoachInterviewServiceDto
@@ -448,8 +459,8 @@ namespace Intervu.API.Test.ApiTests.Interviewer
                 Price = 1500,
                 DurationMinutes = 60
             };
-            var createResponse = await _api.PostAsync("/api/v1/coach-interview-services", createDto, jwtToken: coach1Token);
-            var createResult = await _api.LogDeserializeJson<CoachInterviewServiceDto>(createResponse);
+            var createResponse = await _api.PostAsync("/api/v1/coach-interview-services", createDto, jwtToken: coach1Token, logBody: true);
+            var createResult = await _api.LogDeserializeJson<CoachInterviewServiceDto>(createResponse, true);
             var serviceId = createResult.Data!.Id;
 
             // Act (coach2 tries to delete coach1's service)

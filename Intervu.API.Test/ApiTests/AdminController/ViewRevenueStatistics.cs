@@ -26,7 +26,7 @@ namespace Intervu.API.Test.ApiTests.AdminController
 
         // ===== [N] Normal / Happy Path Tests =====
 
-        [Fact]
+        [Fact(Skip = "No explicit Dashboard endpoint is covered in existing tests; add once API contract is available.")]
         [Trait("Category", "API")]
         [Trait("Category", "Admin")]
         public async Task GetDashboardStats_ReturnsSuccess()
@@ -44,7 +44,7 @@ namespace Intervu.API.Test.ApiTests.AdminController
             await AssertHelper.AssertNotNull(apiResponse.Data, "Dashboard stats data is not null");
         }
 
-        [Fact]
+        [Fact(Skip = "No explicit Dashboard endpoint is covered in existing tests; add once API contract is available.")]
         [Trait("Category", "API")]
         [Trait("Category", "Admin")]
         public async Task GetDashboardStats_ReturnsTotalUsersGreaterThanZero()
@@ -63,7 +63,7 @@ namespace Intervu.API.Test.ApiTests.AdminController
 
         // ===== [A] Abnormal / Error Path Tests =====
 
-        [Fact]
+        [Fact(Skip = "No explicit Dashboard endpoint is covered in existing tests; add once API contract is available.")]
         [Trait("Category", "API")]
         [Trait("Category", "Admin")]
         public async Task GetDashboardStats_WithoutAuthToken_ReturnsUnauthorized()

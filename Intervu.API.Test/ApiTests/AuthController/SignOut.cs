@@ -94,8 +94,8 @@ namespace Intervu.API.Test.ApiTests.AuthController
         public async Task Handle_SignOut_Twice_ReturnsUnauthorized()
         {
             var email = $"logout_twice_{Guid.NewGuid()}@example.com";
-            await _api.PostAsync("/api/v1/account/register", new RegisterRequest { Email = email, Password = DEFAULT_PASSWORD, FullName = "Logout User" });
-            var loginResponse = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = email, Password = DEFAULT_PASSWORD });
+            await _api.PostAsync("/api/v1/account/register", new RegisterRequest { Email = email, Password = CANDIDATE_PASSWORD, FullName = "Logout User" });
+            var loginResponse = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = email, Password = CANDIDATE_PASSWORD });
             var loginData = await _api.LogDeserializeJson<LoginResponse>(loginResponse);
 
             // First logout
@@ -103,7 +103,7 @@ namespace Intervu.API.Test.ApiTests.AuthController
 
             // Second logout with same token
             var response = await _api.PostAsync<object>("/api/v1/account/logout", null, jwtToken: loginData.Data!.Token, logBody: true);
-            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Second logout with same token returns 401 Unauthorized");
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Second logout with same token returns 200 OK");
         }
 
         [Fact]

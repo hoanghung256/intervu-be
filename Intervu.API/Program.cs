@@ -263,7 +263,7 @@ namespace Intervu.API
 
             if (!app.Environment.IsEnvironment("Testing"))
             {
-                app.UseMiddleware<ExceptionHandlingMiddleware>();
+                
 
                 app.UseHttpsRedirection();
 
@@ -282,6 +282,8 @@ namespace Intervu.API
                     Authorization = new[] { new AllowAllDashboardAuthorizationFilter() }
                 });
             }
+
+            app.UseMiddleware<ExceptionHandlingMiddleware>();
 
             app.UseAuthentication();
             app.UseAuthorization();

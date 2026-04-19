@@ -3,12 +3,16 @@ using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Entities.Constants.QuestionConstants;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace Intervu.Application.DTOs.Question
 {
     public class QuestionFilterRequest
     {
+        [Range(1, int.MaxValue)]
         public int Page { get; set; } = 1;
+
+        [Range(1, 100)]
         public int PageSize { get; set; } = 10;
         public string? SearchTerm { get; set; }
         public Guid? CompanyId { get; set; }
@@ -24,15 +28,31 @@ namespace Intervu.Application.DTOs.Question
 
     public class CreateQuestionRequest
     {
+        [Required]
+        [MinLength(5)]
+        [MaxLength(300)]
         public string Title { get; set; } = null!;
+
+        [Required]
+        [MinLength(10)]
+        [MaxLength(5000)]
         public string? Content { get; set; } = null!;
+
         public ExperienceLevel Level { get; set; }
         public InterviewRound Round { get; set; }
+
+        [Required]
+        [MinLength(1)]
         public List<Guid> CompanyIds { get; set; } = new();
+
+        [Required]
+        [MinLength(1)]
         public List<Role> Roles { get; set; } = new();
         public List<Guid>? TagIds { get; set; } = new();
         public QuestionCategory Category { get; set; }
         public Guid? LinkedQuestionId { get; set; }
+
+        [MaxLength(5000)]
         public string? Answer { get; set; }
     }
 
@@ -44,6 +64,9 @@ namespace Intervu.Application.DTOs.Question
 
     public class ReportQuestionRequest
     {
+        [Required]
+        [MinLength(3)]
+        [MaxLength(500)]
         public string Reason { get; set; } = string.Empty;
     }
 
@@ -71,12 +94,25 @@ namespace Intervu.Application.DTOs.Question
 
     public class UpdateQuestionRequest
     {
+        [Required]
+        [MinLength(5)]
+        [MaxLength(300)]
         public string Title { get; set; } = null!;
+
+        [Required]
+        [MinLength(10)]
+        [MaxLength(5000)]
         public string Content { get; set; } = null!;
         public ExperienceLevel Level { get; set; }
         public InterviewRound Round { get; set; }
+
+        [Required]
+        [MinLength(1)]
         public List<Guid> CompanyIds { get; set; } = new();
         public List<string> CompanyNames { get; set; } = new();
+
+        [Required]
+        [MinLength(1)]
         public List<Role> Roles { get; set; } = new();
         public List<Guid> TagIds { get; set; } = new();
         public QuestionCategory Category { get; set; }
@@ -169,7 +205,10 @@ namespace Intervu.Application.DTOs.Question
 
     public class QuestionReportFilterRequest
     {
+        [Range(1, int.MaxValue)]
         public int Page { get; set; } = 1;
+
+        [Range(1, 100)]
         public int PageSize { get; set; } = 10;
         public QuestionReportStatus? Status { get; set; }
         public string? SearchTerm { get; set; }
@@ -190,6 +229,7 @@ namespace Intervu.Application.DTOs.Question
 
     public class UpdateQuestionReportStatusRequest
     {
+        [EnumDataType(typeof(QuestionReportStatus), ErrorMessage = "Invalid question report status.")]
         public QuestionReportStatus Status { get; set; }
         public ResolutionAction? ActionTaken { get; set; }
         public string? ResolutionNote { get; set; }

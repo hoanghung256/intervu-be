@@ -147,8 +147,17 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
         public async Task Handle_CreateJDBookingRequest_AsCoach_ReturnsForbidden()
         {
             // Arrange – coaches are not allowed to create booking requests (Candidate policy)
+            var fullName = "Test Coach Service";
+
+            await _api.PostAsync("/api/v1/account/register", new RegisterRequest
+            {
+                Email = COACH_EMAIL,
+                Password = CANDIDATE_PASSWORD,
+                FullName = fullName,
+                Role = "Coach"
+            });
             var loginResponse = await _api.PostAsync("/api/v1/account/login",
-                new LoginRequest { Email = COACH_EMAIL, Password = DEFAULT_PASSWORD }, logBody: true);
+                new LoginRequest { Email = COACH_EMAIL, Password = CANDIDATE_PASSWORD }, logBody: true);
             var loginPayload = await _api.LogDeserializeJson<LoginResponse>(loginResponse);
             var coachToken = loginPayload.Data!.Token;
 
@@ -239,7 +248,7 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "BookingRequest")]
-        public async Task Handle_CreateJDBookingRequest_GuidEmptyCoachId_ThrowsException()
+        public async Task CreateJDBookingRequest_Abnormal_GuidEmptyCoachId_ReturnsNotFound()
         {
             // Arrange – Guid.Empty passes [Required] model validation but the coach does not exist in the DB
             var token = await LoginSeededCandidateAsync();
@@ -248,25 +257,23 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
             var requiredBlocks = GetRequiredBlockCount(service.DurationMinutes);
             var availabilityIds = await CreateAvailabilityBlocksAsync(requiredBlocks, 43, 7);
 
-            // Act & Assert – business logic throws when the coach cannot be found
-            var exception = await Assert.ThrowsAsync<Exception>(async () =>
-                await _api.PostAsync("/api/v1/booking-requests/jd-interview", new CreateJDBookingRequestDto
-                {
-                    CoachId = Guid.Empty,
-                    JobDescriptionUrl = "https://example.com/empty-coach-jd.pdf",
-                    CVUrl = "https://example.com/empty-coach-cv.pdf",
-                    AimLevel = AimLevel.Junior,
-                    Rounds =
-                    [
-                        new CreateInterviewRoundDto
-                        {
-                            CoachInterviewServiceId = service.Id,
-                            AvailabilityIds = availabilityIds
-                        }
-                    ]
-                }, jwtToken: token, logBody: true));
+            var response = await _api.PostAsync("/api/v1/booking-requests/jd-interview", new CreateJDBookingRequestDto
+            {
+                CoachId = Guid.Empty,
+                JobDescriptionUrl = "https://example.com/empty-coach-jd.pdf",
+                CVUrl = "https://example.com/empty-coach-cv.pdf",
+                AimLevel = AimLevel.Junior,
+                Rounds =
+                [
+                    new CreateInterviewRoundDto
+                    {
+                        CoachInterviewServiceId = service.Id,
+                        AvailabilityIds = availabilityIds
+                    }
+                ]
+            }, jwtToken: token, logBody: true);
 
-            await AssertHelper.AssertNotNull(exception.Message, "Exception is raised for Guid.Empty coach ID");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Guid.Empty coach ID returns 404 Not Found");
         }
 
         [Fact]
@@ -295,8 +302,9 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
                     }
                 ]
             }, jwtToken: token, logBody: true);
-
+            
             var payload = await _api.LogDeserializeJson<JsonElement>(response, logBody: true);
+            
             await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Status code is 404 Not Found for non-existent coach");
             await AssertHelper.AssertFalse(payload.Success, "Booking should fail");
         }
@@ -357,7 +365,7 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "BookingRequest")]
-        public async Task CreateJDBookingRequest_AvailabilityAlreadyBooked_ReturnsConflict()
+        public async Task CreateJDBookingRequest_AvailabilityWaitForPayment_ReturnsBadRequest()
         {
             var token = await LoginSeededCandidateAsync();
             var services = await GetCoachServicesAsync();
@@ -400,7 +408,7 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
             }, jwtToken: token, logBody: true);
 
             var payload = await _api.LogDeserializeJson<JsonElement>(response, logBody: true);
-            await AssertHelper.AssertEqual(HttpStatusCode.Conflict, response.StatusCode, "Status code is 409 Conflict for already booked availability");
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 Bad Request for already booked availability");
             await AssertHelper.AssertFalse(payload.Success, "Booking should fail");
         }
 

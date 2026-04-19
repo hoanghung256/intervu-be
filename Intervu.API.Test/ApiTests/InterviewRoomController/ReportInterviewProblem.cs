@@ -33,7 +33,7 @@ namespace Intervu.API.Test.ApiTests.InterviewRoomController
         {
             var token = await LoginUserAsync("alice@example.com"); // Assuming Alice is in the room
 
-            var response = await _api.PostAsync($"/api/v1/interview-room/{_existingRoomId}/report", new CreateRoomReportRequest
+            var response = await _api.PostAsync($"/api/v1/interviewroom/{_existingRoomId}/report", new CreateRoomReportRequest
             {
                 Reason = "Audio issue",
                 Details = "Mic was disconnected during interview"
@@ -42,7 +42,7 @@ namespace Intervu.API.Test.ApiTests.InterviewRoomController
             var payload = await _api.LogDeserializeJson<JsonElement>(response, true);
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Report problem status is 200 OK");
             await AssertHelper.AssertTrue(payload.Success, "Report problem successful");
-            await AssertHelper.AssertEqual("Problem reported successfully", payload.Message, "Success message matches");
+            await AssertHelper.AssertEqual("Interview problem reported successfully", payload.Message, "Success message matches");
         }
 
         [Fact]
@@ -50,7 +50,7 @@ namespace Intervu.API.Test.ApiTests.InterviewRoomController
         [Trait("Category", "InterviewRoom")]
         public async Task ReportInterviewProblem_Unauthorized_ReturnsUnauthorized()
         {
-            var response = await _api.PostAsync($"/api/v1/interview-room/{_existingRoomId}/report", new CreateRoomReportRequest
+            var response = await _api.PostAsync($"/api/v1/interviewroom/{_existingRoomId}/report", new CreateRoomReportRequest
             {
                 Reason = "Video issue",
                 Details = "Camera not working"
@@ -67,7 +67,7 @@ namespace Intervu.API.Test.ApiTests.InterviewRoomController
             var token = await LoginUserAsync("alice@example.com");
             var nonExistentRoomId = Guid.NewGuid();
 
-            var response = await _api.PostAsync($"/api/v1/interview-room/{nonExistentRoomId}/report", new CreateRoomReportRequest
+            var response = await _api.PostAsync($"/api/v1/interviewroom/{nonExistentRoomId}/report", new CreateRoomReportRequest
             {
                 Reason = "Room not found",
                 Details = "Attempted to report problem for a room that does not exist."
@@ -83,7 +83,7 @@ namespace Intervu.API.Test.ApiTests.InterviewRoomController
         {
             var token = await LoginUserAsync("alice@example.com");
 
-            var response = await _api.PostAsync($"/api/v1/interview-room/{_existingRoomId}/report", new CreateRoomReportRequest
+            var response = await _api.PostAsync($"/api/v1/interviewroom/{_existingRoomId}/report", new CreateRoomReportRequest
             {
                 Reason = "", // Missing reason
                 Details = "Details provided but reason is empty."
@@ -99,7 +99,7 @@ namespace Intervu.API.Test.ApiTests.InterviewRoomController
         {
             var token = await LoginUserAsync("bob@example.com"); // Assuming Bob is NOT in _existingRoomId
 
-            var response = await _api.PostAsync($"/api/v1/interview-room/{_existingRoomId}/report", new CreateRoomReportRequest
+            var response = await _api.PostAsync($"/api/v1/interviewroom/{_existingRoomId}/report", new CreateRoomReportRequest
             {
                 Reason = "Unauthorized report",
                 Details = "User not part of this room."

@@ -1,6 +1,7 @@
 using Intervu.API.Test.Base;
 using Intervu.API.Test.Utils;
 using Intervu.Application.DTOs.User;
+using Intervu.Domain.Entities.Constants;
 using System.Net;
 using System.Text.Json;
 using Xunit.Abstractions;
@@ -24,6 +25,26 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
             return loginData.Data!.Token;
         }
 
+        private async Task<string> RegisterAndLoginNewCoachAsync()
+        {
+            var email = $"coach_empty_upcoming_{Guid.NewGuid():N}@example.com";
+            await _api.PostAsync("/api/v1/account/register", new RegisterRequest
+            {
+                FullName = "Coach Empty Upcoming",
+                Email = email,
+                Password = CANDIDATE_PASSWORD,
+                Role = "Coach",
+                SlugProfileUrl = $"coach-empty-upcoming-{Guid.NewGuid():N}"
+            }, logBody: true);
+
+            var login = await _api.PostAsync("/api/v1/account/login", new LoginRequest
+            {
+                Email = email,
+                Password = CANDIDATE_PASSWORD
+            }, logBody: true);
+            return (await _api.LogDeserializeJson<LoginResponse>(login)).Data!.Token;
+        }
+
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "InterviewRoom")]
@@ -31,12 +52,28 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
         {
             var token = await LoginUserAsync("alice@example.com");
 
-            var response = await _api.GetAsync("/api/v1/interview-room/upcoming-sessions", jwtToken: token, logBody: true);
+            var response = await _api.GetAsync("/api/v1/interviewroom?Statuses=0", jwtToken: token, logBody: true);
             var payload = await _api.LogDeserializeJson<JsonElement>(response, true);
 
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
             await AssertHelper.AssertTrue(payload.Success, "Request successful");
             await AssertHelper.AssertNotNull(payload.Data, "Upcoming sessions data is returned");
+
+            var items = payload.Data.GetProperty("items");
+            foreach (var item in items.EnumerateArray())
+            {
+                if (item.TryGetProperty("status", out var statusElement))
+                {
+                    if (statusElement.ValueKind == JsonValueKind.Number)
+                    {
+                        await AssertHelper.AssertEqual((int)InterviewRoomStatus.Scheduled, statusElement.GetInt32(), "Only scheduled rooms are returned");
+                    }
+                    else if (statusElement.ValueKind == JsonValueKind.String)
+                    {
+                        await AssertHelper.AssertEqual(nameof(InterviewRoomStatus.Scheduled), statusElement.GetString(), "Only scheduled rooms are returned");
+                    }
+                }
+            }
         }
 
         [Fact]
@@ -44,7 +81,7 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
         [Trait("Category", "InterviewRoom")]
         public async Task GetUpcomingSessions_Unauthorized_ReturnsUnauthorized()
         {
-            var response = await _api.GetAsync("/api/v1/interview-room/upcoming-sessions", logBody: true);
+            var response = await _api.GetAsync("/api/v1/interviewroom?Statuses=0", logBody: true);
 
             await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Unauthenticated user should get 401 Unauthorized");
         }
@@ -54,15 +91,14 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
         [Trait("Category", "InterviewRoom")]
         public async Task GetUpcomingSessions_EmptyResults_ReturnsOk()
         {
-            // Assuming Bob has no upcoming sessions
-            var token = await LoginUserAsync("bob@example.com");
+            var token = await RegisterAndLoginNewCoachAsync();
 
-            var response = await _api.GetAsync("/api/v1/interview-room/upcoming-sessions", jwtToken: token, logBody: true);
+            var response = await _api.GetAsync("/api/v1/interviewroom?Statuses=0", jwtToken: token, logBody: true);
             var payload = await _api.LogDeserializeJson<JsonElement>(response, true);
 
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK for no upcoming sessions");
             await AssertHelper.AssertTrue(payload.Success, "Request successful");
-            await AssertHelper.AssertEqual(0, payload.Data.GetArrayLength(), "Data should be an empty list");
+            await AssertHelper.AssertEqual(0, payload.Data.GetProperty("items").GetArrayLength(), "Data items should be an empty list");
         }
 
         [Fact]
@@ -72,7 +108,7 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
         {
             var token = await LoginUserAsync("alice@example.com");
 
-            var response = await _api.GetAsync("/api/v1/interview-room/upcoming-sessions?page=1&pageSize=5", jwtToken: token, logBody: true);
+            var response = await _api.GetAsync("/api/v1/interviewroom?Statuses=0&page=1&pageSize=5", jwtToken: token, logBody: true);
             var payload = await _api.LogDeserializeJson<JsonElement>(response, true);
 
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK for paginated request");
@@ -86,7 +122,7 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
         {
             var token = await LoginUserAsync("alice@example.com");
 
-            var response = await _api.GetAsync("/api/v1/interview-room/upcoming-sessions?page=0", jwtToken: token, logBody: true);
+            var response = await _api.GetAsync("/api/v1/interviewroom?Statuses=0&page=0", jwtToken: token, logBody: true);
 
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Invalid page 0 should return 400 Bad Request");
         }

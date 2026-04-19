@@ -8,6 +8,6 @@ namespace Intervu.Application.Interfaces.UseCases.GeneratedQuestion
 {
     public interface IGetGeneratedQuestionsByRoom
     {
-        Task<List<GeneratedQuestionDto>> ExecuteAsync(Guid interviewRoomId, GeneratedQuestionStatus? status);
+        Task<List<GeneratedQuestionDto>> ExecuteAsync(Guid interviewRoomId, Guid userId, GeneratedQuestionStatus? status);
     }
 }

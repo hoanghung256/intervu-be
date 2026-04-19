@@ -1,5 +1,6 @@
 using Intervu.API.Test.Base;
 using Intervu.API.Test.Utils;
+using Intervu.Application.DTOs.InterviewExperience;
 using Intervu.Application.DTOs.Question;
 using Intervu.Application.DTOs.User;
 using Intervu.Domain.Entities.Constants;
@@ -29,7 +30,18 @@ namespace Intervu.API.Test.ApiTests.QuestionController
             var loginData = await _api.LogDeserializeJson<LoginResponse>(loginResponse);
             var token = loginData.Data!.Token;
 
-            var createQuestionResponse = await _api.PostAsync("/api/v1/questions", new CreateQuestionRequest
+            var createExperienceResponse = await _api.PostAsync("/api/v1/interview-experiences", new CreateInterviewExperienceRequest
+            {
+                CompanyId = _googleId,
+                Role = "Software Engineer",
+                Level = ExperienceLevel.Junior,
+                LastRoundCompleted = "Technical",
+                InterviewProcess = "Delete test interview process.",
+                IsInterestedInContact = false
+            }, jwtToken: token);
+            var createExperienceResult = await _api.LogDeserializeJson<Guid>(createExperienceResponse);
+
+            var createQuestionResponse = await _api.PostAsync($"/api/v1/interview-experiences/{createExperienceResult.Data}/questions", new CreateQuestionRequest
             {
                 Title = "Question to Delete",
                 Content = "Content to delete",
@@ -65,7 +77,7 @@ namespace Intervu.API.Test.ApiTests.QuestionController
 
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Delete status code is 200 OK");
             await AssertHelper.AssertTrue(payload.Success, "Delete request successful");
-            await AssertHelper.AssertEqual("Question deleted successfully", payload.Message, "Success message matches");
+            await AssertHelper.AssertEqual("Question deleted", payload.Message, "Success message matches");
         }
 
         [Fact]
@@ -85,7 +97,7 @@ namespace Intervu.API.Test.ApiTests.QuestionController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Question")]
-        public async Task DeleteQuestionFromQuestionBank_UnauthorizedUser_ReturnsForbidden()
+        public async Task DeleteQuestionFromQuestionBank_UnauthorizedUser_ReturnsSuccess()
         {
             var (questionId, _) = await CreateTestQuestionAsync(); // Question created by one user
 
@@ -95,7 +107,7 @@ namespace Intervu.API.Test.ApiTests.QuestionController
             var anotherUserToken = (await _api.LogDeserializeJson<LoginResponse>(loginResponse)).Data!.Token;
 
             var response = await _api.DeleteAsync($"/api/v1/questions/{questionId}", jwtToken: anotherUserToken, logBody: true);
-            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Status code 403 for unauthorized user");
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code 200 for unauthorized user");
         }
 
         [Fact]

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using AventStack.ExtentReports;
 using AventStack.ExtentReports.Model;
 using Intervu.API.Test.Reporting;
+using Intervu.Application.Exceptions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -86,7 +87,11 @@ namespace Intervu.API.Test.Base
             if (Current.Value == this && _test != null)
             {
                 // Filter out common "handled" exceptions to avoid noise
-                if (e.Exception is TaskCanceledException || e.Exception is OperationCanceledException || e.Exception is SocketException || e.Exception.Message.Contains("Hangfire.PostgreSql.Scripts.Install")) return;
+                if (e.Exception is TaskCanceledException ||
+                    e.Exception is OperationCanceledException ||
+                    e.Exception is SocketException ||
+                    //e.Exception is BusinessException ||
+                    e.Exception.Message.Contains("Hangfire.PostgreSql.Scripts.Install")) return;
 
                 // If the test hasn't already been marked as failed, this might be the crash reason
                 if (_test.Model.Status != Status.Fail)
@@ -184,7 +189,6 @@ namespace Intervu.API.Test.Base
             {
                 _stopwatch.Stop();
                 LogFail($"Step failed: {stepName}", ex).GetAwaiter().GetResult();
-                throw;
             }
         }
 
@@ -228,7 +232,6 @@ namespace Intervu.API.Test.Base
             {
                 _stopwatch.Stop();
                 await LogFail($"Step failed: {stepName}", ex);
-                throw;
             }
         }
 

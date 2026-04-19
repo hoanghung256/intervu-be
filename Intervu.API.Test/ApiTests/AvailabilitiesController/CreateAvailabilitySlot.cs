@@ -23,7 +23,7 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
         [Trait("Category", "Availability")]
         public async Task CreateAvailabilitySlot_ReturnsSuccess()
         {
-            var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(12));
+            var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(15).AddHours(1));
             var end = start.AddHours(2);
 
             var createResponse = await _api.PostAsync("/api/v1/availabilities", new CoachAvailabilityCreateDto
@@ -42,39 +42,37 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Availability")]
-        public async Task CreateAvailabilitySlot_ThrowsArgumentException_WhenRangeIsInvalid()
+        public async Task CreateAvailabilitySlot_Abnormal_InvalidRange_ReturnsBadRequest()
         {
             var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(12));
             var end = start.AddMinutes(-30);
 
-            var exception = await Assert.ThrowsAsync<ArgumentException>(async () =>
-                await _api.PostAsync("/api/v1/availabilities", new CoachAvailabilityCreateDto
-                {
-                    CoachId = BobCoachId,
-                    RangeStartTime = new DateTimeOffset(start, TimeSpan.Zero),
-                    RangeEndTime = new DateTimeOffset(end, TimeSpan.Zero)
-                }, logBody: true));
+            var response = await _api.PostAsync("/api/v1/availabilities", new CoachAvailabilityCreateDto
+            {
+                CoachId = BobCoachId,
+                RangeStartTime = new DateTimeOffset(start, TimeSpan.Zero),
+                RangeEndTime = new DateTimeOffset(end, TimeSpan.Zero)
+            }, logBody: true);
 
-            await AssertHelper.AssertContains("RangeEndTime must be greater than RangeStartTime", exception.Message, "Validation exception message matches");
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Invalid range returns 400 BadRequest");
         }
 
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Availability")]
-        public async Task CreateAvailabilitySlot_PastDateTime_ThrowsException()
+        public async Task CreateAvailabilitySlot_Boundary_PastDateTime_ReturnsBadRequest()
         {
             var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(-1));
             var end = start.AddHours(1);
 
-            var exception = await Assert.ThrowsAsync<ArgumentException>(async () =>
-                await _api.PostAsync("/api/v1/availabilities", new CoachAvailabilityCreateDto
-                {
-                    CoachId = BobCoachId,
-                    RangeStartTime = new DateTimeOffset(start, TimeSpan.Zero),
-                    RangeEndTime = new DateTimeOffset(end, TimeSpan.Zero)
-                }, logBody: true));
+            var response = await _api.PostAsync("/api/v1/availabilities", new CoachAvailabilityCreateDto
+            {
+                CoachId = BobCoachId,
+                RangeStartTime = new DateTimeOffset(start, TimeSpan.Zero),
+                RangeEndTime = new DateTimeOffset(end, TimeSpan.Zero)
+            }, logBody: true);
 
-            await AssertHelper.AssertContains("RangeStartTime must be in the future", exception.Message, "Validation exception message matches");
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Past range returns 400 BadRequest");
         }
 
         [Fact]
@@ -82,7 +80,7 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
         [Trait("Category", "Availability")]
         public async Task CreateAvailabilitySlot_OverlapWithExisting_ReturnsConflict()
         {
-            var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(15));
+            var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(20));
             var end = start.AddHours(2);
 
             // Create initial slot
@@ -109,61 +107,55 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Availability")]
-        public async Task CreateAvailabilitySlot_ZeroDuration_ThrowsException()
+        public async Task CreateAvailabilitySlot_Boundary_ZeroDuration_ReturnsBadRequest()
         {
             var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(16));
 
-            var exception = await Assert.ThrowsAsync<ArgumentException>(async () =>
-                await _api.PostAsync("/api/v1/availabilities", new CoachAvailabilityCreateDto
-                {
-                    CoachId = BobCoachId,
-                    RangeStartTime = new DateTimeOffset(start, TimeSpan.Zero),
-                    RangeEndTime = new DateTimeOffset(start, TimeSpan.Zero)
-                }, logBody: true));
+            var response = await _api.PostAsync("/api/v1/availabilities", new CoachAvailabilityCreateDto
+            {
+                CoachId = BobCoachId,
+                RangeStartTime = new DateTimeOffset(start, TimeSpan.Zero),
+                RangeEndTime = new DateTimeOffset(start, TimeSpan.Zero)
+            }, logBody: true);
 
-            await AssertHelper.AssertContains("RangeEndTime must be greater than RangeStartTime", exception.Message, "Validation exception message matches");
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Zero-duration range returns 400 BadRequest");
         }
 
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Availability")]
-        public async Task Handle_CreateAvailabilitySlot_SameStartAndEndTime_ThrowsArgumentException()
+        public async Task CreateAvailabilitySlot_Boundary_SameStartAndEndTime_ReturnsBadRequest()
         {
             // Arrange – zero-duration range: start == end
             var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(15));
 
-            // Act & Assert
-            var exception = await Assert.ThrowsAsync<ArgumentException>(async () =>
-                await _api.PostAsync("/api/v1/availabilities", new CoachAvailabilityCreateDto
-                {
-                    CoachId = BobCoachId,
-                    RangeStartTime = new DateTimeOffset(start, TimeSpan.Zero),
-                    RangeEndTime = new DateTimeOffset(start, TimeSpan.Zero)
-                }, logBody: true));
+            var response = await _api.PostAsync("/api/v1/availabilities", new CoachAvailabilityCreateDto
+            {
+                CoachId = BobCoachId,
+                RangeStartTime = new DateTimeOffset(start, TimeSpan.Zero),
+                RangeEndTime = new DateTimeOffset(start, TimeSpan.Zero)
+            }, logBody: true);
 
-            await AssertHelper.AssertContains("RangeEndTime must be greater than RangeStartTime", exception.Message, "Zero-duration range is rejected");
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Zero-duration range returns 400 BadRequest");
         }
 
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Availability")]
-        public async Task Handle_CreateAvailabilitySlot_PastDate_ThrowsArgumentException()
+        public async Task CreateAvailabilitySlot_Abnormal_PastDate_ReturnsBadRequest()
         {
             // Arrange – start time is in the past
             var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(-5));
             var end = start.AddHours(1);
 
-            // Act & Assert
-            var exception = await Assert.ThrowsAsync<ArgumentException>(async () =>
-                await _api.PostAsync("/api/v1/availabilities", new CoachAvailabilityCreateDto
-                {
-                    CoachId = BobCoachId,
-                    RangeStartTime = new DateTimeOffset(start, TimeSpan.Zero),
-                    RangeEndTime = new DateTimeOffset(end, TimeSpan.Zero)
-                }, logBody: true));
+            var response = await _api.PostAsync("/api/v1/availabilities", new CoachAvailabilityCreateDto
+            {
+                CoachId = BobCoachId,
+                RangeStartTime = new DateTimeOffset(start, TimeSpan.Zero),
+                RangeEndTime = new DateTimeOffset(end, TimeSpan.Zero)
+            }, logBody: true);
 
-            // The use case should reject past-dated availability slots
-            await AssertHelper.AssertNotNull(exception.Message, "Exception message is returned for past-date slot");
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Past-date slot returns 400 BadRequest");
         }
 
         [Fact]
@@ -217,22 +209,20 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Availability")]
-        public async Task Handle_CreateAvailabilitySlot_GuidEmptyCoachId_ThrowsException()
+        public async Task CreateAvailabilitySlot_Abnormal_GuidEmptyCoachId_ReturnsNotFound()
         {
             // Arrange – Guid.Empty passes model validation but no coach exists in the DB for it
             var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(55).Date.AddHours(11));
             var end = start.AddHours(1);
 
-            // Act & Assert – business logic should throw when coach cannot be found
-            var exception = await Assert.ThrowsAsync<Exception>(async () =>
-                await _api.PostAsync("/api/v1/availabilities", new CoachAvailabilityCreateDto
-                {
-                    CoachId = Guid.Empty,
-                    RangeStartTime = new DateTimeOffset(start, TimeSpan.Zero),
-                    RangeEndTime = new DateTimeOffset(end, TimeSpan.Zero)
-                }, logBody: true));
+            var response = await _api.PostAsync("/api/v1/availabilities", new CoachAvailabilityCreateDto
+            {
+                CoachId = Guid.Empty,
+                RangeStartTime = new DateTimeOffset(start, TimeSpan.Zero),
+                RangeEndTime = new DateTimeOffset(end, TimeSpan.Zero)
+            }, logBody: true);
 
-            await AssertHelper.AssertNotNull(exception.Message, "Exception is raised for Guid.Empty coach ID");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Guid.Empty coach ID returns 404 NotFound");
         }
 
         private static DateTime AlignToHalfHourUtc(DateTime value)

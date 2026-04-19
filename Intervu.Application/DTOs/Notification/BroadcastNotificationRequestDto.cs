@@ -5,7 +5,10 @@ namespace Intervu.Application.DTOs.Notification
     /// <summary>Admin: broadcast a notification to a specific list of users.</summary>
     public class BroadcastNotificationRequestDto
     {
+        [Required]
+        [MinLength(1)]
         public List<Guid> UserIds { get; set; } = new();
+
         public Domain.Entities.Constants.NotificationType Type { get; set; }
 
         [Required, MaxLength(100)]

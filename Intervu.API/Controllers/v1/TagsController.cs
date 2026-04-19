@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using Intervu.Application.DTOs.Common;
 using Intervu.Application.Interfaces.UseCases.Tag;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,9 +17,9 @@ namespace Intervu.API.Controllers.v1
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllTags([FromQuery] int page, [FromQuery] int pageSize)
+        public async Task<IActionResult> GetAllTags([FromQuery] PaginationParams @params)
         {
-            var tags = await _getAllTags.ExecuteAsync(page, pageSize);
+            var tags = await _getAllTags.ExecuteAsync(@params.Page, @params.PageSize);
             return Ok(new
             {
                 success = true,

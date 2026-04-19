@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Intervu.Application.Interfaces.UseCases.Authentication;
 using Asp.Versioning;
 using FirebaseAdmin.Messaging;
+using Intervu.API.Utils.Constant;
 
 namespace Intervu.API.Controllers.v1.Authentication
 {
@@ -115,7 +116,7 @@ namespace Intervu.API.Controllers.v1.Authentication
             });
         }
 
-        [Authorize]
+        [Authorize(Policy = AuthorizationPolicies.AllRoles)]
         [HttpPost("logout")]
         public IActionResult Logout()
         {

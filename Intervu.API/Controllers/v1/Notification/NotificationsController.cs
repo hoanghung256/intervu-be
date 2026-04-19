@@ -11,7 +11,7 @@ namespace Intervu.API.Controllers.v1
     [ApiController]
     [ApiVersion("1.0")]
     [Route("api/v{version:apiVersion}/[controller]")]
-    [Authorize]
+    [Authorize(Policy = AuthorizationPolicies.AllRoles)]
     public class NotificationsController : ControllerBase
     {
         private readonly INotificationUseCase _notificationUseCase;

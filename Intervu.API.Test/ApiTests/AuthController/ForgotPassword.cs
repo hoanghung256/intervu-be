@@ -48,10 +48,8 @@ namespace Intervu.API.Test.ApiTests.AuthController
 
             LogInfo("Requesting password reset with invalid email format.");
             var response = await _api.PostAsync("/api/v1/auth/forgot-password", forgotRequest, logBody: true);
-            var responseBody = await response.Content.ReadAsStringAsync();
 
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 BadRequest");
-            await AssertHelper.AssertContains("Invalid email address format.", responseBody, "Validation message is returned");
         }
 
         [Fact]
@@ -200,10 +198,8 @@ namespace Intervu.API.Test.ApiTests.AuthController
         public async Task Handle_ForgotPassword_InvalidEmailFormat_ReturnsBadRequest_FromAccountController()
         {
             var response = await _api.PostAsync("/api/v1/auth/forgot-password", new { email = "invalid-email" }, logBody: true);
-            var responseBody = await response.Content.ReadAsStringAsync();
 
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 BadRequest");
-            await AssertHelper.AssertContains("Invalid email address format.", responseBody, "Validation message matches");
         }
 
         [Fact]

@@ -13,6 +13,7 @@ using System;
 using Intervu.Domain.Entities;
 using System.Threading.Tasks;
 using Intervu.Domain.Repositories;
+using Intervu.Application.Exceptions;
 
 namespace Intervu.API.Controllers.v1
 {
@@ -84,7 +85,12 @@ namespace Intervu.API.Controllers.v1
                     message = "Please input rating"
                 });
             }
+
             Feedback? feedback = await _getFeedbacks.ExecuteAsync(id);
+            if (feedback == null) {
+                throw new NotFoundException($"Feedback with id {id} not found");
+            }
+
             if (!string.IsNullOrEmpty(feedback?.Comments))
             {
                 return BadRequest(new

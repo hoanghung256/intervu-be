@@ -1,11 +1,15 @@
 using Intervu.Domain.Entities.Constants;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace Intervu.Application.DTOs.InterviewRoom
 {
     public class GetInterviewRoomsRequestDto
     {
+        [Range(1, int.MaxValue)]
         public int Page { get; set; } = 1;
+
+        [Range(1, 100)]
         public int PageSize { get; set; } = 10;
         
         /// <summary>

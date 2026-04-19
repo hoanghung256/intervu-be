@@ -10,5 +10,6 @@ namespace Intervu.Domain.Repositories
     public interface IInterviewTypeRepository : IRepositoryBase<InterviewType>
     {
         Task<IEnumerable<InterviewType>> GetList(int page, int pageSize);
+        Task<InterviewType?> GetByNameAsync(string name);
     }
 }

@@ -5,7 +5,9 @@ namespace Intervu.Application.DTOs.Notification
     /// <summary>Admin: send a notification to a specific user.</summary>
     public class CreateNotificationRequestDto
     {
+        [Required]
         public Guid UserId { get; set; }
+
         public Domain.Entities.Constants.NotificationType Type { get; set; }
 
         [Required, MaxLength(100)]

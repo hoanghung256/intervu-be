@@ -15,6 +15,27 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
         private readonly ApiHelper _api;
         public ViewSessionHistoryTests(BaseApiTest<Program> factory, ITestOutputHelper output) : base(output) => _api = new ApiHelper(factory.CreateClient());
 
+        private async Task<string> RegisterAndLoginNewCoachAsync()
+        {
+            var email = $"coach_empty_history_{Guid.NewGuid():N}@example.com";
+            await _api.PostAsync("/api/v1/account/register", new RegisterRequest
+            {
+                FullName = "Coach Empty History",
+                Email = email,
+                Password = CANDIDATE_PASSWORD,
+                Role = "Coach",
+                SlugProfileUrl = $"coach-empty-history-{Guid.NewGuid():N}"
+            }, logBody: true);
+
+            var login = await _api.PostAsync("/api/v1/account/login", new LoginRequest
+            {
+                Email = email,
+                Password = CANDIDATE_PASSWORD
+            }, logBody: true);
+            var token = (await _api.LogDeserializeJson<LoginResponse>(login)).Data!.Token;
+            return token;
+        }
+
         // ── /interview-booking/history ──────────────────────────────────────────
 
         [Fact]
@@ -67,7 +88,7 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
         public async Task Handle_GetMyBookingRequests_AsCoach_ReturnsSuccess()
         {
             // Arrange – coaches can also list their own incoming booking requests
-            var login = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = COACH_EMAIL, Password = DEFAULT_PASSWORD });
+            var login = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = COACH_EMAIL, Password = CANDIDATE_PASSWORD });
             var token = (await _api.LogDeserializeJson<LoginResponse>(login)).Data!.Token;
 
             // Act
@@ -203,7 +224,7 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "BookingRequest")]
-        public async Task Handle_GetBookingRequestDetail_NonExistentId_ThrowsException()
+        public async Task GetBookingRequestDetail_Abnormal_NonExistentId_ReturnsNotFound()
         {
             // Arrange
             var login = await _api.PostAsync("/api/v1/account/login",
@@ -211,11 +232,8 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
             var token = (await _api.LogDeserializeJson<LoginResponse>(login)).Data!.Token;
             var nonExistentId = Guid.NewGuid();
 
-            // Act & Assert
-            var exception = await Assert.ThrowsAsync<Exception>(async () =>
-                await _api.GetAsync($"/api/v1/booking-requests/{nonExistentId}", jwtToken: token, logBody: true));
-
-            await AssertHelper.AssertNotNull(exception.Message, "Exception is raised for non-existent booking request ID");
+            var response = await _api.GetAsync($"/api/v1/booking-requests/{nonExistentId}", jwtToken: token, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent booking request ID returns 404 Not Found");
         }
 
         [Fact]
@@ -223,11 +241,7 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
         [Trait("Category", "BookingRequest")]
         public async Task Handle_ViewSessionHistory_EmptyHistory_ReturnsEmptyList()
         {
-            // Assuming a user with no booking history can be created or exists
-            // For now, we'll use a valid user and assume they might have an empty history if no bookings are made.
-            // A more robust test would involve creating a new user and checking their empty history.
-            var login = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = "bob@example.com", Password = DEFAULT_PASSWORD });
-            var token = (await _api.LogDeserializeJson<LoginResponse>(login)).Data!.Token;
+            var token = await RegisterAndLoginNewCoachAsync();
             var response = await _api.GetAsync("/api/v1/interview-booking/history?page=1&pageSize=10", jwtToken: token, logBody: true);
             var body = await _api.LogDeserializeJson<PagedResult<InterviewBookingTransactionHistoryDto>>(response);
 

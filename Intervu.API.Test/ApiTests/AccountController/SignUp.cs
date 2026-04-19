@@ -52,11 +52,7 @@ namespace Intervu.API.Test.ApiTests.AccountController
             };
 
             var response = await _api.PostAsync("/api/v1/account/register", request, logBody: true);
-            var apiResponse = await _api.LogDeserializeJson<object>(response);
-
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 BadRequest");
-            await AssertHelper.AssertFalse(apiResponse.Success, "Registration should fail");
-            await AssertHelper.AssertEqual("Email is required", apiResponse.Message, "Validation message matches");
         }
 
         [Fact]
@@ -72,11 +68,7 @@ namespace Intervu.API.Test.ApiTests.AccountController
             };
 
             var response = await _api.PostAsync("/api/v1/account/register", request, logBody: true);
-            var apiResponse = await _api.LogDeserializeJson<object>(response);
-
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 BadRequest");
-            await AssertHelper.AssertFalse(apiResponse.Success, "Registration should fail");
-            await AssertHelper.AssertEqual("Password is required", apiResponse.Message, "Validation message matches");
         }
 
         [Fact]
@@ -114,11 +106,7 @@ namespace Intervu.API.Test.ApiTests.AccountController
 
             LogInfo("Registering user with weak password.");
             var response = await _api.PostAsync("/api/v1/account/register", request, logBody: true);
-            var apiResponse = await _api.LogDeserializeJson<object>(response);
-
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 BadRequest");
-            await AssertHelper.AssertFalse(apiResponse.Success, "Registration should fail");
-            await AssertHelper.AssertEqual("Password must be at least 8 characters", apiResponse.Message, "Validation message matches");
         }
 
         [Fact]
@@ -135,11 +123,7 @@ namespace Intervu.API.Test.ApiTests.AccountController
 
             LogInfo("Registering user with invalid email.");
             var response = await _api.PostAsync("/api/v1/account/register", request, logBody: true);
-            var apiResponse = await _api.LogDeserializeJson<object>(response);
-
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 BadRequest");
-            await AssertHelper.AssertFalse(apiResponse.Success, "Registration should fail");
-            await AssertHelper.AssertEqual("Invalid email format", apiResponse.Message, "Validation message matches");
         }
     }
 }

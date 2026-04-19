@@ -13,11 +13,16 @@ namespace Intervu.Application.DTOs.InterviewType
     public class InterviewTypeDto
     {
         public Guid Id { get; set; }
-        [MaxLength(150)]
-        public string Name { get; set; }
 
+        [Required]
+        [MinLength(2)]
+        [MaxLength(150)]
+        public string Name { get; set; } = string.Empty;
+
+        [Required]
+        [MinLength(10)]
         [MaxLength(1000)]
-        public string Description { get; set; }
+        public string Description { get; set; } = string.Empty;
 
         public bool IsCoding { get; set; }
 

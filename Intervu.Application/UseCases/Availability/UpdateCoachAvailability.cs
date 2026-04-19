@@ -1,4 +1,5 @@
 using Intervu.Application.DTOs.Availability;
+using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.UseCases.Availability;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
@@ -22,7 +23,7 @@ namespace Intervu.Application.UseCases.Availability
         public async Task<bool> ExecuteAsync(CoachAvailabilityUpdateDto dto)
         {
             if (dto == null)
-                throw new ArgumentNullException(nameof(dto));
+                throw new BadRequestException("Request body is required");
 
             var utcNow = DateTimeOffset.UtcNow;
             var origStart = dto.OriginalStartTime.UtcDateTime;
@@ -32,22 +33,22 @@ namespace Intervu.Application.UseCases.Availability
 
             // Basic validation
             if (newEnd <= newStart)
-                throw new ArgumentException("NewEndTime must be greater than NewStartTime");
+                throw new BadRequestException("NewEndTime must be greater than NewStartTime");
 
             if (newStart <= utcNow.UtcDateTime || newEnd <= utcNow.UtcDateTime)
-                throw new ArgumentException("Cannot update availability to a time in the past");
+                throw new BadRequestException("Cannot update availability to a time in the past");
 
             var newDuration = newEnd - newStart;
             if (newDuration < TimeSpan.FromMinutes(30))
-                throw new ArgumentException("Availability range must be at least 30 minutes");
+                throw new BadRequestException("Availability range must be at least 30 minutes");
 
             if (newDuration.TotalMinutes % 30 != 0)
-                throw new ArgumentException("Availability range must be a multiple of 30 minutes");
+                throw new BadRequestException("Availability range must be a multiple of 30 minutes");
 
             // Get existing blocks in the original range
             var existingBlocks = await _repo.GetBlocksInRangeAsync(dto.CoachId, origStart, origEnd);
             if (!existingBlocks.Any())
-                throw new ArgumentException("No existing blocks found in the original range");
+                throw new NotFoundException("No existing blocks found in the original range");
 
             // Compute the set of 30-min slots for old and new ranges
             var oldSlots = GenerateSlots(origStart, origEnd);
@@ -63,7 +64,7 @@ namespace Intervu.Application.UseCases.Availability
                 .ToList();
 
             if (blocksToRemove.Any(b => b.Status == CoachAvailabilityStatus.Booked))
-                throw new ArgumentException("Cannot update: range contains booked sessions");
+                throw new ConflictException("Cannot update: range contains booked sessions");
 
             // Check overlap for newly added slots (exclude existing blocks from this coach in old range)
             if (slotsToAdd.Any())
@@ -86,7 +87,7 @@ namespace Intervu.Application.UseCases.Availability
                         // Check if the overlap is only with blocks we already own in the original range
                         var overlappingOwn = existingBlocks.Any(b => b.StartTime == slotStart);
                         if (!overlappingOwn)
-                            throw new ArgumentException($"New time range overlaps with an existing availability block at {slotStart:HH:mm}");
+                            throw new ConflictException($"New time range overlaps with an existing availability block at {slotStart:HH:mm}");
                     }
                 }
             }

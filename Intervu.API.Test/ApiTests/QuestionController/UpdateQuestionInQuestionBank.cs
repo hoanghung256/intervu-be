@@ -15,6 +15,7 @@ namespace Intervu.API.Test.ApiTests.QuestionController
     public class UpdateQuestionInQuestionBankTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         private readonly ApiHelper _api;
+        private readonly Guid _googleId = Guid.Parse("11111111-1111-4111-8111-111111111111");
 
         public UpdateQuestionInQuestionBankTests(BaseApiTest<Program> factory, ITestOutputHelper output) : base(output)
         {
@@ -76,8 +77,8 @@ namespace Intervu.API.Test.ApiTests.QuestionController
                 Level = ExperienceLevel.Middle,
                 Round = InterviewRound.HRRound,
                 Category = QuestionCategory.Behavioral,
-                CompanyIds = new List<Guid>(),
-                Roles = new List<Role>(),
+                CompanyIds = new List<Guid> { _googleId },
+                Roles = new List<Role> { Role.SoftwareEngineer },
                 TagIds = new List<Guid>()
             }, jwtToken: token, logBody: true);
 
@@ -124,8 +125,8 @@ namespace Intervu.API.Test.ApiTests.QuestionController
                 Level = ExperienceLevel.Senior,
                 Round = InterviewRound.TechnicalScreen,
                 Category = QuestionCategory.Coding,
-                CompanyIds = new List<Guid>(),
-                Roles = new List<Role>(),
+                CompanyIds = new List<Guid> { _googleId },
+                Roles = new List<Role> { Role.SoftwareEngineer },
                 TagIds = new List<Guid>()
             }, jwtToken: aliceToken, logBody: true);
 

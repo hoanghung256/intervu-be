@@ -1,5 +1,6 @@
 using AutoMapper;
 using Intervu.Application.DTOs.Availability;
+using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.UseCases.Availability;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
@@ -24,28 +25,28 @@ namespace Intervu.Application.UseCases.Availability
 
         public async Task<List<Guid>> ExecuteAsync(CoachAvailabilityCreateDto dto)
         {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (dto == null) throw new BadRequestException("Request body is required");
 
             var coachProfile = await _coachProfileRepo.GetProfileByIdAsync(dto.CoachId);
             if (coachProfile == null)
-                throw new ArgumentException($"Coach with ID {dto.CoachId} does not exist");
+                throw new NotFoundException($"Coach with ID {dto.CoachId} does not exist");
 
             var utcNow = DateTimeOffset.UtcNow;
             var rangeStart = dto.RangeStartTime.UtcDateTime;
             var rangeEnd = dto.RangeEndTime.UtcDateTime;
 
             if (rangeStart <= utcNow.UtcDateTime || rangeEnd <= utcNow.UtcDateTime)
-                throw new ArgumentException("Cannot create availability in the past");
+                throw new BadRequestException("Cannot create availability in the past");
 
             if (rangeEnd <= rangeStart)
-                throw new ArgumentException("RangeEndTime must be greater than RangeStartTime");
+                throw new BadRequestException("RangeEndTime must be greater than RangeStartTime");
 
             var duration = rangeEnd - rangeStart;
             if (duration < TimeSpan.FromMinutes(30))
-                throw new ArgumentException("Availability range must be at least 30 minutes");
+                throw new BadRequestException("Availability range must be at least 30 minutes");
 
             if (duration.TotalMinutes % 30 != 0)
-                throw new ArgumentException("Availability range must be a multiple of 30 minutes");
+                throw new BadRequestException("Availability range must be a multiple of 30 minutes");
 
             // Check overlap with ANY existing block in this range
             bool isAvailable = await _repo.IsCoachAvailableAsync(
@@ -54,7 +55,7 @@ namespace Intervu.Application.UseCases.Availability
                 new DateTimeOffset(rangeEnd, TimeSpan.Zero));
 
             if (!isAvailable)
-                throw new ArgumentException("Time range overlaps with an existing availability block");
+                throw new ConflictException("Time range overlaps with an existing availability block");
 
             // Split range into 30-minute blocks
             var blocks = new List<CoachAvailability>();

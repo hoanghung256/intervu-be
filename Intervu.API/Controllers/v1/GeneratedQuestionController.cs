@@ -34,10 +34,16 @@ namespace Intervu.API.Controllers.v1
         }
 
         [Authorize(Policy = AuthorizationPolicies.AllRoles)]
-        [HttpGet("rooms/{roomId:guid}")]
+        [HttpGet("rooms/{roomId}")]
         public async Task<IActionResult> GetByRoom(Guid roomId, [FromQuery] GeneratedQuestionStatus? status)
         {
-            var result = await _getByRoom.ExecuteAsync(roomId, status);
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { success = false, message = "Invalid user credentials" });
+            }
+
+            var result = await _getByRoom.ExecuteAsync(roomId, userId, status);
             return Ok(new { success = true, message = "Success", data = result });
         }
 
@@ -53,7 +59,7 @@ namespace Intervu.API.Controllers.v1
 
 
         [Authorize(Policy = AuthorizationPolicies.InterviewOrAdmin)]
-        [HttpPut("{generatedQuestionId:guid}/approve")]
+        [HttpPut("{generatedQuestionId}/approve")]
         public async Task<IActionResult> Approve(Guid generatedQuestionId, [FromBody] ApproveGeneratedQuestionRequest request)
         {
             _ = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);
@@ -62,7 +68,7 @@ namespace Intervu.API.Controllers.v1
         }
 
         [Authorize(Policy = AuthorizationPolicies.InterviewOrAdmin)]
-        [HttpPut("{generatedQuestionId:guid}/reject")]
+        [HttpPut("{generatedQuestionId}/reject")]
         public async Task<IActionResult> Reject(Guid generatedQuestionId)
         {
             _ = Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId);

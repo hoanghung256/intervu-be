@@ -2,6 +2,7 @@ using Intervu.API.Test.Base;
 using Intervu.API.Test.Utils;
 using Intervu.Application.DTOs.Coach;
 using System.Net;
+using System.Text.Json;
 using Xunit.Abstractions;
 
 namespace Intervu.API.Test.ApiTests.CoachProfileController
@@ -88,16 +89,20 @@ namespace Intervu.API.Test.ApiTests.CoachProfileController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "CoachProfile")]
-        public async Task GetCoachRating_NonExistentCoachId_ReturnsBadRequest()
+        public async Task GetCoachRating_NonExistentCoachId_ReturnsSuccessWithNoRating()
         {
             // Arrange
             var nonExistentId = Guid.NewGuid();
 
             // Act
             var response = await _api.GetAsync($"/api/v1/coach-profile/{nonExistentId}/rating", logBody: true);
+            var payload = await _api.LogDeserializeJson<JsonElement>(response, logBody: true);
 
             // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Non-existent coach rating returns 400 BadRequest");
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Non-existent coach rating returns 200 OK");
+            await AssertHelper.AssertTrue(payload.Success, "Response success flag is true");
+            await AssertHelper.AssertEqual(0.0, payload.Data!.GetProperty("rating").GetDouble(), "Rating should be 0.0 for non-existent coach");
+            await AssertHelper.AssertEqual(0, payload.Data!.GetProperty("totalRatings").GetInt32(), "TotalRatings should be 0 for non-existent coach");
         }
     }
 }

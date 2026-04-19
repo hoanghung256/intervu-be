@@ -1,15 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations;
 
 namespace Intervu.Application.DTOs.Feedback
 {
     public class UpdateFeedbackDto
     {
+        [Range(1, 5)]
         public int Rating { get; set; }
 
-        public string Comments { get; set; }
+        [Required]
+        [MinLength(1)]
+        [MaxLength(1000)]
+        public string Comments { get; set; } = string.Empty;
     }
 }
