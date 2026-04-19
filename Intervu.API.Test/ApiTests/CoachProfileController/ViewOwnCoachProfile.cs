@@ -20,7 +20,7 @@ namespace Intervu.API.Test.ApiTests.CoachProfileController
         private async Task<(string token, Guid userId)> LoginSeededUserAsync(string email)
         {
             var loginResponse = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = email, Password = DEFAULT_PASSWORD });
-            var loginData = await _api.LogDeserializeJson<LoginResponse>(loginResponse);
+            var loginData = await _api.LogDeserializeJson<LoginResponse>(loginResponse, logBody: true);
             return (loginData.Data!.Token, loginData.Data.User.Id);
         }
 

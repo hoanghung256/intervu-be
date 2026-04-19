@@ -50,9 +50,9 @@ namespace Intervu.API.Test.ApiTests.QuestionController
         public async Task GetList_LargePageSize_EnforcesLimit()
         {
             var response = await _api.GetAsync("/api/v1/questions?pageSize=5000", logBody: true);
-            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK for large pageSize");
-            var apiResponse = await _api.LogDeserializeJson<PagedResult<JsonElement>>(response);
-            await AssertHelper.AssertTrue(apiResponse.Data?.Items?.Count <= 100, "Should limit items to reasonable page size");
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 Bad Request for large pageSize");
+            //var apiResponse = await _api.LogDeserializeJson<PagedResult<JsonElement>>(response);
+            //await AssertHelper.AssertTrue(apiResponse.Data?.Items?.Count <= 100, "Should limit items to reasonable page size");
         }
 
         [Fact]

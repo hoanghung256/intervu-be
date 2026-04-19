@@ -25,18 +25,29 @@ namespace Intervu.Application.UseCases.InterviewType
         public async Task ExecuteAsync(Guid id, InterviewTypeDto interviewTypeDto)
         {
             if (id == Guid.Empty)
-                throw new ArgumentException("Type ID must be a valid GUID");
+                throw new BadRequestException("Type ID must be a valid GUID");
 
             if (interviewTypeDto.SuggestedDurationMinutes % 30 != 0)
             {
                 throw new BadRequestException("Suggested duration must be a multiple of 30 minutes.");
             }
 
+            if (interviewTypeDto.MinPrice > interviewTypeDto.MaxPrice)
+            {
+                throw new BadRequestException("MinPrice cannot be greater than MaxPrice.");
+            }
+
             var interviewTypeToUpdate = await _repo.GetByIdAsync(id);
             
             if (interviewTypeToUpdate is null)
             {
-                throw new KeyNotFoundException($"InterviewType with ID {id} not found.");
+                throw new NotFoundException($"InterviewType with ID {id} not found.");
+            }
+
+            var existingType = await _repo.GetByNameAsync(interviewTypeDto.Name);
+            if (existingType != null && existingType.Id != id)
+            {
+                throw new ConflictException("Interview type name already exists.");
             }
             
             _mapper.Map(interviewTypeDto, interviewTypeToUpdate);

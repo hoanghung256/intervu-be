@@ -1,3 +1,4 @@
+using Intervu.Application.Exceptions;
 using Intervu.Application.DTOs.Question;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.UseCases.Notification;
@@ -27,7 +28,7 @@ namespace Intervu.Application.UseCases.Question
             var questionRepository = unitOfWork.GetRepository<IQuestionRepository>();
 
             var report = await reportRepository.GetByIdAsync(reportId)
-                ?? throw new Exception("Report not found");
+                ?? throw new NotFoundException("Report not found");
 
             var question = await questionRepository.GetByIdAsync(report.QuestionId);
             var questionTitle = question?.Title ?? "Unknown Question";

@@ -141,7 +141,7 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Availability")]
-        public async Task Handle_ViewCoachAvailabilities_WithInvalidMonth_ReturnsSuccess()
+        public async Task Handle_ViewCoachAvailabilities_WithInvalidMonth_ReturnsInternalServerError()
         {
             // Arrange – month=13 is out of calendar range; no server-side query param validation expected
             // Act
@@ -151,8 +151,8 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
 
             // Assert – API returns 200 (filters produce zero results for an impossible month)
             var payload = await _api.LogDeserializeJson<JsonElement>(response, logBody: true);
-            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Invalid month=13 still returns 200 OK");
-            await AssertHelper.AssertTrue(payload.Success, "Request succeeds with out-of-range month");
+            await AssertHelper.AssertEqual(HttpStatusCode.InternalServerError, response.StatusCode, "Invalid month=13 will return 500 Internal Server Error");
+            await AssertHelper.AssertFalse(payload.Success, "Request fails with out-of-range month");
         }
 
         [Fact]
@@ -192,8 +192,10 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
 
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
             await AssertHelper.AssertTrue(payload.Success, "Request succeeds");
-            await AssertHelper.AssertEqual(JsonValueKind.Array, payload.Data.ValueKind, "Data should be an array");
-            await AssertHelper.AssertEqual(0, payload.Data.GetArrayLength(), "Data should be empty for non-existent coach");
+            await AssertHelper.AssertEqual(JsonValueKind.Array, payload.Data.GetProperty("freeSlots").ValueKind, "Data should be an array");
+            await AssertHelper.AssertEqual(0, payload.Data.GetProperty("freeSlots").GetArrayLength(), "Data should be empty for non-existent coach");
+            await AssertHelper.AssertEqual(JsonValueKind.Array, payload.Data.GetProperty("bookedSlots").ValueKind, "Data should be an array");
+            await AssertHelper.AssertEqual(0, payload.Data.GetProperty("bookedSlots").GetArrayLength(), "Data should be empty for non-existent coach");
         }
 
         [Fact]

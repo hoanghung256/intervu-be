@@ -3,6 +3,7 @@ using Intervu.Application.DTOs.Common;
 using Intervu.Application.DTOs.InterviewType;
 using Intervu.Application.Interfaces.UseCases.InterviewType;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 
 namespace Intervu.API.Controllers.v1
 {
@@ -25,7 +26,9 @@ namespace Intervu.API.Controllers.v1
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetAll(
+            [FromQuery][Range(1, int.MaxValue)] int page = 1,
+            [FromQuery][Range(1, int.MaxValue)] int pageSize = 10)
         {
             var result = await _getInterviewType.ExecuteAsync(pageSize, page);
             return Ok(new {
@@ -35,7 +38,7 @@ namespace Intervu.API.Controllers.v1
             });
         }
 
-        [HttpGet("{id:guid}")]
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
             var result = await _getInterviewType.ExecuteAsync(id);
@@ -49,21 +52,14 @@ namespace Intervu.API.Controllers.v1
             return Ok(new { success = true, message = "Interview type created successfully", data = request });
         }
 
-        [HttpPut("{id:guid}")]
+        [HttpPut("{id}")]
         public async Task<IActionResult> Update(Guid id, [FromBody] InterviewTypeDto request)
         {
-            try
-            {
-                await _updateInterviewType.ExecuteAsync(id, request);
-                return Ok(new { success = true, message = "Interview type updated successfully" });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { success = false, message = ex.Message });
-            }
+            await _updateInterviewType.ExecuteAsync(id, request);
+            return Ok(new { success = true, message = "Interview type updated successfully" });
         }
 
-        [HttpDelete("{id:guid}")]
+        [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteInterviewType(Guid id)
         {
             try

@@ -28,7 +28,7 @@ namespace Intervu.API.Controllers.v1
             _rescheduleRequestRepository = rescheduleRequestRepository;
         }
 
-        [Authorize]
+        [Authorize(Policy = AuthorizationPolicies.CandidateOrInterviewer)]
         [HttpPost]
         public async Task<IActionResult> CreateRescheduleRequest([FromBody] CreateRescheduleRequestDto dto)
         {
@@ -66,7 +66,7 @@ namespace Intervu.API.Controllers.v1
             });
         }
 
-        [Authorize]
+        [Authorize(Policy = AuthorizationPolicies.CandidateOrInterviewer)]
         [HttpPost("{id}/respond")]
         public async Task<IActionResult> RespondToRescheduleRequest(Guid id, [FromBody] RespondToRescheduleRequestDto dto)
         {
@@ -98,7 +98,7 @@ namespace Intervu.API.Controllers.v1
             });
         }
 
-        [Authorize]
+        [Authorize(Policy = AuthorizationPolicies.CandidateOrInterviewer)]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetRescheduleRequestById(Guid id)
         {
@@ -121,7 +121,7 @@ namespace Intervu.API.Controllers.v1
             });
         }
 
-        [Authorize]
+        [Authorize(Policy = AuthorizationPolicies.CandidateOrInterviewer)]
         [HttpGet("my-requests")]
         public async Task<IActionResult> GetMyRescheduleRequests()
         {
@@ -146,7 +146,7 @@ namespace Intervu.API.Controllers.v1
         }
 
         // Unused endpoint
-        [Authorize]
+        [Authorize(Policy = AuthorizationPolicies.CandidateOrInterviewer)]
         [HttpGet("pending-responses")]
         public async Task<IActionResult> GetPendingResponses()
         {

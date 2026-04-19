@@ -1,14 +1,21 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace Intervu.Application.DTOs.Comment
 {
     public class CreateCommentRequest
     {
+        [Required]
+        [MinLength(1)]
+        [MaxLength(2000)]
         public string Content { get; set; } = null!;
     }
 
     public class UpdateCommentRequest
     {
+        [Required]
+        [MinLength(1)]
+        [MaxLength(2000)]
         public string Content { get; set; } = null!;
     }
 

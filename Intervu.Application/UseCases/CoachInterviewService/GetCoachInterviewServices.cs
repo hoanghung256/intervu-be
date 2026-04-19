@@ -1,5 +1,6 @@
 using AutoMapper;
 using Intervu.Application.DTOs.CoachInterviewService;
+using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.UseCases.CoachInterviewService;
 using Intervu.Domain.Repositories;
 
@@ -19,6 +20,8 @@ namespace Intervu.Application.UseCases.CoachInterviewService
         public async Task<IEnumerable<CoachInterviewServiceDto>> ExecuteAsync(Guid coachId)
         {
             var services = await _serviceRepo.GetByCoachIdAsync(coachId);
+            if(services == null || !services.Any())
+                throw new NotFoundException($"No interview services found for coach with ID {coachId}");
             return _mapper.Map<IEnumerable<CoachInterviewServiceDto>>(services);
         }
     }

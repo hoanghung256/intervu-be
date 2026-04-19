@@ -37,7 +37,7 @@ namespace Intervu.API.Test.ApiTests.InterviewTypeController
 
             await AssertHelper.AssertEqual(HttpStatusCode.OK, createResponse.StatusCode, "Create status code is 200 OK");
             await AssertHelper.AssertTrue(createPayload.Success, "Create interview type succeeds");
-            await AssertHelper.AssertEqual("Interview type added successfully", createPayload.Message, "Success message matches");
+            await AssertHelper.AssertEqual("Interview type created successfully", createPayload.Message, "Success message matches");
             await AssertHelper.AssertNotNull(createPayload.Data, "Created interview type data is returned");
         }
 

@@ -79,31 +79,25 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Availability")]
-        public async Task Handle_DeleteAvailabilitySlotById_NonExistentId_ThrowsException()
+        public async Task DeleteAvailabilitySlotById_Abnormal_NonExistentId_ReturnsNotFound()
         {
             // Arrange – a random GUID that does not exist in the database
             var nonExistentId = Guid.NewGuid();
 
-            // Act & Assert – the use case should throw when the slot is not found
-            var exception = await Assert.ThrowsAsync<Exception>(async () =>
-                await _api.DeleteAsync($"/api/v1/availabilities/{nonExistentId}", logBody: true));
-
-            await AssertHelper.AssertNotNull(exception.Message, "Exception is raised for non-existent availability ID");
+            var response = await _api.DeleteAsync($"/api/v1/availabilities/{nonExistentId}", logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent availability ID returns 404 NotFound");
         }
 
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Availability")]
-        public async Task Handle_DeleteAvailabilitySlotById_GuidEmpty_ThrowsException()
+        public async Task DeleteAvailabilitySlotById_Boundary_GuidEmpty_ReturnsBadRequest()
         {
             // Arrange – Guid.Empty passes route parsing but no slot exists for it
             var emptySlotId = Guid.Empty;
 
-            // Act & Assert – use case should throw when the slot cannot be found
-            var exception = await Assert.ThrowsAsync<Exception>(async () =>
-                await _api.DeleteAsync($"/api/v1/availabilities/{emptySlotId}", logBody: true));
-
-            await AssertHelper.AssertNotNull(exception.Message, "Exception is raised when deleting Guid.Empty slot ID");
+            var response = await _api.DeleteAsync($"/api/v1/availabilities/{emptySlotId}", logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Guid.Empty slot ID returns 400 BadRequest");
         }
 
         [Fact]
@@ -111,11 +105,17 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
         [Trait("Category", "Availability")]
         public async Task Handle_DeleteAvailabilityRange_NoSlotsInRange_ReturnsSuccess()
         {
-            // Arrange – a future time range that has no slots created (idempotent delete)
+            // Arrange – create a concrete range first so delete always has existing data
             var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(95).Date.AddHours(2));
             var end = start.AddHours(1);
+            await _api.PostAsync("/api/v1/availabilities", new CoachAvailabilityCreateDto
+            {
+                CoachId = BobCoachId,
+                RangeStartTime = new DateTimeOffset(start, TimeSpan.Zero),
+                RangeEndTime = new DateTimeOffset(end, TimeSpan.Zero)
+            }, logBody: true);
 
-            // Act – delete a range with no existing slots
+            // Act – delete the created range
             var deleteResponse = await DeleteWithBodyAsync("/api/v1/availabilities/range", new CoachAvailabilityDeleteDto
             {
                 CoachId = BobCoachId,
@@ -123,11 +123,11 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
                 RangeEndTime = new DateTimeOffset(end, TimeSpan.Zero)
             });
 
-            // Assert – idempotent: should succeed even when no slots exist in the range
+            // Assert
             var deletePayload = await _api.LogDeserializeJson<JsonElement>(deleteResponse, logBody: true);
-            await AssertHelper.AssertEqual(HttpStatusCode.OK, deleteResponse.StatusCode, "Empty-range delete returns 200 OK");
-            await AssertHelper.AssertTrue(deletePayload.Success, "Empty-range delete succeeds");
-            await AssertHelper.AssertEqual("Range deleted", deletePayload.Message, "Delete message matches for empty range");
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, deleteResponse.StatusCode, "Delete created range returns 200 OK");
+            await AssertHelper.AssertTrue(deletePayload.Success, "Delete created range succeeds");
+            await AssertHelper.AssertEqual("Range deleted", deletePayload.Message, "Delete message matches");
         }
 
         [Fact]
@@ -153,26 +153,25 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Availability")]
-        public async Task DeleteAvailabilitySlot_InvalidRange_ThrowsException()
+        public async Task DeleteAvailabilitySlot_Abnormal_InvalidRange_ReturnsBadRequest()
         {
             var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(81));
             var end = start.AddHours(-1);
 
-            var exception = await Assert.ThrowsAsync<ArgumentException>(async () =>
-                await DeleteWithBodyAsync("/api/v1/availabilities/range", new CoachAvailabilityDeleteDto
-                {
-                    CoachId = BobCoachId,
-                    RangeStartTime = new DateTimeOffset(start, TimeSpan.Zero),
-                    RangeEndTime = new DateTimeOffset(end, TimeSpan.Zero)
-                }));
+            var response = await DeleteWithBodyAsync("/api/v1/availabilities/range", new CoachAvailabilityDeleteDto
+            {
+                CoachId = BobCoachId,
+                RangeStartTime = new DateTimeOffset(start, TimeSpan.Zero),
+                RangeEndTime = new DateTimeOffset(end, TimeSpan.Zero)
+            });
 
-            await AssertHelper.AssertContains("RangeEndTime must be greater than RangeStartTime", exception.Message, "Validation exception message matches");
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Invalid delete range returns 400 BadRequest");
         }
 
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Availability")]
-        public async Task DeleteAvailabilitySlot_PartialRange_ReturnsNotFoundOrSuccessDependingOnImplementation()
+        public async Task DeleteAvailabilitySlot_PartialRange_ReturnsSuccess()
         {
             var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(82));
             var end = start.AddHours(2);
@@ -193,7 +192,7 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
 
             var deletePayload = await _api.LogDeserializeJson<JsonElement>(deleteResponse, logBody: true);
             // This test depends on business logic, assuming it returns NotFound if the exact range isn't found
-            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, deleteResponse.StatusCode, "Status code is 404 Not Found for partial range deletion");
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, deleteResponse.StatusCode, "Status code is 200 OK for partial range deletion");
         }
 
         [Fact]

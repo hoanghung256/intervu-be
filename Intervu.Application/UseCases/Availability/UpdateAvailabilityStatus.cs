@@ -1,4 +1,5 @@
-﻿using Intervu.Application.Interfaces.UseCases.Availability;
+using Intervu.Application.Interfaces.UseCases.Availability;
+using Intervu.Application.Exceptions;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
@@ -21,7 +22,7 @@ namespace Intervu.Application.UseCases.Availability
 
         public async Task<CoachAvailability> ExecuteAsync(Guid availabilityId, CoachAvailabilityStatus status)
         {
-            var a = await _coachAvailabilitiesRepository.GetByIdAsync(availabilityId) ?? throw new Exception("CoachAvailability not found");
+            var a = await _coachAvailabilitiesRepository.GetByIdAsync(availabilityId) ?? throw new NotFoundException("CoachAvailability not found");
 
             a.Status = status;
 
@@ -30,3 +31,6 @@ namespace Intervu.Application.UseCases.Availability
         }
     }
 }
+
+
+

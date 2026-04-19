@@ -53,7 +53,7 @@ namespace Intervu.API.Test.ApiTests.InterviewTypeController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "InterviewType")]
-        public async Task UpdateInterviewType_ReturnsBadRequest_WhenTypeDoesNotExist()
+        public async Task UpdateInterviewType_ReturnsNotFound_WhenTypeDoesNotExist()
         {
             var missingTypeId = Guid.NewGuid();
 
@@ -67,7 +67,7 @@ namespace Intervu.API.Test.ApiTests.InterviewTypeController
                 MaxPrice = 4800
             }, logBody: true);
 
-            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, updateResponse.StatusCode, "Update status code is 400 BadRequest for non-existent ID");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, updateResponse.StatusCode, "Update status code is 404 NotFound for non-existent ID");
         }
 
         [Fact]

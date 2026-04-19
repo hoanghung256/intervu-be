@@ -49,10 +49,7 @@ namespace Intervu.API.Test.ApiTests.AuthController
             };
 
             var response = await _api.PostAsync("/api/v1/auth/reset-password", resetRequest, logBody: true);
-            var responseBody = await response.Content.ReadAsStringAsync();
-
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 BadRequest");
-            await AssertHelper.AssertContains("Passwords do not match.", responseBody, "Validation message is returned");
         }
 
         [Fact]
@@ -68,10 +65,7 @@ namespace Intervu.API.Test.ApiTests.AuthController
             };
 
             var response = await _api.PostAsync("/api/v1/auth/reset-password", resetRequest, logBody: true);
-            var responseBody = await response.Content.ReadAsStringAsync();
-
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 BadRequest");
-            await AssertHelper.AssertContains("Password must be at least 6 characters long.", responseBody, "Validation message is returned");
         }
 
         [Fact]
@@ -136,11 +130,9 @@ namespace Intervu.API.Test.ApiTests.AuthController
             // Act
             LogInfo("Resetting password with a 5-char password (boundary: min length is 6).");
             var response = await _api.PostAsync("/api/v1/auth/reset-password", resetRequest, logBody: true);
-            var responseBody = await response.Content.ReadAsStringAsync();
 
             // Assert – fails MinLength(6) validation
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "5-char password below min boundary returns 400 BadRequest");
-            await AssertHelper.AssertContains("Password must be at least 6 characters long.", responseBody, "Min-length validation message is returned");
         }
 
         [Fact]

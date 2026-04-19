@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using Intervu.Application.DTOs.Availability;
 using Intervu.Application.Interfaces.UseCases.Availability;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 

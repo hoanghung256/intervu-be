@@ -1,4 +1,5 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
+using Intervu.Application.DTOs.Common;
 using Intervu.Application.Interfaces.UseCases.Company;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,9 +17,9 @@ namespace Intervu.API.Controllers.v1
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllCompanies([FromQuery] int page, [FromQuery] int pageSize)
+        public async Task<IActionResult> GetAllCompanies([FromQuery] PaginationParams @params)
         {
-            var companies = await _getAllCompanies.ExecuteAsync(page, pageSize);
+            var companies = await _getAllCompanies.ExecuteAsync(@params.Page, @params.PageSize);
             return Ok(new
             {
                 success = true,

@@ -146,7 +146,7 @@ namespace Intervu.API.Controllers.v1
         /// Candidate cancels a Pending or Accepted booking request
         /// </summary>
         [Authorize(Policy = AuthorizationPolicies.Candidate)]
-        [HttpPost("{id:guid}/cancel")]
+        [HttpPost("{id}/cancel")]
         public async Task<IActionResult> CancelBookingRequest(Guid id)
         {
             var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -154,7 +154,7 @@ namespace Intervu.API.Controllers.v1
             return Ok(new
             {
                 success = true,
-            ssage = "Booking request cancelled successfully",
+                message = "Booking request cancelled successfully",
                 data = result
             });
         }

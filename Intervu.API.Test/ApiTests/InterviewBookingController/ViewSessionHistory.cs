@@ -19,6 +19,26 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
             _api = new ApiHelper(factory.CreateClient());
         }
 
+        private async Task<string> RegisterAndLoginNewCoachAsync()
+        {
+            var email = $"coach_empty_session_{Guid.NewGuid():N}@example.com";
+            await _api.PostAsync("/api/v1/account/register", new RegisterRequest
+            {
+                FullName = "Coach Empty Session",
+                Email = email,
+                Password = CANDIDATE_PASSWORD,
+                Role = "Coach",
+                SlugProfileUrl = $"coach-empty-session-{Guid.NewGuid():N}"
+            }, logBody: true);
+
+            var login = await _api.PostAsync("/api/v1/account/login", new LoginRequest
+            {
+                Email = email,
+                Password = CANDIDATE_PASSWORD
+            }, logBody: true);
+            return (await _api.LogDeserializeJson<LoginResponse>(login)).Data!.Token;
+        }
+
         // ── Normal (Happy Path) ─────────────────────────────────────────────────
 
         [Fact]
@@ -132,11 +152,8 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
         [Trait("Category", "InterviewBooking")]
         public async Task GetHistory_EmptyResults_ReturnsSuccess()
         {
-            // Assuming Bob has no history
-            var loginResponse = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = "bob@example.com", Password = DEFAULT_PASSWORD });
-            var loginData = await _api.LogDeserializeJson<LoginResponse>(loginResponse);
-
-            var response = await _api.GetAsync("/api/v1/interview-booking/history?page=1&pageSize=10", jwtToken: loginData.Data!.Token, logBody: true);
+            var token = await RegisterAndLoginNewCoachAsync();
+            var response = await _api.GetAsync("/api/v1/interview-booking/history?page=1&pageSize=10", jwtToken: token, logBody: true);
 
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK for empty history");
             var apiResponse = await _api.LogDeserializeJson<PagedResult<InterviewBookingTransactionHistoryDto>>(response);

@@ -22,6 +22,26 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
             _api = new ApiHelper(_client);
         }
 
+        private async Task<string> RegisterAndLoginNewCoachAsync()
+        {
+            var email = $"coach_empty_payment_{Guid.NewGuid():N}@example.com";
+            await _api.PostAsync("/api/v1/account/register", new RegisterRequest
+            {
+                FullName = "Coach Empty Payment",
+                Email = email,
+                Password = CANDIDATE_PASSWORD,
+                Role = "Coach",
+                SlugProfileUrl = $"coach-empty-payment-{Guid.NewGuid():N}"
+            }, logBody: true);
+
+            var login = await _api.PostAsync("/api/v1/account/login", new LoginRequest
+            {
+                Email = email,
+                Password = CANDIDATE_PASSWORD
+            }, logBody: true);
+            return (await _api.LogDeserializeJson<LoginResponse>(login)).Data!.Token;
+        }
+
         // ── GET /interview-booking/{orderCode} ─────────────────────────────────
         // No authentication required for this endpoint.
 
@@ -88,6 +108,7 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
         {
             // Arrange – send a POST with no body and wrong content-type; model binding should fail
             var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/interview-booking/webhook");
+            request.Content = new StringContent("", Encoding.UTF8, "application/json");
             // No Content set — ASP.NET Core model binding will return 400 for a required complex type
 
             // Act
@@ -130,8 +151,7 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
         [Fact]
         public async Task Handle_EmptyHistory_ReturnsSuccess()
         {
-            var login = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = "bob@example.com", Password = DEFAULT_PASSWORD });
-            var token = (await _api.LogDeserializeJson<LoginResponse>(login)).Data!.Token;
+            var token = await RegisterAndLoginNewCoachAsync();
             var response = await _api.GetAsync("/api/v1/interview-booking/history?page=1&pageSize=10", jwtToken: token, logBody: true);
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK for empty history");
             var body = await _api.LogDeserializeJson<PagedResult<InterviewBookingTransactionHistoryDto>>(response);

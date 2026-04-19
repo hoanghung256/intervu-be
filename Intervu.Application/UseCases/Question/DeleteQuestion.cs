@@ -1,3 +1,4 @@
+using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.UseCases.Question;
 using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Intervu.Domain.Repositories;
@@ -12,7 +13,7 @@ namespace Intervu.Application.UseCases.Question
         {
             var questionRepo = unitOfWork.GetRepository<IQuestionRepository>();
             var question = await questionRepo.GetByIdAsync(questionId)
-                ?? throw new Exception("Question not found");
+                ?? throw new NotFoundException("Question not found");
 
             questionRepo.DeleteAsync(question);
             await unitOfWork.SaveChangesAsync();

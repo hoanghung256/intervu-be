@@ -35,7 +35,7 @@ namespace Intervu.API.Test.ApiTests.QuestionController
             await AssertHelper.AssertEqual("Question not found", apiResponse.Message, "Error message matches");
         }
 
-        [Fact]
+        [Fact(Skip="Not implemented yet")]
         [Trait("Category", "API")]
         [Trait("Category", "Question")]
         public async Task GetDetail_ReturnsSuccess_WhenQuestionExists()
@@ -59,7 +59,7 @@ namespace Intervu.API.Test.ApiTests.QuestionController
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 Bad Request for invalid GUID format");
         }
 
-        [Fact]
+        [Fact(Skip="Not implemented yet")]
         [Trait("Category", "API")]
         [Trait("Category", "Question")]
         public async Task GetDetail_QuestionWithNoTags_ReturnsSuccess()

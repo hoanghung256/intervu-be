@@ -13,6 +13,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 {
     public class InterviewTypeRepository(IntervuPostgreDbContext context) : RepositoryBase<InterviewType>(context), IInterviewTypeRepository
     {
+        public async Task<InterviewType?> GetByNameAsync(string name)
+        {
+            var normalized = name.Trim().ToLower();
+            return await _context.InterviewTypes
+                .FirstOrDefaultAsync(it => it.Name.ToLower() == normalized);
+        }
 
         public async Task<IEnumerable<InterviewType>> GetList(int page, int pageSize)
         {

@@ -10,7 +10,6 @@ namespace Intervu.API.Test.ApiTests.CoachProfileController
     public class UpdateCoachProfileTests : BaseTest, IClassFixture<BaseApiTest<Program>>
     {
         private readonly ApiHelper _api;
-        private readonly string _bobEmail = "bob@example.com";
 
         public UpdateCoachProfileTests(BaseApiTest<Program> factory, ITestOutputHelper output) : base(output)
         {
@@ -24,6 +23,54 @@ namespace Intervu.API.Test.ApiTests.CoachProfileController
             return (loginData.Data!.Token, loginData.Data.User.Id);
         }
 
+        private async Task<(string token, Guid userId)> RegisterAndLoginNewCoachAsync()
+        {
+            var email = $"coach_update_profile_{Guid.NewGuid():N}@example.com";
+            await _api.PostAsync("/api/v1/account/register", new RegisterRequest
+            {
+                FullName = "Coach Update Profile",
+                Email = email,
+                Password = CANDIDATE_PASSWORD,
+                Role = "Coach",
+                SlugProfileUrl = $"coach-update-{Guid.NewGuid():N}"
+            }, logBody: true);
+
+            var loginResponse = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = email, Password = CANDIDATE_PASSWORD });
+            var loginData = await _api.LogDeserializeJson<LoginResponse>(loginResponse);
+            return (loginData.Data!.Token, loginData.Data.User.Id);
+        }
+
+        private async Task<(string token, Guid userId)> CreateCoachProfileByAdminAndLoginCoachAsync()
+        {
+            var coachEmail = $"coach_admin_create_{Guid.NewGuid():N}@example.com";
+
+            var adminLoginResponse = await _api.PostAsync("/api/v1/account/login", new LoginRequest
+            {
+                Email = ADMIN_EMAIL,
+                Password = DEFAULT_PASSWORD
+            }, logBody: true);
+            var adminLoginData = await _api.LogDeserializeJson<LoginResponse>(adminLoginResponse);
+            var adminToken = adminLoginData.Data!.Token;
+
+            await _api.PostAsync("/api/v1/coach-profile", new CoachCreateDto
+            {
+                FullName = "Coach Created By Admin",
+                Email = coachEmail,
+                Password = CANDIDATE_PASSWORD,
+                Role = Intervu.Domain.Entities.Constants.UserRole.Coach,
+                CurrentAmount = 0,
+                ExperienceYears = 1
+            }, jwtToken: adminToken, logBody: true);
+
+            var coachLoginResponse = await _api.PostAsync("/api/v1/account/login", new LoginRequest
+            {
+                Email = coachEmail,
+                Password = CANDIDATE_PASSWORD
+            }, logBody: true);
+            var coachLoginData = await _api.LogDeserializeJson<LoginResponse>(coachLoginResponse);
+            return (coachLoginData.Data!.Token, coachLoginData.Data.User.Id);
+        }
+
         // ===== [N] Normal / Happy Path Tests =====
 
         [Fact]
@@ -32,10 +79,11 @@ namespace Intervu.API.Test.ApiTests.CoachProfileController
         public async Task UpdateCoachProfile_ReturnsSuccess_WhenDataIsValid()
         {
             // Arrange
-            var (token, userId) = await LoginSeededUserAsync(_bobEmail);
+            var (token, userId) = await CreateCoachProfileByAdminAndLoginCoachAsync();
 
             var updateDto = new CoachUpdateDto
             {
+                Id = userId,
                 FullName = "Updated Bob",
                 Email = "updated@example.com",
                 Bio = "Updated Bio for testing purposes.",
@@ -60,12 +108,13 @@ namespace Intervu.API.Test.ApiTests.CoachProfileController
         public async Task UpdateCoachProfile_PartialUpdate_ReturnsSuccess()
         {
             // Arrange
-            var (token, userId) = await LoginSeededUserAsync(_bobEmail);
+            var (token, userId) = await CreateCoachProfileByAdminAndLoginCoachAsync();
 
             var updateDto = new CoachUpdateDto
             {
+                Id = userId,
                 FullName = "Bob Partial Update",
-                Email = "bob@example.com",
+                Email = $"coach.partial.{Guid.NewGuid():N}@example.com",
                 Bio = "Partially updated bio only"
             };
 
@@ -84,7 +133,7 @@ namespace Intervu.API.Test.ApiTests.CoachProfileController
         public async Task ManageCoachWorkExperiences_FullCRUDCycle_ReturnsSuccess()
         {
             // Arrange
-            var (token, userId) = await LoginSeededUserAsync(_bobEmail);
+            var (token, userId) = await RegisterAndLoginNewCoachAsync();
 
             // Create
             var createDto = new CoachWorkExperienceDto
@@ -123,7 +172,7 @@ namespace Intervu.API.Test.ApiTests.CoachProfileController
         public async Task ManageCoachCertificates_FullCRUDCycle_ReturnsSuccess()
         {
             // Arrange
-            var (token, userId) = await LoginSeededUserAsync(_bobEmail);
+            var (token, userId) = await RegisterAndLoginNewCoachAsync();
 
             // Create
             var addResponse = await _api.PostAsync($"/api/v1/coach-profile/{userId}/certificates", new CoachCertificateDto
@@ -158,7 +207,7 @@ namespace Intervu.API.Test.ApiTests.CoachProfileController
         public async Task UpdateCoachProfile_NonExistentCoachId_ReturnsBadRequest()
         {
             // Arrange
-            var (token, _) = await LoginSeededUserAsync(_bobEmail);
+            var (token, _) = await RegisterAndLoginNewCoachAsync();
             var nonExistentId = Guid.NewGuid();
 
             var updateDto = new CoachUpdateDto
@@ -183,7 +232,7 @@ namespace Intervu.API.Test.ApiTests.CoachProfileController
         public async Task UpdateCoachProfile_ReturnsUnauthorized_WhenNoToken()
         {
             // Arrange
-            var (_, userId) = await LoginSeededUserAsync(_bobEmail);
+            var (_, userId) = await RegisterAndLoginNewCoachAsync();
             var updateDto = new CoachUpdateDto
             {
                 FullName = "Unauthorized Update",
@@ -208,7 +257,7 @@ namespace Intervu.API.Test.ApiTests.CoachProfileController
         {
             // Arrange
             var (candidateToken, _) = await LoginSeededUserAsync("alice@example.com");
-            var (_, coachId) = await LoginSeededUserAsync(_bobEmail);
+            var (_, coachId) = await RegisterAndLoginNewCoachAsync();
 
             var updateDto = new CoachUpdateDto
             {
@@ -230,7 +279,7 @@ namespace Intervu.API.Test.ApiTests.CoachProfileController
         public async Task CreateWorkExperience_ReturnsUnauthorized_WhenNoToken()
         {
             // Arrange
-            var (_, userId) = await LoginSeededUserAsync(_bobEmail);
+            var (_, userId) = await RegisterAndLoginNewCoachAsync();
 
             // Act
             var response = await _api.PostAsync($"/api/v1/coach-profile/{userId}/work-experiences", new CoachWorkExperienceDto

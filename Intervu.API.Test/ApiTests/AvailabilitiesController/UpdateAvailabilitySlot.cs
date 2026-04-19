@@ -51,7 +51,7 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Availability")]
-        public async Task Handle_UpdateAvailabilitySlot_NewEndBeforeNewStart_ThrowsArgumentException()
+        public async Task UpdateAvailabilitySlot_Abnormal_NewEndBeforeNewStart_ReturnsBadRequest()
         {
             // Arrange – create a valid slot first
             var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(85).Date.AddHours(6));
@@ -63,24 +63,22 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
                 RangeEndTime = new DateTimeOffset(end, TimeSpan.Zero)
             });
 
-            // Act & Assert – the new range is inverted (NewEndTime < NewStartTime)
-            var exception = await Assert.ThrowsAsync<ArgumentException>(async () =>
-                await _api.PutAsync("/api/v1/availabilities", new CoachAvailabilityUpdateDto
-                {
-                    CoachId = BobCoachId,
-                    OriginalStartTime = new DateTimeOffset(start, TimeSpan.Zero),
-                    OriginalEndTime = new DateTimeOffset(end, TimeSpan.Zero),
-                    NewStartTime = new DateTimeOffset(end, TimeSpan.Zero),
-                    NewEndTime = new DateTimeOffset(start, TimeSpan.Zero)
-                }, logBody: true));
+            var response = await _api.PutAsync("/api/v1/availabilities", new CoachAvailabilityUpdateDto
+            {
+                CoachId = BobCoachId,
+                OriginalStartTime = new DateTimeOffset(start, TimeSpan.Zero),
+                OriginalEndTime = new DateTimeOffset(end, TimeSpan.Zero),
+                NewStartTime = new DateTimeOffset(end, TimeSpan.Zero),
+                NewEndTime = new DateTimeOffset(start, TimeSpan.Zero)
+            }, logBody: true);
 
-            await AssertHelper.AssertNotNull(exception.Message, "ArgumentException is raised for inverted new time range");
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Inverted new time range returns 400 BadRequest");
         }
 
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Availability")]
-        public async Task Handle_UpdateAvailabilitySlot_SameNewStartAndEnd_ThrowsArgumentException()
+        public async Task UpdateAvailabilitySlot_Boundary_SameNewStartAndEnd_ReturnsBadRequest()
         {
             // Arrange
             var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(90).Date.AddHours(7));
@@ -92,64 +90,58 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
                 RangeEndTime = new DateTimeOffset(end, TimeSpan.Zero)
             });
 
-            // Act & Assert – zero-duration new range
-            var exception = await Assert.ThrowsAsync<ArgumentException>(async () =>
-                await _api.PutAsync("/api/v1/availabilities", new CoachAvailabilityUpdateDto
-                {
-                    CoachId = BobCoachId,
-                    OriginalStartTime = new DateTimeOffset(start, TimeSpan.Zero),
-                    OriginalEndTime = new DateTimeOffset(end, TimeSpan.Zero),
-                    NewStartTime = new DateTimeOffset(start, TimeSpan.Zero),
-                    NewEndTime = new DateTimeOffset(start, TimeSpan.Zero)
-                }, logBody: true));
+            var response = await _api.PutAsync("/api/v1/availabilities", new CoachAvailabilityUpdateDto
+            {
+                CoachId = BobCoachId,
+                OriginalStartTime = new DateTimeOffset(start, TimeSpan.Zero),
+                OriginalEndTime = new DateTimeOffset(end, TimeSpan.Zero),
+                NewStartTime = new DateTimeOffset(start, TimeSpan.Zero),
+                NewEndTime = new DateTimeOffset(start, TimeSpan.Zero)
+            }, logBody: true);
 
-            await AssertHelper.AssertNotNull(exception.Message, "ArgumentException is raised for zero-duration new range");
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Zero-duration new range returns 400 BadRequest");
         }
 
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Availability")]
-        public async Task Handle_UpdateAvailabilitySlot_NonExistentOriginalSlot_ThrowsException()
+        public async Task UpdateAvailabilitySlot_Abnormal_NonExistentOriginalSlot_ReturnsNotFound()
         {
             // Arrange – a time range that was never created (no availability blocks exist for it)
             var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(102).Date.AddHours(8));
             var end = start.AddHours(1);
 
-            // Act & Assert – use case should throw when original slots cannot be found
-            var exception = await Assert.ThrowsAsync<Exception>(async () =>
-                await _api.PutAsync("/api/v1/availabilities", new CoachAvailabilityUpdateDto
-                {
-                    CoachId = BobCoachId,
-                    OriginalStartTime = new DateTimeOffset(start, TimeSpan.Zero),
-                    OriginalEndTime = new DateTimeOffset(end, TimeSpan.Zero),
-                    NewStartTime = new DateTimeOffset(start.AddHours(2), TimeSpan.Zero),
-                    NewEndTime = new DateTimeOffset(end.AddHours(2), TimeSpan.Zero)
-                }, logBody: true));
+            var response = await _api.PutAsync("/api/v1/availabilities", new CoachAvailabilityUpdateDto
+            {
+                CoachId = BobCoachId,
+                OriginalStartTime = new DateTimeOffset(start, TimeSpan.Zero),
+                OriginalEndTime = new DateTimeOffset(end, TimeSpan.Zero),
+                NewStartTime = new DateTimeOffset(start.AddHours(2), TimeSpan.Zero),
+                NewEndTime = new DateTimeOffset(end.AddHours(2), TimeSpan.Zero)
+            }, logBody: true);
 
-            await AssertHelper.AssertNotNull(exception.Message, "Exception is raised when original slot range does not exist");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent original slot returns 404 NotFound");
         }
 
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Availability")]
-        public async Task Handle_UpdateAvailabilitySlot_GuidEmptyCoachId_ThrowsException()
+        public async Task UpdateAvailabilitySlot_Abnormal_GuidEmptyCoachId_ReturnsNotFound()
         {
             // Arrange – Guid.Empty passes model validation but coach does not exist in the DB
             var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(108).Date.AddHours(9));
             var end = start.AddHours(1);
 
-            // Act & Assert – use case should throw when coach cannot be found
-            var exception = await Assert.ThrowsAsync<Exception>(async () =>
-                await _api.PutAsync("/api/v1/availabilities", new CoachAvailabilityUpdateDto
-                {
-                    CoachId = Guid.Empty,
-                    OriginalStartTime = new DateTimeOffset(start, TimeSpan.Zero),
-                    OriginalEndTime = new DateTimeOffset(end, TimeSpan.Zero),
-                    NewStartTime = new DateTimeOffset(start.AddHours(1), TimeSpan.Zero),
-                    NewEndTime = new DateTimeOffset(end.AddHours(1), TimeSpan.Zero)
-                }, logBody: true));
+            var response = await _api.PutAsync("/api/v1/availabilities", new CoachAvailabilityUpdateDto
+            {
+                CoachId = Guid.Empty,
+                OriginalStartTime = new DateTimeOffset(start, TimeSpan.Zero),
+                OriginalEndTime = new DateTimeOffset(end, TimeSpan.Zero),
+                NewStartTime = new DateTimeOffset(start.AddHours(1), TimeSpan.Zero),
+                NewEndTime = new DateTimeOffset(end.AddHours(1), TimeSpan.Zero)
+            }, logBody: true);
 
-            await AssertHelper.AssertNotNull(exception.Message, "Exception is raised for Guid.Empty coach ID on update");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Guid.Empty coach ID returns 404 NotFound");
         }
 
         [Fact]
@@ -177,22 +169,21 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Availability")]
-        public async Task UpdateAvailabilitySlot_InvalidNewRange_ThrowsException()
+        public async Task UpdateAvailabilitySlot_Boundary_InvalidNewRange_ReturnsBadRequest()
         {
             var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(91));
             var end = start.AddHours(1);
 
-            var exception = await Assert.ThrowsAsync<ArgumentException>(async () =>
-                await _api.PutAsync("/api/v1/availabilities", new CoachAvailabilityUpdateDto
-                {
-                    CoachId = BobCoachId,
-                    OriginalStartTime = new DateTimeOffset(start, TimeSpan.Zero),
-                    OriginalEndTime = new DateTimeOffset(end, TimeSpan.Zero),
-                    NewStartTime = new DateTimeOffset(end, TimeSpan.Zero),
-                    NewEndTime = new DateTimeOffset(start, TimeSpan.Zero)
-                }, logBody: true));
+            var response = await _api.PutAsync("/api/v1/availabilities", new CoachAvailabilityUpdateDto
+            {
+                CoachId = BobCoachId,
+                OriginalStartTime = new DateTimeOffset(start, TimeSpan.Zero),
+                OriginalEndTime = new DateTimeOffset(end, TimeSpan.Zero),
+                NewStartTime = new DateTimeOffset(end, TimeSpan.Zero),
+                NewEndTime = new DateTimeOffset(start, TimeSpan.Zero)
+            }, logBody: true);
 
-            await AssertHelper.AssertContains("NewEndTime must be greater than NewStartTime", exception.Message, "Validation exception message matches");
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Invalid new range returns 400 BadRequest");
         }
 
         [Fact]
@@ -241,14 +232,16 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
         {
             var start = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(-5));
             var end = start.AddHours(1);
+            var newStart = AlignToHalfHourUtc(DateTime.UtcNow.AddDays(10).Date.AddHours(10));
+            var newEnd = newStart.AddHours(1);
 
             var updateResponse = await _api.PutAsync("/api/v1/availabilities", new CoachAvailabilityUpdateDto
             {
                 CoachId = BobCoachId,
                 OriginalStartTime = new DateTimeOffset(start, TimeSpan.Zero),
                 OriginalEndTime = new DateTimeOffset(end, TimeSpan.Zero),
-                NewStartTime = new DateTimeOffset(DateTime.UtcNow.AddDays(10), TimeSpan.Zero),
-                NewEndTime = new DateTimeOffset(DateTime.UtcNow.AddDays(10).AddHours(1), TimeSpan.Zero)
+                NewStartTime = new DateTimeOffset(newStart, TimeSpan.Zero),
+                NewEndTime = new DateTimeOffset(newEnd, TimeSpan.Zero)
             }, logBody: true);
 
             var updatePayload = await _api.LogDeserializeJson<JsonElement>(updateResponse, logBody: true);

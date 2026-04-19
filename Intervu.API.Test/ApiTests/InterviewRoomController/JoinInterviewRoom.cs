@@ -53,11 +53,19 @@ namespace Intervu.API.Test.ApiTests.InterviewRoomController
             return loginData.Data!.Token;
         }
 
-        private async Task<(string coachToken, Guid coachId, Guid serviceId, Guid availabilityId, DateTime startTime)> CreateCoachAndServiceAsync()
+        private async Task<(string coachToken, Guid coachId, Guid serviceId, List<Guid> availabilityId, DateTime startTime)> CreateCoachAndServiceAsync()
         {
             var adminToken = await LoginAdminAsync();
             var coachEmail = $"coach_{Guid.NewGuid()}@example.com";
-            await _api.PostAsync("/api/v1/account/register", new RegisterRequest { Email = coachEmail, Password = CANDIDATE_PASSWORD, FullName = "Test Coach", Role = "Coach" });
+            await _api.PostAsync("/api/v1/coach-profile", new CoachCreateDto
+            {
+                FullName = "Test Coach",
+                Email = coachEmail,
+                Password = CANDIDATE_PASSWORD,
+                Role = UserRole.Coach,
+                ExperienceYears = 1,
+                CurrentAmount = 0
+            }, jwtToken: adminToken, logBody: true);
             var coachLoginResponse = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = coachEmail, Password = CANDIDATE_PASSWORD });
             var coachLoginData = await _api.LogDeserializeJson<LoginResponse>(coachLoginResponse);
             var coachToken = coachLoginData.Data!.Token;
@@ -65,6 +73,7 @@ namespace Intervu.API.Test.ApiTests.InterviewRoomController
 
             var itResponse = await _api.PostAsync("/api/v1/InterviewType", new InterviewTypeDto
             {
+                Id = Guid.NewGuid(),
                 Name = $"Test Type {Guid.NewGuid()}",
                 Description = "Test Description",
                 MinPrice = 0,
@@ -72,17 +81,17 @@ namespace Intervu.API.Test.ApiTests.InterviewRoomController
                 SuggestedDurationMinutes = 60,
                 Status = InterviewTypeStatus.Active
             }, jwtToken: adminToken);
-            var itResult = await _api.LogDeserializeJson<InterviewTypeDto>(itResponse);
+            var itResult = await _api.LogDeserializeJson<InterviewTypeDto>(itResponse, true);
 
-            var serviceResponse = await _api.PostAsync("/api/v1/coach-interview-services", new CreateCoachInterviewServiceDto { InterviewTypeId = itResult.Data!.Id, Price = 0, DurationMinutes = 60 }, jwtToken: coachToken);
-            var serviceResult = await _api.LogDeserializeJson<CoachInterviewServiceDto>(serviceResponse);
+            var serviceResponse = await _api.PostAsync("/api/v1/coach-interview-services", new CreateCoachInterviewServiceDto { InterviewTypeId = itResult.Data!.Id, Price = 0, DurationMinutes = 60 }, jwtToken: coachToken, logBody: true);
+            var serviceResult = await _api.LogDeserializeJson<CoachInterviewServiceDto>(serviceResponse, true);
 
             var startTime = new DateTime(DateTime.UtcNow.AddDays(7).Year, DateTime.UtcNow.AddDays(7).Month, DateTime.UtcNow.AddDays(7).Day, DateTime.UtcNow.AddDays(7).Hour, 0, 0, DateTimeKind.Utc).AddHours(1);
-            await _api.PostAsync("/api/v1/availabilities", new CoachAvailabilityCreateDto { CoachId = coachId, RangeStartTime = startTime, RangeEndTime = startTime.AddHours(1) }, jwtToken: coachToken);
-            var scheduleResponse = await _api.GetAsync($"/api/v1/availabilities/{coachId}?month={startTime.Month}&year={startTime.Year}", jwtToken: coachToken);
-            var scheduleResult = await _api.LogDeserializeJson<CoachScheduleDto>(scheduleResponse);
+            await _api.PostAsync("/api/v1/availabilities", new CoachAvailabilityCreateDto { CoachId = coachId, RangeStartTime = startTime, RangeEndTime = startTime.AddHours(1) }, jwtToken: coachToken, logBody: true);
+            var scheduleResponse = await _api.GetAsync($"/api/v1/availabilities/{coachId}?month={startTime.Month}&year={startTime.Year}", jwtToken: coachToken, logBody: true);
+            var scheduleResult = await _api.LogDeserializeJson<CoachScheduleDto>(scheduleResponse, true);
 
-            return (coachToken, coachId, serviceResult.Data!.Id, scheduleResult.Data!.FreeSlots.First().Id, startTime);
+            return (coachToken, coachId, serviceResult.Data!.Id, scheduleResult.Data!.FreeSlots.First().AvailabilityIds, startTime);
         }
 
         private async Task<(Guid roomId, string candidateToken, Guid candidateId, string coachToken, Guid coachId)> CreateTestInterviewRoomAsync()
@@ -94,11 +103,11 @@ namespace Intervu.API.Test.ApiTests.InterviewRoomController
             var candidateToken = candidateLoginData.Data!.Token;
             var candidateId = candidateLoginData.Data.User.Id;
 
-            var (coachToken, coachId, serviceId, availabilityId, startTime) = await CreateCoachAndServiceAsync();
+            var (coachToken, coachId, serviceId, availabilityIds, startTime) = await CreateCoachAndServiceAsync();
             await _api.PostAsync("/api/v1/interview-booking", new InterviewBookingRequest
             {
                 CoachId = coachId,
-                CoachAvailabilityId = availabilityId,
+                CoachAvailabilityId = availabilityIds.First(),
                 CoachInterviewServiceId = serviceId,
                 StartTime = startTime,
                 ReturnUrl = "https://test.com/return"

@@ -1,9 +1,10 @@
-﻿using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
-using Intervu.API.Test.Base;
+﻿using Intervu.API.Test.Base;
 using Intervu.Application.DTOs.Common;
 using Intervu.Application.DTOs.Skill;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 
 namespace Intervu.API.Test.Utils
 {

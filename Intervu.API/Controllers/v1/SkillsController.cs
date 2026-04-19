@@ -1,4 +1,5 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
+using Intervu.Application.DTOs.Common;
 using Intervu.Application.Interfaces.UseCases.Skill;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,9 +17,9 @@ namespace Intervu.API.Controllers.v1
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllSkills([FromQuery] int page, [FromQuery] int pageSize)
+        public async Task<IActionResult> GetAllSkills([FromQuery] PaginationParams @params)
         {
-            var skills = await _getAllSkills.ExecuteAsync(page, pageSize);
+            var skills = await _getAllSkills.ExecuteAsync(@params.Page, @params.PageSize);
             return Ok(new
             {
                 success = true,

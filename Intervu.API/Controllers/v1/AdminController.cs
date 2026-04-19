@@ -237,6 +237,7 @@ namespace Intervu.API.Controllers.v1
         /// Get all users with pagination
         /// </summary>
         [HttpGet("users")]
+        [Authorize(Policy = AuthorizationPolicies.Admin)]
         public async Task<IActionResult> GetAllUsers([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             try
@@ -264,6 +265,7 @@ namespace Intervu.API.Controllers.v1
         /// Filter users by role and search
         /// </summary>
         [HttpGet("users/filter")]
+        [Authorize(Policy = AuthorizationPolicies.Admin)]
         public async Task<IActionResult> FilterUsers(
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
@@ -407,6 +409,7 @@ namespace Intervu.API.Controllers.v1
         /// Create a new user
         /// </summary>
         [HttpPost("users")]
+        [Authorize(Policy = AuthorizationPolicies.Admin)]
         public async Task<IActionResult> CreateUser([FromBody] AdminCreateUserDto request)
         {
             try
@@ -443,6 +446,7 @@ namespace Intervu.API.Controllers.v1
         /// Get user by ID
         /// </summary>
         [HttpGet("users/{id}")]
+        [Authorize(Policy = AuthorizationPolicies.Admin)]
         public async Task<IActionResult> GetUserById([FromRoute] Guid id)
         {
             try
@@ -479,6 +483,7 @@ namespace Intervu.API.Controllers.v1
         /// Update user
         /// </summary>
         [HttpPut("users/{id}")]
+        [Authorize(Policy = AuthorizationPolicies.Admin)]   
         public async Task<IActionResult> UpdateUser([FromRoute] Guid id, [FromBody] AdminCreateUserDto request)
         {
             try
@@ -515,6 +520,7 @@ namespace Intervu.API.Controllers.v1
         /// Suspend user (soft-delete)
         /// </summary>
         [HttpDelete("users/{id}")]
+        [Authorize(Policy = AuthorizationPolicies.Admin)]
         public async Task<IActionResult> DeleteUser([FromRoute] Guid id)
         {
             try
@@ -839,6 +845,7 @@ namespace Intervu.API.Controllers.v1
         /// Get AI traffic metrics (token usage, latency) for all AI providers
         /// </summary>
         [HttpGet("system/python-ai-metrics")]
+        [Authorize(Policy = AuthorizationPolicies.Admin)]
         public async Task<IActionResult> GetPythonAiMetrics([FromQuery] PythonAiMetricsQueryDto query)
         {
             try

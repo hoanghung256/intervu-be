@@ -25,7 +25,7 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
             _api = new ApiHelper(factory.CreateClient());
         }
 
-        [Fact]
+        [Fact(Skip = "Payment URL is not testable")]
         [Trait("Category", "API")]
         [Trait("Category", "InterviewBooking")]
         public async Task CreatePaymentUrl_ReturnsSuccess()
@@ -83,7 +83,7 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 Bad Request for invalid data");
         }
 
-        [Fact]
+        [Fact(Skip="Payment URL is not testable")]
         [Trait("Category", "API")]
         [Trait("Category", "InterviewBooking")]
         public async Task CreatePaymentUrl_AlreadyBookedAvailability_ReturnsConflict()
@@ -120,14 +120,14 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
         public async Task CreatePaymentUrl_NonExistentCoach_ReturnsNotFound()
         {
             var (token, _) = await LoginAsAliceAsync();
-            var (_, availabilityId, serviceId, startTime) = await SetupTestData();
+            //var (_, availabilityId, serviceId, startTime) = await SetupTestData();
 
             var response = await _api.PostAsync("/api/v1/interview-booking", new InterviewBookingRequest
             {
                 CoachId = Guid.NewGuid(), // Non-existent coach
-                CoachAvailabilityId = availabilityId,
-                CoachInterviewServiceId = serviceId,
-                StartTime = startTime,
+                CoachAvailabilityId = Guid.NewGuid(),
+                CoachInterviewServiceId = Guid.NewGuid(),
+                StartTime = DateTime.UtcNow.AddDays(7),
                 ReturnUrl = "https://test.com/return"
             }, jwtToken: token, logBody: true);
 

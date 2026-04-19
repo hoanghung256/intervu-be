@@ -132,7 +132,7 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
         {
             // Arrange – the cancel endpoint is restricted to Candidate policy
             var loginResponse = await _api.PostAsync("/api/v1/account/login",
-                new LoginRequest { Email = COACH_EMAIL, Password = DEFAULT_PASSWORD }, logBody: true);
+                new LoginRequest { Email = COACH_EMAIL, Password = CANDIDATE_PASSWORD }, logBody: true);
             var loginPayload = await _api.LogDeserializeJson<LoginResponse>(loginResponse);
             var coachToken = loginPayload.Data!.Token;
 
@@ -164,17 +164,14 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "BookingRequest")]
-        public async Task Handle_CancelBookingRequest_NonExistentBookingId_ThrowsException()
+        public async Task CancelBookingRequest_Abnormal_NonExistentBookingId_ReturnsNotFound()
         {
             // Arrange – a random GUID that does not exist in the database
             var token = await LoginSeededCandidateAsync();
             var nonExistentBookingId = Guid.NewGuid();
 
-            // Act & Assert – business logic throws when the booking cannot be found
-            var exception = await Assert.ThrowsAsync<Exception>(async () =>
-                await _api.PostAsync<object>($"/api/v1/booking-requests/{nonExistentBookingId}/cancel", null, jwtToken: token, logBody: true));
-
-            await AssertHelper.AssertNotNull(exception.Message, "Exception is raised for non-existent booking ID");
+            var response = await _api.PostAsync<object>($"/api/v1/booking-requests/{nonExistentBookingId}/cancel", null, jwtToken: token, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent booking ID returns 404 Not Found");
         }
 
         private async Task<Guid> CreateBookingAndGetIdAsync(string candidateToken, bool isMultipleRounds, int dayOffset, int hourOffset)

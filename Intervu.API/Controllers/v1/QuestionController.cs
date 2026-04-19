@@ -93,7 +93,7 @@ namespace Intervu.API.Controllers.v1
             return Ok(new { success = true, message = "Success", data = result });
         }
 
-        [HttpGet("{questionId:guid}")]
+        [HttpGet("{questionId}")]
         public async Task<IActionResult> GetDetail(Guid questionId)
         {
             var userId = GetOptionalUserId();
@@ -116,7 +116,7 @@ namespace Intervu.API.Controllers.v1
         }
 
         [Authorize(Policy = AuthorizationPolicies.AllRoles)]
-        [HttpPost("{questionId:guid}/like")]
+        [HttpPost("{questionId}/like")]
         public async Task<IActionResult> LikeQuestion(Guid questionId)
         {
             if (!TryGetRequiredUserId(out Guid userId))
@@ -131,7 +131,7 @@ namespace Intervu.API.Controllers.v1
         }
 
         [Authorize(Policy = AuthorizationPolicies.AllRoles)]
-        [HttpPost("{questionId:guid}/save")]
+        [HttpPost("{questionId}/save")]
         public async Task<IActionResult> SaveQuestion(Guid questionId, [FromBody] bool isSaved)
         {
             if (!TryGetRequiredUserId(out Guid userId))
@@ -144,7 +144,7 @@ namespace Intervu.API.Controllers.v1
         }
 
         [Authorize(Policy = AuthorizationPolicies.AllRoles)]
-        [HttpPost("{questionId:guid}/report")]
+        [HttpPost("{questionId}/report")]
         public async Task<IActionResult> ReportQuestion(Guid questionId, [FromBody] ReportQuestionRequest request)
         {
             if (!TryGetRequiredUserId(out Guid userId))
@@ -157,7 +157,7 @@ namespace Intervu.API.Controllers.v1
         }
 
         [Authorize(Policy = AuthorizationPolicies.AllRoles)]
-        [HttpPut("{questionId:guid}")]
+        [HttpPut("{questionId}")]
         public async Task<IActionResult> Update(Guid questionId, [FromBody] UpdateQuestionRequest request)
         {
             if (!TryGetRequiredUserId(out Guid userId))
@@ -170,7 +170,7 @@ namespace Intervu.API.Controllers.v1
         }
 
         [Authorize(Policy = AuthorizationPolicies.AllRoles)]
-        [HttpDelete("{questionId:guid}")]
+        [HttpDelete("{questionId}")]
         public async Task<IActionResult> Delete(Guid questionId)
         {
             if (!TryGetRequiredUserId(out Guid userId))
@@ -191,7 +191,7 @@ namespace Intervu.API.Controllers.v1
         }
 
         [Authorize(Policy = AuthorizationPolicies.Admin)]
-        [HttpPut("reports/{reportId:guid}/status")]
+        [HttpPut("reports/{reportId}/status")]
         public async Task<IActionResult> UpdateReportStatus(Guid reportId, [FromBody] UpdateQuestionReportStatusRequest request)
         {
             if (!TryGetRequiredUserId(out Guid adminUserId))

@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Intervu.Application.DTOs.Availability;
+using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.UseCases.Availability;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
@@ -23,21 +24,21 @@ namespace Intervu.Application.UseCases.Availability
         public async Task<bool> ExecuteAsync(Guid availabilityId)
         {
             if (availabilityId == Guid.Empty)
-                throw new ArgumentException("Availability ID must be a valid GUID");
+                throw new BadRequestException("Availability ID must be a valid GUID");
 
             var availability = await _repo.GetByIdAsync(availabilityId);
             if (availability == null)
-                throw new InvalidOperationException("Availability not found");
+                throw new NotFoundException("Availability not found");
 
             if (availability.Status == CoachAvailabilityStatus.Booked)
-                throw new ArgumentException("Cannot delete a booked slot");
+                throw new ConflictException("Cannot delete a booked slot");
 
             if (availability.Status != CoachAvailabilityStatus.Available)
-                throw new ArgumentException("You can only delete available slots.");
+                throw new ConflictException("You can only delete available slots.");
 
             var deleted = await _repo.DeleteCoachAvailabilityAsync(availabilityId);
             if (!deleted)
-                throw new InvalidOperationException($"Availability with ID {availabilityId} not found or could not be deleted");
+                throw new NotFoundException($"Availability with ID {availabilityId} not found or could not be deleted");
 
             return true;
         }
@@ -49,23 +50,23 @@ namespace Intervu.Application.UseCases.Availability
         public async Task<bool> ExecuteRangeAsync(CoachAvailabilityDeleteDto dto)
         {
             if (dto == null)
-                throw new ArgumentNullException(nameof(dto));
+                throw new BadRequestException("Request body is required");
 
             var rangeStart = dto.RangeStartTime.UtcDateTime;
             var rangeEnd = dto.RangeEndTime.UtcDateTime;
 
             if (rangeEnd <= rangeStart)
-                throw new ArgumentException("RangeEndTime must be greater than RangeStartTime");
+                throw new BadRequestException("RangeEndTime must be greater than RangeStartTime");
 
             var blocks = await _repo.GetBlocksInRangeAsync(dto.CoachId, rangeStart, rangeEnd);
             if (!blocks.Any())
-                throw new InvalidOperationException("No availability blocks found in the specified range");
+                throw new NotFoundException("No availability blocks found in the specified range");
 
             if (blocks.Any(b => b.Status == CoachAvailabilityStatus.Booked))
-                throw new ArgumentException("Cannot delete: range contains booked sessions");
+                throw new ConflictException("Cannot delete: range contains booked sessions");
 
             if (blocks.Any(b => b.Status != CoachAvailabilityStatus.Available))
-                throw new ArgumentException("You can only delete available slots.");
+                throw new ConflictException("You can only delete available slots.");
 
             var ids = blocks.Select(b => b.Id).ToList();
             var deletedCount = await _repo.DeleteMultipleAsync(ids);

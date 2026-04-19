@@ -1,4 +1,5 @@
 using Intervu.Application.DTOs.Question;
+using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.UseCases.Question;
 using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Intervu.Domain.Entities;
@@ -15,7 +16,7 @@ namespace Intervu.Application.UseCases.Question
         {
             var questionRepo = unitOfWork.GetRepository<IQuestionRepository>();
             var question = await questionRepo.GetDetailAsync(questionId)
-                ?? throw new Exception("Question not found");
+                ?? throw new NotFoundException("Question not found");
 
             question.Title = request.Title;
             question.Content = request.Content;
@@ -44,7 +45,7 @@ namespace Intervu.Application.UseCases.Question
         {
             var questionRepo = unitOfWork.GetRepository<IQuestionRepository>();
             var question = await questionRepo.GetByIdAsync(questionId)
-                ?? throw new Exception("Question not found");
+                ?? throw new NotFoundException("Question not found");
             if (isUpvote)
             {
                 question.Vote++;

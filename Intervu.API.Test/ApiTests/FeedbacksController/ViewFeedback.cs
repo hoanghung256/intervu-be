@@ -137,11 +137,8 @@ namespace Intervu.API.Test.ApiTests.FeedbacksController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Feedbacks")]
-        public async Task UpdateFeedback_ReturnsServerError_WhenFeedbackIdDoesNotExist()
+        public async Task UpdateFeedback_ReturnsNotFound_WhenFeedbackIdDoesNotExist()
         {
-            // Arrange – use a random Guid that has no matching Feedback row.
-            // NOTE: This test documents a known NullReferenceException bug in FeedbacksController.UpdateFeedback:
-            // after the `feedback?.Comments` null-guard passes, the code accesses `feedback.Rating` on a null reference.
             var loginResponse = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = "alice@example.com", Password = DEFAULT_PASSWORD });
             var loginData = await _api.LogDeserializeJson<LoginResponse>(loginResponse);
             var nonExistentId = Guid.NewGuid();
@@ -149,8 +146,8 @@ namespace Intervu.API.Test.ApiTests.FeedbacksController
             // Act
             var response = await _api.PutAsync($"/api/v1/feedbacks/{nonExistentId}", new UpdateFeedbackDto { Rating = 5, Comments = "Valid comment" }, jwtToken: loginData.Data!.Token, logBody: true);
 
-            // Assert – controller throws NullReferenceException; framework returns 500
-            await AssertHelper.AssertEqual(HttpStatusCode.InternalServerError, response.StatusCode, "Status code is 500 when feedback ID does not exist (bug: no null guard before property assignment)");
+            // Assert 
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Status code is 404 when feedback ID does not exist (bug: no null guard before property assignment)");
         }
 
         [Fact]

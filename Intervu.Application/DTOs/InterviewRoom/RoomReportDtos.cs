@@ -1,20 +1,37 @@
+using System.ComponentModel.DataAnnotations;
 using Intervu.Domain.Entities.Constants;
 
 namespace Intervu.Application.DTOs.InterviewRoom
 {
     public class CreateRoomReportRequest
     {
+        [Required]
+        [MinLength(1)]
+        [MaxLength(200)]
         public string Reason { get; set; } = string.Empty;
+
+        [MaxLength(2000)]
         public string? Details { get; set; }
+
+        [MaxLength(2000)]
         public string? ExpectTo { get; set; }
     }
 
     // Backward-compatible payload used by existing FE modal
     public class CreateRoomReportLegacyRequest
     {
+        [Required]
         public Guid InterviewRoomId { get; set; }
+
+        [Required]
+        [MinLength(1)]
+        [MaxLength(200)]
         public string Reason { get; set; } = string.Empty;
+
+        [MaxLength(2000)]
         public string? Details { get; set; }
+
+        [MaxLength(2000)]
         public string? ExpectTo { get; set; }
     }
 
