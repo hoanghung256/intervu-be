@@ -133,6 +133,7 @@ namespace Intervu.Application.UseCases.BookingRequest
                             CoachInterviewServiceId = round.CoachInterviewServiceId,
                             AimLevel = bookingRequest.AimLevel,
                             RoundNumber = round.RoundNumber,
+                            RoadmapNodeId = bookingRequest.RoadmapNodeId,
                             EvaluationResults = await _createEvaluationResults.ExecuteAsync(round.CoachInterviewServiceId),
                             IsEvaluationCompleted = false
                         };

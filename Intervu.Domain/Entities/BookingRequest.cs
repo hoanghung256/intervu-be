@@ -65,10 +65,16 @@ namespace Intervu.Domain.Entities
         // --- Payment ---
 
         /// <summary>
-        /// Calculated total price (sum of all round prices for Flow C, 
+        /// Calculated total price (sum of all round prices for Flow C,
         /// or single service price for Flow B)
         /// </summary>
         public int TotalAmount { get; set; }
+
+        /// <summary>
+        /// Optional: the roadmap node (skill_id) this booking was initiated from.
+        /// Propagated to InterviewRoom so post-interview evaluation can update the exact node.
+        /// </summary>
+        public string? RoadmapNodeId { get; set; }
 
         // Navigation
         public CandidateProfile Candidate { get; set; } = null!;

@@ -8,6 +8,7 @@
             Guid coachAvailabilityId,
             Guid coachInterviewServiceId,
             DateTime startTime,
-            string returnUrl);
+            string returnUrl,
+            string? roadmapNodeId = null);
     }
 }

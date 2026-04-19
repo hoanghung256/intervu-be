@@ -204,6 +204,42 @@ namespace Intervu.Application.DTOs.Assessment
 
         [JsonPropertyName("child_skills")]
         public List<SurveyRoadmapChildSkillDto> ChildSkills { get; set; } = new();
+
+        [JsonPropertyName("recommended_coach")]
+        public SurveyRoadmapNodeCoachDto? RecommendedCoach { get; set; }
+
+        [JsonPropertyName("recommended_service")]
+        public SurveyRoadmapNodeServiceDto? RecommendedService { get; set; }
+    }
+
+    public class SurveyRoadmapNodeCoachDto
+    {
+        [JsonPropertyName("id")]
+        public string Id { get; set; } = string.Empty;
+
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("slug_profile_url")]
+        public string SlugProfileUrl { get; set; } = string.Empty;
+
+        [JsonPropertyName("avatar_url")]
+        public string AvatarUrl { get; set; } = string.Empty;
+    }
+
+    public class SurveyRoadmapNodeServiceDto
+    {
+        [JsonPropertyName("id")]
+        public string Id { get; set; } = string.Empty;
+
+        [JsonPropertyName("interview_type_name")]
+        public string InterviewTypeName { get; set; } = string.Empty;
+
+        [JsonPropertyName("price")]
+        public int Price { get; set; }
+
+        [JsonPropertyName("duration_minutes")]
+        public int DurationMinutes { get; set; }
     }
 
     public class SurveyRoadmapNodeAssessmentDto

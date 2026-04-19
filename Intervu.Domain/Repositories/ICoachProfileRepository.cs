@@ -36,5 +36,6 @@ namespace Intervu.Domain.Repositories
         void DeleteCoachProfile(Guid id);
         Task<int> GetTotalCoachCountAsync();
         Task<List<CoachProfile>> GetTopPerformingCoachesAsync(int count);
+        Task<List<CoachProfile>> GetCoachCatalogForRoadmapAsync(int limit);
     }
 }

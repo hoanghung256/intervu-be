@@ -28,6 +28,51 @@ namespace Intervu.Application.DTOs.Assessment
 
         [JsonPropertyName("gap")]
         public AiGapDto Gap { get; set; } = new();
+
+        [JsonPropertyName("coach_catalog")]
+        public List<AiCoachCatalogEntryDto> CoachCatalog { get; set; } = new();
+    }
+
+    public class AiCoachCatalogEntryDto
+    {
+        [JsonPropertyName("id")]
+        public string Id { get; set; } = string.Empty;
+
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("slug_profile_url")]
+        public string SlugProfileUrl { get; set; } = string.Empty;
+
+        [JsonPropertyName("avatar_url")]
+        public string AvatarUrl { get; set; } = string.Empty;
+
+        [JsonPropertyName("skills")]
+        public List<string> Skills { get; set; } = new();
+
+        [JsonPropertyName("bio")]
+        public string Bio { get; set; } = string.Empty;
+
+        [JsonPropertyName("services")]
+        public List<AiCoachCatalogServiceDto> Services { get; set; } = new();
+    }
+
+    public class AiCoachCatalogServiceDto
+    {
+        [JsonPropertyName("id")]
+        public string Id { get; set; } = string.Empty;
+
+        [JsonPropertyName("interview_type_name")]
+        public string InterviewTypeName { get; set; } = string.Empty;
+
+        [JsonPropertyName("price")]
+        public int Price { get; set; }
+
+        [JsonPropertyName("duration_minutes")]
+        public int DurationMinutes { get; set; }
+
+        [JsonPropertyName("aim_level_hint")]
+        public string AimLevelHint { get; set; } = string.Empty;
     }
 
     public class AiTargetSkillDto
@@ -99,6 +144,13 @@ namespace Intervu.Application.DTOs.Assessment
 
         [JsonPropertyName("evaluation")]
         public List<AiEvaluationItemDto> Evaluation { get; set; } = new();
+
+        /// <summary>
+        /// Optional: when set, AI service updates only the node with matching skill_id
+        /// using the deterministic progress formula (no LLM).
+        /// </summary>
+        [JsonPropertyName("target_node_id")]
+        public string? TargetNodeId { get; set; }
     }
 
     public class AiEvaluationItemDto

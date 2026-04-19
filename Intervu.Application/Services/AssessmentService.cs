@@ -18,17 +18,22 @@ namespace Intervu.Application.Services
     {
         private readonly IUserSkillAssessmentSnapshotRepository _snapshotRepository;
         private readonly IInterviewRoomRepository _roomRepository;
+        private readonly ICoachProfileRepository _coachProfileRepository;
         private readonly IAiService _aiService;
         private readonly ILogger<AssessmentService> _logger;
+
+        private const int CoachCatalogLimit = 60;
 
         public AssessmentService(
             IUserSkillAssessmentSnapshotRepository snapshotRepository,
             IInterviewRoomRepository roomRepository,
+            ICoachProfileRepository coachProfileRepository,
             IAiService aiService,
             ILogger<AssessmentService> logger)
         {
             _snapshotRepository = snapshotRepository;
             _roomRepository = roomRepository;
+            _coachProfileRepository = coachProfileRepository;
             _aiService = aiService;
             _logger = logger;
         }
@@ -254,6 +259,7 @@ namespace Intervu.Application.Services
                     Weak = gap.Weak ?? new List<string>(),
                     Missing = gap.Missing ?? new List<string>(),
                 },
+                CoachCatalog = await BuildCoachCatalogAsync(),
             };
 
             var aiResponse = await _aiService.GenerateRoadmapAsync(roadmapRequest, cancellationToken, useCase: "GenerateRoadmap");
@@ -351,16 +357,47 @@ namespace Intervu.Application.Services
                 }).ToList()
             };
 
-            // Append mock history to the first phase that still has incomplete nodes (the active phase)
             var currentRoadmap = MapRoadmapToSurveyDto(snapshot.Roadmap)!;
-            var activePhase = currentRoadmap.Phases
-                .FirstOrDefault(p => p.Nodes.Any(n => n.Assessment.Status != "Complete"))
+
+            // Prefer the phase that owns the linked roadmap node; fall back to first phase
+            // with incomplete nodes. This keeps mock history anchored to the node the
+            // candidate actually booked against (roadmap-driven flow).
+            var targetNodeId = room.RoadmapNodeId;
+            SurveyRoadmapPhaseDto? owningPhase = null;
+            if (!string.IsNullOrWhiteSpace(targetNodeId))
+            {
+                owningPhase = currentRoadmap.Phases
+                    .FirstOrDefault(p => p.Nodes.Any(n => n.SkillId == targetNodeId));
+            }
+
+            var activePhase = owningPhase
+                ?? currentRoadmap.Phases
+                    .FirstOrDefault(p => p.Nodes.Any(n => n.Assessment.Status != "Complete"))
                 ?? currentRoadmap.Phases.Last();
 
             // Avoid duplicates: skip if this room was already recorded
             if (!activePhase.MockHistory.Any(m => m.MockId == mockEntry.MockId))
             {
                 activePhase.MockHistory.Add(mockEntry);
+            }
+
+            // When the room is linked to a specific roadmap node, update that node
+            // deterministically in C# and skip the LLM call entirely.
+            if (owningPhase != null && !string.IsNullOrWhiteSpace(targetNodeId))
+            {
+                var targetNode = owningPhase.Nodes.FirstOrDefault(n => n.SkillId == targetNodeId);
+                if (targetNode != null)
+                {
+                    ApplyDeterministicNodeUpdate(targetNode, room.EvaluationResults);
+                }
+
+                snapshot.Roadmap = MapRoadmap(currentRoadmap);
+                await _snapshotRepository.UpsertSnapshotAsync(snapshot, cancellationToken);
+
+                _logger.LogInformation(
+                    "UpdateRoadmapAfterInterview: node {NodeId} updated deterministically for candidate {CandidateId} after room {RoomId}",
+                    targetNodeId, candidateId, interviewRoomId);
+                return;
             }
 
             // Ask AI to recalculate node progress based on evaluation scores
@@ -375,7 +412,8 @@ namespace Intervu.Application.Services
                     Score = e.Score,
                     Question = e.Question,
                     Answer = e.Answer
-                }).ToList()
+                }).ToList(),
+                TargetNodeId = targetNodeId
             };
 
             var aiResponse = await _aiService.UpdateRoadmapProgressAsync(aiRequest, cancellationToken, useCase: "UpdateRoadmapProgress");
@@ -422,6 +460,61 @@ namespace Intervu.Application.Services
             await _snapshotRepository.UpsertSnapshotAsync(snapshot, cancellationToken);
 
             _logger.LogInformation("UpdateRoadmapAfterInterview: roadmap updated for candidate {CandidateId} after room {RoomId}", candidateId, interviewRoomId);
+        }
+
+        /// <summary>
+        /// Deterministic node progress formula — mirrors the AI service's
+        /// node-targeted branch. progress = round(avg_score / 10 * 100), clamped to
+        /// the current progress (monotonic). Status: >=80 Complete, >=40 Weak, else Missing.
+        /// </summary>
+        private static void ApplyDeterministicNodeUpdate(SurveyRoadmapNodeDto node, IEnumerable<EvaluationResult> evaluations)
+        {
+            var scored = evaluations?.Where(e => e.Score > 0).Select(e => e.Score).ToList() ?? new List<int>();
+            if (scored.Count == 0) return;
+
+            var avgScore = scored.Average();
+            var newProgress = (int)Math.Round(avgScore / 10.0 * 100.0);
+            if (newProgress < 0) newProgress = 0;
+            if (newProgress > 100) newProgress = 100;
+
+            node.Assessment.Progress = Math.Max(node.Assessment.Progress, newProgress);
+            node.Assessment.Status = node.Assessment.Progress >= 80
+                ? "Complete"
+                : node.Assessment.Progress >= 40 ? "Weak" : "Missing";
+        }
+
+        private async Task<List<AiCoachCatalogEntryDto>> BuildCoachCatalogAsync()
+        {
+            try
+            {
+                var coaches = await _coachProfileRepository.GetCoachCatalogForRoadmapAsync(CoachCatalogLimit);
+                return coaches
+                    .Select(c => new AiCoachCatalogEntryDto
+                    {
+                        Id = c.Id.ToString(),
+                        Name = c.User?.FullName ?? string.Empty,
+                        SlugProfileUrl = c.User?.SlugProfileUrl ?? string.Empty,
+                        AvatarUrl = c.User?.ProfilePicture ?? string.Empty,
+                        Skills = (c.Skills ?? new List<Skill>()).Select(s => s.Name).Where(n => !string.IsNullOrWhiteSpace(n)).ToList(),
+                        Bio = c.Bio ?? string.Empty,
+                        Services = (c.InterviewServices ?? new List<CoachInterviewService>())
+                            .Select(s => new AiCoachCatalogServiceDto
+                            {
+                                Id = s.Id.ToString(),
+                                InterviewTypeName = s.InterviewType?.Name ?? string.Empty,
+                                Price = s.Price,
+                                DurationMinutes = s.DurationMinutes,
+                                AimLevelHint = string.Empty,
+                            })
+                            .ToList(),
+                    })
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "BuildCoachCatalogAsync: failed to assemble coach catalog; proceeding without per-node recommendations");
+                return new List<AiCoachCatalogEntryDto>();
+            }
         }
 
         private static RoadmapSnapshot? MapRoadmap(SurveyRoadmapDto? roadmap)
@@ -500,6 +593,20 @@ namespace Intervu.Application.Services
                                             .ToList(),
                                     })
                                     .ToList(),
+                                RecommendedCoach = node.RecommendedCoach == null ? null : new RoadmapNodeCoachSnapshot
+                                {
+                                    Id = node.RecommendedCoach.Id,
+                                    Name = node.RecommendedCoach.Name,
+                                    SlugProfileUrl = node.RecommendedCoach.SlugProfileUrl,
+                                    AvatarUrl = node.RecommendedCoach.AvatarUrl,
+                                },
+                                RecommendedService = node.RecommendedService == null ? null : new RoadmapNodeServiceSnapshot
+                                {
+                                    Id = node.RecommendedService.Id,
+                                    InterviewTypeName = node.RecommendedService.InterviewTypeName,
+                                    Price = node.RecommendedService.Price,
+                                    DurationMinutes = node.RecommendedService.DurationMinutes,
+                                },
                             })
                             .ToList(),
                     })
@@ -583,6 +690,20 @@ namespace Intervu.Application.Services
                                             .ToList(),
                                     })
                                     .ToList(),
+                                RecommendedCoach = node.RecommendedCoach == null ? null : new SurveyRoadmapNodeCoachDto
+                                {
+                                    Id = node.RecommendedCoach.Id,
+                                    Name = node.RecommendedCoach.Name,
+                                    SlugProfileUrl = node.RecommendedCoach.SlugProfileUrl,
+                                    AvatarUrl = node.RecommendedCoach.AvatarUrl,
+                                },
+                                RecommendedService = node.RecommendedService == null ? null : new SurveyRoadmapNodeServiceDto
+                                {
+                                    Id = node.RecommendedService.Id,
+                                    InterviewTypeName = node.RecommendedService.InterviewTypeName,
+                                    Price = node.RecommendedService.Price,
+                                    DurationMinutes = node.RecommendedService.DurationMinutes,
+                                },
                             })
                             .ToList(),
                     })
