@@ -87,15 +87,13 @@ namespace Intervu.Application.UseCases.BookingRequest
             {
                 var firstRound = bookingRequest.Rounds.OrderBy(r => r.RoundNumber).FirstOrDefault();
                 var scheduledTime = firstRound?.StartTime ?? DateTime.UtcNow;
+                // Calculate refund amount based on all active rounds in the booking request
+                // Because may have a case Candidate cancel 1 round in booking request with multiple rounds, 
+                // so only refund for the cancelled round, not the whole booking request
+                var roundsToCancel = bookingRequest.Rounds.Where(r => r.Status == InterviewRoundStatus.Active).ToList();
+                refundAmount = roundsToCancel.Sum(r => r.Price);
 
-                try
-                {
-                    refundAmount = _refundPolicy.CalculateRefundAmount(payment.Amount, scheduledTime, DateTime.UtcNow);
-                }
-                catch
-                {
-                    refundAmount = payment.Amount;
-                }
+                refundAmount = _refundPolicy.CalculateRefundAmount(refundAmount, scheduledTime, DateTime.UtcNow);
 
                 // Refund for Candidate
                 //_backgroundService.Enqueue<IPaymentService>(
@@ -135,8 +133,11 @@ namespace Intervu.Application.UseCases.BookingRequest
             }
 
             // Restore availability blocks for all rounds back to Available
+            // and transition all non-cancelled rounds to Cancelled
             foreach (var round in bookingRequest.Rounds)
             {
+                if (round.Status == InterviewRoundStatus.Cancelled)
+                    continue;
                 if (round.AvailabilityBlocks == null) continue;
                 foreach (var block in round.AvailabilityBlocks)
                 {
@@ -144,11 +145,13 @@ namespace Intervu.Application.UseCases.BookingRequest
                     block.InterviewRoundId = null;
                     _availabilityRepo.UpdateAsync(block);
                 }
+                round.Status = InterviewRoundStatus.Cancelled;
             }
 
             _bookingRepo.UpdateAsync(bookingRequest);
             await _bookingRepo.SaveChangesAsync();
 
+            // Send cancellation emails to both candidate and coach
             try
             {
                 var candidate = await _userRepository.GetByIdAsync(bookingRequest.CandidateId);
