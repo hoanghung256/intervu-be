@@ -1,6 +1,7 @@
 ﻿using Hangfire;
 using Intervu.Application.Interfaces.BackgroundJobs;
 using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.UseCases.InterviewBooking;
 using Intervu.Application.Interfaces.UseCases.Notification;
 using Intervu.Application.Services;
 using Intervu.Domain.Entities.Constants;
@@ -32,10 +33,7 @@ namespace Intervu.Infrastructure.BackgroundJobs
         public string JobId => "InterviewMonitor";
         public string CronExpression => Cron.Minutely();
 
-        // This job runs every minute to:
-        // 1. Move rooms from Scheduled to Ongoing if their scheduled time is within the next 5 minutes.
-        // 2. (Optional) Move rooms from Ongoing to Completed if they have been ongoing for more than 1 hour. 
-        // This part is currently not implemented to avoid edge cases with interviews that run longer than expected. 
+        // Runs every minute to keep interview room status in sync with schedule.
         public async Task ExecuteAsync()
         {
             var now = DateTime.UtcNow;
@@ -65,6 +63,38 @@ namespace Intervu.Infrastructure.BackgroundJobs
                 {
                     _backgroundService.Enqueue<INotificationUseCase>(
                         uc => uc.SendInterviewReminderAsync(room.Id));
+                }
+            }
+
+            // Complete rooms that are overdue by 60 minutes after planned end.
+            var ongoingRooms = await _db.InterviewRooms
+                .Where(room => room.Status == InterviewRoomStatus.Ongoing &&
+                               room.ScheduledTime.HasValue &&
+                               room.DurationMinutes.HasValue)
+                .ToListAsync();
+
+            var roomsToComplete = ongoingRooms
+                .Where(room => room.ScheduledTime!.Value
+                    .AddMinutes(room.DurationMinutes!.Value + 60) <= now)
+                .ToList();
+
+            if (roomsToComplete.Count != 0)
+            {
+                foreach (var room in roomsToComplete)
+                {
+                    room.Status = InterviewRoomStatus.Completed;
+                    _cache.Update(room);
+                }
+
+                _db.InterviewRooms.UpdateRange(roomsToComplete);
+                await _db.SaveChangesAsync();
+                _logger.LogInformation("Changed rooms to Completed: {RoomIds}", string.Join(", ", roomsToComplete.Select(r => r.Id)));
+
+                // Queue payout processing for rooms completed in this run.
+                foreach (var room in roomsToComplete)
+                {
+                    _backgroundService.Enqueue<IPayoutForCoachAfterInterview>(
+                        uc => uc.ExecuteAsync(room.Id));
                 }
             }
         }
