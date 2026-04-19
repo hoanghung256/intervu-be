@@ -386,6 +386,23 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             return await _context.CoachProfiles.CountAsync();
         }
 
+        public async Task<List<CoachProfile>> GetCoachCatalogForRoadmapAsync(int limit)
+        {
+            if (limit <= 0) limit = 60;
+
+            return await _context.CoachProfiles
+                .Include(p => p.User)
+                .Include(p => p.Skills)
+                .Include(p => p.InterviewServices)
+                    .ThenInclude(s => s.InterviewType)
+                .Where(p => p.Status == CoachProfileStatus.Enable
+                            && p.InterviewServices.Any())
+                .OrderByDescending(p => _context.Feedbacks.Where(f => f.CoachId == p.Id).Count())
+                .ThenByDescending(p => _context.Feedbacks.Where(f => f.CoachId == p.Id).Average(f => (double?)f.Rating) ?? 0)
+                .Take(limit)
+                .ToListAsync();
+        }
+
         public async Task<List<CoachProfile>> GetTopPerformingCoachesAsync(int count)
         {
             // Ranking logic: Coaches with the most completed interviews and highest ratings

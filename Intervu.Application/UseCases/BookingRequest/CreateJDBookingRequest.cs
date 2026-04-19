@@ -150,7 +150,8 @@ namespace Intervu.Application.UseCases.BookingRequest
                     AimLevel = dto.AimLevel,
                     TotalAmount = totalAmount,
                     ExpiresAt = DateTime.UtcNow.Add(DefaultExpiration),
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    RoadmapNodeId = dto.RoadmapNodeId
                 };
 
                 // Link rounds to the booking request

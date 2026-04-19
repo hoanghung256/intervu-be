@@ -3,17 +3,20 @@ using System;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
+namespace Intervu.Infrastructure.Persistence.SqlServer.Migrations
 {
     [DbContext(typeof(IntervuPostgreDbContext))]
-    partial class IntervuPostgreDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260419170923_AddRoadmapNodeIdToBookingAndRoom")]
+    partial class AddRoadmapNodeIdToBookingAndRoom
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2298,7 +2301,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             CreatedAt = new DateTime(2026, 1, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
                             InterviewExperienceId = new Guid("a1b2c3d4-e5f6-4a1b-8c2d-3e4f5a6b7c8d"),
-                            IsHidden = false,
                             IsHot = true,
                             Level = 3,
                             Round = 2,
@@ -2317,7 +2319,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             CreatedAt = new DateTime(2026, 1, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
                             InterviewExperienceId = new Guid("a1b2c3d4-e5f6-4a1b-8c2d-3e4f5a6b7c8d"),
-                            IsHidden = false,
                             IsHot = true,
                             Level = 3,
                             Round = 9,
@@ -2336,7 +2337,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             CreatedAt = new DateTime(2026, 1, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedBy = new Guid("0d0b8b1e-2e2c-43e2-9d8e-7d2f7a2a1a11"),
                             InterviewExperienceId = new Guid("b2c3d4e5-f6a1-4b2c-9d3e-4f5a6b7c8d9e"),
-                            IsHidden = false,
                             IsHot = false,
                             Level = 2,
                             Round = 2,
@@ -2355,7 +2355,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Migrations
                             CreatedAt = new DateTime(2026, 2, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CreatedBy = new Guid("2f8c7a6b-6d5e-4e2f-8c7a-9d6e5c4b3a33"),
                             InterviewExperienceId = new Guid("c3d4e5f6-a1b2-4c3d-0e4f-5a6b7c8d9e0f"),
-                            IsHidden = false,
                             IsHot = false,
                             Level = 1,
                             Round = 7,

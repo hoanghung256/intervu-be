@@ -54,7 +54,7 @@ namespace Intervu.Domain.Entities
         public Guid? BookingRequestId { get; set; }
 
         /// <summary>
-        /// FK to CoachInterviewService — the service type for this room
+        /// FK to CoachInterviewService ï¿½ the service type for this room
         /// </summary>
         public Guid? CoachInterviewServiceId { get; set; }
 
@@ -67,6 +67,13 @@ namespace Intervu.Domain.Entities
         /// Which round number this room belongs to (for JD multi-round Flow C)
         /// </summary>
         public int? RoundNumber { get; set; }
+
+        /// <summary>
+        /// Optional: the roadmap node (skill_id) this interview was booked against.
+        /// Carried from BookingRequest.RoadmapNodeId so post-interview evaluation
+        /// can deterministically update the originating node.
+        /// </summary>
+        public string? RoadmapNodeId { get; set; }
 
         // Store the evaluation structure as a JSON string in the database, EF purpose
         [Column(TypeName = "jsonb")]

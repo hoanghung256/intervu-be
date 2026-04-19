@@ -41,6 +41,12 @@ namespace Intervu.Application.DTOs.BookingRequest
         [Required]
         [MinLength(1, ErrorMessage = "At least 1 round is required")]
         public List<CreateInterviewRoundDto> Rounds { get; set; } = [];
+
+        /// <summary>
+        /// Optional: roadmap node skill_id this booking targets — propagated to InterviewRoom
+        /// so the post-interview update can deterministically update the originating node.
+        /// </summary>
+        public string? RoadmapNodeId { get; set; }
     }
 
     /// <summary>

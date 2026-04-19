@@ -19,6 +19,12 @@ namespace Intervu.Application.DTOs.InterviewBooking
         [Required]
         [Url]
         public string ReturnUrl { get; set; } = string.Empty;
+        
+        /// <summary>
+        /// Optional: roadmap node skill_id this booking targets — propagated to InterviewRoom
+        /// so the post-interview update can deterministically update the originating node.
+        /// </summary>
+        public string? RoadmapNodeId { get; set; }
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {

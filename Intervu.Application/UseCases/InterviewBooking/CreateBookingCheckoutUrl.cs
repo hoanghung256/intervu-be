@@ -62,7 +62,8 @@ namespace Intervu.Application.UseCases.InterviewBooking
             Guid coachAvailabilityId,
             Guid coachInterviewServiceId,
             DateTime startTime,
-            string returnUrl)
+            string returnUrl,
+            string? roadmapNodeId = null)
         {
             await _unitOfWork.BeginTransactionAsync();
             try
@@ -137,7 +138,8 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     ExpiresAt = (paymentAmount == 0)
                         ? DateTime.UtcNow.AddHours(24)
                         : DateTime.UtcNow.AddMinutes(5),
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    RoadmapNodeId = roadmapNodeId
                 };
 
                 // 6. Create 1 InterviewRound linked to the BookingRequest
@@ -238,6 +240,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
                         CoachInterviewServiceId = coachInterviewServiceId,
                         AimLevel = null,
                         RoundNumber = 1,
+                        RoadmapNodeId = roadmapNodeId,
                         EvaluationResults = await _createEvaluationResults.ExecuteAsync(coachInterviewServiceId),
                         IsEvaluationCompleted = false
                     };

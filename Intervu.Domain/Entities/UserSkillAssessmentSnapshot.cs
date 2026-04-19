@@ -240,6 +240,42 @@ namespace Intervu.Domain.Entities
 
         [JsonPropertyName("child_skills")]
         public List<RoadmapChildSkillSnapshot> ChildSkills { get; set; } = new();
+
+        [JsonPropertyName("recommended_coach")]
+        public RoadmapNodeCoachSnapshot? RecommendedCoach { get; set; }
+
+        [JsonPropertyName("recommended_service")]
+        public RoadmapNodeServiceSnapshot? RecommendedService { get; set; }
+    }
+
+    public class RoadmapNodeCoachSnapshot
+    {
+        [JsonPropertyName("id")]
+        public string Id { get; set; } = string.Empty;
+
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("slug_profile_url")]
+        public string SlugProfileUrl { get; set; } = string.Empty;
+
+        [JsonPropertyName("avatar_url")]
+        public string AvatarUrl { get; set; } = string.Empty;
+    }
+
+    public class RoadmapNodeServiceSnapshot
+    {
+        [JsonPropertyName("id")]
+        public string Id { get; set; } = string.Empty;
+
+        [JsonPropertyName("interview_type_name")]
+        public string InterviewTypeName { get; set; } = string.Empty;
+
+        [JsonPropertyName("price")]
+        public int Price { get; set; }
+
+        [JsonPropertyName("duration_minutes")]
+        public int DurationMinutes { get; set; }
     }
 
     public class RoadmapNodeAssessmentSnapshot
