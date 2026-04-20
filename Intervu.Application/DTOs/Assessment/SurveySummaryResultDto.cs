@@ -6,6 +6,9 @@ namespace Intervu.Application.DTOs.Assessment
 {
     public class EvaluateAssessmentRequestDto
     {
+        [JsonPropertyName("userId")]
+        public Guid UserId { get; set; }
+
         [JsonPropertyName("answer")]
         public SurveyAnswerJsonDto Answer { get; set; } = new();
     }

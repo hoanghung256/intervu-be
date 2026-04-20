@@ -20,6 +20,7 @@ using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Repositories;
 using System.Text.RegularExpressions;
+using Intervu.Application.Interfaces.UseCases.Assessment;
 
 namespace Intervu.Infrastructure.ExternalServices
 {
@@ -30,19 +31,22 @@ namespace Intervu.Infrastructure.ExternalServices
         private readonly ILogger<AiService> _logger;
         private readonly IAiTrafficLogRepository _aiTrafficLogRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ISaveAssessmentAnswersUseCase _saveAssessmentAnswersUseCase;
 
         public AiService(
             IHttpClientFactory httpClientFactory,
             IGetDuplicateQuestion getDuplicateQuestion,
             ILogger<AiService> logger,
             IAiTrafficLogRepository aiTrafficLogRepository,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            ISaveAssessmentAnswersUseCase saveAssessmentAnswersUseCase)
         {
             _httpClient = httpClientFactory.CreateClient("AiServiceClient");
             _getDuplicateQuestion = getDuplicateQuestion;
             _logger = logger;
             _aiTrafficLogRepository = aiTrafficLogRepository;
             _unitOfWork = unitOfWork;
+            _saveAssessmentAnswersUseCase = saveAssessmentAnswersUseCase;
         }
 
         public async Task<bool> StoreCvUrlAsync(Guid roomId, string cvUrl, IFormFile? file, string? useCase = null)
@@ -392,7 +396,14 @@ namespace Intervu.Infrastructure.ExternalServices
                     $"AI service request failed with status code {(int)response.StatusCode}: {rawContent}");
             }
 
-            return string.IsNullOrWhiteSpace(rawContent) ? "{}" : rawContent;
+            var normalizedRawContent = string.IsNullOrWhiteSpace(rawContent) ? "{}" : rawContent;
+
+            if (request.UserId != Guid.Empty)
+            {
+                await _saveAssessmentAnswersUseCase.SaveRawEvaluationAsync(request.UserId, normalizedRawContent);
+            }
+
+            return normalizedRawContent;
         }
 
         private static void NormalizeOptionLevels(JArray phase)

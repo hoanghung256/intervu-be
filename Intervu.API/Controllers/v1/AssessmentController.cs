@@ -6,7 +6,9 @@ using Intervu.Application.Interfaces.UseCases.Assessment;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -34,9 +36,20 @@ namespace Intervu.API.Controllers.v1
         [HttpPost("process")]
         public async Task<IActionResult> ProcessSurvey([FromBody] SurveyResponsesDto request, CancellationToken cancellationToken)
         {
+            var resolvedUserId = ResolveUserId(request.UserId);
+            if (resolvedUserId == Guid.Empty)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "UserId is required to persist assessment snapshot."
+                });
+            }
+
             var raw = await _aiService.EvaluateAssessmentRawAsync(
                 new EvaluateAssessmentRequestDto
                 {
+                    UserId = resolvedUserId,
                     Answer = request.Answer ?? new SurveyAnswerJsonDto()
                 },
                 cancellationToken,
@@ -45,11 +58,25 @@ namespace Intervu.API.Controllers.v1
             return Content(raw, "application/json");
         }
 
+        private Guid ResolveUserId(Guid bodyUserId)
+        {
+            if (bodyUserId != Guid.Empty)
+            {
+                return bodyUserId;
+            }
+
+            var claimValue = User?.Claims?.FirstOrDefault(c =>
+                c.Type == ClaimTypes.NameIdentifier || c.Type == "sub")?.Value;
+
+            return Guid.TryParse(claimValue, out var userId) ? userId : Guid.Empty;
+        }
+
         [HttpPost("evaluate-assessment")]
         public async Task<IActionResult> EvaluateAssessment(
             [FromBody] EvaluateAssessmentRequestDto request,
             CancellationToken cancellationToken)
         {
+            request.UserId = ResolveUserId(request.UserId);
             var raw = await _aiService.EvaluateAssessmentRawAsync(request, cancellationToken, useCase: "AutoAssessmentEvaluation");
             return Content(raw, "application/json");
         }
