@@ -94,7 +94,7 @@ namespace Intervu.Infrastructure.ExternalServices.AI
 
                 var chatResponse = JsonConvert.DeserializeObject<HfChatResponse>(responseBody);
 
-                _ = TryLogUsageAsync(chatResponse?.Usage, sw.ElapsedMilliseconds, useCase);
+                await TryLogUsageAsync(chatResponse?.Usage, sw.ElapsedMilliseconds, useCase);
 
                 var rawContent = chatResponse?.Choices?.FirstOrDefault()?.Message?.Content;
                 var parsed = ReasoningShared.ParseResults(rawContent);

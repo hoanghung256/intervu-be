@@ -69,6 +69,7 @@ namespace Intervu.Infrastructure.ExternalServices.AI
             var timeoutMs = _configuration.GetValue<int>("SmartSearch:LlmTimeoutMs", 8000); // 8 second default limit
             var reasoningUrl = _configuration["ReasoningApi:BaseUrl"] ?? HF_REASONING_URL;
             var reasoningModel = _configuration["ReasoningApi:ModelId"] ?? HF_REASONING_MODEL;
+            var maxTokens = _configuration.GetValue<int>("ReasoningApi:MaxTokens", 3072);
 
             var idList = string.Join(", ", candidates.Select(c => c.Id));
             var requestBody = new
@@ -79,7 +80,9 @@ namespace Intervu.Infrastructure.ExternalServices.AI
                     new { role = "system", content = ReasoningShared.BuildSystemPrompt(candidates.Count, idList) },
                     new { role = "user", content = ReasoningShared.BuildUserPrompt(query, candidates) }
                 },
-                temperature = 0.2
+                temperature = 0.2,
+                max_tokens = maxTokens,
+                stream = false
             };
 
             var jsonContent = new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8, "application/json");
@@ -105,7 +108,7 @@ namespace Intervu.Infrastructure.ExternalServices.AI
 
                 var responseBody = await response.Content.ReadAsStringAsync();
                 var aiResponse = JsonConvert.DeserializeObject<HuggingFaceChatResponse>(responseBody);
-                _ = TryLogUsageAsync(aiResponse?.Usage, sw.ElapsedMilliseconds, useCase);
+                await TryLogUsageAsync(aiResponse?.Usage, sw.ElapsedMilliseconds, useCase);
 
                 var rawText = aiResponse?.Choices?.FirstOrDefault()?.Message?.Content;
                 var jsonResultText = ExtractJsonPayload(rawText) ?? rawText;
