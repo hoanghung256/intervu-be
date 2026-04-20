@@ -72,5 +72,114 @@ namespace Intervu.Application.UseCases.Assessment
                 SavedAtUtc = DateTime.UtcNow
             };
         }
+
+        public async Task<SaveAssessmentAnswersResultDto> SaveRawEvaluationAsync(Guid userId, string rawEvaluationJson)
+        {
+            if (userId == Guid.Empty)
+            {
+                throw new InvalidOperationException("UserId is required.");
+            }
+
+            var snapshot = BuildSnapshotFromRawEvaluation(userId, rawEvaluationJson);
+            await _snapshotRepository.UpsertSnapshotAsync(snapshot);
+
+            return new SaveAssessmentAnswersResultDto
+            {
+                UserId = userId,
+                SavedAtUtc = DateTime.UtcNow
+            };
+        }
+
+        private static UserSkillAssessmentSnapshot BuildSnapshotFromRawEvaluation(Guid userId, string rawEvaluationJson)
+        {
+            var normalizedRaw = NormalizeJsonPayload(rawEvaluationJson);
+
+            try
+            {
+                using var document = JsonDocument.Parse(normalizedRaw);
+                var root = document.RootElement;
+
+                if (root.ValueKind != JsonValueKind.Object)
+                {
+                    return new UserSkillAssessmentSnapshot
+                    {
+                        UserId = userId,
+                        AnswerJson = normalizedRaw
+                    };
+                }
+
+                var answerJson = ExtractObjectJson(root, "answer", "answerJson");
+                var targetJson = ExtractObjectJson(root, "target", "targetJson");
+                var currentJson = ExtractObjectJson(root, "current", "currentJson");
+                var gapJson = ExtractObjectJson(root, "gapJson", "gap", "gap_json");
+                var roadmapJson = ExtractObjectJson(root, "roadmap", "roadMap", "roadMapJson");
+
+                return new UserSkillAssessmentSnapshot
+                {
+                    UserId = userId,
+                    AnswerJson = answerJson,
+                    TargetJson = targetJson,
+                    CurrentJson = currentJson,
+                    GapJson = gapJson,
+                    RoadMapJson = roadmapJson
+                };
+            }
+            catch (JsonException)
+            {
+                return new UserSkillAssessmentSnapshot
+                {
+                    UserId = userId,
+                    AnswerJson = normalizedRaw
+                };
+            }
+        }
+
+        private static string ExtractObjectJson(JsonElement root, params string[] propertyNames)
+        {
+            foreach (var propertyName in propertyNames)
+            {
+                if (!TryGetPropertyIgnoreCase(root, propertyName, out var propertyValue))
+                {
+                    continue;
+                }
+
+                if (propertyValue.ValueKind == JsonValueKind.Null || propertyValue.ValueKind == JsonValueKind.Undefined)
+                {
+                    return "{}";
+                }
+
+                return propertyValue.GetRawText();
+            }
+
+            return "{}";
+        }
+
+        private static bool TryGetPropertyIgnoreCase(JsonElement element, string propertyName, out JsonElement value)
+        {
+            foreach (var property in element.EnumerateObject())
+            {
+                if (string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
+                {
+                    value = property.Value;
+                    return true;
+                }
+            }
+
+            value = default;
+            return false;
+        }
+
+        private static string NormalizeJsonPayload(string? json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return "{}";
+            }
+
+            var trimmed = json.Trim();
+            return string.Equals(trimmed, "null", StringComparison.OrdinalIgnoreCase)
+                ? "{}"
+                : trimmed;
+        }
     }
 }
