@@ -207,26 +207,25 @@ namespace Intervu.Infrastructure
             services.AddHttpClient<IVectorStoreService, PineconeVectorStoreService>()
                 .AddHttpMessageHandler<ServiceMetricsHandler>();
 
-            // AI Reasoning Services
-            services.AddHttpClient<Application.Interfaces.ExternalServices.AI.ISmartSearchReasoningService, ExternalServices.AI.GeminiReasoningService>()
-                .AddHttpMessageHandler<ServiceMetricsHandler>();
+            // AI Python service
             services.AddHttpClient<IPythonAiService, ExternalServices.AI.PythonAiService>()
                 .AddHttpMessageHandler<ServiceMetricsHandler>();
-            services.AddHttpClient<IEmbeddingService, PineconeInferenceService>();
-            services.AddHttpClient<IVectorStoreService, PineconeVectorStoreService>();
 
             // AI Reasoning Services
             services.AddHttpClient<ExternalServices.AI.HuggingFaceReasoningService>();
             services.AddHttpClient<ExternalServices.AI.GeminiNativeReasoningService>();
+            services.AddHttpClient<ExternalServices.AI.GeminiReasoningService>();
             services.AddScoped<Application.Interfaces.ExternalServices.AI.ISmartSearchReasoningService>(sp =>
             {
                 var config = sp.GetRequiredService<IConfiguration>();
                 var provider = (config["ReasoningApi:Provider"] ?? "huggingface").Trim().ToLowerInvariant();
-                return provider == "gemini"
-                    ? sp.GetRequiredService<ExternalServices.AI.GeminiNativeReasoningService>()
-                    : sp.GetRequiredService<ExternalServices.AI.HuggingFaceReasoningService>();
+                return provider switch
+                {
+                    "gemini" => sp.GetRequiredService<ExternalServices.AI.GeminiNativeReasoningService>(),
+                    "gemini-hf" => sp.GetRequiredService<ExternalServices.AI.GeminiReasoningService>(),
+                    _ => sp.GetRequiredService<ExternalServices.AI.HuggingFaceReasoningService>()
+                };
             });
-            services.AddHttpClient<IPythonAiService, ExternalServices.AI.PythonAiService>();
 
 
             //Add HttpClient to call from API
