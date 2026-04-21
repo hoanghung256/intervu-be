@@ -16,7 +16,7 @@ namespace Intervu.API.Test.ApiTests.AuthController
             _api = new ApiHelper(factory.CreateClient());
         }
 
-        [Fact(Skip = "Untestable API")]
+        [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Authentication")]
         public async Task GoogleLogin_Abnormal_TokenMissing_ReturnsBadRequest()
@@ -25,7 +25,7 @@ namespace Intervu.API.Test.ApiTests.AuthController
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Missing token returns 400 BadRequest");
         }
 
-        [Fact(Skip = "Untestable API")]
+        [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Authentication")]
         public async Task GoogleLogin_Abnormal_BodyNull_ReturnsBadRequest()
@@ -34,7 +34,7 @@ namespace Intervu.API.Test.ApiTests.AuthController
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Null body returns 400 BadRequest");
         }
 
-        [Fact(Skip = "Untestable API")]
+        [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Authentication")]
         public async Task GoogleLogin_Boundary_IdTokenWhitespace_ReturnsBadRequest()
@@ -46,7 +46,7 @@ namespace Intervu.API.Test.ApiTests.AuthController
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Whitespace token returns 400 BadRequest");
         }
 
-        [Fact(Skip = "Untestable API")]
+        [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Authentication")]
         public async Task GoogleLogin_Abnormal_IdTokenInvalidSignature_ReturnsBadRequest()

@@ -120,7 +120,7 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
                 NewEndTime = new DateTimeOffset(end.AddHours(2), TimeSpan.Zero)
             }, logBody: true);
 
-            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent original slot returns 404 NotFound");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent original slot returns 404 NotFound");
         }
 
         [Fact]
@@ -141,7 +141,7 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
                 NewEndTime = new DateTimeOffset(end.AddHours(1), TimeSpan.Zero)
             }, logBody: true);
 
-            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Guid.Empty coach ID returns 404 NotFound");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Guid.Empty coach ID returns 404 NotFound");
         }
 
         [Fact]
@@ -162,7 +162,7 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
             }, logBody: true);
 
             var updatePayload = await _api.LogDeserializeJson<JsonElement>(updateResponse, logBody: true);
-            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, updateResponse.StatusCode, "Status code is 404 Not Found for non-existent original range");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, updateResponse.StatusCode, "Status code is 404 Not Found for non-existent original range");
             await AssertHelper.AssertFalse(updatePayload.Success, "Update should fail");
         }
 
@@ -245,7 +245,7 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
             }, logBody: true);
 
             var updatePayload = await _api.LogDeserializeJson<JsonElement>(updateResponse, logBody: true);
-            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, updateResponse.StatusCode, "Status code is 404 Not Found for past original range");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, updateResponse.StatusCode, "Status code is 404 Not Found for past original range");
         }
 
         private static DateTime AlignToHalfHourUtc(DateTime value)

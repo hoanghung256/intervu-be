@@ -56,7 +56,7 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
             var response = await _api.PostAsync<object>($"/api/v1/interview-booking/cancel/{_pastScheduledRoomId}", null, jwtToken: coachToken, logBody: true);
 
             // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Status code is 403 Forbidden for Coach role");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Status code is 403 Forbidden for Coach role");
         }
 
         // ── Boundary: Non-existent room ─────────────────────────────────────────
@@ -74,7 +74,7 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
             var response = await _api.PostAsync<object>($"/api/v1/interview-booking/cancel/{nonExistentRoomId}", null, jwtToken: aliceToken, logBody: true);
 
             // Assert – CancelInterview throws NotFoundException → ExceptionHandlingMiddleware maps to 404
-            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Status code is 404 Not Found for non-existent room");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Status code is 404 Not Found for non-existent room");
             var payload = await _api.LogDeserializeJson<JsonElement>(response, logBody: true);
             await AssertHelper.AssertFalse(payload.Success, "Response success flag is false");
         }

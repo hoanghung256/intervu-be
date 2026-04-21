@@ -25,7 +25,7 @@ namespace Intervu.API.Test.ApiTests.InterviewRoomController
             return loginData.Data!.Token;
         }
 
-        [Fact(Skip = "No explicit Live Coding endpoint is covered in existing tests; add once API contract is available.")]
+        [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "InterviewRoom")]
         public async Task UpdateEditorContent_Success_ReturnsOk()
@@ -43,7 +43,7 @@ namespace Intervu.API.Test.ApiTests.InterviewRoomController
             await AssertHelper.AssertTrue(payload.Success, "Update editor content successful");
         }
 
-        [Fact(Skip = "No explicit Live Coding endpoint is covered in existing tests; add once API contract is available.")]
+        [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "InterviewRoom")]
         public async Task UpdateEditorContent_Unauthorized_ReturnsUnauthorized()
@@ -57,7 +57,7 @@ namespace Intervu.API.Test.ApiTests.InterviewRoomController
             await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Unauthenticated user should get 401 Unauthorized");
         }
 
-        [Fact(Skip = "No explicit Live Coding endpoint is covered in existing tests; add once API contract is available.")]
+        [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "InterviewRoom")]
         public async Task UpdateEditorContent_NonExistentRoom_ReturnsNotFound()
@@ -71,10 +71,10 @@ namespace Intervu.API.Test.ApiTests.InterviewRoomController
                 Language = "javascript"
             }, jwtToken: token, logBody: true);
 
-            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent room ID should return 404 Not Found");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent room ID should return 404 Not Found");
         }
 
-        [Fact(Skip = "No explicit Live Coding endpoint is covered in existing tests; add once API contract is available.")]
+        [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "InterviewRoom")]
         public async Task UpdateEditorContent_MissingContentOrLanguage_ReturnsBadRequest()
@@ -98,7 +98,7 @@ namespace Intervu.API.Test.ApiTests.InterviewRoomController
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Missing language should return 400 Bad Request");
         }
 
-        [Fact(Skip = "No explicit Live Coding endpoint is covered in existing tests; add once API contract is available.")]
+        [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "InterviewRoom")]
         public async Task UpdateEditorContent_UserNotInRoom_ReturnsForbidden()

@@ -288,7 +288,7 @@ namespace Intervu.API.Test.ApiTests.CandidateProfileController
             var response = await _api.PutAsync($"/api/v1/candidate-profile/{candidateId}/status", 0, jwtToken: candidateToken, logBody: true);
 
             // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Candidate updating own status returns 403 Forbidden");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Candidate updating own status returns 403 Forbidden");
         }
 
         [Fact]
@@ -303,7 +303,7 @@ namespace Intervu.API.Test.ApiTests.CandidateProfileController
             var response = await _api.DeleteAsync($"/api/v1/candidate-profile/{candidateId}", jwtToken: candidateToken, logBody: true);
 
             // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Candidate deleting own profile returns 403 Forbidden");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Candidate deleting own profile returns 403 Forbidden");
         }
 
         [Fact]

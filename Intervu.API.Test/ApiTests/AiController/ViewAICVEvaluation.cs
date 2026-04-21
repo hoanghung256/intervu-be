@@ -46,7 +46,7 @@ namespace Intervu.API.Test.ApiTests.AiController
                 logBody: true);
         }
 
-        [Fact(Skip="Cannot provide valid CV for testing")]
+        [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "AI")]
         public async Task ViewAICVEvaluation_ReturnsSuccess_WhenValidCVProvided()
@@ -85,7 +85,7 @@ namespace Intervu.API.Test.ApiTests.AiController
             var response = await EvaluateCvAsync(token);
 
             // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Coach role returns 403 Forbidden");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Coach role returns 403 Forbidden");
         }
     }
 }

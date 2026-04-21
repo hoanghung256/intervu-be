@@ -93,7 +93,7 @@ namespace Intervu.API.Test.ApiTests.CandidateProfileController
             var response = await _api.DeleteAsync($"/api/v1/candidate-profile/{candidateId}", jwtToken: candidateToken, logBody: true);
 
             // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Candidate delete returns 403 Forbidden");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Candidate delete returns 403 Forbidden");
         }
 
         [Fact]

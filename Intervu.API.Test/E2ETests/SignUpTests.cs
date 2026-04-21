@@ -117,7 +117,7 @@ public class SignUpTests : BaseAutomationTest
 
         // Assert
         LogInfo("Verifying error message.");
-        await signUpPage.VerifyErrorToastMessageAsync("Registration failed. Email may already exist.");
+        await signUpPage.VerifyErrorToastMessageAsync("Email already exists");
     }
 
     [Fact]

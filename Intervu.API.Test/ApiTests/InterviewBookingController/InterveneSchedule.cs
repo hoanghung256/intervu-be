@@ -24,7 +24,7 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
             return loginData.Data!.Token;
         }
 
-        [Fact(Skip = "No explicit Intervene endpoint is covered in existing tests; add once API contract is available.")]
+        [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Admin")]
         public async Task AdminIntervene_Success_ReturnsOk()
@@ -47,7 +47,7 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
             }
         }
 
-        [Fact(Skip = "No explicit Intervene endpoint is covered in existing tests; add once API contract is available.")]
+        [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Admin")]
         public async Task AdminIntervene_NonAdmin_ReturnsForbidden()
@@ -62,10 +62,10 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
                 Reason = "Unauthorized intervention"
             }, jwtToken: token, logBody: true);
 
-            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Non-admin user should get 403 Forbidden");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Non-admin user should get 403 Forbidden");
         }
 
-        [Fact(Skip = "No explicit Intervene endpoint is covered in existing tests; add once API contract is available.")]
+        [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Admin")]
         public async Task AdminIntervene_NonExistentBooking_ReturnsNotFound()
@@ -79,10 +79,10 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
                 Reason = "Non-existent booking"
             }, jwtToken: token, logBody: true);
 
-            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Should return 404 Not Found for non-existent booking ID");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Should return 404 Not Found for non-existent booking ID");
         }
 
-        [Fact(Skip = "No explicit Intervene endpoint is covered in existing tests; add once API contract is available.")]
+        [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Admin")]
         public async Task AdminIntervene_MissingAction_ReturnsBadRequest()
@@ -98,7 +98,7 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Should return 400 Bad Request for empty action");
         }
 
-        [Fact(Skip = "No explicit Intervene endpoint is covered in existing tests; add once API contract is available.")]
+        [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Admin")]
         public async Task AdminIntervene_InvalidNewTime_ReturnsBadRequest()

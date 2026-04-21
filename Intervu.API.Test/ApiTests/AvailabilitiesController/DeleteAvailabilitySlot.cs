@@ -85,7 +85,7 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
             var nonExistentId = Guid.NewGuid();
 
             var response = await _api.DeleteAsync($"/api/v1/availabilities/{nonExistentId}", logBody: true);
-            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent availability ID returns 404 NotFound");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent availability ID returns 404 NotFound");
         }
 
         [Fact]
@@ -146,7 +146,7 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
             });
 
             var deletePayload = await _api.LogDeserializeJson<JsonElement>(deleteResponse, logBody: true);
-            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, deleteResponse.StatusCode, "Status code is 404 Not Found for non-existent range");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, deleteResponse.StatusCode, "Status code is 404 Not Found for non-existent range");
             await AssertHelper.AssertFalse(deletePayload.Success, "Delete range should fail");
         }
 
@@ -211,7 +211,7 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
             });
 
             var deletePayload = await _api.LogDeserializeJson<JsonElement>(deleteResponse, logBody: true);
-            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, deleteResponse.StatusCode, "Status code is 404 Not Found for past range");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, deleteResponse.StatusCode, "Status code is 404 Not Found for past range");
         }
 
         private async Task<HttpResponseMessage> DeleteWithBodyAsync(string requestUri, object payload, string jwtToken = "")

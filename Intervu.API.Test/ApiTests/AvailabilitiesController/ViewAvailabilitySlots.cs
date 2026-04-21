@@ -141,7 +141,7 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Availability")]
-        public async Task Handle_ViewCoachAvailabilities_WithInvalidMonth_ReturnsInternalServerError()
+        public async Task Handle_ViewCoachAvailabilities_WithInvalidMonth_ReturnsBadRequest()
         {
             // Arrange – month=13 is out of calendar range; no server-side query param validation expected
             // Act
@@ -149,9 +149,9 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
                 $"/api/v1/availabilities/{BobCoachId}?month=13&year={DateTime.UtcNow.Year}",
                 logBody: true);
 
-            // Assert – API returns 200 (filters produce zero results for an impossible month)
+            // Assert – API returns 400 Bad Request for out-of-range month
             var payload = await _api.LogDeserializeJson<JsonElement>(response, logBody: true);
-            await AssertHelper.AssertEqual(HttpStatusCode.InternalServerError, response.StatusCode, "Invalid month=13 will return 500 Internal Server Error");
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Invalid month=13 will return 400 Bad Request");
             await AssertHelper.AssertFalse(payload.Success, "Request fails with out-of-range month");
         }
 

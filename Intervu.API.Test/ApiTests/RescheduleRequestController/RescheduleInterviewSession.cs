@@ -337,7 +337,7 @@ namespace Intervu.API.Test.ApiTests.RescheduleRequestController
                 Reason = "User not part of this interview session."
             }, jwtToken: outsiderToken, logBody: true);
 
-            await AssertHelper.AssertEqual(HttpStatusCode.Conflict, response.StatusCode, "User not in room should get 403 Forbidden");
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "User not in room should get 403 Forbidden");
         }
     }
 }

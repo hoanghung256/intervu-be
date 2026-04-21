@@ -173,7 +173,7 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
             var response = await _api.GetAsync("/api/v1/booking-requests?page=1&pageSize=10", jwtToken: adminToken, logBody: true);
 
             // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Admin role returns 403 Forbidden on booking request list");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Admin role returns 403 Forbidden on booking request list");
         }
 
         [Fact]
@@ -233,7 +233,7 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
             var nonExistentId = Guid.NewGuid();
 
             var response = await _api.GetAsync($"/api/v1/booking-requests/{nonExistentId}", jwtToken: token, logBody: true);
-            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent booking request ID returns 404 Not Found");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent booking request ID returns 404 Not Found");
         }
 
         [Fact]

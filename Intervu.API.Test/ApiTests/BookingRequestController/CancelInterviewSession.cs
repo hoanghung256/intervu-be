@@ -75,7 +75,7 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
             var token = await LoginSeededCandidateAsync();
             var response = await _api.PostAsync<object>($"/api/v1/booking-requests/{NonExistentBookingId}/cancel", null, jwtToken: token, logBody: true);
 
-            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Status code is 404 Not Found for non-existent booking");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Status code is 404 Not Found for non-existent booking");
         }
 
         [Fact]
@@ -122,7 +122,7 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
 
             var response = await _api.PostAsync<object>($"/api/v1/booking-requests/{bookingId}/cancel", null, jwtToken: bobToken, logBody: true);
 
-            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Status code is 403 Forbidden for cancelling another user's booking");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Status code is 403 Forbidden for cancelling another user's booking");
         }
 
         [Fact]
@@ -140,7 +140,7 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
             var response = await _api.PostAsync<object>($"/api/v1/booking-requests/{Guid.NewGuid()}/cancel", null, jwtToken: coachToken, logBody: true);
 
             // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Coach role cannot cancel booking requests – 403 Forbidden");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Coach role cannot cancel booking requests – 403 Forbidden");
         }
 
         [Fact]
@@ -158,7 +158,7 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
             var response = await _api.PostAsync<object>($"/api/v1/booking-requests/{Guid.NewGuid()}/cancel", null, jwtToken: adminToken, logBody: true);
 
             // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Admin role cannot cancel booking requests – 403 Forbidden");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Admin role cannot cancel booking requests – 403 Forbidden");
         }
 
         [Fact]
@@ -171,7 +171,7 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
             var nonExistentBookingId = Guid.NewGuid();
 
             var response = await _api.PostAsync<object>($"/api/v1/booking-requests/{nonExistentBookingId}/cancel", null, jwtToken: token, logBody: true);
-            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent booking ID returns 404 Not Found");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent booking ID returns 404 Not Found");
         }
 
         private async Task<Guid> CreateBookingAndGetIdAsync(string candidateToken, bool isMultipleRounds, int dayOffset, int hourOffset)

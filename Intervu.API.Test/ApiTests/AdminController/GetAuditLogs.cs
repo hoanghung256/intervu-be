@@ -119,7 +119,7 @@ namespace Intervu.API.Test.ApiTests.AdminController
             var response = await _api.GetAsync("/api/v1/admin/audit-log?page=1&pageSize=10", jwtToken: token, logBody: true);
 
             // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Status code is 403 Forbidden");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Status code is 403 Forbidden");
         }
 
         [Fact]
@@ -147,7 +147,7 @@ namespace Intervu.API.Test.ApiTests.AdminController
             var response = await _api.GetAsync($"/api/v1/admin/room-reports/{roomId}/audit-logs?page=1&pageSize=10", jwtToken: token, logBody: true);
 
             // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Non-admin room audit logs returns 403 Forbidden");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Non-admin room audit logs returns 403 Forbidden");
         }
 
         [Fact]

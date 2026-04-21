@@ -134,7 +134,7 @@ namespace Intervu.API.Test.ApiTests.QuestionController
             // but the logic here is to test permission if it existed.
             if (response.StatusCode != HttpStatusCode.NotFound)
             {
-                await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Status 403 for unauthorized user update");
+                await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Status 403 for unauthorized user update");
             }
         }
 

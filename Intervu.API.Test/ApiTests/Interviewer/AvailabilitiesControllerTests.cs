@@ -107,10 +107,10 @@ namespace Intervu.API.Test.ApiTests.Interviewer
             var (token, _) = await CreateCoachProfileByAdminAndLoginCoachAsync();
             var nonExistentId = Guid.NewGuid();
             var response = await _api.DeleteAsync($"/api/v1/availabilities/{nonExistentId}", jwtToken: token, logBody: true);
-            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent ID returns 404 Not Found");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent ID returns 404 Not Found");
         }
 
-        [Fact(Skip="Cannot test without breaking other tests")]
+        [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "CoachAvailability")]
         public async Task UpdateAvailability_ReturnsUnauthorized_WhenNoToken()

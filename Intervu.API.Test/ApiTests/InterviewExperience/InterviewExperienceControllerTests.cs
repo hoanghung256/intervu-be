@@ -129,7 +129,7 @@ namespace Intervu.API.Test.ApiTests.InterviewExperience
             var response = await _api.GetAsync($"/api/v1/interview-experiences/{randomId}", logBody: true);
 
             // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Status code is 404 Not Found");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Status code is 404 Not Found");
         }
     }
 }

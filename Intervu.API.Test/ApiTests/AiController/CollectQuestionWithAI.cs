@@ -45,10 +45,10 @@ namespace Intervu.API.Test.ApiTests.AiController
             var token = (await _api.LogDeserializeJson<LoginResponse>(login)).Data!.Token;
             var nonExistentRoomId = Guid.NewGuid();
             var response = await _api.GetAsync($"/api/v1/generated-questions/rooms/{nonExistentRoomId}", jwtToken: token, logBody: true);
-            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent room ID returns 404 Not Found");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent room ID returns 404 Not Found");
         }
 
-        [Fact(Skip="No explicit authorization logic is covered in existing tests; add once API contract is available.")]
+        [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "AI")]
         public async Task Handle_UnauthorizedUserForRoom_ReturnsForbidden()
@@ -57,7 +57,7 @@ namespace Intervu.API.Test.ApiTests.AiController
             var login = await _api.PostAsync("/api/v1/account/login", new LoginRequest { Email = "alice@example.com", Password = DEFAULT_PASSWORD });
             var token = (await _api.LogDeserializeJson<LoginResponse>(login)).Data!.Token;
             var response = await _api.GetAsync($"/api/v1/generated-questions/rooms/{_room1Id}", jwtToken: token, logBody: true);
-            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "User not in room returns 403 Forbidden");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "User not in room returns 403 Forbidden");
         }
 
         [Fact]

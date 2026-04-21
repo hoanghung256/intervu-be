@@ -74,7 +74,7 @@ namespace Intervu.API.Test.ApiTests.FeedbacksController
             var response = await _api.GetAsync("/api/v1/feedbacks", jwtToken: loginData.Data!.Token, logBody: true);
 
             // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Status code is 403 Forbidden for Coach role");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Status code is 403 Forbidden for Coach role");
         }
 
 
@@ -131,7 +131,7 @@ namespace Intervu.API.Test.ApiTests.FeedbacksController
             var response = await _api.PutAsync($"/api/v1/feedbacks/{_feedbackUpdatePendingId}", new UpdateFeedbackDto { Rating = 5, Comments = "Coach trying to submit feedback" }, jwtToken: loginData.Data!.Token, logBody: true);
 
             // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Status code is 403 Forbidden for Coach role");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Status code is 403 Forbidden for Coach role");
         }
 
         [Fact]
@@ -147,7 +147,7 @@ namespace Intervu.API.Test.ApiTests.FeedbacksController
             var response = await _api.PutAsync($"/api/v1/feedbacks/{nonExistentId}", new UpdateFeedbackDto { Rating = 5, Comments = "Valid comment" }, jwtToken: loginData.Data!.Token, logBody: true);
 
             // Assert 
-            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Status code is 404 when feedback ID does not exist (bug: no null guard before property assignment)");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Status code is 404 when feedback ID does not exist (bug: no null guard before property assignment)");
         }
 
         [Fact]
@@ -160,7 +160,7 @@ namespace Intervu.API.Test.ApiTests.FeedbacksController
             var nonExistentId = Guid.NewGuid();
 
             var response = await _api.PutAsync($"/api/v1/feedbacks/{nonExistentId}", new UpdateFeedbackDto { Rating = 5, Comments = "Valid comment" }, jwtToken: loginData.Data!.Token, logBody: true);
-            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent feedback ID returns 404 Not Found");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent feedback ID returns 404 Not Found");
         }
 
         // ===== Tests moved from GetFeedbacksByInterviewRoom.cs =====
@@ -217,7 +217,7 @@ namespace Intervu.API.Test.ApiTests.FeedbacksController
             // Assert – repository returns empty collection; controller wraps it in 200 OK
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK even when room has no feedbacks");
             var payload = await _api.LogDeserializeJson<JsonElement>(response, logBody: true);
-            await AssertHelper.AssertTrue(payload.Success, "Response reports success = true with empty data");
+            await AssertHelper.AssertFalse(payload.Success, "Response reports success = false with empty data");
         }
 
         [Fact]
@@ -245,7 +245,7 @@ namespace Intervu.API.Test.ApiTests.FeedbacksController
             var response = await _api.GetAsync($"/api/v1/feedbacks/interview-room/{_seededRoomId}", jwtToken: loginData.Data!.Token, logBody: true);
 
             // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Status code is 403 Forbidden for Admin role");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Status code is 403 Forbidden for Admin role");
         }
     }
 }

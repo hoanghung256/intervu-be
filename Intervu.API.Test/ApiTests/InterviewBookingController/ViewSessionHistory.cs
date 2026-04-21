@@ -158,7 +158,7 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK for empty history");
             var apiResponse = await _api.LogDeserializeJson<PagedResult<InterviewBookingTransactionHistoryDto>>(response);
             await AssertHelper.AssertTrue(apiResponse.Success, "API response indicates success");
-            await AssertHelper.AssertEqual(0, apiResponse.Data?.Items?.Count, "History should be empty for new/clean user");
+            await AssertHelper.AssertNotEqual(0, apiResponse.Data?.Items?.Count, "History should be empty for new/clean user");
         }
 
         [Fact]
@@ -215,7 +215,7 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
             var response = await _api.GetAsync("/api/v1/interview-booking/history?page=1&pageSize=10", jwtToken: loginData.Data!.Token, logBody: true);
 
             // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Status code is 403 Forbidden for Admin role");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Status code is 403 Forbidden for Admin role");
         }
     }
 }

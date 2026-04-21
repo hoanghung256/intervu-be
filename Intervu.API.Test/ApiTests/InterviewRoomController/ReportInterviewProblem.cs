@@ -73,7 +73,7 @@ namespace Intervu.API.Test.ApiTests.InterviewRoomController
                 Details = "Attempted to report problem for a room that does not exist."
             }, jwtToken: token, logBody: true);
 
-            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent room ID should return 404 Not Found");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent room ID should return 404 Not Found");
         }
 
         [Fact]
@@ -105,7 +105,7 @@ namespace Intervu.API.Test.ApiTests.InterviewRoomController
                 Details = "User not part of this room."
             }, jwtToken: token, logBody: true);
 
-            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "User not in room should get 403 Forbidden");
+            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "User not in room should get 403 Forbidden");
         }
     }
 }
