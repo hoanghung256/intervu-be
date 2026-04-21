@@ -173,6 +173,8 @@ namespace Intervu.Domain.Entities
 
         public ICollection<GeneratedQuestion> GeneratedQuestions { get; set; } = new List<GeneratedQuestion>();
 
+        public ICollection<PreparedQuestion> PreparedQuestions { get; set; } = new List<PreparedQuestion>();
+
         public bool IsAvailableForReschedule()
         {
             if (Status != InterviewRoomStatus.Scheduled) return false;
