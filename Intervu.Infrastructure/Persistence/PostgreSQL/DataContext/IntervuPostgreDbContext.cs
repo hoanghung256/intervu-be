@@ -42,6 +42,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
         public DbSet<InterviewReport> InterviewReports { get; set; }
         public DbSet<Question> Questions { get; set; }
         public DbSet<GeneratedQuestion> GeneratedQuestions { get; set; }
+        public DbSet<PreparedQuestion> PreparedQuestions { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<Tag> Tags { get; set; }
         public DbSet<QuestionTag> QuestionTags { get; set; }
@@ -603,6 +604,69 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                  .HasForeignKey(x => x.InterviewRoomId)
                  .HasConstraintName("FK_GeneratedQuestions_InterviewRooms_InterviewRoomId")
                  .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // PreparedQuestion
+            modelBuilder.Entity<PreparedQuestion>(b =>
+            {
+                b.ToTable("PreparedQuestions");
+                b.HasKey(x => x.Id);
+
+                b.Property(x => x.InteractionType).HasConversion<int>().IsRequired();
+                b.Property(x => x.Status).HasConversion<int>().IsRequired();
+
+                b.Property(x => x.Title).HasMaxLength(500).IsRequired();
+                b.Property(x => x.Description).HasColumnType("text").IsRequired();
+                b.Property(x => x.DisplayCategoryLabel).HasMaxLength(100).IsRequired(false);
+                b.Property(x => x.FunctionName).HasMaxLength(200).IsRequired(false);
+
+                b.Property(x => x.SortOrder).IsRequired();
+                b.Property(x => x.CreatedAt).IsRequired();
+                b.Property(x => x.UpdatedAt).IsRequired();
+                b.Property(x => x.AskedAt).IsRequired(false);
+                b.Property(x => x.SourceBankQuestionId).IsRequired(false);
+
+                // Reuse the same JSON conversion pattern used by InterviewRoom.TestCases
+                // so the shape { inputs:[{name,value}], expectedOutputs:[string] } lines up
+                // with the SendProblem hub contract and can be copied without transformation.
+                var pqJsonOptions = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    WriteIndented = false
+                };
+
+                var testCasesComparer = new Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer<object[]>(
+                    (c1, c2) => JsonSerializer.Serialize(c1, pqJsonOptions) == JsonSerializer.Serialize(c2, pqJsonOptions),
+                    c => c == null ? 0 : JsonSerializer.Serialize(c, pqJsonOptions).GetHashCode(),
+                    c => JsonSerializer.Deserialize<object[]>(JsonSerializer.Serialize(c, pqJsonOptions), pqJsonOptions)!);
+
+                b.Property(x => x.TestCases)
+                    .HasColumnName("TestCases")
+                    .HasConversion(
+                        v => v == null ? null : JsonSerializer.Serialize(v, pqJsonOptions),
+                        v => v == null ? null : JsonSerializer.Deserialize<object[]>(v, pqJsonOptions))
+                    .HasColumnType("jsonb")
+                    .IsRequired(false)
+                    .Metadata.SetValueComparer(testCasesComparer);
+
+                b.HasOne(x => x.InterviewRoom)
+                 .WithMany(r => r.PreparedQuestions)
+                 .HasForeignKey(x => x.InterviewRoomId)
+                 .HasConstraintName("FK_PreparedQuestions_InterviewRooms_InterviewRoomId")
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasOne<Question>()
+                 .WithMany()
+                 .HasForeignKey(x => x.SourceBankQuestionId)
+                 .HasConstraintName("FK_PreparedQuestions_Questions_SourceBankQuestionId")
+                 .IsRequired(false)
+                 .OnDelete(DeleteBehavior.SetNull);
+
+                b.HasIndex(x => new { x.InterviewRoomId, x.SortOrder })
+                 .HasDatabaseName("IX_PreparedQuestions_InterviewRoomId_SortOrder");
+
+                b.HasIndex(x => x.SourceBankQuestionId)
+                 .HasDatabaseName("IX_PreparedQuestions_SourceBankQuestionId");
             });
 
             // Feedback

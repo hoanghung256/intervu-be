@@ -59,6 +59,8 @@ using Intervu.Application.Interfaces.UseCases.SmartSearch;
 using Intervu.Application.UseCases.SmartSearch;
 using Intervu.Application.Interfaces.UseCases.GeneratedQuestion;
 using Intervu.Application.UseCases.GeneratedQuestion;
+using Intervu.Application.Interfaces.UseCases.PreparedQuestion;
+using PreparedQuestionUseCases = Intervu.Application.UseCases.PreparedQuestion;
 using Intervu.Application.Interfaces.UseCases.Audit;
 using Intervu.Application.UseCases.Audit;
 using CoachDashboardInterfaces = Intervu.Application.Interfaces.UseCases.CoachDashboard;
@@ -244,6 +246,17 @@ namespace Intervu.Application
             services.AddScoped<IApproveGeneratedQuestion, ApproveGeneratedQuestion>();
             services.AddScoped<IRejectGeneratedQuestion, RejectGeneratedQuestion>();
             services.AddScoped<ICreateGeneratedQuestion, CreateGeneratedQuestion>();
+
+            // --- Prepared Questions (pre-interview roadmap + in-room execution) ---
+            services.AddScoped<IGetPreparedQuestions, PreparedQuestionUseCases.GetPreparedQuestions>();
+            services.AddScoped<IAddCustomPreparedQuestion, PreparedQuestionUseCases.AddCustomPreparedQuestion>();
+            services.AddScoped<IAddPreparedQuestionFromBank, PreparedQuestionUseCases.AddPreparedQuestionFromBank>();
+            services.AddScoped<IUpdatePreparedQuestion, PreparedQuestionUseCases.UpdatePreparedQuestion>();
+            services.AddScoped<IDeletePreparedQuestion, PreparedQuestionUseCases.DeletePreparedQuestion>();
+            services.AddScoped<IReorderPreparedQuestions, PreparedQuestionUseCases.ReorderPreparedQuestions>();
+            services.AddScoped<IMarkPreparedQuestionAsked, PreparedQuestionUseCases.MarkPreparedQuestionAsked>();
+            services.AddScoped<IUnmarkPreparedQuestionAsked, PreparedQuestionUseCases.UnmarkPreparedQuestionAsked>();
+            services.AddScoped<ISendPreparedQuestionToEditor, PreparedQuestionUseCases.SendPreparedQuestionToEditor>();
 
             // --- Comments ---
             services.AddScoped<IGetComments, GetComments>();

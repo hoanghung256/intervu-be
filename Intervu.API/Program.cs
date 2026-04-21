@@ -110,6 +110,7 @@ namespace Intervu.API
 
             // Notification real-time push
             builder.Services.AddScoped<Intervu.Application.Interfaces.ExternalServices.INotificationPusher, Intervu.API.Services.SignalRNotificationPusher>();
+            builder.Services.AddScoped<Intervu.Application.Interfaces.ExternalServices.IInterviewRoomRealtimePusher, Intervu.API.Services.InterviewRoomRealtimePusher>();
 
             // --- AUTHENTICATION WITH JWT CONFIGURATION ---
             builder.Services.AddAuthentication(options =>

@@ -94,6 +94,7 @@ namespace Intervu.Infrastructure
             services.AddScoped<IInterviewTypeRepository, InterviewTypeRepository>();
             services.AddScoped<IQuestionRepository, QuestionRepository>();
             services.AddScoped<IGeneratedQuestionRepository, GeneratedQuestionRepository>();
+            services.AddScoped<IPreparedQuestionRepository, PreparedQuestionRepository>();
             services.AddScoped<ICommentRepository, CommentRepository>();
             services.AddScoped<IInterviewExperienceRepository, InterviewExperienceRepository>();
             services.AddScoped<IInterviewReportRepository, InterviewReportRepository>();
