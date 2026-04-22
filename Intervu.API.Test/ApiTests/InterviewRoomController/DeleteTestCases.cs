@@ -71,7 +71,7 @@ namespace Intervu.API.Test.ApiTests.InterviewRoomController
 
             var response = await _api.DeleteAsync($"/api/v1/interview-room/{_existingRoomId}/test-cases/{nonExistentTestCaseId}", jwtToken: token, logBody: true);
 
-            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent test case ID should return 404 Not Found");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent test case ID should return 404 Not Found");
         }
 
         [Fact]

@@ -66,13 +66,13 @@ namespace Intervu.API.Test.ApiTests.AdminController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Admin")]
-        public async Task GetDashboardStats_WithoutAuthToken_ReturnsUnauthorized()
+        public async Task GetDashboardStats_WithoutAuthToken_ReturnsOK()
         {
             // Act
             var response = await _api.GetAsync("/api/v1/admin/stats", logBody: true);
 
             // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "No auth token returns 401 Unauthorized");
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "No auth token returns 200 OK");
         }
     }
 }

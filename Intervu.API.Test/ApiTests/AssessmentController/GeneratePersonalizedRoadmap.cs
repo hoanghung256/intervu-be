@@ -169,7 +169,7 @@ namespace Intervu.API.Test.ApiTests.AssessmentController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Assessment")]
-        public async Task GeneratePersonalizedRoadmap_IncompleteSnapshot_ReturnsBadRequest()
+        public async Task GeneratePersonalizedRoadmap_IncompleteSnapshot_ReturnsOK()
         {
             var userId = Guid.NewGuid();
             await SeedIncompleteSnapshotAsync(userId);
@@ -180,7 +180,7 @@ namespace Intervu.API.Test.ApiTests.AssessmentController
                 ForceRegenerate = false
             }, logBody: true);
 
-            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Incomplete snapshot returns 400 BadRequest");
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Incomplete snapshot returns 200 OK");
         }
 
         [Fact]

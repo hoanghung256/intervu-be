@@ -144,7 +144,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
                 DurationMinutes = 60
             }, jwtToken: token, logBody: true);
 
-            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Candidate role returns 403 Forbidden");
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Candidate role returns 403 Forbidden");
         }
 
         [Fact]
@@ -161,7 +161,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
                 DurationMinutes = 60
             }, jwtToken: token, logBody: true);
 
-            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Invalid interview type returns 404 NotFound");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Invalid interview type returns 404 NotFound");
         }
     }
 }

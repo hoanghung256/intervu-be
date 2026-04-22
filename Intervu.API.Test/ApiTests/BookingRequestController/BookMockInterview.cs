@@ -184,7 +184,7 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
             }, jwtToken: coachToken, logBody: true);
 
             // Assert
-            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Coach role cannot create booking requests – 403 Forbidden");
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Coach role cannot create booking requests – 403 Forbidden");
         }
 
         [Fact]
@@ -242,7 +242,7 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
             }, jwtToken: adminToken, logBody: true);
 
             // Assert
-            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Admin role cannot create booking requests – 403 Forbidden");
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Admin role cannot create booking requests – 403 Forbidden");
         }
 
         [Fact]
@@ -273,7 +273,7 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
                 ]
             }, jwtToken: token, logBody: true);
 
-            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Guid.Empty coach ID returns 404 Not Found");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Guid.Empty coach ID returns 404 Not Found");
         }
 
         [Fact]
@@ -305,7 +305,7 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
             
             var payload = await _api.LogDeserializeJson<JsonElement>(response, logBody: true);
             
-            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Status code is 404 Not Found for non-existent coach");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Status code is 404 Not Found for non-existent coach");
             await AssertHelper.AssertFalse(payload.Success, "Booking should fail");
         }
 

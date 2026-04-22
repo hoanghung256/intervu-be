@@ -71,7 +71,7 @@ namespace Intervu.API.Test.ApiTests.InterviewRoomController
                 Language = "javascript"
             }, jwtToken: token, logBody: true);
 
-            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent room ID should return 404 Not Found");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent room ID should return 404 Not Found");
         }
 
         [Fact]

@@ -106,7 +106,7 @@ namespace Intervu.API.Test.ApiTests.FeedbacksController
             var nonExistentId = Guid.NewGuid();
 
             var response = await _api.PutAsync($"/api/v1/feedbacks/{nonExistentId}", new UpdateFeedbackDto { Rating = 5, Comments = "Valid comment" }, jwtToken: loginData.Data!.Token, logBody: true);
-            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent feedback ID returns 404 Not Found");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent feedback ID returns 404 Not Found");
         }
     }
 }

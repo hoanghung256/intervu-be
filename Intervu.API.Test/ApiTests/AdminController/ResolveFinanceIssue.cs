@@ -63,7 +63,7 @@ namespace Intervu.API.Test.ApiTests.AdminController
                 IsRefund = false
             }, jwtToken: token, logBody: true);
 
-            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Non-admin user should get 403 Forbidden");
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Non-admin user should get 403 Forbidden");
         }
 
         [Fact]
@@ -79,7 +79,7 @@ namespace Intervu.API.Test.ApiTests.AdminController
                 IsRefund = false
             }, jwtToken: token, logBody: true);
 
-            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Should return 404 Not Found for non-existent booking ID");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Should return 404 Not Found for non-existent booking ID");
         }
 
         [Fact]

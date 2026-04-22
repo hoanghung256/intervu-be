@@ -65,7 +65,7 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
 
             var response = await _api.GetAsync("/api/v1/admin/revenue-statistics?startDate=2023-01-01&endDate=2023-12-31", jwtToken: token, logBody: true);
 
-            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Non-admin user should get 403 Forbidden");
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Non-admin user should get 403 Forbidden");
         }
 
         [Fact]

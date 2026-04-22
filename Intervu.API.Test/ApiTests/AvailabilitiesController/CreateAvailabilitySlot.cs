@@ -100,7 +100,7 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
             }, logBody: true);
 
             var overlapPayload = await _api.LogDeserializeJson<JsonElement>(overlapResponse, logBody: true);
-            await AssertHelper.AssertNotEqual(HttpStatusCode.Conflict, overlapResponse.StatusCode, "Status code is 409 Conflict for overlapping slot");
+            await AssertHelper.AssertEqual(HttpStatusCode.Conflict, overlapResponse.StatusCode, "Status code is 409 Conflict for overlapping slot");
             await AssertHelper.AssertFalse(overlapPayload.Success, "Overlap creation should fail");
         }
 
@@ -222,7 +222,7 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
                 RangeEndTime = new DateTimeOffset(end, TimeSpan.Zero)
             }, logBody: true);
 
-            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Guid.Empty coach ID returns 404 NotFound");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Guid.Empty coach ID returns 404 NotFound");
         }
 
         private static DateTime AlignToHalfHourUtc(DateTime value)

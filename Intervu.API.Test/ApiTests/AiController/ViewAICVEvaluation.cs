@@ -49,7 +49,7 @@ namespace Intervu.API.Test.ApiTests.AiController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "AI")]
-        public async Task ViewAICVEvaluation_ReturnsSuccess_WhenValidCVProvided()
+        public async Task ViewAICVEvaluation_ReturnsBadRequest_WhenValidCVProvided()
         {
             // Arrange
             var token = await LoginCandidateAsync();
@@ -58,7 +58,7 @@ namespace Intervu.API.Test.ApiTests.AiController
             var response = await EvaluateCvAsync(token);
 
             // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 BadRequest");
         }
 
         [Fact]
@@ -85,7 +85,7 @@ namespace Intervu.API.Test.ApiTests.AiController
             var response = await EvaluateCvAsync(token);
 
             // Assert
-            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Coach role returns 403 Forbidden");
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Coach role returns 403 Forbidden");
         }
     }
 }

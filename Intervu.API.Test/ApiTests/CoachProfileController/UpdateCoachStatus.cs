@@ -96,7 +96,7 @@ namespace Intervu.API.Test.ApiTests.CoachProfileController
             var response = await _api.PutAsync($"/api/v1/coach-profile/{coachId}/status", 1, jwtToken: coachToken, logBody: true);
 
             // Assert
-            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Status code is 403 Forbidden");
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Status code is 403 Forbidden");
         }
 
         [Fact]

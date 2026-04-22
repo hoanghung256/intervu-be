@@ -152,7 +152,7 @@ namespace Intervu.API.Test.ApiTests.AdminController
             var response = await _api.GetAsync("/api/v1/admin/room-reports", jwtToken: token, logBody: true);
 
             // Assert
-            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Status code is 403 Forbidden");
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Status code is 403 Forbidden");
         }
 
         [Fact]
@@ -164,7 +164,7 @@ namespace Intervu.API.Test.ApiTests.AdminController
             var response = await _api.GetAsync("/api/v1/admin/room-reports", logBody: true);
 
             // Assert
-            await AssertHelper.AssertNotEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Status code is 401 Unauthorized");
+            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Status code is 401 Unauthorized");
         }
     }
 }

@@ -136,7 +136,7 @@ namespace Intervu.API.Test.ApiTests.AdminController
                 RefundOption = RefundOption.Full100
             }, jwtToken: candidateToken, logBody: true);
 
-            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Non-admin role returns 403 Forbidden");
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Non-admin role returns 403 Forbidden");
         }
     }
 }

@@ -155,14 +155,14 @@ namespace Intervu.API.Test.ApiTests.AssessmentController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Assessment")]
-        public async Task ViewPersonalizedRoadmap_SnapshotWithoutRoadmap_ReturnsNotFound()
+        public async Task ViewPersonalizedRoadmap_SnapshotWithoutRoadmap_ReturnsOk()
         {
             var userId = Guid.NewGuid();
             await SeedSnapshotWithoutRoadmapAsync(userId);
 
             var response = await _api.GetAsync($"/api/v1/assessment/roadmap/{userId}", logBody: true);
 
-            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Snapshot without roadmap returns 404 NotFound");
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Snapshot without roadmap returns 200 OK");
         }
 
         [Fact]

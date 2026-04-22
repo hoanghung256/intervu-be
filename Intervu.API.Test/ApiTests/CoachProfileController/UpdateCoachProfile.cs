@@ -270,7 +270,7 @@ namespace Intervu.API.Test.ApiTests.CoachProfileController
             var response = await _api.PutAsync($"/api/v1/coach-profile/{coachId}", updateDto, jwtToken: candidateToken, logBody: true);
 
             // Assert
-            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Candidate updating coach returns 403 Forbidden");
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Candidate updating coach returns 403 Forbidden");
         }
 
         [Fact]

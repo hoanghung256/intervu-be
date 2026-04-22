@@ -131,7 +131,7 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
                 ReturnUrl = "https://test.com/return"
             }, jwtToken: token, logBody: true);
 
-            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Status code is 404 Not Found for non-existent coach");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Status code is 404 Not Found for non-existent coach");
         }
 
         [Fact]
@@ -179,7 +179,7 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
             var response = await _api.PostAsync("/api/v1/interview-booking", request, jwtToken: coachToken, logBody: true);
 
             // Assert
-            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Status code is 403 Forbidden for Coach role");
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Status code is 403 Forbidden for Coach role");
         }
 
         private async Task<(string token, Guid userId)> LoginAsAliceAsync()

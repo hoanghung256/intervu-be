@@ -54,7 +54,7 @@ namespace Intervu.API.Test.ApiTests.QuestionController
             var userData = await _api.LogDeserializeJson<LoginResponse>(login);
 
             var response = await _api.GetAsync("/api/v1/questions/reports", jwtToken: userData.Data!.Token, logBody: true);
-            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Non-admin user receives 403 Forbidden");
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Non-admin user receives 403 Forbidden");
         }
 
         [Fact]

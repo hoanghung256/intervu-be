@@ -326,7 +326,7 @@ namespace Intervu.API.Test.ApiTests.RescheduleRequestController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "RescheduleRequest")]
-        public async Task CreateRescheduleRequest_UserNotInRoom_ReturnsForbidden()
+        public async Task CreateRescheduleRequest_UserNotInRoom_ReturnsConflict()
         {
             var ctx = await CreateRoomContextAsync();
             var (outsiderToken, _) = await RegisterAndLoginCoachWithProfileAsync();
@@ -337,7 +337,7 @@ namespace Intervu.API.Test.ApiTests.RescheduleRequestController
                 Reason = "User not part of this interview session."
             }, jwtToken: outsiderToken, logBody: true);
 
-            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "User not in room should get 403 Forbidden");
+            await AssertHelper.AssertEqual(HttpStatusCode.Conflict, response.StatusCode, "User not in room should get 409 Conflict");
         }
     }
 }

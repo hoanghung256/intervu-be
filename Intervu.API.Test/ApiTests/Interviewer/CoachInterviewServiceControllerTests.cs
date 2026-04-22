@@ -305,7 +305,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
             var response = await _api.GetAsync("/api/v1/coach-interview-services/mine", jwtToken: token, logBody: true);
 
             // Assert
-            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Status code is 404 NotFound");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Status code is 404 NotFound");
             var result = await _api.LogDeserializeJson<List<CoachInterviewServiceDto>>(response, true);
             await AssertHelper.AssertFalse(result.Success, "API response indicates success");
             await AssertHelper.AssertNull(result.Data, "Service list is null");
@@ -351,7 +351,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
             var response = await _api.PostAsync("/api/v1/coach-interview-services", createDto, jwtToken: token, logBody: true);
 
             // Assert
-            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Non-coach returns 403 Forbidden");
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Non-coach returns 403 Forbidden");
         }
 
         [Fact]
@@ -372,7 +372,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
             var response = await _api.PostAsync("/api/v1/coach-interview-services", createDto, jwtToken: token, logBody: true);
 
             // Assert
-            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Invalid interview type ID returns 404 Not Found");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Invalid interview type ID returns 404 Not Found");
         }
 
         [Fact]
@@ -393,7 +393,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
             var response = await _api.PutAsync($"/api/v1/coach-interview-services/{nonExistentServiceId}", updateDto, jwtToken: token, logBody: true);
 
             // Assert
-            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent service ID returns 404 Not Found");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent service ID returns 404 Not Found");
         }
 
         [Fact]
@@ -425,7 +425,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
             var response = await _api.PutAsync($"/api/v1/coach-interview-services/{serviceId}", updateDto, jwtToken: coach2Token, logBody: true);
 
             // Assert
-            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Other coach returns 403 Forbidden");
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Other coach returns 403 Forbidden");
         }
 
         [Fact]
@@ -441,7 +441,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
             var response = await _api.DeleteAsync($"/api/v1/coach-interview-services/{nonExistentServiceId}", jwtToken: token, logBody: true);
 
             // Assert
-            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent service ID returns 404 Not Found");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent service ID returns 404 Not Found");
         }
 
         [Fact]
@@ -467,7 +467,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
             var response = await _api.DeleteAsync($"/api/v1/coach-interview-services/{serviceId}", jwtToken: coach2Token, logBody: true);
 
             // Assert
-            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Other coach returns 403 Forbidden");
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Other coach returns 403 Forbidden");
         }
 
         [Fact]
@@ -482,7 +482,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
             var response = await _api.GetAsync($"/api/v1/coach-interview-services/coach/{nonExistentCoachId}", logBody: true);
 
             // Assert
-            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent coach ID returns 404 Not Found");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent coach ID returns 404 Not Found");
         }
     }
 }

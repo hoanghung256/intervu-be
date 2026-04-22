@@ -70,7 +70,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
             {
                 InterviewTypeId = _validInterviewTypeId,
                 Price = 1700,
-                DurationMinutes = 75
+                DurationMinutes = 60
             }, jwtToken: coachToken, logBody: true);
 
             var createData = await _api.LogDeserializeJson<CoachInterviewServiceDto>(createResponse, true);
@@ -132,7 +132,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
         {
             var response = await _api.GetAsync($"/api/v1/coach-interview-services/coach/{Guid.NewGuid()}", logBody: true);
 
-            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent coach returns 404 NotFound");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent coach returns 404 NotFound");
         }
 
         [Fact]
@@ -144,7 +144,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
 
             var response = await _api.GetAsync("/api/v1/coach-interview-services/mine", jwtToken: token, logBody: true);
 
-            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Coach with no services returns 404 NotFound");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Coach with no services returns 404 NotFound");
         }
     }
 }

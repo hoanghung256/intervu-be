@@ -85,7 +85,7 @@ namespace Intervu.API.Test.ApiTests.InterviewRoomController
                 ExpectedOutput = "non-existent output"
             }, jwtToken: token, logBody: true);
 
-            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent test case ID should return 404 Not Found");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent test case ID should return 404 Not Found");
         }
 
         [Fact]

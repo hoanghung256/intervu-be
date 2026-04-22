@@ -94,7 +94,7 @@ namespace Intervu.API.Test.ApiTests.BookingRequestController
 
             var response = await _api.GetAsync("/api/v1/booking-requests?page=1&pageSize=10", jwtToken: token, logBody: true);
 
-            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Admin role returns 403 Forbidden");
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Admin role returns 403 Forbidden");
         }
     }
 }

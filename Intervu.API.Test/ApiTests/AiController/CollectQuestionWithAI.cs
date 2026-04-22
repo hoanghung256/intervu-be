@@ -45,7 +45,7 @@ namespace Intervu.API.Test.ApiTests.AiController
             var token = (await _api.LogDeserializeJson<LoginResponse>(login)).Data!.Token;
             var nonExistentRoomId = Guid.NewGuid();
             var response = await _api.GetAsync($"/api/v1/generated-questions/rooms/{nonExistentRoomId}", jwtToken: token, logBody: true);
-            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent room ID returns 404 Not Found");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent room ID returns 404 Not Found");
         }
 
         [Fact]

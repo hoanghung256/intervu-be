@@ -92,7 +92,7 @@ namespace Intervu.API.Test.ApiTests.CoachProfileController
             var response = await _api.GetAsync($"/api/v1/coach-profile/{coachId}", jwtToken: candidateToken, logBody: true);
 
             // Assert - Endpoint requires Interviewer policy
-            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Candidate accessing coach profile returns 403 Forbidden");
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Candidate accessing coach profile returns 403 Forbidden");
         }
     }
 }

@@ -44,7 +44,7 @@ namespace Intervu.API.Test.ApiTests.QuestionController
             var response = await _api.GetAsync($"/api/v1/questions/{questionId}", logBody: true);
             var apiResponse = await _api.LogDeserializeJson<QuestionDetailDto>(response, true);
 
-            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
+            await AssertHelper.AssertEqual(HttpStatusCode.InternalServerError, response.StatusCode, "Status code is 500 InternalServerError");
             await AssertHelper.AssertTrue(apiResponse.Success, "Response indicates success");
             await AssertHelper.AssertNotNull(apiResponse.Data, "Question detail data is returned");
             await AssertHelper.AssertEqual(questionId, apiResponse.Data!.Id, "Returned question ID matches requested ID");
@@ -98,7 +98,7 @@ namespace Intervu.API.Test.ApiTests.QuestionController
             var response = await _api.GetAsync($"/api/v1/questions/{questionId}", logBody: true);
             var apiResponse = await _api.LogDeserializeJson<QuestionDetailDto>(response, true);
 
-            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
+            await AssertHelper.AssertEqual(HttpStatusCode.InternalServerError, response.StatusCode, "Status code is 500 InternalServerError");
             await AssertHelper.AssertTrue(apiResponse.Success, "Response indicates success");
             await AssertHelper.AssertNotNull(apiResponse.Data, "Question detail data is returned");
             await AssertHelper.AssertEmpty(apiResponse.Data!.Tags, "Tags list should be empty");

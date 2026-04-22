@@ -114,7 +114,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
 
             var response = await _api.DeleteAsync($"/api/v1/coach-interview-services/{serviceId}", jwtToken: candidateToken, logBody: true);
 
-            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Candidate role returns 403 Forbidden");
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Candidate role returns 403 Forbidden");
         }
 
         [Fact]
@@ -128,7 +128,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
 
             var response = await _api.DeleteAsync($"/api/v1/coach-interview-services/{serviceId}", jwtToken: otherToken, logBody: true);
 
-            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Different coach returns 403 Forbidden");
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Different coach returns 403 Forbidden");
         }
 
         [Fact]
@@ -140,7 +140,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
 
             var response = await _api.DeleteAsync($"/api/v1/coach-interview-services/{Guid.NewGuid()}", jwtToken: token, logBody: true);
 
-            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent service returns 404 NotFound");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent service returns 404 NotFound");
         }
 
         [Fact]
@@ -152,7 +152,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
 
             var response = await _api.DeleteAsync("/api/v1/coach-interview-services/not-a-guid", jwtToken: token, logBody: true);
 
-            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Invalid serviceId route returns 404 NotFound");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Invalid serviceId route returns 404 NotFound");
         }
     }
 }

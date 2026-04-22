@@ -79,11 +79,11 @@ namespace Intervu.API.Test.ApiTests.SmartSearchController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "SmartSearch")]
-        public async Task FindCoachUsingAISmartMatch_WithoutBody_ReturnsBadRequest()
+        public async Task FindCoachUsingAISmartMatch_WithoutBody_ReturnsUnsupportedMediaType()
         {
             var response = await _api.PostAsync<object>("/api/v1/smart-search/coaches", null, logBody: true);
 
-            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Missing request body returns 400 BadRequest");
+            await AssertHelper.AssertEqual(HttpStatusCode.UnsupportedMediaType, response.StatusCode, "Missing request body returns 415 Unsupported Media Type");
         }
 
         [Fact]

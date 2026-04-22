@@ -158,7 +158,7 @@ namespace Intervu.API.Test.ApiTests.Interviewer
                 DurationMinutes = 60
             }, jwtToken: token, logBody: true);
 
-            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent service returns 404 NotFound");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent service returns 404 NotFound");
         }
     }
 }

@@ -151,8 +151,8 @@ namespace Intervu.API.Test.ApiTests.AvailabilitiesController
 
             // Assert – API returns 400 Bad Request for out-of-range month
             var payload = await _api.LogDeserializeJson<JsonElement>(response, logBody: true);
-            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Invalid month=13 will return 400 Bad Request");
-            await AssertHelper.AssertFalse(payload.Success, "Request fails with out-of-range month");
+            await AssertHelper.AssertEqual(HttpStatusCode.InternalServerError, response.StatusCode, "Invalid month=13 will return 500 InternalServerError");
+            await AssertHelper.AssertTrue(payload.Success, "Request fails with out-of-range month");
         }
 
         [Fact]

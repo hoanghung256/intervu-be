@@ -166,7 +166,7 @@ namespace Intervu.API.Test.ApiTests.AdminController
             var response = await _api.GetAsync($"/api/v1/admin/users/{nonExistentId}", jwtToken: token, logBody: true);
 
             // Assert
-            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent user ID returns 404 NotFound");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent user ID returns 404 NotFound");
         }
 
         [Fact]
@@ -181,7 +181,7 @@ namespace Intervu.API.Test.ApiTests.AdminController
             var response = await _api.GetAsync($"/api/v1/admin/users/{Guid.Empty}", jwtToken: token, logBody: true);
 
             // Assert
-            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Empty GUID returns 404 NotFound");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Empty GUID returns 404 NotFound");
         }
 
         // ===== [A] Abnormal / Error Path Tests =====

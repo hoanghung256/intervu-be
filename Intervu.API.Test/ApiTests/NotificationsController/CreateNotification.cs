@@ -97,7 +97,7 @@ namespace Intervu.API.Test.ApiTests.NotificationsController
                 Message = "This should fail"
             }, jwtToken: loginData.Data!.Token, logBody: true);
 
-            await AssertHelper.AssertNotEqual(HttpStatusCode.Forbidden, response.StatusCode, "Status 403 for non-admin user");
+            await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Status 403 for non-admin user");
         }
 
         [Fact]

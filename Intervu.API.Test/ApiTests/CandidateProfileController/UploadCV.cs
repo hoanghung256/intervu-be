@@ -52,7 +52,7 @@ namespace Intervu.API.Test.ApiTests.CandidateProfileController
             var response = await _api.PostMultipartAsync($"/api/v1/userprofile/upload-cv/{Guid.NewGuid()}", Encoding.UTF8.GetBytes("dummy cv"), "cv.pdf", "application/pdf", "file", jwtToken: token, logBody: true);
 
             // Assert
-            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Status code is 404 NotFound");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Status code is 404 NotFound");
         }
 
         [Fact]
@@ -67,7 +67,7 @@ namespace Intervu.API.Test.ApiTests.CandidateProfileController
             var response = await _api.PostMultipartAsync($"/api/v1/userprofile/upload-cv/{Guid.Empty}", Encoding.UTF8.GetBytes("dummy cv"), "cv.pdf", "application/pdf", "file", jwtToken: token, logBody: true);
 
             // Assert
-            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Empty GUID returns 404 NotFound");
+            await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Empty GUID returns 404 NotFound");
         }
 
         // ===== [A] Abnormal / Error Path Tests =====
