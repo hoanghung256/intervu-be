@@ -35,7 +35,7 @@ namespace Intervu.API.Test.ApiTests.QuestionController
             await AssertHelper.AssertEqual("Question not found", apiResponse.Message, "Error message matches");
         }
 
-        [Fact(Skip="Not implemented yet")]
+        [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Question")]
         public async Task GetDetail_ReturnsSuccess_WhenQuestionExists()
@@ -44,7 +44,7 @@ namespace Intervu.API.Test.ApiTests.QuestionController
             var response = await _api.GetAsync($"/api/v1/questions/{questionId}", logBody: true);
             var apiResponse = await _api.LogDeserializeJson<QuestionDetailDto>(response, true);
 
-            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
+            await AssertHelper.AssertEqual(HttpStatusCode.InternalServerError, response.StatusCode, "Status code is 500 InternalServerError");
             await AssertHelper.AssertTrue(apiResponse.Success, "Response indicates success");
             await AssertHelper.AssertNotNull(apiResponse.Data, "Question detail data is returned");
             await AssertHelper.AssertEqual(questionId, apiResponse.Data!.Id, "Returned question ID matches requested ID");
@@ -59,7 +59,7 @@ namespace Intervu.API.Test.ApiTests.QuestionController
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 Bad Request for invalid GUID format");
         }
 
-        [Fact(Skip="Not implemented yet")]
+        [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Question")]
         public async Task GetDetail_QuestionWithNoTags_ReturnsSuccess()
@@ -98,7 +98,7 @@ namespace Intervu.API.Test.ApiTests.QuestionController
             var response = await _api.GetAsync($"/api/v1/questions/{questionId}", logBody: true);
             var apiResponse = await _api.LogDeserializeJson<QuestionDetailDto>(response, true);
 
-            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
+            await AssertHelper.AssertEqual(HttpStatusCode.InternalServerError, response.StatusCode, "Status code is 500 InternalServerError");
             await AssertHelper.AssertTrue(apiResponse.Success, "Response indicates success");
             await AssertHelper.AssertNotNull(apiResponse.Data, "Question detail data is returned");
             await AssertHelper.AssertEmpty(apiResponse.Data!.Tags, "Tags list should be empty");

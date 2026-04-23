@@ -25,7 +25,7 @@ namespace Intervu.API.Test.ApiTests.AdminController
             return loginData.Data!.Token;
         }
 
-        [Fact(Skip = "No explicit finance-issue endpoint is covered in existing tests; add once API contract is available.")]
+        [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Admin")]
         public async Task ResolveFinanceIssue_Success_ReturnsOk()
@@ -48,7 +48,7 @@ namespace Intervu.API.Test.ApiTests.AdminController
             }
         }
 
-        [Fact(Skip = "No explicit finance-issue endpoint is covered in existing tests; add once API contract is available.")]
+        [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Admin")]
         public async Task ResolveFinanceIssue_Unauthorized_ReturnsForbidden()
@@ -66,7 +66,7 @@ namespace Intervu.API.Test.ApiTests.AdminController
             await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Non-admin user should get 403 Forbidden");
         }
 
-        [Fact(Skip = "No explicit finance-issue endpoint is covered in existing tests; add once API contract is available.")]
+        [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Admin")]
         public async Task ResolveFinanceIssue_NonExistentBooking_ReturnsNotFound()
@@ -82,7 +82,7 @@ namespace Intervu.API.Test.ApiTests.AdminController
             await AssertHelper.AssertEqual(HttpStatusCode.NotFound, response.StatusCode, "Should return 404 Not Found for non-existent booking ID");
         }
 
-        [Fact(Skip = "No explicit finance-issue endpoint is covered in existing tests; add once API contract is available.")]
+        [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Admin")]
         public async Task ResolveFinanceIssue_MissingResolutionMessage_ReturnsBadRequest()
@@ -98,7 +98,7 @@ namespace Intervu.API.Test.ApiTests.AdminController
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Should return 400 Bad Request for empty resolution");
         }
 
-        [Fact(Skip = "No explicit finance-issue endpoint is covered in existing tests; add once API contract is available.")]
+        [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "Admin")]
         public async Task ResolveFinanceIssue_AlreadyResolved_ReturnsConflict()

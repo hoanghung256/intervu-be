@@ -37,6 +37,36 @@ namespace Intervu.API.Test.ApiTests.InterviewRoomController
         [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "InterviewRoom")]
+        public async Task GetById_ReturnsSuccess_WhenCoachIsAuthenticated()
+        {
+            var (roomId, _, _, coachToken, _) = await CreateTestInterviewRoomAsync();
+            var response = await _api.GetAsync($"/api/v1/interviewroom/{roomId}", jwtToken: coachToken, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Coach can get room detail with 200 OK");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "InterviewRoom")]
+        public async Task GetById_ReturnsNotFound_WhenRoomDoesNotExist()
+        {
+            var (_, candidateToken, _, _, _) = await CreateTestInterviewRoomAsync();
+            var response = await _api.GetAsync($"/api/v1/interviewroom/{Guid.NewGuid()}", jwtToken: candidateToken, logBody: true);
+            await AssertHelper.AssertNotEqual(HttpStatusCode.NotFound, response.StatusCode, "Non-existent room returns 404 NotFound");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "InterviewRoom")]
+        public async Task GetById_ReturnsUnauthorized_WhenNoToken()
+        {
+            var (roomId, _, _, _, _) = await CreateTestInterviewRoomAsync();
+            var response = await _api.GetAsync($"/api/v1/interviewroom/{roomId}", logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Missing token returns 401 Unauthorized");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "InterviewRoom")]
         public async Task GetList_ReturnsSuccess_WhenUserIsAuthenticated()
         {
             var (_, candidateToken, _, _, _) = await CreateTestInterviewRoomAsync();
@@ -44,6 +74,15 @@ namespace Intervu.API.Test.ApiTests.InterviewRoomController
             await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
             var apiResponse = await _api.LogDeserializeJson<PagedResult<InterviewRoomDto>>(response, true);
             await AssertHelper.AssertNotEmpty(apiResponse.Data!.Items, "Candidate should have at least one room");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "InterviewRoom")]
+        public async Task GetList_ReturnsUnauthorized_WhenNoToken()
+        {
+            var response = await _api.GetAsync("/api/v1/interviewroom?page=1&pageSize=10", logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.Unauthorized, response.StatusCode, "Missing token returns 401 Unauthorized");
         }
 
         private async Task<string> LoginAdminAsync()

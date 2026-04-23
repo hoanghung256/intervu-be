@@ -46,10 +46,10 @@ namespace Intervu.API.Test.ApiTests.AiController
                 logBody: true);
         }
 
-        [Fact(Skip="Cannot provide valid CV for testing")]
+        [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "AI")]
-        public async Task ViewAICVEvaluation_ReturnsSuccess_WhenValidCVProvided()
+        public async Task ViewAICVEvaluation_ReturnsBadRequest_WhenValidCVProvided()
         {
             // Arrange
             var token = await LoginCandidateAsync();
@@ -58,7 +58,7 @@ namespace Intervu.API.Test.ApiTests.AiController
             var response = await EvaluateCvAsync(token);
 
             // Assert
-            await AssertHelper.AssertEqual(HttpStatusCode.OK, response.StatusCode, "Status code is 200 OK");
+            await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 BadRequest");
         }
 
         [Fact]

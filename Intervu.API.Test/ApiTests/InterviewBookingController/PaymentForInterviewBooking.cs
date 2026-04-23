@@ -25,7 +25,7 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
             _api = new ApiHelper(factory.CreateClient());
         }
 
-        [Fact(Skip = "Payment URL is not testable")]
+        [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "InterviewBooking")]
         public async Task CreatePaymentUrl_ReturnsSuccess()
@@ -83,7 +83,7 @@ namespace Intervu.API.Test.ApiTests.InterviewBookingController
             await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Status code is 400 Bad Request for invalid data");
         }
 
-        [Fact(Skip="Payment URL is not testable")]
+        [Fact]
         [Trait("Category", "API")]
         [Trait("Category", "InterviewBooking")]
         public async Task CreatePaymentUrl_AlreadyBookedAvailability_ReturnsConflict()
