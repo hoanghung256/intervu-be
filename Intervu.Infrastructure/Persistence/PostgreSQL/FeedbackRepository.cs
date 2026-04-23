@@ -27,6 +27,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             var totalItems = await query.CountAsync();
 
             var items = await query
+            .OrderByDescending(f => f.Rating == 0 && (f.Comments == null || f.Comments == ""))
+            .ThenByDescending(f => f.InterviewRoom != null ? f.InterviewRoom.ScheduledTime : null)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
                 .ToListAsync();
