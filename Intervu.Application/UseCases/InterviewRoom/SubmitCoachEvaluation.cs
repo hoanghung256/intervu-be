@@ -112,6 +112,15 @@ namespace Intervu.Application.UseCases.InterviewRoom
                 var coachFullName = coach?.FullName ?? string.Empty;
                 var candidateId = room.CandidateId.Value;
                 var roomId = interviewRoomId;
+
+                _jobService.Enqueue<INotificationUseCase>(uc => uc.CreateAsync(
+                    candidateId,
+                    NotificationType.RoadmapUpdateStarted,
+                    "Updating your roadmap",
+                    "Your coach just submitted feedback. We're recalculating your roadmap now.",
+                    "/assessment?step=roadmap",
+                    roomId));
+
                 _jobService.Enqueue<IAssessmentService>(svc =>
                     svc.UpdateRoadmapAfterInterviewAsync(candidateId, roomId, coachFullName, CancellationToken.None));
             }

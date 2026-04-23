@@ -12,6 +12,8 @@ namespace Intervu.Domain.Entities.Constants
         InterviewReminder,
         FeedbackReceived,
         AiAnalysisCompleted,
-        SystemAnnouncement
+        SystemAnnouncement,
+        RoadmapUpdateStarted,
+        RoadmapUpdated
     }
 }

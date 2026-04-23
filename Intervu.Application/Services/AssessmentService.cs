@@ -7,7 +7,9 @@ using System.Threading.Tasks;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.DTOs.Assessment;
 using Intervu.Application.Interfaces.Services;
+using Intervu.Application.Interfaces.UseCases.Notification;
 using Intervu.Domain.Entities;
+using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 using Microsoft.Extensions.Logging;
 
@@ -32,6 +34,7 @@ namespace Intervu.Application.Services
         private readonly IInterviewRoomRepository _roomRepository;
         private readonly ICoachProfileRepository _coachProfileRepository;
         private readonly IAiService _aiService;
+        private readonly IBackgroundService _jobService;
         private readonly ILogger<AssessmentService> _logger;
         private static readonly string[] BackendFrameworkSkills =
         {
@@ -77,12 +80,14 @@ namespace Intervu.Application.Services
             IInterviewRoomRepository roomRepository,
             ICoachProfileRepository coachProfileRepository,
             IAiService aiService,
+            IBackgroundService jobService,
             ILogger<AssessmentService> logger)
         {
             _snapshotRepository = snapshotRepository;
             _roomRepository = roomRepository;
             _coachProfileRepository = coachProfileRepository;
             _aiService = aiService;
+            _jobService = jobService;
             _logger = logger;
         }
 
@@ -517,6 +522,8 @@ namespace Intervu.Application.Services
                 snapshot.Roadmap = MapRoadmap(currentRoadmap);
                 await _snapshotRepository.UpsertSnapshotAsync(snapshot, cancellationToken);
 
+                EnqueueRoadmapUpdatedNotification(candidateId, interviewRoomId);
+
                 _logger.LogInformation(
                     "UpdateRoadmapAfterInterview: node {NodeId} updated deterministically for candidate {CandidateId} after room {RoomId}",
                     targetNodeId, candidateId, interviewRoomId);
@@ -582,7 +589,20 @@ namespace Intervu.Application.Services
             snapshot.Roadmap = MapRoadmap(updatedRoadmap);
             await _snapshotRepository.UpsertSnapshotAsync(snapshot, cancellationToken);
 
+            EnqueueRoadmapUpdatedNotification(candidateId, interviewRoomId);
+
             _logger.LogInformation("UpdateRoadmapAfterInterview: roadmap updated for candidate {CandidateId} after room {RoomId}", candidateId, interviewRoomId);
+        }
+
+        private void EnqueueRoadmapUpdatedNotification(Guid candidateId, Guid interviewRoomId)
+        {
+            _jobService.Enqueue<INotificationUseCase>(uc => uc.CreateAsync(
+                candidateId,
+                NotificationType.RoadmapUpdated,
+                "Roadmap updated",
+                "Your roadmap has been refreshed based on your latest interview.",
+                "/assessment?step=roadmap",
+                interviewRoomId));
         }
 
         /// <summary>
