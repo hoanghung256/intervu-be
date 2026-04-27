@@ -73,9 +73,40 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             if (availability == null)
                 return false;
 
+            await DetachAvailabilityReferencesAsync(new[] { availabilityId });
+
             _context.CoachAvailabilities.Remove(availability);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        private async Task DetachAvailabilityReferencesAsync(IReadOnlyCollection<Guid> ids)
+        {
+            if (ids.Count == 0) return;
+
+            var rooms = await _context.InterviewRooms
+                .Where(r => r.CurrentAvailabilityId.HasValue && ids.Contains(r.CurrentAvailabilityId.Value))
+                .ToListAsync();
+            foreach (var room in rooms)
+            {
+                room.CurrentAvailabilityId = null;
+            }
+
+            var reschedulesByCurrent = await _context.InterviewRescheduleRequests
+                .Where(r => r.CurrentAvailabilityId.HasValue && ids.Contains(r.CurrentAvailabilityId.Value))
+                .ToListAsync();
+            foreach (var r in reschedulesByCurrent)
+            {
+                r.CurrentAvailabilityId = null;
+            }
+
+            var reschedulesByProposed = await _context.InterviewRescheduleRequests
+                .Where(r => r.ProposedAvailabilityId.HasValue && ids.Contains(r.ProposedAvailabilityId.Value))
+                .ToListAsync();
+            foreach (var r in reschedulesByProposed)
+            {
+                r.ProposedAvailabilityId = null;
+            }
         }
 
         public async Task<bool> UpdateCoachAvailabilityAsync(Guid availabilityId, DateTimeOffset startTime, DateTimeOffset endTime)
@@ -147,6 +178,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             var blocks = await _context.CoachAvailabilities
                 .Where(x => ids.Contains(x.Id))
                 .ToListAsync();
+
+            await DetachAvailabilityReferencesAsync(blocks.Select(b => b.Id).ToList());
 
             _context.CoachAvailabilities.RemoveRange(blocks);
             await _context.SaveChangesAsync();
