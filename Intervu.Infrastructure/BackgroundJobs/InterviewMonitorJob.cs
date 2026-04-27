@@ -2,6 +2,7 @@
 using Intervu.Application.Interfaces.BackgroundJobs;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
+using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Intervu.Application.Interfaces.UseCases.Notification;
 using Intervu.Application.Services;
 using Intervu.Domain.Entities.Constants;
@@ -110,6 +111,8 @@ namespace Intervu.Infrastructure.BackgroundJobs
             {
                 _backgroundService.Enqueue<IPayoutForCoachAfterInterview>(
                     uc => uc.ExecuteAsync(room.Id));
+                _backgroundService.Enqueue<IOnRoomCompleted>(
+                    uc => uc.ExecuteAsync(room.Id));
             }
         }
 
@@ -146,6 +149,8 @@ namespace Intervu.Infrastructure.BackgroundJobs
             foreach (var room in roomsToComplete)
             {
                 _backgroundService.Enqueue<IPayoutForCoachAfterInterview>(
+                    uc => uc.ExecuteAsync(room.Id));
+                _backgroundService.Enqueue<IOnRoomCompleted>(
                     uc => uc.ExecuteAsync(room.Id));
             }
         }

@@ -122,6 +122,7 @@ namespace Intervu.Application
             services.AddScoped<IGetSessions, GetSessions>();
             services.AddScoped<IUpdateRoom, UpdateRoom>();
             services.AddScoped<IGetCurrentRoom, GetCurrentRoom>();
+            services.AddScoped<IOnRoomCompleted, OnRoomCompleted>();
             services.AddScoped<IGetCoachEvaluation, GetCoachEvaluation>();
             services.AddScoped<ISubmitCoachEvaluation, SubmitCoachEvaluation>();
             services.AddScoped<ISaveCoachEvaluationDraft, SaveCoachEvaluationDraft>();

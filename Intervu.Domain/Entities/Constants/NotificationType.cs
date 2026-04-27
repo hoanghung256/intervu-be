@@ -14,6 +14,7 @@ namespace Intervu.Domain.Entities.Constants
         AiAnalysisCompleted,
         SystemAnnouncement,
         RoadmapUpdateStarted,
-        RoadmapUpdated
+        RoadmapUpdated,
+        AiAnalysisStarted
     }
 }

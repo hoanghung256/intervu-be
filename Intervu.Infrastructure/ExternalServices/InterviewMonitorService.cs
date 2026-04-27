@@ -63,6 +63,7 @@ namespace Intervu.Infrastructure.ExternalServices
                     //using var scope = _services.CreateScope();
                     //var db = scope.ServiceProvider.GetRequiredService<IntervuDbContext>();
                     var payout = scope.ServiceProvider.GetRequiredService<Intervu.Application.Interfaces.UseCases.InterviewBooking.IPayoutForCoachAfterInterview>();
+                    var onRoomCompleted = scope.ServiceProvider.GetRequiredService<Intervu.Application.Interfaces.UseCases.InterviewRoom.IOnRoomCompleted>();
 
                     foreach (var room in roomsToEnd)
                     {
@@ -72,6 +73,9 @@ namespace Intervu.Infrastructure.ExternalServices
 
                         // Payout immediately for coach after interview completed
                         await payout.ExecuteAsync(room.Id);
+
+                        // Notify candidate/coach progress trays
+                        await onRoomCompleted.ExecuteAsync(room.Id);
 
                         // Update status in cache
                         _cache.Update(room);
