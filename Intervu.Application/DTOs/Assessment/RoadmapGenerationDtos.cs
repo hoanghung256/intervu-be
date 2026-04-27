@@ -178,5 +178,8 @@ namespace Intervu.Application.DTOs.Assessment
 
         [JsonPropertyName("error")]
         public string? Error { get; set; }
+
+        [JsonPropertyName("usage")]
+        public LlmTokenUsageDto? Usage { get; set; }
     }
 }
