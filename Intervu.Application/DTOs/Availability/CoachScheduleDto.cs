@@ -22,6 +22,7 @@ namespace Intervu.Application.DTOs.Availability
         public DateTime StartTime { get; set; }
         public DateTime EndTime { get; set; }
         public string CandidateName { get; set; } = string.Empty;
+        public string CandidateAvatar { get; set; } = string.Empty; // Candidate's profile picture URL
         public string InterviewType { get; set; } = string.Empty; // e.g., "Mock Interview", "Resume Review"
         public string Status { get; set; } = string.Empty; // e.g., "Confirmed", "Paid"
     }
