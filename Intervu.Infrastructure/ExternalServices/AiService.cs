@@ -576,6 +576,11 @@ namespace Intervu.Infrastructure.ExternalServices
 
         private async Task LogUsageAsync(LlmTokenUsageDto? usage, string endpointName, string provider, long latencyMs, string? useCase = null)
         {
+            if (usage == null || (usage.PromptTokens == 0 && usage.CompletionTokens == 0 && usage.TotalTokens == 0))
+            {
+                return;
+            }
+
             try
             {
                 var log = new AiTrafficLog
