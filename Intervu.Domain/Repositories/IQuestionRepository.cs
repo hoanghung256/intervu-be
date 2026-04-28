@@ -33,5 +33,7 @@ namespace Intervu.Domain.Repositories
         Task IncrementViewCountAsync(Guid questionId);
 
         Task<List<Question>> GetByIdsAsync(IEnumerable<Guid> ids);
+
+        Task<int> GetApprovedCountAsync();
     }
 }

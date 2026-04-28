@@ -162,6 +162,7 @@ namespace Intervu.Application
             services.AddScoped<IUpdateCommissionRate, AdminUseCases.UpdateCommissionRate>();
             services.AddScoped<IGetNeedsAttentionQueue, AdminUseCases.GetNeedsAttentionQueue>();
             services.AddScoped<IGetPineconeIndexStats, AdminUseCases.GetPineconeIndexStats>();
+            services.AddScoped<IPurgePineconeNamespace, AdminUseCases.PurgePineconeNamespace>();
             services.AddScoped<IGetAiServicesHealth, AdminUseCases.GetAiServicesHealth>();
             services.AddScoped<IGetAiConfiguration, AdminUseCases.GetAiConfiguration>();
             services.AddScoped<IAdminTriggerVectorSync, AdminUseCases.AdminTriggerVectorSync>();

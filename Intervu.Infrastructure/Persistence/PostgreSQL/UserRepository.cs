@@ -158,5 +158,10 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             }
             return query.CountAsync();
         }
+
+        public Task<int> GetActiveCoachCountAsync()
+        {
+            return _context.Users.CountAsync(u => u.Role == UserRole.Coach && u.Status == UserStatus.Active);
+        }
     }
 }

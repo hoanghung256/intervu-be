@@ -96,19 +96,33 @@ namespace Intervu.Infrastructure.ExternalServices.Pinecone
             await SendAsync(HttpMethod.Post, "vectors/delete", body);
         }
 
+        public async Task DeleteNamespaceAsync(string @namespace)
+        {
+            var body = new
+            {
+                deleteAll = true,
+                @namespace = @namespace.Trim()
+            };
+
+            await SendAsync(HttpMethod.Post, "vectors/delete", body);
+        }
+
         public async Task<PineconeIndexStatsDto> DescribeIndexStatsAsync()
         {
             var content = await SendAsync(HttpMethod.Post, "describe_index_stats", new { });
             var root = JObject.Parse(content);
 
-            var namespaces = new Dictionary<string, int>();
+            var namespaces = new Dictionary<string, NamespaceComparisonDto>();
             var nsToken = root["namespaces"];
             if (nsToken is JObject nsObj)
             {
                 foreach (var prop in nsObj.Properties())
                 {
                     var count = prop.Value["vectorCount"]?.Value<int>() ?? 0;
-                    namespaces[prop.Name] = count;
+                    namespaces[prop.Name] = new NamespaceComparisonDto
+                    {
+                        VectorCount = count
+                    };
                 }
             }
 

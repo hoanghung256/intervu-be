@@ -808,6 +808,25 @@ namespace Intervu.API.Controllers.v1
         }
 
         /// <summary>
+        /// Purge all vectors in a specific namespace.
+        /// </summary>
+        [HttpDelete("system/pinecone-namespace/{namespace}")]
+        public async Task<IActionResult> PurgePineconeNamespace(
+            [FromRoute(Name = "namespace")] string namespaceName,
+            [FromServices] IPurgePineconeNamespace purgePineconeNamespace)
+        {
+            try
+            {
+                await purgePineconeNamespace.ExecuteAsync(namespaceName);
+                return Ok(new { success = true, message = $"Successfully purged namespace '{namespaceName}'." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
+
+        /// <summary>
         /// Get live health status of all configured AI services
         /// </summary>
         [HttpGet("system/ai-health")]

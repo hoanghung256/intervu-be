@@ -16,6 +16,8 @@ namespace Intervu.Application.Interfaces.ExternalServices.Pinecone
             string? @namespace = null,
             Dictionary<string, object>? metadataFilter = null);
         Task DeleteAsync(string id, string? @namespace = null);
+        /// <summary>Deletes ALL vectors in the given namespace (Purge). Pinecone: POST vectors/delete with deleteAll=true.</summary>
+        Task DeleteNamespaceAsync(string @namespace);
         Task<PineconeIndexStatsDto> DescribeIndexStatsAsync();
     }
 

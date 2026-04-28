@@ -24,5 +24,7 @@ namespace Intervu.Domain.Repositories
         Task<bool> UpdatePasswordAsync(Guid userId, string hashedPassword);
         Task<string?> UpdateProfilePictureAsync(Guid userId, string profilePictureUrl);
         Task<bool> ClearProfilePictureAsync(Guid userId);
+        /// <summary>Returns the count of active (non-suspended, non-deleted) coach accounts in SQL DB.</summary>
+        Task<int> GetActiveCoachCountAsync();
     }
 }
