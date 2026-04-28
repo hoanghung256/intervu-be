@@ -1,6 +1,10 @@
 using Intervu.Application.Exceptions;
+using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.ExternalServices.Email;
 using Intervu.Application.Interfaces.UseCases.Admin;
+using Intervu.Application.Interfaces.UseCases.Notification;
 using Intervu.Domain.Entities;
+using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 
 namespace Intervu.Application.UseCases.Admin
@@ -8,8 +12,15 @@ namespace Intervu.Application.UseCases.Admin
     public class UpdateCommissionRate : IUpdateCommissionRate
     {
         private readonly IPlatformSettingRepository _repo;
+        private readonly IBackgroundService _backgroundService;
 
-        public UpdateCommissionRate(IPlatformSettingRepository repo) => _repo = repo;
+        public UpdateCommissionRate(
+            IPlatformSettingRepository repo,
+            IBackgroundService backgroundService)
+        {
+            _repo = repo;
+            _backgroundService = backgroundService;
+        }
 
         public async Task<decimal> ExecuteAsync(decimal rate)
         {
@@ -35,6 +46,36 @@ namespace Intervu.Application.UseCases.Admin
             }
 
             await _repo.SaveChangesAsync();
+
+            // Broadcast in-app notification to all Coaches in background (non-blocking)
+            var ratePercent = Math.Round(rate * 100, 2);
+            var title = "Platform Commission Rate Updated";
+            var message = $"The platform commission rate has been updated to {ratePercent}%. This applies to all future bookings.";
+
+            _backgroundService.Enqueue<INotificationUseCase>(uc =>
+                uc.BroadcastToRoleAsync(
+                    UserRole.Coach.ToString(),
+                    NotificationType.SystemAnnouncement,
+                    title,
+                    message,
+                    null));
+
+            // Broadcast email to all Coaches in background (paginated, non-blocking)
+            var effectiveDate = DateTime.UtcNow.ToString("dd/MM/yyyy");
+            var emailPlaceholders = new Dictionary<string, string>
+            {
+                ["CommissionRate"] = ratePercent.ToString(),
+                ["EffectiveDate"] = effectiveDate,
+                ["DashboardLink"] = "https://intervu.com/coach/dashboard/earnings"
+                // CoachName is injected per-user inside BroadcastEmailToRoleAsync
+            };
+
+            _backgroundService.Enqueue<IEmailService>(svc =>
+                svc.BroadcastEmailToRoleAsync(
+                    UserRole.Coach.ToString(),
+                    "CommissionRateUpdated",
+                    emailPlaceholders));
+
             return setting.CommissionRate;
         }
     }

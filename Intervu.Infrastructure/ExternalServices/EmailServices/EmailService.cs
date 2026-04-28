@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Intervu.Application.Interfaces.ExternalServices.Email;
+using Intervu.Domain.Entities.Constants;
+using Intervu.Domain.Repositories;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.Extensions.Configuration;
@@ -16,10 +18,16 @@ namespace Intervu.Infrastructure.ExternalServices.EmailServices
         private readonly string _appEmail;
         private readonly string _appPassword;
         private readonly IEmailTemplateService _emailTemplateService;
+        private readonly IUserRepository _userRepository;
+        private const int BroadcastBatchSize = 500;
 
-        public EmailService(IEmailTemplateService emailTemplateService, IConfiguration configuration)
+        public EmailService(
+            IEmailTemplateService emailTemplateService,
+            IConfiguration configuration,
+            IUserRepository userRepository)
         {
             _emailTemplateService = emailTemplateService;
+            _userRepository = userRepository;
             _appEmail = configuration["EmailSettings:GmailEmail"];
             _appPassword = configuration["EmailSettings:GmailAppPassword"];
 
@@ -92,8 +100,43 @@ namespace Intervu.Infrastructure.ExternalServices.EmailServices
                 "PayoutConfirmation" => "Payout Processed - Intervu",
                 "InterviewReminder" => "Interview Reminder - Intervu",
                 "JDRescheduleNotification" => "Interview Schedule Updated - Intervu",
+                "CommissionRateUpdated" => "Platform Commission Rate Updated - Intervu",
                 _ => "Intervu Notification"
             };
+        }
+
+        public async Task BroadcastEmailToRoleAsync(string role, string templateName, Dictionary<string, string> sharedPlaceholders)
+        {
+            if (!Enum.TryParse<UserRole>(role, out var userRole))
+                return;
+
+            int page = 1;
+            bool hasMore = true;
+
+            while (hasMore)
+            {
+                var (users, _) = await _userRepository.GetPagedUsersByFilterAsync(page, BroadcastBatchSize, userRole, null);
+                if (users.Count == 0) break;
+
+                foreach (var user in users)
+                {
+                    try
+                    {
+                        var placeholders = new Dictionary<string, string>(sharedPlaceholders)
+                        {
+                            ["CoachName"] = user.FullName ?? "Coach"
+                        };
+                        await SendEmailWithTemplateAsync(user.Email, templateName, placeholders);
+                    }
+                    catch
+                    {
+                        // Skip failed individual sends — never break the broadcast loop
+                    }
+                }
+
+                hasMore = users.Count == BroadcastBatchSize;
+                page++;
+            }
         }
     }
 }
