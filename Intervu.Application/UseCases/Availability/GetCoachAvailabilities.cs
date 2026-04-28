@@ -56,6 +56,7 @@ namespace Intervu.Application.UseCases.Availability
                 StartTime = round.StartTime,
                 EndTime = round.EndTime,
                 CandidateName = round.BookingRequest?.Candidate?.User?.FullName ?? string.Empty,
+                CandidateAvatar = round.BookingRequest?.Candidate?.User?.ProfilePicture ?? string.Empty,
                 InterviewType = round.CoachInterviewService?.InterviewType?.Name
                     ?? (round.BookingRequest?.Type == Domain.Entities.Constants.BookingRequestType.Direct
                         ? "Direct Booking"
