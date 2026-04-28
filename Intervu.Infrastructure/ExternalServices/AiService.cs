@@ -1,4 +1,4 @@
-﻿using Intervu.Application.Interfaces.ExternalServices;
+using Intervu.Application.Interfaces.ExternalServices;
 using System.Net.Http.Json;
 using System;
 using System.Diagnostics;
@@ -376,7 +376,7 @@ namespace Intervu.Infrastructure.ExternalServices
             NormalizeOptionLevels(result.PhaseA);
             NormalizeOptionLevels(result.PhaseB);
 
-            var usage = result.Usage ?? ExtractUsage(rawContent);
+            var usage = (result.HasUsageData ? result.Usage : null) ?? ExtractUsage(rawContent);
             await LogUsageAsync(usage, "api/generate-assessment", "HuggingFace", sw.ElapsedMilliseconds, useCase);
             return result;
         }
@@ -560,7 +560,7 @@ namespace Intervu.Infrastructure.ExternalServices
             {
                 var result = System.Text.Json.JsonSerializer.Deserialize<AiUpdateRoadmapProgressResponseDto>(rawContent, options);
                 _logger.LogInformation("AI update-roadmap-progress returned status {Status}", result?.Status);
-                await LogUsageAsync(ExtractUsage(rawContent), "api/update-roadmap-progress", "Gemini", sw.ElapsedMilliseconds, useCase);
+                await LogUsageAsync(result?.Usage ?? ExtractUsage(rawContent), "api/update-roadmap-progress", "Gemini", sw.ElapsedMilliseconds, useCase);
                 return result;
             }
             catch (System.Text.Json.JsonException ex)
@@ -576,6 +576,11 @@ namespace Intervu.Infrastructure.ExternalServices
 
         private async Task LogUsageAsync(LlmTokenUsageDto? usage, string endpointName, string provider, long latencyMs, string? useCase = null)
         {
+            if (usage == null || (usage.PromptTokens == 0 && usage.CompletionTokens == 0 && usage.TotalTokens == 0))
+            {
+                return;
+            }
+
             try
             {
                 var log = new AiTrafficLog

@@ -50,6 +50,11 @@ namespace Intervu.Application.DTOs
         [JsonProperty("usage")]
         [JsonPropertyName("usage")]
         public LlmTokenUsageDto? Usage { get; set; }
+
+        /// <summary>Returns true only when the deserialized Usage object contains non-zero token data.</summary>
+        [Newtonsoft.Json.JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        public bool HasUsageData => Usage != null && (Usage.PromptTokens > 0 || Usage.CompletionTokens > 0 || Usage.TotalTokens > 0);
     }
 
     public class AssessmentQuestionItemDto
