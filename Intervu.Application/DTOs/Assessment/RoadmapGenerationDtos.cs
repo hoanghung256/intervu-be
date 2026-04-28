@@ -31,6 +31,15 @@ namespace Intervu.Application.DTOs.Assessment
 
         [JsonPropertyName("coach_catalog")]
         public List<AiCoachCatalogEntryDto> CoachCatalog { get; set; } = new();
+
+        /// <summary>
+        /// Pass-through of the snapshot's AnswerJson (per-question score, desc,
+        /// confidence, etc.). The AI service's strategy step uses it to add
+        /// per-mission interview themes and failed-question excerpts. Optional —
+        /// the AI service still produces a valid roadmap when this is null.
+        /// </summary>
+        [JsonPropertyName("answer_json")]
+        public object? AnswerJson { get; set; }
     }
 
     public class AiCoachCatalogEntryDto
@@ -103,6 +112,9 @@ namespace Intervu.Application.DTOs.Assessment
 
         [JsonPropertyName("sfiaLevel")]
         public int SfiaLevel { get; set; }
+
+        [JsonPropertyName("score")]
+        public decimal Score { get; set; }
     }
 
     public class AiGapDto
@@ -178,5 +190,34 @@ namespace Intervu.Application.DTOs.Assessment
 
         [JsonPropertyName("error")]
         public string? Error { get; set; }
+    }
+
+    // ── Role × level competency matrix (Phase 2) ────────────────────────────
+
+    public class AiCompetencyMatrixResponseDto
+    {
+        [JsonPropertyName("role_key")]
+        public string RoleKey { get; set; } = string.Empty;
+
+        [JsonPropertyName("level_key")]
+        public string LevelKey { get; set; } = string.Empty;
+
+        [JsonPropertyName("skills")]
+        public List<AiSkillCompetencyDto> Skills { get; set; } = new();
+    }
+
+    public class AiSkillCompetencyDto
+    {
+        [JsonPropertyName("skill")]
+        public string Skill { get; set; } = string.Empty;
+
+        [JsonPropertyName("target_level")]
+        public int TargetLevel { get; set; }
+
+        [JsonPropertyName("weight")]
+        public double Weight { get; set; } = 0.7;
+
+        [JsonPropertyName("interview_critical")]
+        public bool InterviewCritical { get; set; }
     }
 }

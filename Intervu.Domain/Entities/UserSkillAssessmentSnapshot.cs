@@ -129,7 +129,7 @@ namespace Intervu.Domain.Entities
         [JsonPropertyName("missing")]
         public List<string> Missing { get; set; } = new();
 
-        [JsonIgnore]
+        [JsonPropertyName("weak")]
         public List<string> Weak { get; set; } = new();
     }
 

@@ -49,7 +49,7 @@ namespace Intervu.Application.UseCases.InterviewRoom
                     NotificationType.RoadmapUpdateStarted,
                     "Updating your roadmap",
                     "Your interview just ended. We're recalculating your roadmap.",
-                    "/assessment?step=roadmap",
+                    "/roadmap",
                     roomId);
             }
         }

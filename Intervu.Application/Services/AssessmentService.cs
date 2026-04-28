@@ -141,7 +141,80 @@ namespace Intervu.Application.Services
             };
         }
 
-        private static List<string> ResolveSkillScope(SurveyAnswerProfileDto profile, IReadOnlyCollection<SurveyAnswerResponseDto> responses)
+        /// <summary>
+        /// Maps the target career band ("junior", "middle", "senior", ...) to the
+        /// numeric proficiency level (1-4) we expect a candidate at that band to hit.
+        /// Used to classify a skill as "Weak" when 0 &lt; current &lt; band target.
+        /// </summary>
+        private static int MapTargetLevelBand(string? targetLevel)
+        {
+            return (targetLevel ?? string.Empty).Trim().ToLowerInvariant() switch
+            {
+                "intern" or "fresher" => 1,
+                "junior" or "jr" => 2,
+                "mid" or "middle" or "intermediate" => 3,
+                "senior" or "sr" or "lead" or "principal" => 4,
+                _ => 3
+            };
+        }
+
+        // In-process cache for the matrix — survives the lifetime of the host. The
+        // matrix is static configuration, so a service restart picks up changes;
+        // we never invalidate during a request.
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, List<string>> _matrixSkillScopeCache = new();
+
+        private async Task<List<string>?> TryFetchMatrixSkillScopeAsync(string role, string level, CancellationToken cancellationToken)
+        {
+            var key = $"{(role ?? string.Empty).Trim().ToLowerInvariant()}|{(level ?? string.Empty).Trim().ToLowerInvariant()}";
+            if (_matrixSkillScopeCache.TryGetValue(key, out var cached))
+            {
+                return cached;
+            }
+
+            var matrix = await _aiService.GetCompetencyMatrixAsync(role ?? string.Empty, level ?? string.Empty, cancellationToken);
+            if (matrix?.Skills == null || matrix.Skills.Count == 0)
+            {
+                return null;
+            }
+
+            var scope = matrix.Skills
+                .Select(s => s.Skill)
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            _matrixSkillScopeCache[key] = scope;
+            return scope;
+        }
+
+        private async Task<List<string>> ResolveSkillScopeAsync(
+            SurveyAnswerProfileDto profile,
+            IReadOnlyCollection<SurveyAnswerResponseDto> responses,
+            CancellationToken cancellationToken)
+        {
+            // Phase 2: prefer the AI-service competency matrix as single source of
+            // truth. Fall back to the legacy keyword buckets if the matrix is
+            // unreachable or has no entry for this (role, level), so a transient
+            // AI-service outage doesn't break the assessment flow.
+            var matrixScope = await TryFetchMatrixSkillScopeAsync(profile.Role ?? string.Empty, profile.Level ?? string.Empty, cancellationToken);
+            var scoped = matrixScope ?? BuildLegacySkillScope(profile);
+
+            // Always merge skills the candidate actually saw, so a question on
+            // "Redis" outside the matrix still ends up in the snapshot.
+            foreach (var skill in responses
+                         .Select(response => response.Skill?.Trim())
+                         .Where(skill => !string.IsNullOrWhiteSpace(skill))
+                         .Cast<string>())
+            {
+                if (!scoped.Contains(skill, StringComparer.OrdinalIgnoreCase))
+                {
+                    scoped.Add(skill);
+                }
+            }
+
+            return scoped;
+        }
+
+        private static List<string> BuildLegacySkillScope(SurveyAnswerProfileDto profile)
         {
             var role = profile.Role?.ToLowerInvariant() ?? string.Empty;
             var baseSkills = role.Contains("front", StringComparison.OrdinalIgnoreCase)
@@ -159,19 +232,7 @@ namespace Intervu.Application.Services
                 _ => baseSkills.Count
             };
 
-            var scoped = baseSkills.Take(scopedCount).ToList();
-            foreach (var skill in responses
-                         .Select(response => response.Skill?.Trim())
-                         .Where(skill => !string.IsNullOrWhiteSpace(skill))
-                         .Cast<string>())
-            {
-                if (!scoped.Contains(skill, StringComparer.OrdinalIgnoreCase))
-                {
-                    scoped.Add(skill);
-                }
-            }
-
-            return scoped;
+            return baseSkills.Take(scopedCount).ToList();
         }
 
         public async Task<SurveySummaryResultDto> ProcessSurveyResponsesAsync(SurveyResponsesDto request, CancellationToken cancellationToken = default)
@@ -190,7 +251,7 @@ namespace Intervu.Application.Services
             CancellationToken cancellationToken = default)
         {
             var responses = answer.Responses ?? new List<SurveyAnswerResponseDto>();
-            var skillScope = ResolveSkillScope(answer.Profile, responses);
+            var skillScope = await ResolveSkillScopeAsync(answer.Profile, responses, cancellationToken);
             var evaluatedResponses = new List<EvaluatedResponseItem>();
 
             foreach (var response in responses)
@@ -238,6 +299,21 @@ namespace Intervu.Application.Services
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
+            // A skill is "weak" when the candidate has SOME proficiency (level > 0)
+            // but is still below the target band for their declared level. Without
+            // this list, the roadmap LLM only sees "missing" gaps and treats partial
+            // skills as already-satisfied — see Phase 1.3 of the audit plan.
+            var targetBand = MapTargetLevelBand(answer.Profile.Level ?? target?.Level);
+            var weak = currentSkills
+                .Where(skill =>
+                {
+                    if (!int.TryParse(skill.Level, out var lvl)) return false;
+                    return lvl > 0 && lvl < targetBand;
+                })
+                .Select(skill => skill.Skill)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
             var averageLevel = evaluatedResponses.Any()
                 ? evaluatedResponses.Average(item => item.EffectiveLevel)
                 : 0.0;
@@ -279,14 +355,16 @@ namespace Intervu.Application.Services
                     .Select(skill => new SkillLevel
                     {
                         Skill = skill.Skill,
-                        Level = skill.Level
+                        Level = skill.Level,
+                        Score = skill.Score
                     })
                     .ToList()
             };
 
             var snapshotGap = new Gap
             {
-                Missing = missing
+                Missing = missing,
+                Weak = weak
             };
 
             if (userId.HasValue && userId.Value != Guid.Empty)
@@ -379,6 +457,7 @@ namespace Intervu.Application.Services
                             Skill = skill.Skill,
                             Level = skill.Level,
                             SfiaLevel = skill.SfiaLevel,
+                            Score = skill.Score,
                         })
                         .ToList(),
                 },
@@ -388,6 +467,7 @@ namespace Intervu.Application.Services
                     Missing = gap.Missing ?? new List<string>(),
                 },
                 CoachCatalog = await BuildCoachCatalogAsync(),
+                AnswerJson = ParseAnswerJsonForAi(snapshot.AnswerJson),
             };
 
             var aiResponse = await _aiService.GenerateRoadmapAsync(roadmapRequest, cancellationToken, useCase: "GenerateRoadmap");
@@ -601,7 +681,7 @@ namespace Intervu.Application.Services
                 NotificationType.RoadmapUpdated,
                 "Roadmap updated",
                 "Your roadmap has been refreshed based on your latest interview.",
-                "/assessment?step=roadmap",
+                "/roadmap",
                 interviewRoomId));
         }
 
@@ -624,6 +704,31 @@ namespace Intervu.Application.Services
             node.Assessment.Status = node.Assessment.Progress >= 80
                 ? "Complete"
                 : node.Assessment.Progress >= 40 ? "Weak" : "Missing";
+        }
+
+        /// <summary>
+        /// The snapshot persists AnswerJson as a string blob. The AI service expects
+        /// a real JSON object on the wire (so its strategy module can read
+        /// `responses[].score`, `desc`, etc.), so we parse and forward as a JsonElement.
+        /// Returns null when the blob is empty or unparseable — the AI service then
+        /// falls back to building missions without per-question colour.
+        /// </summary>
+        private static object? ParseAnswerJsonForAi(string? answerJson)
+        {
+            if (string.IsNullOrWhiteSpace(answerJson) || answerJson.Trim() == "{}")
+            {
+                return null;
+            }
+
+            try
+            {
+                using var document = JsonDocument.Parse(answerJson);
+                return document.RootElement.Clone();
+            }
+            catch (JsonException)
+            {
+                return null;
+            }
         }
 
         private async Task<List<AiCoachCatalogEntryDto>> BuildCoachCatalogAsync()
