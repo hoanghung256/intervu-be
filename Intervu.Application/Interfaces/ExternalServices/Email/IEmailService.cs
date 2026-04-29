@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,5 +10,11 @@ namespace Intervu.Application.Interfaces.ExternalServices.Email
     {
         Task SendEmailAsync(string to, string subject, string body, bool isHtml = true);
         Task SendEmailWithTemplateAsync(string to, string templateName, Dictionary<string, string> placeholders);
+
+        /// <summary>
+        /// Paginates over all users with the given role and sends an email to each.
+        /// Designed to be called from a Hangfire background job to avoid memory bloat.
+        /// </summary>
+        Task BroadcastEmailToRoleAsync(string role, string templateName, Dictionary<string, string> sharedPlaceholders);
     }
 }

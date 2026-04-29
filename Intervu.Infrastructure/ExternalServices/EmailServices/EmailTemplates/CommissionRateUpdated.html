@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platform Commission Rate Updated - Intervu</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #F8FAFC; padding: 20px 0; }
+        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #0F172A 0%, #334155 100%); color: white; padding: 40px 30px; text-align: center; }
+        .header h1 { font-size: 26px; font-weight: 700; margin-bottom: 10px; letter-spacing: -0.5px; }
+        .header p { font-size: 14px; opacity: 0.85; font-weight: 400; }
+        .content { padding: 40px 30px; }
+        .greeting { font-size: 16px; color: #0F172A; margin-bottom: 25px; line-height: 1.6; }
+        .greeting strong { font-weight: 600; }
+        .rate-box { background-color: #F0FDF4; border-left: 4px solid #86EFAC; padding: 24px; margin: 28px 0; border-radius: 4px; text-align: center; }
+        .rate-box .rate-label { font-size: 13px; color: #64748B; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .rate-box .rate-value { font-size: 42px; font-weight: 800; color: #0F172A; letter-spacing: -1px; }
+        .rate-box .rate-desc { font-size: 13px; color: #64748B; margin-top: 8px; }
+        .info-box { background-color: #F8FAFC; border-left: 4px solid #D9F99D; padding: 20px; margin: 28px 0; border-radius: 4px; }
+        .info-box p { color: #374151; font-size: 14px; line-height: 1.7; }
+        .info-box p + p { margin-top: 8px; }
+        .cta-section { margin: 36px 0; text-align: center; }
+        .btn { display: inline-block; background-color: #0F172A; color: #FFFFFF !important; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; }
+        .btn:link, .btn:visited { color: #FFFFFF !important; }
+        .footer-section { margin-top: 30px; padding-top: 30px; border-top: 1px solid #e5e7eb; }
+        .footer-text { font-size: 13px; color: #64748B; line-height: 1.8; }
+        .footer { background-color: #F8FAFC; padding: 20px 30px; text-align: center; font-size: 12px; color: #9ca3af; }
+        @media (max-width: 600px) { .container { border-radius: 0; } .header { padding: 30px 20px; } .content { padding: 25px 20px; } .rate-box .rate-value { font-size: 32px; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Platform Commission Update</h1>
+            <p>Important update regarding your earnings on Intervu</p>
+        </div>
+        <div class="content">
+            <div class="greeting">
+                Hello <strong>{{CoachName}}</strong>,
+                <br><br>
+                We'd like to inform you that the platform commission rate for coach services on Intervu has been updated by our admin team.
+            </div>
+
+            <div class="rate-box">
+                <div class="rate-label">New Commission Rate</div>
+                <div class="rate-value">{{CommissionRate}}%</div>
+                <div class="rate-desc">Effective for all bookings from <strong>{{EffectiveDate}}</strong> onward</div>
+            </div>
+
+            <div class="info-box">
+                <p>&#8226; This rate reflects the percentage of each booking fee retained by the platform.</p>
+                <p>&#8226; You will receive the remaining percentage as your net payout after each completed session.</p>
+                <p>&#8226; This change does not affect any bookings that have already been confirmed and paid.</p>
+            </div>
+
+            <div class="cta-section">
+                <a href="{{DashboardLink}}" class="btn">View Your Earnings</a>
+            </div>
+            <div class="footer-section">
+                <div class="footer-text">
+                    If you have any questions or concerns, please contact us at <strong>support@intervu.com</strong>.
+                </div>
+            </div>
+        </div>
+        <div class="footer">
+            <p>&copy; 2025 Intervu. All rights reserved.</p>
+            <p style="margin-top: 8px; font-size: 11px;">This is an automated email. Please do not reply directly.</p>
+        </div>
+    </div>
+</body>
+</html>
