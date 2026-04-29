@@ -168,6 +168,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Include(q => q.QuestionTags).ThenInclude(qt => qt.Tag)
                 .ToListAsync();
         }
+
+        public Task<int> GetApprovedCountAsync()
+        {
+            return _context.Questions.CountAsync(q => q.Status == QuestionStatus.Approved && !q.IsHidden);
+        }
     }
 }
 
