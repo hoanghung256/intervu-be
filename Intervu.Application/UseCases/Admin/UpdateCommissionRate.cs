@@ -6,6 +6,7 @@ using Intervu.Application.Interfaces.UseCases.Notification;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
+using Microsoft.Extensions.Configuration;
 
 namespace Intervu.Application.UseCases.Admin
 {
@@ -13,13 +14,16 @@ namespace Intervu.Application.UseCases.Admin
     {
         private readonly IPlatformSettingRepository _repo;
         private readonly IBackgroundService _backgroundService;
+        private readonly IConfiguration _configuration;
 
         public UpdateCommissionRate(
             IPlatformSettingRepository repo,
-            IBackgroundService backgroundService)
+            IBackgroundService backgroundService,
+            IConfiguration configuration)
         {
             _repo = repo;
             _backgroundService = backgroundService;
+            _configuration = configuration;
         }
 
         public async Task<decimal> ExecuteAsync(decimal rate)
@@ -62,11 +66,14 @@ namespace Intervu.Application.UseCases.Admin
 
             // Broadcast email to all Coaches in background (paginated, non-blocking)
             var effectiveDate = DateTime.UtcNow.ToString("dd/MM/yyyy");
+            var frontEndUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:5173";
+            var dashboardLink = $"{frontEndUrl}/dashboard/wallet";
+
             var emailPlaceholders = new Dictionary<string, string>
             {
                 ["CommissionRate"] = ratePercent.ToString(),
                 ["EffectiveDate"] = effectiveDate,
-                ["DashboardLink"] = "https://intervu.com/coach/dashboard/earnings"
+                ["DashboardLink"] = dashboardLink
                 // CoachName is injected per-user inside BroadcastEmailToRoleAsync
             };
 
