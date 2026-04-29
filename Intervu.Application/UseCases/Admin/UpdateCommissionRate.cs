@@ -67,7 +67,7 @@ namespace Intervu.Application.UseCases.Admin
             // Broadcast email to all Coaches in background (paginated, non-blocking)
             var effectiveDate = DateTime.UtcNow.ToString("dd/MM/yyyy");
             var frontEndUrl = _configuration["AppSettings:FrontendUrl"] ?? "http://localhost:5173";
-            var dashboardLink = $"{frontEndUrl}/dashboard/wallet";
+            var dashboardLink = $"{frontEndUrl}/wallet";
 
             var emailPlaceholders = new Dictionary<string, string>
             {
