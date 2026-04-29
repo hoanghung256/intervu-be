@@ -254,9 +254,6 @@ namespace Intervu.Domain.Entities
 
         [JsonPropertyName("recommended_coach")]
         public RoadmapNodeCoachSnapshot? RecommendedCoach { get; set; }
-
-        [JsonPropertyName("recommended_service")]
-        public RoadmapNodeServiceSnapshot? RecommendedService { get; set; }
     }
 
     public class RoadmapNodeCoachSnapshot
@@ -272,21 +269,6 @@ namespace Intervu.Domain.Entities
 
         [JsonPropertyName("avatar_url")]
         public string AvatarUrl { get; set; } = string.Empty;
-    }
-
-    public class RoadmapNodeServiceSnapshot
-    {
-        [JsonPropertyName("id")]
-        public string Id { get; set; } = string.Empty;
-
-        [JsonPropertyName("interview_type_name")]
-        public string InterviewTypeName { get; set; } = string.Empty;
-
-        [JsonPropertyName("price")]
-        public int Price { get; set; }
-
-        [JsonPropertyName("duration_minutes")]
-        public int DurationMinutes { get; set; }
     }
 
     public class RoadmapNodeAssessmentSnapshot

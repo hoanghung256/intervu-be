@@ -848,13 +848,6 @@ namespace Intervu.Application.Services
                                     SlugProfileUrl = node.RecommendedCoach.SlugProfileUrl,
                                     AvatarUrl = node.RecommendedCoach.AvatarUrl,
                                 },
-                                RecommendedService = node.RecommendedService == null ? null : new RoadmapNodeServiceSnapshot
-                                {
-                                    Id = node.RecommendedService.Id,
-                                    InterviewTypeName = node.RecommendedService.InterviewTypeName,
-                                    Price = node.RecommendedService.Price,
-                                    DurationMinutes = node.RecommendedService.DurationMinutes,
-                                },
                             })
                             .ToList(),
                     })
@@ -944,13 +937,6 @@ namespace Intervu.Application.Services
                                     Name = node.RecommendedCoach.Name,
                                     SlugProfileUrl = node.RecommendedCoach.SlugProfileUrl,
                                     AvatarUrl = node.RecommendedCoach.AvatarUrl,
-                                },
-                                RecommendedService = node.RecommendedService == null ? null : new SurveyRoadmapNodeServiceDto
-                                {
-                                    Id = node.RecommendedService.Id,
-                                    InterviewTypeName = node.RecommendedService.InterviewTypeName,
-                                    Price = node.RecommendedService.Price,
-                                    DurationMinutes = node.RecommendedService.DurationMinutes,
                                 },
                             })
                             .ToList(),
