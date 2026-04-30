@@ -82,7 +82,7 @@ namespace Intervu.Application.UseCases.InterviewRoom
                     NotificationType.FeedbackReceived,
                     "Evaluation Completed",
                     "Your coach has submitted their evaluation. Check your dashboard for details.",
-                    "/interview?tab=past",
+                    $"/booking-requests/{room.BookingRequestId}?round={room.RoundNumber}",
                     null
                 ));
 
@@ -95,7 +95,7 @@ namespace Intervu.Application.UseCases.InterviewRoom
                         {
                             ["CandidateName"] = candidate.FullName,
                             ["CoachName"] = coach?.FullName ?? "Coach",
-                            ["DashboardLink"] = $"{frontendUrl.TrimEnd('/')}/interview?tab=past"
+                            ["DashboardLink"] = $"{frontendUrl.TrimEnd('/')}/booking-requests/{room.BookingRequestId}?round={room.RoundNumber}"
                         };
 
                         _jobService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(

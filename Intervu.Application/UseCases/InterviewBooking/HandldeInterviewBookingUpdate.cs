@@ -254,11 +254,11 @@ namespace Intervu.Application.UseCases.InterviewBooking
             }
 
             // Sent notification
-            SentNotification(
-                bookingRequest.Status == BookingRequestStatus.Accepted,
-                bookingRequest.CandidateId,
-                bookingRequest.CoachId
-            );
+            // SentNotification(
+            //     bookingRequest.Status == BookingRequestStatus.Accepted,
+            //     bookingRequest.CandidateId,
+            //     bookingRequest.CoachId
+            // );
 
             _logger.LogInformation(
                 "BookingRequest {BookingRequestId} marked as Paid, availability blocks confirmed as Booked",
