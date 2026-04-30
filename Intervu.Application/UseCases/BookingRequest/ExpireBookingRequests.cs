@@ -37,6 +37,14 @@ namespace Intervu.Application.UseCases.BookingRequest
                 request.Status = BookingRequestStatus.Expired;
                 request.UpdatedAt = DateTime.UtcNow;
                 _bookingRepo.UpdateAsync(request);
+
+                var payment = await _transactionRepo.GetByBookingRequestId(request.Id, TransactionType.Payment);
+                if (payment != null && payment.Status == TransactionStatus.Created)
+                {
+                    payment.Status = TransactionStatus.Cancel;
+                    _transactionRepo.UpdateAsync(payment);
+                }
+
                 FreeAvailabilityBlocks(request);
                 count++;
             }
