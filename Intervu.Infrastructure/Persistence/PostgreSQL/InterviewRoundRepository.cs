@@ -17,5 +17,11 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .OrderBy(r => r.RoundNumber)
                 .ToListAsync();
         }
+
+        public async Task<InterviewRound?> GetByInterviewRoomIdAsync(Guid interviewRoomId)
+        {
+            return await _context.InterviewRounds
+                .FirstOrDefaultAsync(r => r.InterviewRoomId == interviewRoomId);
+        }
     }
 }

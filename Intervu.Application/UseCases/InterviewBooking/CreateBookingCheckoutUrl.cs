@@ -32,7 +32,6 @@ namespace Intervu.Application.UseCases.InterviewBooking
         private readonly IUnitOfWork _unitOfWork;
         private readonly IUserRepository _userRepository;
         private readonly IConfiguration _configuration;
-        private readonly ICommissionCalculator _commissionCalculator;
 
         public CreateBookingCheckoutUrl(
             ILogger<CreateBookingCheckoutUrl> logger,
@@ -42,7 +41,6 @@ namespace Intervu.Application.UseCases.InterviewBooking
             IUserRepository userRepository,
             IConfiguration configuration,
             ICreateEvaluationResultsUseCase createEvaluationResults,
-            ICommissionCalculator commissionCalculator,
             IUnitOfWork unitOfWork)
         {
             _logger = logger;
@@ -53,7 +51,6 @@ namespace Intervu.Application.UseCases.InterviewBooking
             _unitOfWork = unitOfWork;
             _userRepository = userRepository;
             _configuration = configuration;
-            _commissionCalculator = commissionCalculator;
         }
 
         public async Task<string?> ExecuteAsync(
@@ -176,7 +173,8 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 var brRepo = _unitOfWork.GetRepository<IBookingRequestRepository>();
                 await brRepo.AddAsync(br);
 
-                // 7. Create Payment + Payout transactions linked to BookingRequest
+                // 7. Create Payment transaction linked to BookingRequest.
+                // Payout is created per-round in PayoutForCoachAfterInterview when each round completes.
                 InterviewBookingTransaction t = new()
                 {
                     OrderCode = RandomGenerator.GenerateOrderCode(),
@@ -187,23 +185,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     BookingRequestId = br.Id,
                 };
 
-                var split = await _commissionCalculator.ComputeAsync(paymentAmount);
-
-                InterviewBookingTransaction t2 = new()
-                {
-                    OrderCode = RandomGenerator.GenerateOrderCode(),
-                    UserId = coachId,
-                    Amount = split.Net,
-                    GrossAmount = paymentAmount,
-                    CommissionAmount = split.Commission,
-                    CommissionRate = split.Rate,
-                    Status = TransactionStatus.Created,
-                    Type = TransactionType.Payout,
-                    BookingRequestId = br.Id,
-                };
-
                 await transactionRepo.AddAsync(t);
-                await transactionRepo.AddAsync(t2);
 
                 // 8. Payment gateway or immediate finalization
                 string? checkoutUrl = null;
@@ -211,7 +193,6 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 if (t.Amount == 0)
                 {
                     t.Status = TransactionStatus.Paid;
-                    t2.Status = TransactionStatus.Paid;
                     shouldSendBookingEmails = true;
 
                     // Free booking: payment confirmed immediately — upgrade blocks from Reserved to Booked

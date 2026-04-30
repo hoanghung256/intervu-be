@@ -73,13 +73,7 @@ namespace Intervu.Application.UseCases.BookingRequest
             bookingRequest.Status = BookingRequestStatus.Cancelled;
             bookingRequest.UpdatedAt = DateTime.UtcNow;
 
-            // Handle refunds via BookingRequest transactions
-            var payout = await _transactionRepo.GetByBookingRequestId(bookingRequestId, TransactionType.Payout);
-            if (payout != null)
-            {
-                payout.Status = TransactionStatus.Cancel;
-                _transactionRepo.UpdateAsync(payout);
-            }
+            // Payout rows are written per-round on completion, so a cancelled booking has none to cancel.
 
             int refundAmount = 0;
             var payment = await _transactionRepo.GetByBookingRequestId(bookingRequestId, TransactionType.Payment);

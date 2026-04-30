@@ -139,8 +139,9 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
             Assert.Equal(1, result);
             Assert.Equal(BookingRequestStatus.Expired, booking.Status);
 
-            // Payout cancelled
-            Assert.Equal(TransactionStatus.Cancel, payout.Status);
+            // Per-round payout model: payout is written on round completion, so an expired
+            // booking leaves the legacy seeded payout untouched.
+            Assert.Equal(TransactionStatus.Created, payout.Status);
 
             // 100% refund created
             ctx.TransactionRepo.Verify(x => x.AddAsync(It.Is<InterviewBookingTransaction>(t =>

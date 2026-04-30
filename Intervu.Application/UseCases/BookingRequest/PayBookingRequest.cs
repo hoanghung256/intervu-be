@@ -18,7 +18,6 @@ namespace Intervu.Application.UseCases.BookingRequest
         private readonly IPaymentService _paymentService;
         private readonly IBackgroundService _backgroundService;
         private readonly ICreateEvaluationResultsUseCase _createEvaluationResults;
-        private readonly ICommissionCalculator _commissionCalculator;
         private readonly IUnitOfWork _unitOfWork;
 
         public PayBookingRequest(
@@ -26,14 +25,12 @@ namespace Intervu.Application.UseCases.BookingRequest
             IPaymentService paymentService,
             IBackgroundService backgroundService,
             ICreateEvaluationResultsUseCase createEvaluationResults,
-            ICommissionCalculator commissionCalculator,
             IUnitOfWork unitOfWork)
         {
             _logger = logger;
             _paymentService = paymentService;
             _backgroundService = backgroundService;
             _createEvaluationResults = createEvaluationResults;
-            _commissionCalculator = commissionCalculator;
             _unitOfWork = unitOfWork;
         }
 
@@ -71,31 +68,17 @@ namespace Intervu.Application.UseCases.BookingRequest
                     BookingRequestId = bookingRequestId,
                 };
 
-                var split = await _commissionCalculator.ComputeAsync(paymentAmount);
-
-                // Create payout transaction (coach receives net after commission)
-                InterviewBookingTransaction payoutTx = new()
-                {
-                    OrderCode = RandomGenerator.GenerateOrderCode(),
-                    UserId = bookingRequest.CoachId,
-                    Amount = split.Net,
-                    GrossAmount = paymentAmount,
-                    CommissionAmount = split.Commission,
-                    CommissionRate = split.Rate,
-                    Status = TransactionStatus.Created,
-                    Type = TransactionType.Payout,
-                    BookingRequestId = bookingRequestId,
-                };
-
                 await transactionRepo.AddAsync(paymentTx);
-                await transactionRepo.AddAsync(payoutTx);
+
+                // Payout transactions are no longer created up front. They are created per-round
+                // in PayoutForCoachAfterInterview when each round completes, so coaches are
+                // only paid for rounds they actually deliver.
 
                 string? checkoutUrl = null;
                 if (paymentAmount == 0)
                 {
                     // Free booking — auto-accept immediately, upgrade blocks and create rooms
                     paymentTx.Status = TransactionStatus.Paid;
-                    payoutTx.Status = TransactionStatus.Paid;
                     bookingRequest.Status = BookingRequestStatus.Accepted;
                     bookingRequest.ExpiresAt = DateTime.UtcNow.AddHours(48);
                     bookingRequest.UpdatedAt = DateTime.UtcNow;

@@ -73,13 +73,7 @@ namespace Intervu.Application.UseCases.BookingRequest
 
         private async Task ProcessRefundAsync(Domain.Entities.BookingRequest request)
         {
-            // Cancel payout — coach will not be paid
-            var payout = await _transactionRepo.GetByBookingRequestId(request.Id, TransactionType.Payout);
-            if (payout != null)
-            {
-                payout.Status = TransactionStatus.Cancel;
-                _transactionRepo.UpdateAsync(payout);
-            }
+            // Payout rows are written per-round on completion, so an expired booking has none to cancel.
 
             // Issue 100% refund to candidate
             var payment = await _transactionRepo.GetByBookingRequestId(request.Id, TransactionType.Payment);

@@ -238,6 +238,11 @@ namespace Intervu.Application.Services
                     // Notify candidate/coach progress trays now that the room is Completed.
                     await onRoomCompleted.ExecuteAsync(room.Id);
 
+                    // Enqueue coach payout — manual-end path must trigger payout too,
+                    // otherwise InterviewMonitorJob will skip it (it only scans Ongoing rooms).
+                    var backgroundService = scope.ServiceProvider.GetRequiredService<IBackgroundService>();
+                    backgroundService.Enqueue<IPayoutForCoachAfterInterview>(uc => uc.ExecuteAsync(room.Id));
+
                     //Create feedback
                     GetFeedbackRequest request = new GetFeedbackRequest
                     {

@@ -123,8 +123,9 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
             Assert.Equal(BookingRequestStatus.Rejected, result.Status);
             Assert.Equal("Not available", booking.RejectionReason);
 
-            // Payout cancelled
-            Assert.Equal(TransactionStatus.Cancel, payout.Status);
+            // Per-round payout model: payout is written on round completion, so a coach
+            // rejection leaves the legacy seeded payout untouched.
+            Assert.Equal(TransactionStatus.Created, payout.Status);
 
             // 100% refund created
             ctx.TransactionRepo.Verify(x => x.AddAsync(It.Is<InterviewBookingTransaction>(t =>

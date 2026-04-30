@@ -15,6 +15,11 @@ namespace Intervu.Domain.Entities
         /// </summary>
         public Guid? BookingRequestId { get; set; }
 
+        /// <summary>
+        /// Set on per-round Payout/Earnings rows. Null for Payment rows (paid up front for the whole booking).
+        /// </summary>
+        public Guid? InterviewRoundId { get; set; }
+
         public int Amount { get; set; }
 
         public int? GrossAmount { get; set; }
@@ -29,6 +34,7 @@ namespace Intervu.Domain.Entities
 
         // Navigation
         public BookingRequest? BookingRequest { get; set; }
+        public InterviewRound? InterviewRound { get; set; }
         public User? User { get; set; }
     }
 }
