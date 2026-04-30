@@ -128,7 +128,7 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
 
         [Fact]
         [Trait("Category", "Unit")]
-        public async Task ExecuteAsync_LastActiveRound_CancelsBookingAndPayout()
+        public async Task ExecuteAsync_LastActiveRound_CancelsBookingWithoutTouchingPayout()
         {
             var candidateId = Guid.NewGuid();
             var coachId = Guid.NewGuid();
@@ -190,8 +190,10 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
             Assert.Single(ctx.RefundTransactions);
             Assert.Equal(TransactionStatus.Paid, ctx.RefundTransactions[0].Status);
 
+            // Per-round payout model: payout rows are written on round completion, not at
+            // booking time — so cancelling the booking should not touch any payout row.
             ctx.TransactionRepo.Verify(x => x.UpdateAsync(It.Is<InterviewBookingTransaction>(t =>
-                t.Id == payout.Id && t.Status == TransactionStatus.Cancel)), Times.Once);
+                t.Id == payout.Id && t.Status == TransactionStatus.Cancel)), Times.Never);
 
             ctx.PaymentService.Verify(x => x.CreateSpendOrderAsync(
                 75,

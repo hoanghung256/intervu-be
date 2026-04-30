@@ -92,8 +92,10 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
 
             context.TransactionRepo.Verify(x => x.AddAsync(It.Is<InterviewBookingTransaction>(t =>
                 t.Type == TransactionType.Refund && t.Amount == 120 && t.UserId == candidateId)), Times.Once);
+            // Per-round payout model: payout is written on round completion, so cancelling
+            // the booking should not touch any payout row.
             context.TransactionRepo.Verify(x => x.UpdateAsync(It.Is<InterviewBookingTransaction>(t =>
-                t.Id == payout.Id && t.Status == TransactionStatus.Cancel)), Times.Once);
+                t.Id == payout.Id && t.Status == TransactionStatus.Cancel)), Times.Never);
             context.AvailabilityRepo.Verify(x => x.UpdateAsync(It.IsAny<CoachAvailability>()), Times.Once);
             context.RoomRepo.Verify(x => x.UpdateAsync(It.Is<InterviewRoom>(r => r.Id == room.Id && r.Status == InterviewRoomStatus.Cancelled)), Times.Once);
             context.BookingRepo.Verify(x => x.SaveChangesAsync(), Times.Once);
