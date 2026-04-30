@@ -204,6 +204,7 @@ namespace Intervu.Application.Services
 
                 var roomRepo = scope.ServiceProvider.GetRequiredService<IInterviewRoomRepository>();
                 var updateRoom = scope.ServiceProvider.GetRequiredService<IUpdateRoom>();
+                var onRoomCompleted = scope.ServiceProvider.GetRequiredService<IOnRoomCompleted>();
                 var getFeedbacks = scope.ServiceProvider.GetRequiredService<IGetFeedbacks>();
                 var createFeedback = scope.ServiceProvider.GetRequiredService<ICreateFeedback>();
                 var getAudioChunk = scope.ServiceProvider.GetRequiredService<IGetAudioChunk>();
@@ -233,6 +234,14 @@ namespace Intervu.Application.Services
                     _logger.LogInformation("Saved data for room '{RoomId}'.", roomId);
 
                     await updateRoom.ExecuteAsync(room);
+
+                    // Notify candidate/coach progress trays now that the room is Completed.
+                    await onRoomCompleted.ExecuteAsync(room.Id);
+
+                    // Enqueue coach payout — manual-end path must trigger payout too,
+                    // otherwise InterviewMonitorJob will skip it (it only scans Ongoing rooms).
+                    var backgroundService = scope.ServiceProvider.GetRequiredService<IBackgroundService>();
+                    backgroundService.Enqueue<IPayoutForCoachAfterInterview>(uc => uc.ExecuteAsync(room.Id));
 
                     //Create feedback
                     GetFeedbackRequest request = new GetFeedbackRequest

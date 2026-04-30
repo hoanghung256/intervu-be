@@ -15,6 +15,7 @@ namespace Intervu.Application.Interfaces.ExternalServices
         Task<string> EvaluateAssessmentRawAsync(EvaluateAssessmentRequestDto request, CancellationToken cancellationToken = default, string? useCase = null);
         Task<AiGenerateRoadmapResponseDto?> GenerateRoadmapAsync(AiGenerateRoadmapRequestDto request, CancellationToken cancellationToken = default, string? useCase = null);
         Task<AiUpdateRoadmapProgressResponseDto?> UpdateRoadmapProgressAsync(AiUpdateRoadmapProgressRequestDto request, CancellationToken cancellationToken = default, string? useCase = null);
+        Task<AiCompetencyMatrixResponseDto?> GetCompetencyMatrixAsync(string role, string level, CancellationToken cancellationToken = default);
         Task<bool> StoreCvUrlAsync(Guid roomId, string cvUrl, IFormFile? file, string? useCase = null);
         Task<string?> GetLastCvPdfUrlAsync(Guid roomId);
         Task<AiQuestionExtractionResponse> GetNewQuestionsFromTranscriptAsync(byte[] audioData, Guid roomId, IEnumerable<string>? availableTags = null, string? useCase = null);

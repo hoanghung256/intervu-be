@@ -163,13 +163,8 @@ namespace Intervu.Application.UseCases.BookingRequest
             bookingRequest.Status = BookingRequestStatus.Rejected;
             bookingRequest.RejectionReason = rejectionReason;
 
-            // Cancel the payout — coach will not receive payment
-            var payout = await _transactionRepo.GetByBookingRequestId(bookingRequest.Id, TransactionType.Payout);
-            if (payout != null)
-            {
-                payout.Status = TransactionStatus.Cancel;
-                _transactionRepo.UpdateAsync(payout);
-            }
+            // Payout rows are written per-round on completion, not at booking time, so there
+            // is nothing to cancel here when the coach rejects the request.
 
             // Issue 100% refund to candidate
             var payment = await _transactionRepo.GetByBookingRequestId(bookingRequest.Id, TransactionType.Payment);

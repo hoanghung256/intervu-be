@@ -126,20 +126,15 @@ namespace Intervu.Application.UseCases.BookingRequest
                 }
             }
 
-            // If this was the last active round, cancel the entire booking
+            // If this was the last active round, cancel the entire booking.
+            // Payout rows are no longer pre-created at booking time — they are written per-round
+            // by PayoutForCoachAfterInterview only when a round actually completes, so a cancelled
+            // round leaves no Payout row to flip.
             var hasActiveRounds = bookingRequest.Rounds.Any(r => r.Id != roundId && r.Status == InterviewRoundStatus.Active);
             if (!hasActiveRounds)
             {
                 bookingRequest.Status = BookingRequestStatus.Cancelled;
                 bookingRequest.UpdatedAt = DateTime.UtcNow;
-
-                // Cancel the payout — coach will not be paid for any remaining sessions
-                var payout = await _transactionRepo.GetByBookingRequestId(bookingRequestId, TransactionType.Payout);
-                if (payout != null)
-                {
-                    payout.Status = TransactionStatus.Cancel;
-                    _transactionRepo.UpdateAsync(payout);
-                }
             }
 
             _bookingRepo.UpdateAsync(bookingRequest);

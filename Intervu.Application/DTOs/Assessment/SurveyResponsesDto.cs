@@ -213,9 +213,6 @@ namespace Intervu.Application.DTOs.Assessment
 
         [JsonPropertyName("recommended_coach")]
         public SurveyRoadmapNodeCoachDto? RecommendedCoach { get; set; }
-
-        [JsonPropertyName("recommended_service")]
-        public SurveyRoadmapNodeServiceDto? RecommendedService { get; set; }
     }
 
     public class SurveyRoadmapNodeCoachDto
@@ -233,22 +230,7 @@ namespace Intervu.Application.DTOs.Assessment
         public string AvatarUrl { get; set; } = string.Empty;
     }
 
-    public class SurveyRoadmapNodeServiceDto
-    {
-        [JsonPropertyName("id")]
-        public string Id { get; set; } = string.Empty;
-
-        [JsonPropertyName("interview_type_name")]
-        public string InterviewTypeName { get; set; } = string.Empty;
-
-        [JsonPropertyName("price")]
-        public int Price { get; set; }
-
-        [JsonPropertyName("duration_minutes")]
-        public int DurationMinutes { get; set; }
-    }
-
-    public class SurveyRoadmapNodeAssessmentDto
+public class SurveyRoadmapNodeAssessmentDto
     {
         [JsonPropertyName("current_level")]
         public string CurrentLevel { get; set; } = string.Empty;

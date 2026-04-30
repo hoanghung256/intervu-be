@@ -574,6 +574,45 @@ namespace Intervu.Infrastructure.ExternalServices
             }
         }
 
+        public async Task<AiCompetencyMatrixResponseDto?> GetCompetencyMatrixAsync(string role, string level, CancellationToken cancellationToken = default)
+        {
+            if (_httpClient.BaseAddress == null)
+            {
+                return null;
+            }
+
+            // Free-form role/level strings — URL-encode so values like "Backend Developer" survive routing.
+            var path = $"api/competency-matrix/{Uri.EscapeDataString(role ?? string.Empty)}/{Uri.EscapeDataString(level ?? string.Empty)}";
+
+            try
+            {
+                var response = await _httpClient.GetAsync(path, cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning("AI competency-matrix returned {StatusCode} for {Role}/{Level}", response.StatusCode, role, level);
+                    return null;
+                }
+
+                var rawContent = await response.Content.ReadAsStringAsync(cancellationToken);
+                if (string.IsNullOrWhiteSpace(rawContent))
+                {
+                    return null;
+                }
+
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    NumberHandling = JsonNumberHandling.AllowReadingFromString,
+                };
+                return System.Text.Json.JsonSerializer.Deserialize<AiCompetencyMatrixResponseDto>(rawContent, options);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "AI competency-matrix call failed for {Role}/{Level}", role, level);
+                return null;
+            }
+        }
+
         private async Task LogUsageAsync(LlmTokenUsageDto? usage, string endpointName, string provider, long latencyMs, string? useCase = null)
         {
             if (usage == null || (usage.PromptTokens == 0 && usage.CompletionTokens == 0 && usage.TotalTokens == 0))

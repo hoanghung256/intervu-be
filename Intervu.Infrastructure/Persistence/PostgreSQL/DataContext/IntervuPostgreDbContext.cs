@@ -721,6 +721,16 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 .HasConstraintName("FK_InterviewBookingTransaction_Users_UserId")
                 .OnDelete(DeleteBehavior.Cascade);
 
+                b.HasOne(x => x.InterviewRound)
+                .WithMany()
+                .HasForeignKey(x => x.InterviewRoundId)
+                .IsRequired(false)
+                .HasConstraintName("FK_InterviewBookingTransaction_InterviewRounds_InterviewRoundId")
+                .OnDelete(DeleteBehavior.SetNull);
+
+                b.HasIndex(x => new { x.InterviewRoundId, x.Type })
+                .HasDatabaseName("IX_InterviewBookingTransaction_InterviewRoundId_Type");
+
                 b.Property(x => x.GrossAmount).IsRequired(false);
                 b.Property(x => x.CommissionAmount).IsRequired(false);
                 b.Property(x => x.CommissionRate).HasPrecision(5, 4).IsRequired(false);

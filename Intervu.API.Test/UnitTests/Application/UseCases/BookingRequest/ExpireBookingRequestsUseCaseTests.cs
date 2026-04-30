@@ -51,6 +51,58 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
 
         [Fact]
         [Trait("Category", "Unit")]
+        public async Task ExecuteAsync_PendingExpiredWithCreatedPayment_CancelsPaymentTransaction()
+        {
+            var booking = BuildPendingExpiredBooking();
+            var payment = new InterviewBookingTransaction
+            {
+                Id = Guid.NewGuid(),
+                BookingRequestId = booking.Id,
+                Type = TransactionType.Payment,
+                Amount = 100,
+                Status = TransactionStatus.Created,
+                UserId = booking.CandidateId
+            };
+
+            var ctx = BuildContext(pendingExpired: [booking], paidExpired: [], payment);
+            var useCase = ctx.Provider.GetRequiredService<IExpireBookingRequests>();
+
+            var result = await useCase.ExecuteAsync();
+
+            Assert.Equal(1, result);
+            Assert.Equal(BookingRequestStatus.Expired, booking.Status);
+            Assert.Equal(TransactionStatus.Cancel, payment.Status);
+            ctx.TransactionRepo.Verify(x => x.UpdateAsync(payment), Times.Once);
+            ctx.BookingRepo.Verify(x => x.SaveChangesAsync(), Times.Once);
+        }
+
+        [Fact]
+        [Trait("Category", "Unit")]
+        public async Task ExecuteAsync_PendingExpiredWithPaidPayment_DoesNotCancelPayment()
+        {
+            // Race-window guard: webhook flipped Created→Paid right before sweep — do not clobber.
+            var booking = BuildPendingExpiredBooking();
+            var payment = new InterviewBookingTransaction
+            {
+                Id = Guid.NewGuid(),
+                BookingRequestId = booking.Id,
+                Type = TransactionType.Payment,
+                Amount = 100,
+                Status = TransactionStatus.Paid,
+                UserId = booking.CandidateId
+            };
+
+            var ctx = BuildContext(pendingExpired: [booking], paidExpired: [], payment);
+            var useCase = ctx.Provider.GetRequiredService<IExpireBookingRequests>();
+
+            await useCase.ExecuteAsync();
+
+            Assert.Equal(TransactionStatus.Paid, payment.Status);
+            ctx.TransactionRepo.Verify(x => x.UpdateAsync(It.IsAny<InterviewBookingTransaction>()), Times.Never);
+        }
+
+        [Fact]
+        [Trait("Category", "Unit")]
         public async Task ExecuteAsync_PaidExpired_MarksExpiredRefundsFreeBlocksEmailsBoth()
         {
             var candidateId = Guid.NewGuid();
@@ -87,8 +139,9 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
             Assert.Equal(1, result);
             Assert.Equal(BookingRequestStatus.Expired, booking.Status);
 
-            // Payout cancelled
-            Assert.Equal(TransactionStatus.Cancel, payout.Status);
+            // Per-round payout model: payout is written on round completion, so an expired
+            // booking leaves the legacy seeded payout untouched.
+            Assert.Equal(TransactionStatus.Created, payout.Status);
 
             // 100% refund created
             ctx.TransactionRepo.Verify(x => x.AddAsync(It.Is<InterviewBookingTransaction>(t =>
@@ -212,6 +265,12 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
                 var bid = booking.Id;
                 transactionRepo.Setup(x => x.GetByBookingRequestId(bid, TransactionType.Payment)).ReturnsAsync(payment);
                 transactionRepo.Setup(x => x.GetByBookingRequestId(bid, TransactionType.Payout)).ReturnsAsync(payout);
+            }
+
+            foreach (var booking in pendingExpired)
+            {
+                var bid = booking.Id;
+                transactionRepo.Setup(x => x.GetByBookingRequestId(bid, TransactionType.Payment)).ReturnsAsync(payment);
             }
 
             transactionRepo.Setup(x => x.AddAsync(It.IsAny<InterviewBookingTransaction>())).Returns(Task.CompletedTask);

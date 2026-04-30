@@ -19,6 +19,12 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .FirstOrDefaultAsync(t => t.BookingRequestId == bookingRequestId && t.Type == type);
         }
 
+        public async Task<InterviewBookingTransaction?> GetByInterviewRoundId(Guid interviewRoundId, TransactionType type)
+        {
+            return await _context.InterviewBookingTransaction
+                .FirstOrDefaultAsync(t => t.InterviewRoundId == interviewRoundId && t.Type == type);
+        }
+
         public async Task<InterviewBookingTransaction?> GetByAvailabilityId(Guid availabilityId, TransactionType type)
         {
             return await (
@@ -48,6 +54,10 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             if (type.HasValue)
             {
                 query = query.Where(t => t.Type == type);
+            }
+            else
+            {
+                query = query.Where(t => t.Type != TransactionType.Payout);
             }
 
             if (status.HasValue)
