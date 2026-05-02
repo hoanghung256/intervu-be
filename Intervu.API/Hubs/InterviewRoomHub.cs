@@ -133,6 +133,12 @@ namespace Intervu.API.Hubs
 
         public async Task JoinRoom(string room, string userId, UserRole role, string userName)
         {
+            if (!IsRoomOngoing(room))
+            {
+                _logger.LogInformation("Rejected join for inactive room {RoomId} by connection {ConnectionId}", room, Context.ConnectionId);
+                throw new HubException("Room is not active");
+            }
+
             // Get the current state for the room (creates it if it doesn't exist)
             var roomState = await _roomManager.GetOrCreateRoomStateAsync(room);
 
@@ -140,8 +146,6 @@ namespace Intervu.API.Hubs
             await Clients.Caller.SendAsync("ReceiveFullState", roomState);
 
             await Groups.AddToGroupAsync(Context.ConnectionId, room);
-
-            if (await isRoomCompleted(room)) return;
 
             // Log join event directly to DB
             Guid? userGuid = Guid.TryParse(userId, out var u) ? u : null;
@@ -180,6 +184,17 @@ namespace Intervu.API.Hubs
             await Clients.Caller.SendAsync("ExistingPeers", existingPeers);
 
             _logger.LogInformation("Client {ConnectionId} joined room {RoomId}", Context.ConnectionId, room);
+        }
+
+        private bool IsRoomOngoing(string roomId)
+        {
+            if (!Guid.TryParse(roomId, out var parsedRoomId))
+            {
+                return false;
+            }
+
+            var room = _cache.Rooms.SingleOrDefault(r => r.Id == parsedRoomId);
+            return room?.Status == InterviewRoomStatus.Ongoing;
         }
 
         public async Task LeaveRoom(string room, string userId, UserRole role, string userName)
@@ -470,8 +485,14 @@ namespace Intervu.API.Hubs
 
         public async Task<bool> isRoomCompleted(string roomId)
         {
-            var room = _cache.Rooms.SingleOrDefault(r => r.Id == Guid.Parse(roomId));
-            if (room != null && room.Status == Domain.Entities.Constants.InterviewRoomStatus.Completed)
+            if (!Guid.TryParse(roomId, out var parsedRoomId))
+            {
+                _logger.LogInformation("Invalid room id: {RoomId}", roomId);
+                return true;
+            }
+
+            var room = _cache.Rooms.SingleOrDefault(r => r.Id == parsedRoomId);
+            if (room != null && room.Status == InterviewRoomStatus.Completed)
             {
                 _logger.LogInformation("Room is completed for id: " + roomId);
                 return true;
