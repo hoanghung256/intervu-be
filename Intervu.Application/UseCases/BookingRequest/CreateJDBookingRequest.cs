@@ -4,6 +4,7 @@ using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.ExternalServices.Email;
 using Intervu.Application.Interfaces.UseCases.BookingRequest;
+using Intervu.Application.Utils;
 using Intervu.Application.Validators;
 using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Intervu.Domain.Entities;
@@ -151,7 +152,8 @@ namespace Intervu.Application.UseCases.BookingRequest
                     TotalAmount = totalAmount,
                     ExpiresAt = DateTime.UtcNow.Add(DefaultExpiration),
                     CreatedAt = DateTime.UtcNow,
-                    RoadmapNodeId = dto.RoadmapNodeId
+                    RoadmapNodeId = dto.RoadmapNodeId,
+                    CandidateNote = CandidateNoteNormalizer.Normalize(dto.CandidateNote)
                 };
 
                 // Link rounds to the booking request
