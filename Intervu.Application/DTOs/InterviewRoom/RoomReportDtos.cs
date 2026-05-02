@@ -77,6 +77,7 @@ namespace Intervu.Application.DTOs.InterviewRoom
         public string? ExpectTo { get; set; }
         public InterviewReportStatus Status { get; set; }
         public DateTime CreatedAt { get; set; }
+        public string? Transcript { get; set; }
         public RoomReportBookingContextDto BookingContext { get; set; } = new();
         public RoomReportFinancialStatusDto FinancialStatus { get; set; } = new();
     }
