@@ -65,7 +65,9 @@ namespace Intervu.Application.UseCases.InterviewRoom
                 }).ToList(),
                 Others = others,
                 HireDecision = hireDecision,
-                EvaluationStructureJson = room.EvaluationResultsJson
+                EvaluationStructureJson = room.EvaluationResultsJson,
+                RoadmapNodeId = room.RoadmapNodeId,
+                CheckpointPassThreshold = 70
             };
         }
 

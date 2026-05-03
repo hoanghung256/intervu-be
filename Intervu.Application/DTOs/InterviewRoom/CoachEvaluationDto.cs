@@ -22,6 +22,8 @@ namespace Intervu.Application.DTOs.InterviewRoom
         public string? Others { get; set; }
         public string? HireDecision { get; set; }
         public string? EvaluationStructureJson { get; set; }
+        public string? RoadmapNodeId { get; set; }
+        public int CheckpointPassThreshold { get; set; } = 70;
     }
 
     public class SubmitCoachEvaluationRequest

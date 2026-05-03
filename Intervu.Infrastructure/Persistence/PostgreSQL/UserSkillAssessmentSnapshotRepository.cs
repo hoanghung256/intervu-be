@@ -26,6 +26,23 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Repositories
 
         public async Task UpsertSnapshotAsync(UserSkillAssessmentSnapshot snapshot, CancellationToken cancellationToken = default)
         {
+            await StageUpsertSnapshotAsync(snapshot, cancellationToken);
+
+            try
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateException)
+            {
+                // Keep legacy callers resilient to concurrent snapshot creation.
+                _context.ChangeTracker.Clear();
+                await StageUpsertSnapshotAsync(snapshot, cancellationToken);
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+        }
+
+        public async Task StageUpsertSnapshotAsync(UserSkillAssessmentSnapshot snapshot, CancellationToken cancellationToken = default)
+        {
             var now = DateTime.UtcNow;
             snapshot.EnsureJsonPayloads();
             snapshot.AnswerJson = NormalizeJsonPayload(snapshot.AnswerJson);
@@ -49,29 +66,6 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Repositories
                 existing.RoadMapJson = snapshot.RoadMapJson;
                 existing.AnswerJson = snapshot.AnswerJson;
                 existing.UpdatedAt = now;
-            }
-
-            try
-            {
-                await _context.SaveChangesAsync(cancellationToken);
-            }
-            catch (DbUpdateException) when (existing == null)
-            {
-                // A concurrent request inserted a record for the same UserId between
-                // our check and our insert. Detach the failed entity and retry as update.
-                _context.Entry(snapshot).State = EntityState.Detached;
-                var conflicting = await _context.UserSkillAssessments
-                    .FirstOrDefaultAsync(x => x.UserId == snapshot.UserId, cancellationToken);
-                if (conflicting != null)
-                {
-                    conflicting.TargetJson = snapshot.TargetJson;
-                    conflicting.CurrentJson = snapshot.CurrentJson;
-                    conflicting.GapJson = snapshot.GapJson;
-                    conflicting.RoadMapJson = snapshot.RoadMapJson;
-                    conflicting.AnswerJson = snapshot.AnswerJson;
-                    conflicting.UpdatedAt = now;
-                    await _context.SaveChangesAsync(cancellationToken);
-                }
             }
         }
 
