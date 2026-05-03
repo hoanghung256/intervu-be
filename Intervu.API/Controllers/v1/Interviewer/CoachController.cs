@@ -1,6 +1,8 @@
 using Asp.Versioning;
 using Intervu.Application.DTOs.Coach;
+using Intervu.Application.Interfaces.UseCases.Admin;
 using Intervu.Application.Interfaces.UseCases.CoachProfile;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Linq;
@@ -12,10 +14,13 @@ namespace Intervu.API.Controllers.v1.Interviewer
     [Route("api/v{version:apiVersion}/[controller]")]
     public class CoachController : ControllerBase
     {
-        IGetAllCoach _getAllCoach;
-        public CoachController(IGetAllCoach getAllCoach)
+        private readonly IGetAllCoach _getAllCoach;
+        private readonly IGetTopCoachesLeaderboard _getTopCoachesLeaderboard;
+
+        public CoachController(IGetAllCoach getAllCoach, IGetTopCoachesLeaderboard getTopCoachesLeaderboard)
         {
             _getAllCoach = getAllCoach;
+            _getTopCoachesLeaderboard = getTopCoachesLeaderboard;
         }
 
         // [GET] api/interviewers?pageNumber=1&pageSize=10
@@ -59,6 +64,23 @@ namespace Intervu.API.Controllers.v1.Interviewer
                 success = true,
                 message = "Success",
                 data = pagedResult
+            });
+        }
+
+        /// <summary>
+        /// Spotlight coaches ranked by feedback volume and average rating. No new DB tables; read-only aggregate.
+        /// </summary>
+        [AllowAnonymous]
+        [HttpGet("top")]
+        public async Task<IActionResult> GetTopCoaches([FromQuery] int count = 5)
+        {
+            var safeCount = Math.Clamp(count, 1, 12);
+            var coaches = await _getTopCoachesLeaderboard.ExecuteAsync(safeCount);
+            return Ok(new
+            {
+                success = true,
+                message = "Success",
+                data = coaches
             });
         }
 

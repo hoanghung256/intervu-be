@@ -37,7 +37,11 @@ namespace Intervu.Application.UseCases.Admin
                 result.Add(new CoachPerformanceDto
                 {
                     Rank = rank++,
-                    Name = coach.User.FullName,
+                    CoachId = coach.Id,
+                    SlugProfileUrl = string.IsNullOrWhiteSpace(coach.User?.SlugProfileUrl)
+                        ? null
+                        : coach.User.SlugProfileUrl,
+                    Name = coach.User?.FullName ?? string.Empty,
                     Company = coach.Companies.FirstOrDefault()?.Name ?? "Freelance",
                     SessionCount = feedbacks.TotalCount,
                     Rating = Math.Round(avgRating, 1),

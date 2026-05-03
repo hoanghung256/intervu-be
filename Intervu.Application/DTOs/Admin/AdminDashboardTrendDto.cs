@@ -29,6 +29,13 @@ namespace Intervu.Application.DTOs.Admin
     public class CoachPerformanceDto
     {
         public int Rank { get; set; }
+
+        /// <summary>Coach profile id (same id used by rating and public profile APIs).</summary>
+        public Guid CoachId { get; set; }
+
+        /// <summary>Public profile slug for deep links.</summary>
+        public string? SlugProfileUrl { get; set; }
+
         public string Name { get; set; } = string.Empty;
         public string Company { get; set; } = string.Empty;
         public int SessionCount { get; set; }
