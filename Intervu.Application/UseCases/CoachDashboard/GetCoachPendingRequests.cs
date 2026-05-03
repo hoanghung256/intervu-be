@@ -33,6 +33,7 @@ namespace Intervu.Application.UseCases.CoachDashboard
                     Message = br.JobDescriptionUrl != null
                         ? "JD-based interview request"
                         : null,
+                    CandidateNote = br.CandidateNote,
                     RequestedAt = br.CreatedAt
                 };
             }).ToList();

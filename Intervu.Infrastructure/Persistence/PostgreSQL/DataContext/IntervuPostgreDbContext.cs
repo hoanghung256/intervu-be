@@ -1067,6 +1067,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 b.Property(x => x.TotalAmount).IsRequired();
                 b.Property(x => x.JobDescriptionUrl).HasMaxLength(1000);
                 b.Property(x => x.CVUrl).HasMaxLength(1000);
+                b.Property(x => x.CandidateNote).HasMaxLength(1000);
                 b.Property(x => x.RejectionReason).HasColumnType("text");
 
                 b.HasOne(x => x.Candidate)

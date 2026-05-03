@@ -52,6 +52,11 @@ namespace Intervu.Domain.Entities
         /// </summary>
         public string? CVUrl { get; set; }
 
+        /// <summary>
+        /// Optional note from the candidate for the coach (goals, role focus, topics, etc.).
+        /// </summary>
+        public string? CandidateNote { get; set; }
+
         // --- Coach response ---
 
         public string? RejectionReason { get; set; }

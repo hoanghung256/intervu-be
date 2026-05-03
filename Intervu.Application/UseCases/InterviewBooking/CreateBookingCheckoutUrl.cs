@@ -60,7 +60,8 @@ namespace Intervu.Application.UseCases.InterviewBooking
             Guid coachInterviewServiceId,
             DateTime startTime,
             string returnUrl,
-            string? roadmapNodeId = null)
+            string? roadmapNodeId = null,
+            string? candidateNote = null)
         {
             await _unitOfWork.BeginTransactionAsync();
             try
@@ -136,7 +137,8 @@ namespace Intervu.Application.UseCases.InterviewBooking
                         ? DateTime.UtcNow.AddHours(24)
                         : DateTime.UtcNow.AddMinutes(5),
                     CreatedAt = DateTime.UtcNow,
-                    RoadmapNodeId = roadmapNodeId
+                    RoadmapNodeId = roadmapNodeId,
+                    CandidateNote = CandidateNoteNormalizer.Normalize(candidateNote)
                 };
 
                 // 6. Create 1 InterviewRound linked to the BookingRequest

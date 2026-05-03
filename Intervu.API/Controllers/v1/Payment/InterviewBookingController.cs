@@ -52,7 +52,8 @@ namespace Intervu.API.Controllers.v1.Payment
                 request.CoachInterviewServiceId,
                 request.StartTime,
                 request.ReturnUrl,
-                request.RoadmapNodeId);
+                request.RoadmapNodeId,
+                request.CandidateNote);
 
             return Ok(new
             {

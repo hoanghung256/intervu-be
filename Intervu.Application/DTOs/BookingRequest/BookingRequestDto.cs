@@ -29,6 +29,8 @@ namespace Intervu.Application.DTOs.BookingRequest
         // Flow C fields
         public string? JobDescriptionUrl { get; set; }
         public string? CVUrl { get; set; }
+        /// <summary>Optional note from the candidate for the coach.</summary>
+        public string? CandidateNote { get; set; }
         public List<InterviewRoundDto>? Rounds { get; set; }
 
         // Response
@@ -43,8 +45,7 @@ namespace Intervu.Application.DTOs.BookingRequest
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
 
-        /// For Flow B: the single session ID and its status
-        /// </summary>
+        /// <summary>For Flow B: the single session ID and its status</summary>
         public Guid? InterviewRoomId { get; set; }
         public string? InterviewRoomStatus { get; set; }
     }

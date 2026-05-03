@@ -47,6 +47,12 @@ namespace Intervu.Application.DTOs.BookingRequest
         /// so the post-interview update can deterministically update the originating node.
         /// </summary>
         public string? RoadmapNodeId { get; set; }
+
+        /// <summary>
+        /// Optional message for the coach (trimmed; empty treated as omitted).
+        /// </summary>
+        [StringLength(1000)]
+        public string? CandidateNote { get; set; }
     }
 
     /// <summary>

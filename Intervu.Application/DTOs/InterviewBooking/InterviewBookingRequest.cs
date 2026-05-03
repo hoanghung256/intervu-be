@@ -26,6 +26,10 @@ namespace Intervu.Application.DTOs.InterviewBooking
         /// </summary>
         public string? RoadmapNodeId { get; set; }
 
+        /// <summary>Optional note for the coach (max 1000 characters).</summary>
+        [StringLength(1000)]
+        public string? CandidateNote { get; set; }
+
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
             if (CoachId == Guid.Empty)
