@@ -1,3 +1,5 @@
+using Intervu.Domain.Entities.Constants;
+
 namespace Intervu.Application.DTOs.CoachInterviewService
 {
     /// <summary>
@@ -28,5 +30,12 @@ namespace Intervu.Application.DTOs.CoachInterviewService
         /// Coach's custom duration in minutes
         /// </summary>
         public int DurationMinutes { get; set; }
+
+        public InterviewTypeStatus InterviewTypeStatus { get; set; }
+
+        /// <summary>
+        /// True when the interview type is Active and this service can be booked.
+        /// </summary>
+        public bool IsBookable { get; set; }
     }
 }

@@ -29,15 +29,11 @@ namespace Intervu.Application.UseCases.InterviewType
             return dto;
         }
 
-        public async Task<PagedResult<InterviewTypeDto>> ExecuteAsync(int pageSize, int currentPage)
+        public async Task<PagedResult<InterviewTypeDto>> ExecuteAsync(int pageSize, int currentPage, bool includeAllStatuses = false)
         {
-            var it = await _repo.GetList(currentPage, pageSize);
-
-            var dto = _mapper.Map<IEnumerable<InterviewTypeDto>>(it);
-
-            int totalItem = it.Count();
-
-            return new PagedResult<InterviewTypeDto>(dto.ToList(), totalItem, pageSize, currentPage);
+            var (items, totalCount) = await _repo.GetPagedAsync(currentPage, pageSize, activeOnly: !includeAllStatuses);
+            var dto = _mapper.Map<List<InterviewTypeDto>>(items);
+            return new PagedResult<InterviewTypeDto>(dto, totalCount, pageSize, currentPage);
         }
     }
 }

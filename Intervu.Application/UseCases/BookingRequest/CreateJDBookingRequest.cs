@@ -4,6 +4,7 @@ using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.ExternalServices.Email;
 using Intervu.Application.Interfaces.UseCases.BookingRequest;
+using Intervu.Application.Utils;
 using Intervu.Application.Validators;
 using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Intervu.Domain.Entities;
@@ -67,6 +68,13 @@ namespace Intervu.Application.UseCases.BookingRequest
             var invalidServices = services.Where(s => s.CoachId != dto.CoachId).ToList();
             if (invalidServices.Count > 0)
                 throw new BadRequestException("One or more selected services do not belong to the specified coach");
+
+            foreach (var s in services)
+            {
+                if (s.InterviewType == null)
+                    throw new NotFoundException("One or more coach interview services are missing interview type metadata");
+                InterviewTypeBookability.EnsureActiveForBooking(s.InterviewType);
+            }
 
             var serviceMap = services.ToDictionary(s => s.Id);
             var serviceDurations = services.ToDictionary(s => s.Id, s => s.DurationMinutes);

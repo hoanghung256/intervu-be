@@ -2,6 +2,7 @@ using AutoMapper;
 using Intervu.Application.DTOs.CoachInterviewService;
 using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.UseCases.CoachInterviewService;
+using Intervu.Application.Utils;
 using Intervu.Domain.Repositories;
 
 
@@ -38,6 +39,8 @@ namespace Intervu.Application.UseCases.CoachInterviewService
 
             var interviewType = await _typeRepo.GetByIdAsync(dto.InterviewTypeId)
                 ?? throw new NotFoundException("Interview type not found");
+
+            InterviewTypeBookability.EnsureActiveForCoachServices(interviewType);
 
             // Validate price within allowed range
             if (dto.Price < interviewType.MinPrice || dto.Price > interviewType.MaxPrice)

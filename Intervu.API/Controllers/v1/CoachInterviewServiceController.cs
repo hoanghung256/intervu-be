@@ -36,7 +36,7 @@ namespace Intervu.API.Controllers.v1
         [HttpGet("coach/{coachId:guid}")]
         public async Task<IActionResult> GetByCoachId(Guid coachId)
         {
-            var result = await _getServices.ExecuteAsync(coachId);
+            var result = await _getServices.ExecuteAsync(coachId, includeUnavailableForCoach: false);
             return Ok(new
             {
                 success = true,
@@ -53,7 +53,7 @@ namespace Intervu.API.Controllers.v1
         public async Task<IActionResult> GetMyServices()
         {
             var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            var result = await _getServices.ExecuteAsync(userId);
+            var result = await _getServices.ExecuteAsync(userId, includeUnavailableForCoach: true);
             return Ok(new
             {
                 success = true,

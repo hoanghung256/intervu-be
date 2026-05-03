@@ -1,4 +1,5 @@
 using Intervu.Application.Exceptions;
+using Intervu.Application.Utils;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.ExternalServices.Email;
 using Intervu.Application.Interfaces.Services;
@@ -6,7 +7,6 @@ using Intervu.Application.Interfaces.UseCases.BookingRequest;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Intervu.Application.Interfaces.UseCases.Notification;
-using Intervu.Application.Utils;
 using Intervu.Domain.Abstractions.Entity.Interfaces;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
@@ -83,6 +83,11 @@ namespace Intervu.Application.UseCases.InterviewBooking
 
                 if (service.CoachId != coachId)
                     throw new BadRequestException("The selected service does not belong to the specified coach");
+
+                if (service.InterviewType == null)
+                    throw new NotFoundException("Coach interview service is missing interview type metadata");
+
+                InterviewTypeBookability.EnsureActiveForBooking(service.InterviewType);
 
                 int paymentAmount = service.Price;
                 int duration = service.DurationMinutes;

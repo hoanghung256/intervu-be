@@ -3,6 +3,7 @@ using Intervu.API.Test.Utils;
 using System.Net;
 using Intervu.Application.DTOs.Coach;
 using Intervu.Application.DTOs.CoachInterviewService;
+using Intervu.Application.DTOs.InterviewType;
 using Intervu.Application.DTOs.User;
 using Intervu.Domain.Entities.Constants;
 using Xunit.Abstractions;
@@ -352,6 +353,73 @@ namespace Intervu.API.Test.ApiTests.Interviewer
 
             // Assert
             await AssertHelper.AssertEqual(HttpStatusCode.Forbidden, response.StatusCode, "Non-coach returns 403 Forbidden");
+        }
+
+        [Fact]
+        [Trait("Category", "API")]
+        [Trait("Category", "CoachInterviewService")]
+        public async Task CreateCoachInterviewService_ReturnsBadRequest_WhenInterviewTypeIsNotActive()
+        {
+            var typeId = Guid.NewGuid();
+            var name = $"InactiveOffer_{Guid.NewGuid():N}";
+            var createTypeDto = new InterviewTypeDto
+            {
+                Id = typeId,
+                Name = name,
+                Description = "Test description for inactive type flow",
+                SuggestedDurationMinutes = 60,
+                MinPrice = 0,
+                MaxPrice = 10000,
+                IsCoding = false,
+                Status = InterviewTypeStatus.Active
+            };
+
+            var postType = await _api.PostAsync("/api/v1/interviewtype", createTypeDto, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, postType.StatusCode, "Create interview type succeeds");
+
+            var updateInactive = new InterviewTypeDto
+            {
+                Id = typeId,
+                Name = name,
+                Description = "Test description for inactive type flow",
+                SuggestedDurationMinutes = 60,
+                MinPrice = 0,
+                MaxPrice = 10000,
+                IsCoding = false,
+                Status = InterviewTypeStatus.Inactive
+            };
+            var putInactive = await _api.PutAsync($"/api/v1/interviewtype/{typeId}", updateInactive, logBody: true);
+            await AssertHelper.AssertEqual(HttpStatusCode.OK, putInactive.StatusCode, "Deactivate interview type");
+
+            try
+            {
+                var (token, _) = await RegisterAndLoginCoachAsync("inactive_type_coach");
+                var createDto = new CreateCoachInterviewServiceDto
+                {
+                    InterviewTypeId = typeId,
+                    Price = 1500,
+                    DurationMinutes = 60
+                };
+
+                var response = await _api.PostAsync("/api/v1/coach-interview-services", createDto, jwtToken: token, logBody: true);
+
+                await AssertHelper.AssertEqual(HttpStatusCode.BadRequest, response.StatusCode, "Inactive interview type returns 400 Bad Request");
+            }
+            finally
+            {
+                var restore = new InterviewTypeDto
+                {
+                    Id = typeId,
+                    Name = name,
+                    Description = "Test description for inactive type flow",
+                    SuggestedDurationMinutes = 60,
+                    MinPrice = 0,
+                    MaxPrice = 10000,
+                    IsCoding = false,
+                    Status = InterviewTypeStatus.Active
+                };
+                await _api.PutAsync($"/api/v1/interviewtype/{typeId}", restore, logBody: true);
+            }
         }
 
         [Fact]

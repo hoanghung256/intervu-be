@@ -1,7 +1,10 @@
 ﻿using AutoMapper;
 using Intervu.Application.DTOs.InterviewType;
 using Intervu.Application.Exceptions;
+using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.UseCases.InterviewType;
+using Intervu.Application.Interfaces.UseCases.Notification;
+using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 using System;
 using System.Collections.Generic;
@@ -14,11 +17,19 @@ namespace Intervu.Application.UseCases.InterviewType
     public class UpdateInterviewType : IUpdateInterviewType
     {
         private readonly IInterviewTypeRepository _repo;
+        private readonly ICoachInterviewServiceRepository _serviceRepo;
+        private readonly IBackgroundService _backgroundService;
         private readonly IMapper _mapper;
 
-        public UpdateInterviewType(IInterviewTypeRepository repo, IMapper mapper)
+        public UpdateInterviewType(
+            IInterviewTypeRepository repo,
+            ICoachInterviewServiceRepository serviceRepo,
+            IBackgroundService backgroundService,
+            IMapper mapper)
         {
             _repo = repo;
+            _serviceRepo = serviceRepo;
+            _backgroundService = backgroundService;
             _mapper = mapper;
         }
 
@@ -49,10 +60,27 @@ namespace Intervu.Application.UseCases.InterviewType
             {
                 throw new ConflictException("Interview type name already exists.");
             }
-            
+
+            var previousStatus = interviewTypeToUpdate.Status;
             _mapper.Map(interviewTypeDto, interviewTypeToUpdate);
             
             await _repo.SaveChangesAsync();
+
+            if (previousStatus != InterviewTypeStatus.Deprecated &&
+                interviewTypeToUpdate.Status == InterviewTypeStatus.Deprecated)
+            {
+                var coachIds = await _serviceRepo.GetCoachIdsByInterviewTypeIdAsync(id);
+                foreach (var coachId in coachIds)
+                {
+                    _backgroundService.Enqueue<INotificationUseCase>(uc => uc.CreateAsync(
+                        coachId,
+                        NotificationType.SystemAnnouncement,
+                        "Interview service unavailable",
+                        $"Your \"{interviewTypeToUpdate.Name}\" interview service is no longer available because the interview type was deprecated.",
+                        "/my-services",
+                        null));
+                }
+            }
         }
     }
 }

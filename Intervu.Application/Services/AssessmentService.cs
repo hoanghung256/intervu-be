@@ -746,6 +746,7 @@ namespace Intervu.Application.Services
                         Skills = (c.Skills ?? new List<Skill>()).Select(s => s.Name).Where(n => !string.IsNullOrWhiteSpace(n)).ToList(),
                         Bio = c.Bio ?? string.Empty,
                         Services = (c.InterviewServices ?? new List<CoachInterviewService>())
+                            .Where(s => s.InterviewType?.Status == InterviewTypeStatus.Active)
                             .Select(s => new AiCoachCatalogServiceDto
                             {
                                 Id = s.Id.ToString(),
@@ -756,6 +757,7 @@ namespace Intervu.Application.Services
                             })
                             .ToList(),
                     })
+                    .Where(entry => entry.Services.Count > 0)
                     .ToList();
             }
             catch (Exception ex)
