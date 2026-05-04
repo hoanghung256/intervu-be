@@ -29,8 +29,7 @@ namespace Intervu.Application.DTOs.PreparedQuestion
         public DateTime UpdatedAt { get; set; }
 
         /// <summary>
-        /// True when the question can be sent to the candidate's editor.
-        /// Always true for NonCoding. For Coding, requires FunctionName AND >= 1 TestCase.
+        /// Kept for API compatibility; always true (coach may send coding prompts without test cases).
         /// </summary>
         public bool IsReadyForEditor { get; set; }
     }
