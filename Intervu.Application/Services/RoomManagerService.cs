@@ -72,7 +72,7 @@ namespace Intervu.Application.Services
         private readonly ConcurrentDictionary<string, RoomState> _roomStates = new();
         private readonly ConcurrentDictionary<string, Timer> _periodicSaveTimers = new();
         private readonly ConcurrentDictionary<string, Timer> _roomTimers = new();
-        private readonly TimeSpan _roomExpiryTime = TimeSpan.FromSeconds(60);
+        private readonly TimeSpan _roomExpiryTime = TimeSpan.FromSeconds(20);
         private readonly TimeSpan _periodicSaveInterval = TimeSpan.FromSeconds(30);
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly double value;

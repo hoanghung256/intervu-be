@@ -13,6 +13,7 @@ namespace Intervu.Application.DTOs.GeneratedQuestion
         public string Title { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public GeneratedQuestionStatus Status { get; set; }
+        public ExperienceLevel Level { get; set; }
         public List<string> Tags { get; set; } = new();
     }
 
@@ -24,6 +25,8 @@ namespace Intervu.Application.DTOs.GeneratedQuestion
         public string Title { get; set; } = string.Empty;
 
         public Guid InterviewRoomId { get; set; }
+
+        public ExperienceLevel Level { get; set; } = ExperienceLevel.Intern;
 
         public List<string> Tags { get; set; } = new();
     }
