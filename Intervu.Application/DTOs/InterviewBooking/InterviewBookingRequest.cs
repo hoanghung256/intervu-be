@@ -30,6 +30,11 @@ namespace Intervu.Application.DTOs.InterviewBooking
         [StringLength(1000)]
         public string? CandidateNote { get; set; }
 
+        /// <summary>
+        /// Required when the selected interview type has <c>RequiresCandidateCv</c>; otherwise optional.
+        /// </summary>
+        public string? CVUrl { get; set; }
+
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
             if (CoachId == Guid.Empty)

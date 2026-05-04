@@ -26,6 +26,8 @@ namespace Intervu.Application.DTOs.InterviewType
 
         public bool IsCoding { get; set; }
 
+        public bool RequiresCandidateCv { get; set; }
+
         [Range(0, int.MaxValue)]
         public int MinPrice { get; set; }
 

@@ -61,7 +61,8 @@ namespace Intervu.Application.UseCases.InterviewBooking
             DateTime startTime,
             string returnUrl,
             string? roadmapNodeId = null,
-            string? candidateNote = null)
+            string? candidateNote = null,
+            string? cvUrl = null)
         {
             await _unitOfWork.BeginTransactionAsync();
             try
@@ -84,6 +85,11 @@ namespace Intervu.Application.UseCases.InterviewBooking
 
                 if (service.CoachId != coachId)
                     throw new BadRequestException("The selected service does not belong to the specified coach");
+
+                if (service.InterviewType == null)
+                    throw new NotFoundException("Coach interview service is missing interview type metadata");
+
+                var resolvedCvUrl = BookingCvUrlResolver.Resolve(service.InterviewType.RequiresCandidateCv, cvUrl);
 
                 int paymentAmount = service.Price;
                 int duration = service.DurationMinutes;
@@ -138,7 +144,8 @@ namespace Intervu.Application.UseCases.InterviewBooking
                         : DateTime.UtcNow.AddMinutes(5),
                     CreatedAt = DateTime.UtcNow,
                     RoadmapNodeId = roadmapNodeId,
-                    CandidateNote = CandidateNoteNormalizer.Normalize(candidateNote)
+                    CandidateNote = CandidateNoteNormalizer.Normalize(candidateNote),
+                    CVUrl = resolvedCvUrl
                 };
 
                 // 6. Create 1 InterviewRound linked to the BookingRequest

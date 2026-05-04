@@ -20,6 +20,11 @@ namespace Intervu.Application.DTOs.CoachInterviewService
         public bool IsCoding { get; set; }
 
         /// <summary>
+        /// When true, candidates must supply a CV URL when booking this service.
+        /// </summary>
+        public bool RequiresCandidateCv { get; set; }
+
+        /// <summary>
         /// Coach's custom price for this service
         /// </summary>
         public int Price { get; set; }

@@ -10,6 +10,7 @@
             DateTime startTime,
             string returnUrl,
             string? roadmapNodeId = null,
-            string? candidateNote = null);
+            string? candidateNote = null,
+            string? cvUrl = null);
     }
 }

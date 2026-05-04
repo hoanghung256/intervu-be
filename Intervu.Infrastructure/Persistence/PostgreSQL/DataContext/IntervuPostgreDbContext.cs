@@ -1017,6 +1017,9 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 entity.Property(e => e.Status)
                       .HasConversion<int>();
 
+                entity.Property(e => e.RequiresCandidateCv)
+                      .HasDefaultValue(false);
+
                 entity.Property(e => e.EvaluationStructureJson)
                   .HasColumnName("EvaluationStructure")
                   .HasColumnType("jsonb");
@@ -2111,6 +2114,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.DataContext
                 Name = "CV Interview",
                 Description = "Resume review and HR-style interview focusing on background and experience.",
                 IsCoding = false,
+                RequiresCandidateCv = true,
                 SuggestedDurationMinutes = 30,
                 MinPrice = 1000,
                 MaxPrice = 2000,

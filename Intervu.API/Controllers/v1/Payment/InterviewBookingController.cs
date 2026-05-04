@@ -53,7 +53,8 @@ namespace Intervu.API.Controllers.v1.Payment
                 request.StartTime,
                 request.ReturnUrl,
                 request.RoadmapNodeId,
-                request.CandidateNote);
+                request.CandidateNote,
+                request.CVUrl);
 
             return Ok(new
             {

@@ -165,7 +165,8 @@ namespace Intervu.Application.Mappings
             // CoachInterviewService mappings
             CreateMap<CoachInterviewService, CoachInterviewServiceDto>()
                 .ForMember(dest => dest.InterviewTypeName, opt => opt.MapFrom(src => src.InterviewType.Name))
-                .ForMember(dest => dest.IsCoding, opt => opt.MapFrom(src => src.InterviewType.IsCoding));
+                .ForMember(dest => dest.IsCoding, opt => opt.MapFrom(src => src.InterviewType.IsCoding))
+                .ForMember(dest => dest.RequiresCandidateCv, opt => opt.MapFrom(src => src.InterviewType.RequiresCandidateCv));
             CreateMap<CreateCoachInterviewServiceDto, CoachInterviewService>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.CoachId, opt => opt.Ignore());

@@ -17,6 +17,11 @@ namespace Intervu.Domain.Entities
 
         public bool IsCoding { get; set; }
 
+        /// <summary>
+        /// When true, candidates must provide a CV URL (upload or profile) when booking this interview type.
+        /// </summary>
+        public bool RequiresCandidateCv { get; set; }
+
         [Range(0, int.MaxValue)]
         public int MinPrice { get; set; }
 
