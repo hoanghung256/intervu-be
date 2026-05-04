@@ -51,6 +51,7 @@ namespace Intervu.Application.UseCases.InterviewRoom
                 ExpectTo = report.ExpectTo,
                 Status = report.Status,
                 CreatedAt = report.CreatedAt,
+                Transcript = room.Transcript,
                 BookingContext = new RoomReportBookingContextDto
                 {
                     CoachName = coach?.FullName,
