@@ -70,23 +70,9 @@ namespace Intervu.Domain.Entities
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
         /// <summary>
-        /// A coding question is only "ready for editor" once the coach has provided
-        /// a function name AND at least one test case. Bank-imported coding questions
-        /// start incomplete and must be completed before Send to Editor is allowed.
+        /// Legacy flag kept for API compatibility. Coding questions may be broadcast to the
+        /// candidate editor without test cases or a finalized stub—the coach can finish setup in-room.
         /// </summary>
-        public bool IsReadyForEditor()
-        {
-            if (InteractionType != PreparedQuestionInteractionType.Coding)
-            {
-                return true;
-            }
-
-            if (string.IsNullOrWhiteSpace(FunctionName))
-            {
-                return false;
-            }
-
-            return TestCases != null && TestCases.Length > 0;
-        }
+        public bool IsReadyForEditor() => true;
     }
 }

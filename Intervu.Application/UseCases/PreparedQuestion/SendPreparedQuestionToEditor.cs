@@ -32,19 +32,13 @@ namespace Intervu.Application.UseCases.PreparedQuestion
             var room = await PreparedQuestionAuthorization.EnsureRoomCoachAsync(
                 roomRepo, entity.InterviewRoomId, userId);
 
-            if (!entity.IsReadyForEditor())
-            {
-                throw new BadRequestException(
-                    "Coding question is incomplete. Add a function name and at least one test case before sending.");
-            }
-
             var now = DateTime.UtcNow;
             var testCases = entity.TestCases ?? Array.Empty<object>();
 
             // Mirror the in-room QuestionPanel "Set Problem" flow: persist the room
             // problem fields so the candidate's next reconnect restores the same state.
             room.ProblemDescription = entity.Description;
-            room.ProblemShortName = entity.FunctionName;
+            room.ProblemShortName = entity.FunctionName ?? string.Empty;
             room.TestCases = testCases;
             roomRepo.UpdateAsync(room);
 
