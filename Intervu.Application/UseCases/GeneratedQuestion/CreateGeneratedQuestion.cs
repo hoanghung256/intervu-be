@@ -22,7 +22,7 @@ namespace Intervu.Application.UseCases.GeneratedQuestion
                 InterviewRoomId = request.InterviewRoomId,
                 Title = request.Title?.Trim() ?? string.Empty,
                 Content = request.Content.Trim(),
-                Status = GeneratedQuestionStatus.PendingReview
+                Status = GeneratedQuestionStatus.PendingReview,
             };
 
             if (request.Tags != null && request.Tags.Any())

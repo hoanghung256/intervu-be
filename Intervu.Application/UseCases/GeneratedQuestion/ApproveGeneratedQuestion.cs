@@ -1,4 +1,5 @@
 using Intervu.Application.DTOs.GeneratedQuestion;
+using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.UseCases.Audit;
 using Intervu.Application.Interfaces.UseCases.GeneratedQuestion;
 using Intervu.Domain.Abstractions.Entity.Interfaces;
@@ -24,11 +25,11 @@ namespace Intervu.Application.UseCases.GeneratedQuestion
             var tagRepo = unitOfWork.GetRepository<ITagRepository>();
 
             var generated = await generatedRepo.GetByIdAsync(generatedQuestionId)
-                ?? throw new Exception("Generated question not found");
+                ?? throw new NotFoundException("Generated question not found");
 
             if (generated.Status != GeneratedQuestionStatus.PendingReview)
             {
-                throw new Exception("Generated question is already reviewed");
+                throw new ConflictException("Generated question is already reviewed");
             }
 
             // Prepare Audit Log data before modification
@@ -39,12 +40,14 @@ namespace Intervu.Application.UseCases.GeneratedQuestion
                 {
                     Title = generated.Title,
                     Content = generated.Content,
+                    Level = Domain.Entities.Constants.QuestionConstants.ExperienceLevel.Intern,
                     TagIds = generated.TagIds
                 },
                 Approved = new
                 {
                     Title = request.Title?.Trim() ?? generated.Title,
                     Content = request.Content?.Trim() ?? generated.Content,
+                    Level = request.Level,
                     TagIds = request.TagIds,
                     Tags = request.Tags
                 }
@@ -59,8 +62,8 @@ namespace Intervu.Application.UseCases.GeneratedQuestion
                 Content = string.IsNullOrWhiteSpace(request.Content) ? generated.Content : request.Content.Trim(),
                 InterviewExperienceId = request.InterviewExperienceId,
                 Level = request.Level,
-                Round = request.Round,
-                Category = request.Category,
+                Round = Domain.Entities.Constants.QuestionConstants.InterviewRound.Other,
+                Category = Domain.Entities.Constants.QuestionConstants.QuestionCategory.Other,
                 Status = Domain.Entities.Constants.QuestionConstants.QuestionStatus.Pending,
                 CreatedBy = reviewerUserId,
                 CreatedAt = now,
