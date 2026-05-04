@@ -38,7 +38,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
         {
             var rooms = await _context.InterviewRooms
                 .Include(r => r.CurrentAvailability)
-                .Include(r => r.BookingRequest)
+                .Include(r => r.BookingRequest)!
+                    .ThenInclude(br => br.Rounds)
                 .Include(r => r.CoachInterviewService)!
                     .ThenInclude(s => s!.InterviewType)
                 .Where(r => r.CandidateId == candidateId)
@@ -58,7 +59,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
         {
             var rooms = await _context.InterviewRooms
                 .Include(r => r.CurrentAvailability)
-                .Include(r => r.BookingRequest)
+                .Include(r => r.BookingRequest)!
+                    .ThenInclude(br => br.Rounds)
                 .Include(r => r.CoachInterviewService)!
                     .ThenInclude(s => s!.InterviewType)
                 .Where(r => r.CoachId == coachId)

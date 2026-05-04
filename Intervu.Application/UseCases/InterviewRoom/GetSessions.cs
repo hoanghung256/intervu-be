@@ -273,6 +273,9 @@ namespace Intervu.Application.UseCases.InterviewRoom
                 HasPendingReschedule = activeDto.HasPendingReschedule,
                 CanReschedule = activeDto.CanReschedule,
                 CanCancel = activeDto.CanCancel,
+                BookingInterviewRoundId = activeDto.BookingInterviewRoundId,
+                BookingRoundStartTime = activeDto.BookingRoundStartTime,
+                BookingRoundPrice = activeDto.BookingRoundPrice,
                 SessionId = session.SessionId,
                 CurrentRound = activeIdx + 1,
                 TotalRounds = session.Rounds.Count,
@@ -290,6 +293,8 @@ namespace Intervu.Application.UseCases.InterviewRoom
             var canReschedule = room.IsAvailableForReschedule() && !hasPendingReschedule;
             var canCancel = room.IsAvailableForCancel();
             ratingByRoomId.TryGetValue(room.Id, out var rating);
+
+            var (bookingRoundId, bookingRoundStart, bookingRoundPrice) = ResolveBookingRoundSnapshot(room);
 
             return new InterviewRoomDto
             {
@@ -325,7 +330,23 @@ namespace Intervu.Application.UseCases.InterviewRoom
                 CanReschedule = canReschedule,
                 CanCancel = canCancel,
                 Type = room.Type,
+                BookingInterviewRoundId = bookingRoundId,
+                BookingRoundStartTime = bookingRoundStart,
+                BookingRoundPrice = bookingRoundPrice,
             };
+        }
+
+        private static (Guid? RoundId, DateTime? StartTime, int? Price) ResolveBookingRoundSnapshot(Domain.Entities.InterviewRoom room)
+        {
+            var rounds = room.BookingRequest?.Rounds;
+            if (rounds == null || rounds.Count == 0)
+                return (null, null, null);
+
+            Domain.Entities.InterviewRound? match = rounds.FirstOrDefault(ir => ir.InterviewRoomId == room.Id);
+            if (match == null && room.RoundNumber is int rn)
+                match = rounds.FirstOrDefault(ir => ir.RoundNumber == rn);
+
+            return match == null ? (null, null, null) : (match.Id, match.StartTime, match.Price);
         }
     }
 }

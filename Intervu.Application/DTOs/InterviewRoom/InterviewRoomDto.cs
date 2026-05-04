@@ -76,5 +76,20 @@ namespace Intervu.Application.DTOs.InterviewRoom
         /// Indicates if this interview can be cancelled (scheduled time not yet passed)
         /// </summary>
         public bool CanCancel { get; set; }
+
+        /// <summary>
+        /// Matching interview-round entity id when this room is part of a booking (round cancel API).
+        /// </summary>
+        public Guid? BookingInterviewRoundId { get; set; }
+
+        /// <summary>
+        /// Interview round start time used for refund policy (aligns with round cancel use case).
+        /// </summary>
+        public DateTime? BookingRoundStartTime { get; set; }
+
+        /// <summary>
+        /// Interview round price snapshot for partial refund amount preview.
+        /// </summary>
+        public int? BookingRoundPrice { get; set; }
     }
 }
