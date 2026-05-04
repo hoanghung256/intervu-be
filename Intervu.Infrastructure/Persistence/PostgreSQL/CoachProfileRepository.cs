@@ -180,6 +180,24 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
             var totalItems = await query.CountAsync();
 
+            // Rating sort matches feedback aggregation elsewhere: max rating per interview room, then average across rooms.
+            // Coaches with no rated sessions sort last (effective average -1). Tie-break: more rated sessions first, then stable id.
+            query = query
+                .OrderByDescending(coach =>
+                    (double?)_context.Feedbacks
+                        .Where(f => f.CoachId == coach.Id)
+                        .GroupBy(f => f.InterviewRoomId)
+                        .Select(g => (double)g.Max(f => f.Rating))
+                        .Average()
+                    ?? -1d)
+                .ThenByDescending(coach =>
+                    _context.Feedbacks
+                        .Where(f => f.CoachId == coach.Id)
+                        .Select(f => f.InterviewRoomId)
+                        .Distinct()
+                        .Count())
+                .ThenBy(coach => coach.Id);
+
             var items = await query
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
