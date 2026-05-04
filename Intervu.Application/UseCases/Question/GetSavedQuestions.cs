@@ -15,6 +15,7 @@ namespace Intervu.Application.UseCases.Question
         IUserRepository userRepository,
         ICandidateProfileRepository candidateProfileRepository,
         ICoachProfileRepository coachProfileRepository,
+        IQuestionRepository questionRepository,
         IUserQuestionLikeRepository likeRepository) : IGetSavedQuestions
     {
         public async Task<List<QuestionListItemDto>> ExecuteAsync(Guid userId)
@@ -38,29 +39,36 @@ namespace Intervu.Application.UseCases.Question
             if (snapshots == null || !snapshots.Any())
                 return new List<QuestionListItemDto>();
 
-            var snapshotIds = snapshots.Select(s => s.Id).ToList();
-            var likedIds = await likeRepository.GetLikedQuestionIdsAsync(userId, snapshotIds);
+            var savedIds = snapshots.Select(s => s.Id).ToList();
+            var questions = await questionRepository.GetByIdsAsync(savedIds);
+            var questionMap = questions.ToDictionary(q => q.Id);
+            var likedIds = await likeRepository.GetLikedQuestionIdsAsync(userId, savedIds);
 
-            return snapshots.Select(s => new QuestionListItemDto
-            {
-                Id = s.Id,
-                Title = s.Title,
-                Content = s.Content,
-                Level = Enum.Parse<ExperienceLevel>(s.Level),
-                Round = Enum.Parse<Intervu.Domain.Entities.Constants.QuestionConstants.InterviewRound>(s.Round),
-                Status = Enum.Parse<QuestionStatus>(s.Status),
-                ViewCount = s.ViewCount,
-                SaveCount = s.SaveCount,
-                Vote = s.Vote,
-                IsHot = s.IsHot,
-                CreatedAt = s.CreatedAt,
-                CompanyNames = s.CompanyNames,
-                Roles = s.Roles,
-                Tags = s.Tags.Select(t => new TagDto { Id = Guid.Empty, Name = t }).ToList(),
-                Category = s.Category,
-                IsLikedByUser = likedIds.Contains(s.Id),
-                IsSavedByUser = true
-            }).ToList();
+            return savedIds
+                .Where(questionMap.ContainsKey) // preserve saved order, skip missing questions
+                .Select(id => questionMap[id])
+                .Select(q => new QuestionListItemDto
+                {
+                    Id = q.Id,
+                    Title = q.Title,
+                    Content = q.Content,
+                    Level = q.Level,
+                    Round = q.Round,
+                    Status = q.Status,
+                    ViewCount = q.ViewCount,
+                    SaveCount = q.SaveCount,
+                    CommentCount = q.Comments?.Count ?? 0,
+                    Vote = q.Vote,
+                    IsHot = q.IsHot,
+                    CreatedAt = q.CreatedAt,
+                    CompanyNames = q.QuestionCompanies?.Select(qc => qc.Company?.Name ?? string.Empty).ToList() ?? new(),
+                    Roles = q.QuestionRoles?.Select(qr => qr.Role.ToString()).ToList() ?? new(),
+                    Tags = q.QuestionTags?.Select(qt => new TagDto { Id = qt.TagId, Name = qt.Tag?.Name ?? string.Empty }).ToList() ?? new(),
+                    Category = q.Category.ToString(),
+                    IsLikedByUser = likedIds.Contains(q.Id),
+                    IsSavedByUser = true
+                })
+                .ToList();
         }
     }
 }
