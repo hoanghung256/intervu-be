@@ -29,5 +29,11 @@ namespace Intervu.Domain.Entities
         /// Active, Suspended, Deleted
         /// </summary>
         public UserStatus Status { get; set; }
+
+        /// <summary>
+        /// Incremented on each new login; must match JWT claim session_ver for the token to stay valid.
+        /// </summary>
+        public int SessionVersion { get; set; }
     }
 }
+

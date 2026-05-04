@@ -9,6 +9,6 @@ namespace Intervu.Application.Interfaces.UseCases.InterviewRoom
 {
     public interface IGetCurrentRoom
     {
-        Task<InterviewRoomDto?> ExecuteAsync(Guid roomId);
+        Task<InterviewRoomDto?> ExecuteAsync(Guid roomId, Guid userId);
     }
 }

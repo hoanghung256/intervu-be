@@ -1,12 +1,8 @@
 using AutoMapper;
 using Intervu.Application.DTOs.InterviewRoom;
+using Intervu.Application.Exceptions;
 using Intervu.Application.Interfaces.UseCases.InterviewRoom;
 using Intervu.Domain.Repositories;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Intervu.Application.UseCases.InterviewRoom
 {
@@ -21,12 +17,17 @@ namespace Intervu.Application.UseCases.InterviewRoom
             _mapper = mapper;
         }
 
-        public async Task<InterviewRoomDto?> ExecuteAsync(Guid roomId)
+        public async Task<InterviewRoomDto?> ExecuteAsync(Guid roomId, Guid userId)
         {
             var room = await _repo.GetByIdWithDetailsAsync(roomId);
             if (room == null)
             {
                 return null;
+            }
+
+            if (room.CandidateId != userId && room.CoachId != userId)
+            {
+                throw new ForbiddenException("You are not authorized to view this interview room");
             }
 
             return _mapper.Map<InterviewRoomDto>(room);

@@ -144,8 +144,6 @@ namespace Intervu.Application.Services
             });
             using var scope = _scopeFactory.CreateScope();
 
-            var getCurrentRoom = scope.ServiceProvider.GetRequiredService<IGetCurrentRoom>();
-            //Domain.Entities.InterviewRoom interviewRoom = await getCurrentRoom.ExecuteAsync(int.Parse(roomId));
             var roomGuid = Guid.Parse(roomId);
             InterviewRoom? interviewRoom = _cache.Rooms.SingleOrDefault(r => r.Id == roomGuid);
 

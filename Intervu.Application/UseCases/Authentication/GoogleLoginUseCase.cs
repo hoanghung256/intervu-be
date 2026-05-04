@@ -103,7 +103,9 @@ namespace Intervu.Application.UseCases.Authentication
 
             await _refreshTokenRepository.RevokeAllUserTokensAsync(user.Id);
 
-            var token = _jwtService.GenerateToken(user.Id, user.Email, user.Role.ToString());
+            var sessionVersion = await _userRepository.IncrementSessionVersionAndGetAsync(user.Id);
+
+            var token = _jwtService.GenerateToken(user.Id, user.Email, user.Role.ToString(), sessionVersion);
             var expiresIn = _jwtService.GetTokenValidityInSeconds();
             var refreshToken = await _refreshTokenRepository.CreateRefreshTokenAsync(user.Id);
 

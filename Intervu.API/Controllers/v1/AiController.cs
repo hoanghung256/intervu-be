@@ -111,7 +111,17 @@ namespace Intervu.API.Controllers.v1
                 return BadRequest(new { success = false, message = "Recording session ID is required" });
             }
 
-            var room = await _getCurrentRoom.ExecuteAsync(request.RecordingSessionId);
+            if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
+            {
+                return Unauthorized(new { success = false, message = "Invalid user credentials" });
+            }
+
+            var room = await _getCurrentRoom.ExecuteAsync(request.RecordingSessionId, userId);
+
+            if (room == null)
+            {
+                return NotFound(new { success = false, message = "Interview room not found" });
+            }
 
             if (room.Status != InterviewRoomStatus.Ongoing)
             {
