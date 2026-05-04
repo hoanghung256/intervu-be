@@ -24,5 +24,20 @@ namespace Intervu.Application.DTOs.Admin
         [MaxLength(1000)]
         public string? ProfilePicture { get; set; }
         public UserStatus Status { get; set; } = UserStatus.Active;
+
+        [Url]
+        [MaxLength(1000)]
+        public string? PortfolioUrl { get; set; }
+
+        public int? CurrentAmount { get; set; }
+
+        [Range(0, 80)]
+        public int? ExperienceYears { get; set; }
+
+        [MaxLength(200)]
+        public string? CurrentJobTitle { get; set; }
+
+        [MaxLength(4000)]
+        public string? Bio { get; set; }
     }
 }
