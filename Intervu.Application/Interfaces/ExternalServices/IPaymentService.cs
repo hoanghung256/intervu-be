@@ -1,4 +1,6 @@
-﻿namespace Intervu.Application.Interfaces.ExternalServices
+﻿using Intervu.Application.DTOs.Payment;
+
+namespace Intervu.Application.Interfaces.ExternalServices
 {
     public interface IPaymentService
     {
@@ -16,6 +18,9 @@
         (bool isValid, int orderCode) VerifyPayment(object payload);
 
         Task<bool> CreateSpendOrderAsync(int amount, string description, string targetBankId, string targetBankAccountNumber);
+
+        /// <summary>Reads payout-account balance using PayOS payout channel credentials.</summary>
+        Task<PayoutAccountBalanceDto> GetPayoutAccountBalanceAsync(CancellationToken cancellationToken = default);
 
         Task RegisterWebhooks();
     }

@@ -47,6 +47,7 @@ namespace Intervu.API.Controllers.v1
         private readonly IGetPythonAiMetrics _getPythonAiMetrics;
         private readonly IGetCommissionRate _getCommissionRate;
         private readonly IUpdateCommissionRate _updateCommissionRate;
+        private readonly IGetPayOsPayoutAccountBalance _getPayOsPayoutAccountBalance;
 
         public AdminController(
             IGetDashboardStats getDashboardStats,
@@ -75,7 +76,8 @@ namespace Intervu.API.Controllers.v1
             IAdminTriggerVectorSync triggerVectorSync,
             IGetPythonAiMetrics getPythonAiMetrics,
             IGetCommissionRate getCommissionRate,
-            IUpdateCommissionRate updateCommissionRate)
+            IUpdateCommissionRate updateCommissionRate,
+            IGetPayOsPayoutAccountBalance getPayOsPayoutAccountBalance)
         {
             _getDashboardStats = getDashboardStats;
             _getAllUsers = getAllUsers;
@@ -104,6 +106,7 @@ namespace Intervu.API.Controllers.v1
             _getPythonAiMetrics = getPythonAiMetrics;
             _getCommissionRate = getCommissionRate;
             _updateCommissionRate = updateCommissionRate;
+            _getPayOsPayoutAccountBalance = getPayOsPayoutAccountBalance;
         }
 
         public class UpdateCommissionRateRequest
@@ -120,6 +123,17 @@ namespace Intervu.API.Controllers.v1
         {
             var rate = await _getCommissionRate.ExecuteAsync();
             return Ok(new { success = true, message = "Success", data = new { commissionRate = rate } });
+        }
+
+        /// <summary>
+        /// Returns PayOS payout (spend) account balance for the configured payout channel.
+        /// </summary>
+        [HttpGet("payout-account/balance")]
+        [Authorize(Policy = AuthorizationPolicies.Admin)]
+        public async Task<IActionResult> GetPayOsPayoutAccountBalance(CancellationToken cancellationToken)
+        {
+            var data = await _getPayOsPayoutAccountBalance.ExecuteAsync(cancellationToken);
+            return Ok(new { success = true, message = "Success", data });
         }
 
         /// <summary>

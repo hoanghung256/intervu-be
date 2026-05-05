@@ -168,6 +168,7 @@ namespace Intervu.Application
             services.AddScoped<IGetAiConfiguration, AdminUseCases.GetAiConfiguration>();
             services.AddScoped<IAdminTriggerVectorSync, AdminUseCases.AdminTriggerVectorSync>();
             services.AddScoped<IGetPythonAiMetrics, AdminUseCases.GetPythonAiMetrics>();
+            services.AddScoped<IGetPayOsPayoutAccountBalance, AdminUseCases.GetPayOsPayoutAccountBalance>();
             // ----- Feedback ----
             services.AddScoped<IGetFeedbacks, GetFeedbacks>();
             services.AddScoped<ICreateFeedback, CreateFeedback>();

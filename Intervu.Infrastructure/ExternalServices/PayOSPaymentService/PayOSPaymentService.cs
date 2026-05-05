@@ -1,5 +1,8 @@
-﻿using Intervu.Application.Interfaces.ExternalServices;
+﻿using Intervu.Application.DTOs.Payment;
+using Intervu.Application.Exceptions;
+using Intervu.Application.Interfaces.ExternalServices;
 using Microsoft.Extensions.Logging;
+using PayOS.Models;
 using PayOS.Models.V1.Payouts;
 using PayOS.Models.V2.PaymentRequests;
 using PayOS.Models.Webhooks;
@@ -90,6 +93,30 @@ namespace Intervu.Infrastructure.ExternalServices.PayOSPaymentService
             {
                 _logger.LogError(ex, "Failed to create payout order. Amount: {Amount}, TargetBankId: {TargetBankId}, TargetAccount: {MaskedAccount}", amount, targetBankId, maskedAccount);
                 throw;
+            }
+        }
+
+        public async Task<PayoutAccountBalanceDto> GetPayoutAccountBalanceAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogInformation("Fetching PayOS payout account balance.");
+                var info = await _payoutClient.Client.PayoutsAccount.GetBalanceAsync(
+                    new RequestOptions { CancellationToken = cancellationToken });
+
+                return new PayoutAccountBalanceDto
+                {
+                    AccountNumber = info.AccountNumber,
+                    AccountName = info.AccountName,
+                    Currency = info.Currency,
+                    Balance = info.Balance,
+                };
+            }
+            catch (PayOS.Exceptions.ApiException ex)
+            {
+                var detail = ex.ErrorDescription ?? ex.Message;
+                _logger.LogError(ex, "PayOS payout balance request failed: {Detail}", detail);
+                throw new BadRequestException($"Could not read payout account balance: {detail}");
             }
         }
 
