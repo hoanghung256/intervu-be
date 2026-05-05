@@ -39,7 +39,7 @@ namespace Intervu.Application.UseCases.Admin
                     EntityName = $"Room {r.InterviewRoomId.ToString()[..8]}...",
                     Severity = "High",
                     TimeOffset = GetTimeOffset(r.CreatedAt),
-                    ActionLink = $"/admin/reports/room/{r.Id}"
+                    ActionLink = $"/admin/reports/room/{r.InterviewRoomId}"
                 });
             }
 
