@@ -1,3 +1,4 @@
+using System.Data;
 using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
@@ -162,6 +163,40 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
         public Task<int> GetActiveCoachCountAsync()
         {
             return _context.Users.CountAsync(u => u.Role == UserRole.Coach && u.Status == UserStatus.Active);
+        }
+
+        public async Task<int?> GetSessionVersionAsync(Guid userId)
+        {
+            return await _context.Users.AsNoTracking()
+                .Where(u => u.Id == userId)
+                .Select(u => (int?)u.SessionVersion)
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<int> IncrementSessionVersionAndGetAsync(Guid userId)
+        {
+            var conn = _context.Database.GetDbConnection();
+            var shouldClose = conn.State != ConnectionState.Open;
+            if (shouldClose)
+                await conn.OpenAsync();
+            try
+            {
+                await using var cmd = conn.CreateCommand();
+                cmd.CommandText = @"UPDATE ""Users"" SET ""SessionVersion"" = ""SessionVersion"" + 1 WHERE ""Id"" = @id RETURNING ""SessionVersion""";
+                var p = cmd.CreateParameter();
+                p.ParameterName = "id";
+                p.Value = userId;
+                cmd.Parameters.Add(p);
+                var scalar = await cmd.ExecuteScalarAsync();
+                if (scalar is null or DBNull)
+                    throw new InvalidOperationException("User not found for session version increment.");
+                return Convert.ToInt32(scalar);
+            }
+            finally
+            {
+                if (shouldClose)
+                    await conn.CloseAsync();
+            }
         }
     }
 }

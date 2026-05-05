@@ -49,20 +49,18 @@ namespace Intervu.Application.UseCases.Authentication
                 return null;
             }
 
-            // Generate JWT token using JwtService
+            await _refreshTokenRepository.RevokeAllUserTokensAsync(user.Id);
+
+            var sessionVersion = await _userRepository.IncrementSessionVersionAndGetAsync(user.Id);
+
             var token = _jwtService.GenerateToken(
                 user.Id,
                 user.Email,
-                user.Role.ToString()
-            );
+                user.Role.ToString(),
+                sessionVersion);
 
-            // Get token expiry time
             var expiresIn = _jwtService.GetTokenValidityInSeconds();
 
-            // Revoke all existing refresh tokens for this user (logout from all devices)
-            await _refreshTokenRepository.RevokeAllUserTokensAsync(user.Id);
-
-            // Generate new Refresh Token
             var refreshToken = await _refreshTokenRepository.CreateRefreshTokenAsync(user.Id);
 
             // Detach password before returning user data

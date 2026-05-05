@@ -35,7 +35,11 @@ namespace Intervu.Application.UseCases.Authentication
             }
 
             var user = existingToken.User;
-            var newJwtToken = _jwtService.GenerateToken(user.Id, user.Email, user.Role.ToString());
+            var newJwtToken = _jwtService.GenerateToken(
+                user.Id,
+                user.Email,
+                user.Role.ToString(),
+                user.SessionVersion);
 
             var newRefreshToken = await _refreshTokenRepository.CreateRefreshTokenAsync(user.Id);
 

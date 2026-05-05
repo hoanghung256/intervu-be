@@ -18,6 +18,11 @@ using Intervu.API.Middlewares;
 using Hangfire;
 using Intervu.Infrastructure.ExternalServices;
 using Newtonsoft.Json;
+using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
+using Intervu.Application.Utils;
+using Intervu.Domain.Repositories;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Intervu.API
 {
@@ -145,6 +150,28 @@ namespace Intervu.API
                             context.Token = accessToken;
                         }
                         return Task.CompletedTask;
+                    },
+                    OnTokenValidated = async context =>
+                    {
+                        var userIdStr = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier)
+                            ?? context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Sub);
+                        var sessionVerStr = context.Principal?.FindFirstValue(JwtSessionConstants.SessionVersionClaim);
+                        if (string.IsNullOrEmpty(userIdStr)
+                            || string.IsNullOrEmpty(sessionVerStr)
+                            || !int.TryParse(sessionVerStr, out var tokenVersion)
+                            || !Guid.TryParse(userIdStr, out var userId))
+                        {
+                            context.Fail("Invalid token");
+                            return;
+                        }
+
+                        using var scope = context.HttpContext.RequestServices.CreateScope();
+                        var userRepo = scope.ServiceProvider.GetRequiredService<IUserRepository>();
+                        var dbVersion = await userRepo.GetSessionVersionAsync(userId);
+                        if (dbVersion is null || dbVersion != tokenVersion)
+                        {
+                            context.Fail("Session invalidated");
+                        }
                     }
                 };
             });
@@ -213,7 +240,8 @@ namespace Intervu.API
                               "https://scrupleless-aliana-unbreachable.ngrok-free.dev:5173",
                               "https://supereminent-alita-honorless.ngrok-free.dev",
                               "https://supereminent-alita-honorless.ngrok-free.dev:5173",
-                              "https://d9z00h1g-5173.asse.devtunnels.ms"
+                              "https://d9z00h1g-5173.asse.devtunnels.ms",
+                              "https://2zrf59x4-5173.asse.devtunnels.ms"
                           )
                           .AllowAnyHeader()
                           .AllowAnyMethod()

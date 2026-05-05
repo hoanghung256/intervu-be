@@ -28,12 +28,13 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.InterviewRoomUseCase
         {
             // Arrange
             var roomId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
             var roomRepo = new Mock<IInterviewRoomRepository>();
             roomRepo.Setup(x => x.GetByIdWithDetailsAsync(roomId)).ReturnsAsync((DomainInterviewRoom?)null);
             var useCase = new GetCurrentRoom(roomRepo.Object, _mapper);
 
             // Act
-            var result = await useCase.ExecuteAsync(roomId);
+            var result = await useCase.ExecuteAsync(roomId, userId);
 
             // Assert
             Assert.Null(result);
@@ -47,12 +48,14 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.InterviewRoomUseCase
         {
             // Arrange
             var roomId = Guid.NewGuid();
+            var candidateId = Guid.NewGuid();
+            var coachId = Guid.NewGuid();
             var roomRepo = new Mock<IInterviewRoomRepository>();
             var room = new DomainInterviewRoom
             {
                 Id = roomId,
-                CandidateId = Guid.NewGuid(),
-                CoachId = Guid.NewGuid(),
+                CandidateId = candidateId,
+                CoachId = coachId,
                 BookingRequestId = Guid.NewGuid(),
                 Status = InterviewRoomStatus.Scheduled,
                 BookingRequest = new DomainBookingRequest
@@ -73,7 +76,7 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.InterviewRoomUseCase
             var useCase = new GetCurrentRoom(roomRepo.Object, _mapper);
 
             // Act
-            var result = await useCase.ExecuteAsync(roomId);
+            var result = await useCase.ExecuteAsync(roomId, candidateId);
 
             // Assert
             Assert.NotNull(result);
@@ -92,10 +95,14 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.InterviewRoomUseCase
         {
             // Arrange
             var roomId = Guid.NewGuid();
+            var candidateId = Guid.NewGuid();
+            var coachId = Guid.NewGuid();
             var roomRepo = new Mock<IInterviewRoomRepository>();
             var room = new DomainInterviewRoom
             {
                 Id = roomId,
+                CandidateId = candidateId,
+                CoachId = coachId,
                 Status = InterviewRoomStatus.Scheduled,
                 BookingRequestId = null,
                 BookingRequest = null,
@@ -105,7 +112,7 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.InterviewRoomUseCase
             var useCase = new GetCurrentRoom(roomRepo.Object, _mapper);
 
             // Act
-            var result = await useCase.ExecuteAsync(roomId);
+            var result = await useCase.ExecuteAsync(roomId, coachId);
 
             // Assert
             Assert.NotNull(result);

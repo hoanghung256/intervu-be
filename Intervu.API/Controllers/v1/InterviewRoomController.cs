@@ -113,7 +113,16 @@ namespace Intervu.API.Controllers.v1
         [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetById([FromRoute] Guid id)
         {
-            var room = await _getCurrentRoom.ExecuteAsync(id);
+            if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out Guid userId))
+            {
+                return Unauthorized(new
+                {
+                    success = false,
+                    message = "Invalid user credentials"
+                });
+            }
+
+            var room = await _getCurrentRoom.ExecuteAsync(id, userId);
 
             if (room == null)
             {

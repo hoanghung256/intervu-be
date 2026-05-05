@@ -26,5 +26,11 @@ namespace Intervu.Domain.Repositories
         Task<bool> ClearProfilePictureAsync(Guid userId);
         /// <summary>Returns the count of active (non-suspended, non-deleted) coach accounts in SQL DB.</summary>
         Task<int> GetActiveCoachCountAsync();
+
+        Task<int?> GetSessionVersionAsync(Guid userId);
+
+        /// <summary>Atomically increments SessionVersion and returns the new value (one round-trip).</summary>
+        Task<int> IncrementSessionVersionAndGetAsync(Guid userId);
     }
 }
+

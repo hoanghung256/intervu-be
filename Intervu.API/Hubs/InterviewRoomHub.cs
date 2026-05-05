@@ -1,19 +1,23 @@
 using Intervu.Application.Services;
 using Intervu.Infrastructure.ExternalServices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
-using System.Security.Cryptography.X509Certificates;
+using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.API.Utils;
+using Intervu.API.Utils.Constant;
 using Intervu.Domain.Entities;
 using Intervu.Application.Interfaces.UseCases.Audit;
 using Intervu.Domain.Entities.Constants;
 
 namespace Intervu.API.Hubs
 {
+    [Authorize(Policy = AuthorizationPolicies.CandidateOrInterviewer)]
     public class InterviewRoomHub : Hub
     {
         private readonly CodeExecutionService _codeExecutionService;
@@ -22,18 +26,21 @@ namespace Intervu.API.Hubs
         private readonly IReadOnlyDictionary<string, ICodeGenerationService> _codeGenerationServices;
         private readonly InterviewRoomCache _cache;
         private readonly IAddAuditLogEntry _addAuditLogEntry;
+        private readonly IHubContext<InterviewRoomHub> _hubContext;
 
         // A static dictionary to track connections per room
         private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, bool>> _roomConnections = new();
 
-        private static readonly ConcurrentDictionary<string, string> UserConnectionMap = new();
+        /// <summary>Maps "roomId|userId" to the active SignalR connection for that participant in that room.</summary>
+        private static readonly ConcurrentDictionary<string, string> RoomUserSeat = new();
 
         public InterviewRoomHub(CodeExecutionService codeExecutionService,
             ILogger<InterviewRoomHub> logger,
             RoomManagerService roomManager,
             IEnumerable<ICodeGenerationService> codeGenerationServices,
             InterviewRoomCache cache,
-            IAddAuditLogEntry addAuditLogEntry)
+            IAddAuditLogEntry addAuditLogEntry,
+            IHubContext<InterviewRoomHub> hubContext)
         {
             _codeExecutionService = codeExecutionService;
             _logger = logger;
@@ -41,7 +48,10 @@ namespace Intervu.API.Hubs
             _codeGenerationServices = codeGenerationServices.ToDictionary(s => s.Language, StringComparer.OrdinalIgnoreCase);
             _cache = cache;
             _addAuditLogEntry = addAuditLogEntry;
+            _hubContext = hubContext;
         }
+
+        private static string SeatKey(string roomId, Guid userId) => $"{roomId}|{userId}";
 
 
 
@@ -49,14 +59,8 @@ namespace Intervu.API.Hubs
         {
             try
             {
-                var userId = Context.GetHttpContext()?.Request.Query["userId"].ToString();
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    // Overwrite any stale entry from a previous session
-                    UserConnectionMap[userId] = Context.ConnectionId;
-                    _logger.LogInformation("User {UserId} connected with connectionId {ConnectionId}", userId, Context.ConnectionId);
-                }
-
+                var userId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+                _logger.LogInformation("User {UserId} connected with connectionId {ConnectionId}", userId, Context.ConnectionId);
                 await base.OnConnectedAsync();
             }
             catch (Exception ex)
@@ -67,16 +71,16 @@ namespace Intervu.API.Hubs
 
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            var userId = Context.GetHttpContext()?.Request.Query["userId"].ToString();
-            UserRole role = (UserRole) int.Parse(Context.GetHttpContext()?.Request.Query["role"].ToString());
+            var userId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+            var role = ResolveRoleFromClaims();
 
-            // Remove stale entry from the userId → connectionId map
-            if (!string.IsNullOrEmpty(userId))
+            foreach (var key in RoomUserSeat.Keys.ToArray())
             {
-                // Only remove if this specific connectionId is still the registered one
-                // (a fast reconnect could have already registered a new connectionId)
-                UserConnectionMap.TryRemove(
-                    new KeyValuePair<string, string>(userId, Context.ConnectionId));
+                if (RoomUserSeat.TryGetValue(key, out var cid) && cid == Context.ConnectionId)
+                {
+                    RoomUserSeat.TryRemove(key, out _);
+                    break;
+                }
             }
 
             // Find which room the disconnected client belonged to
@@ -133,10 +137,27 @@ namespace Intervu.API.Hubs
 
         public async Task JoinRoom(string room, string userId, UserRole role, string userName)
         {
+            var authUserIdStr = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? Context.User?.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            if (string.IsNullOrEmpty(authUserIdStr)
+                || !Guid.TryParse(authUserIdStr, out var authenticatedUserId)
+                || !Guid.TryParse(userId, out var joinUserId)
+                || joinUserId != authenticatedUserId)
+            {
+                throw new HubException("User identity mismatch");
+            }
+
             if (!IsRoomOngoing(room))
             {
                 _logger.LogInformation("Rejected join for inactive room {RoomId} by connection {ConnectionId}", room, Context.ConnectionId);
                 throw new HubException("Room is not active");
+            }
+
+            var seatKey = SeatKey(room, authenticatedUserId);
+            if (RoomUserSeat.TryGetValue(seatKey, out var previousConnectionId)
+                && previousConnectionId != Context.ConnectionId)
+            {
+                await RemoveDuplicateSeatAsync(room, previousConnectionId);
             }
 
             // Get the current state for the room (creates it if it doesn't exist)
@@ -146,6 +167,8 @@ namespace Intervu.API.Hubs
             await Clients.Caller.SendAsync("ReceiveFullState", roomState);
 
             await Groups.AddToGroupAsync(Context.ConnectionId, room);
+
+            RoomUserSeat[seatKey] = Context.ConnectionId;
 
             // Log join event directly to DB
             Guid? userGuid = Guid.TryParse(userId, out var u) ? u : null;
@@ -186,6 +209,31 @@ namespace Intervu.API.Hubs
             _logger.LogInformation("Client {ConnectionId} joined room {RoomId}", Context.ConnectionId, room);
         }
 
+        private async Task RemoveDuplicateSeatAsync(string room, string previousConnectionId)
+        {
+            _logger.LogInformation(
+                "Replacing SignalR seat in room {RoomId}: disconnecting previous connection {OldConnectionId} for new {NewConnectionId}",
+                room, previousConnectionId, Context.ConnectionId);
+
+            if (_roomConnections.TryGetValue(room, out var dict))
+            {
+                dict.TryRemove(previousConnectionId, out _);
+            }
+
+            await _roomManager.RemovePeerMediaState(room, previousConnectionId);
+            await _hubContext.Groups.RemoveFromGroupAsync(previousConnectionId, room);
+            await _hubContext.Clients.Client(previousConnectionId).SendAsync("RoomSessionReplaced");
+            await Clients.Group(room).SendAsync("UserLeft", previousConnectionId);
+        }
+
+        private UserRole ResolveRoleFromClaims()
+        {
+            var roleClaim = Context.User?.FindFirstValue(ClaimTypes.Role);
+            if (!string.IsNullOrEmpty(roleClaim) && Enum.TryParse<UserRole>(roleClaim, ignoreCase: true, out var r))
+                return r;
+            return UserRole.Candidate;
+        }
+
         private bool IsRoomOngoing(string roomId)
         {
             if (!Guid.TryParse(roomId, out var parsedRoomId))
@@ -201,8 +249,15 @@ namespace Intervu.API.Hubs
         {
             _logger.LogInformation("Client {ConnectionId} leave room {RoomId}", Context.ConnectionId, room);
 
+            Guid? userGuid = Guid.TryParse(userId, out var parsedLeaveUserId) ? parsedLeaveUserId : null;
+            if (userGuid.HasValue)
+            {
+                var seatKey = SeatKey(room, userGuid.Value);
+                if (RoomUserSeat.TryGetValue(seatKey, out var cid) && cid == Context.ConnectionId)
+                    RoomUserSeat.TryRemove(seatKey, out _);
+            }
+
             // Log leave event directly to DB
-            Guid? userGuid = Guid.TryParse(userId, out var u) ? u : null;
             var metaData = JsonSerializer.Serialize(new
             {
                 RoomId = room,
