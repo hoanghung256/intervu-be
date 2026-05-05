@@ -132,7 +132,10 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             };
 
             return await _context.BookingRequests
-                .Where(br => br.CoachId == coachId && activeStatuses.Contains(br.Status))
+                .Where(br => br.CoachId == coachId &&
+                    (br.Status == BookingRequestStatus.Pending ||
+                     br.Status == BookingRequestStatus.PendingForApprovalAfterPayment ||
+                     br.Status == BookingRequestStatus.Accepted))
                 .SelectMany(br => br.Rounds)
                 .Where(r => r.StartTime < rangeEnd && r.EndTime > rangeStart)
                 .Select(r => new { r.StartTime, r.EndTime })

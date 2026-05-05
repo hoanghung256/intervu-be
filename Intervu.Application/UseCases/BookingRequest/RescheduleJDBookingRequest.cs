@@ -5,6 +5,7 @@ using Intervu.Application.Interfaces.ExternalServices.Email;
 using Intervu.Application.Interfaces.UseCases.BookingRequest;
 using Intervu.Application.Interfaces.UseCases.Notification;
 using Intervu.Application.Services;
+using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 using Microsoft.Extensions.Configuration;
@@ -203,12 +204,18 @@ namespace Intervu.Application.UseCases.BookingRequest
                 var round = roundByNumber[roundNumber];
                 var timeline = finalTimeline.First(t => t.RoomId == room.Id);
 
+                var newBlocks = await GetBlocksForRangeAsync(
+                    bookingRequest.CoachId,
+                    timeline.NewStartTime,
+                    timeline.NewEndTime,
+                    round.Id);
+
                 room.ScheduledTime = timeline.NewStartTime;
                 room.RescheduleAttemptCount += 1;
+                room.CurrentAvailabilityId = newBlocks.FirstOrDefault()?.Id;
                 _roomRepo.UpdateAsync(room);
 
-                round.StartTime = timeline.NewStartTime;
-                round.EndTime = timeline.NewEndTime;
+                ApplyRoundReschedule(round, newBlocks, timeline.NewStartTime, timeline.NewEndTime);
             }
 
             bookingRequest.UpdatedAt = DateTime.UtcNow;
@@ -388,6 +395,88 @@ namespace Intervu.Application.UseCases.BookingRequest
             }
 
             return value.ToUniversalTime();
+        }
+
+        private async Task<List<CoachAvailability>> GetBlocksForRangeAsync(
+            Guid coachId,
+            DateTime startTime,
+            DateTime endTime,
+            Guid roundId)
+        {
+            var blocks = await _availabilityRepo.GetBlocksInRangeForUpdateAsync(coachId, startTime, endTime);
+            if (blocks.Count == 0)
+            {
+                throw new ConflictException("No availability blocks found for the proposed time");
+            }
+
+            EnsureBlocksCoverRange(startTime, endTime, blocks);
+
+            foreach (var block in blocks)
+            {
+                if (block.Status != CoachAvailabilityStatus.Available && block.InterviewRoundId != roundId)
+                {
+                    throw new ConflictException("The proposed time includes booked availability blocks");
+                }
+            }
+
+            return blocks;
+        }
+
+        private void ApplyRoundReschedule(
+            InterviewRound round,
+            List<CoachAvailability> newBlocks,
+            DateTime newStartTime,
+            DateTime newEndTime)
+        {
+            var newBlockIds = newBlocks.Select(b => b.Id).ToHashSet();
+
+            foreach (var oldBlock in round.AvailabilityBlocks ?? [])
+            {
+                if (newBlockIds.Contains(oldBlock.Id))
+                {
+                    continue;
+                }
+
+                oldBlock.Status = CoachAvailabilityStatus.Available;
+                oldBlock.InterviewRoundId = null;
+                _availabilityRepo.UpdateAsync(oldBlock);
+            }
+
+            foreach (var block in newBlocks)
+            {
+                block.Status = CoachAvailabilityStatus.Booked;
+                block.InterviewRoundId = round.Id;
+                _availabilityRepo.UpdateAsync(block);
+            }
+
+            round.StartTime = newStartTime;
+            round.EndTime = newEndTime;
+            round.AvailabilityBlocks = newBlocks;
+        }
+
+        private static void EnsureBlocksCoverRange(
+            DateTime startTime,
+            DateTime endTime,
+            List<CoachAvailability> blocks)
+        {
+            var cursor = startTime;
+            foreach (var block in blocks.OrderBy(b => b.StartTime))
+            {
+                if (block.StartTime > cursor)
+                {
+                    break;
+                }
+
+                if (block.EndTime > cursor)
+                {
+                    cursor = block.EndTime;
+                }
+            }
+
+            if (cursor < endTime)
+            {
+                throw new ConflictException("The proposed time is not fully covered by availability blocks");
+            }
         }
 
         private sealed record RoundTimelineItem(
