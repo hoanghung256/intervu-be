@@ -63,7 +63,8 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 query = query.Where(q =>
                     q.Title.Contains(searchTerm) ||
                     q.Content.Contains(searchTerm) ||
-                    q.QuestionCompanies.Any(qc => qc.Company.Name.Contains(searchTerm)));
+                    q.QuestionCompanies.Any(qc => qc.Company.Name.Contains(searchTerm)) ||
+                    q.QuestionTags.Any(qt => qt.Tag.Name.Contains(searchTerm)));
 
             if (companyId.HasValue)
                 query = query.Where(q => q.QuestionCompanies.Any(qc => qc.CompanyId == companyId.Value));
