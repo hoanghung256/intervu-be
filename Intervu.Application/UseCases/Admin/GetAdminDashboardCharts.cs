@@ -35,21 +35,28 @@ namespace Intervu.Application.UseCases.Admin
                 Amount = r.Amount
             }).ToList();
 
-            // 2. User Growth Chart
-            var candidatesByDay = await _userRepository.GetRegistrationTrendAsync(start, end, UserRole.Candidate);
-            var coachesByDay = await _userRepository.GetRegistrationTrendAsync(start, end, UserRole.Coach);
+            // 2. User Growth Chart 
+            var monthRangeStart = new DateTime(end.Year, end.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(-5);
+            var candidatesByDay = await _userRepository.GetRegistrationTrendAsync(monthRangeStart, end, UserRole.Candidate);
+            var coachesByDay = await _userRepository.GetRegistrationTrendAsync(monthRangeStart, end, UserRole.Coach);
 
-            // Merge by date
-            var allDates = candidatesByDay.Select(x => x.Date)
-                .Union(coachesByDay.Select(x => x.Date))
-                .OrderBy(d => d)
+            var candidatesByMonth = candidatesByDay
+                .GroupBy(x => new DateTime(x.Date.Year, x.Date.Month, 1, 0, 0, 0, DateTimeKind.Utc))
+                .ToDictionary(g => g.Key, g => g.Sum(x => x.Count));
+
+            var coachesByMonth = coachesByDay
+                .GroupBy(x => new DateTime(x.Date.Year, x.Date.Month, 1, 0, 0, 0, DateTimeKind.Utc))
+                .ToDictionary(g => g.Key, g => g.Sum(x => x.Count));
+
+            var monthStarts = Enumerable.Range(0, 6)
+                .Select(i => monthRangeStart.AddMonths(i))
                 .ToList();
 
-            var userGrowth = allDates.Select(d => new UserGrowthTrendDto
+            var userGrowth = monthStarts.Select(monthStart => new UserGrowthTrendDto
             {
-                Date = d.ToString("MMM"), // E.g., "Jan", actually should be daily but screenshot shows monthly
-                Candidates = candidatesByDay.Where(c => c.Date == d).Select(c => c.Count).FirstOrDefault(),
-                Coaches = coachesByDay.Where(c => c.Date == d).Select(c => c.Count).FirstOrDefault()
+                Date = monthStart.ToString("MMM yyyy"),
+                Candidates = candidatesByMonth.TryGetValue(monthStart, out var c) ? c : 0,
+                Coaches = coachesByMonth.TryGetValue(monthStart, out var k) ? k : 0,
             }).ToList();
 
             return (revenue, userGrowth);
