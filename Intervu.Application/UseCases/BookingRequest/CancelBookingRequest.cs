@@ -6,7 +6,9 @@ using Intervu.Application.Interfaces.ExternalServices.Email;
 using Intervu.Application.Interfaces.UseCases.BookingRequest;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
 using Intervu.Application.UseCases.InterviewBooking;
+using Intervu.Application.Utils;
 using Intervu.Domain.Abstractions.Policies.Interfaces;
+using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 using Microsoft.Extensions.Hosting;
@@ -112,9 +114,9 @@ namespace Intervu.Application.UseCases.BookingRequest
                         bookingRequest.Candidate.BankAccountNumber
                 );
 
-                if (compensationAmount > 0 && bookingRequest.CoachId.HasValue)
+                if (compensationAmount > 0 && bookingRequest.CoachId != Guid.Empty)
                 {
-                    var coachProfile = await _coachProfileRepository.GetProfileByIdAsync(bookingRequest.CoachId.Value);
+                    var coachProfile = await _coachProfileRepository.GetProfileByIdAsync(bookingRequest.CoachId);
                     if (coachProfile != null)
                     {
                         coachProfile.CurrentAmount = (coachProfile.CurrentAmount ?? 0) + compensationAmount;
@@ -125,7 +127,7 @@ namespace Intervu.Application.UseCases.BookingRequest
                     await _transactionRepo.AddAsync(new InterviewBookingTransaction
                     {
                         OrderCode = RandomGenerator.GenerateOrderCode(),
-                        UserId = bookingRequest.CoachId.Value,
+                        UserId = bookingRequest.CoachId,
                         BookingRequestId = bookingRequestId,
                         Amount = compensationAmount,
                         GrossAmount = totalAmount,

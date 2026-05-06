@@ -116,7 +116,7 @@ namespace Intervu.Infrastructure.ExternalServices.PayOSPaymentService
             {
                 var detail = ex.ErrorDescription ?? ex.Message;
                 _logger.LogError(ex, "PayOS payout balance request failed: {Detail}", detail);
-                throw new BadRequestException($"Could not read payout account balance: {detail}");
+                throw new BadRequestException($"Could not read payout account balance!");
             }
         }
 
