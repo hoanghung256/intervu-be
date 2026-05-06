@@ -63,7 +63,7 @@ namespace Intervu.Application.UseCases.GeneratedQuestion
                 InterviewExperienceId = request.InterviewExperienceId,
                 Level = request.Level,
                 Round = Domain.Entities.Constants.QuestionConstants.InterviewRound.Other,
-                Category = Domain.Entities.Constants.QuestionConstants.QuestionCategory.Other,
+                Category = request.Category,
                 Status = Domain.Entities.Constants.QuestionConstants.QuestionStatus.Pending,
                 CreatedBy = reviewerUserId,
                 CreatedAt = now,
@@ -109,6 +109,20 @@ namespace Intervu.Application.UseCases.GeneratedQuestion
             else if (generated.TagIds != null && generated.TagIds.Any())
             {
                 finalTagIds = generated.TagIds;
+            }
+
+            // Ensure "AI Collected" tag is added
+            const string aiTagName = "AI Collected";
+            var allTags = await tagRepo.GetAllAsync();
+            var aiTag = allTags.FirstOrDefault(t => t.Name.Equals(aiTagName, StringComparison.OrdinalIgnoreCase));
+            if (aiTag == null)
+            {
+                aiTag = new Domain.Entities.Tag { Id = Guid.NewGuid(), Name = aiTagName };
+                await tagRepo.AddAsync(aiTag);
+            }
+            if (!finalTagIds.Contains(aiTag.Id))
+            {
+                finalTagIds.Add(aiTag.Id);
             }
 
             foreach (var tagId in finalTagIds)

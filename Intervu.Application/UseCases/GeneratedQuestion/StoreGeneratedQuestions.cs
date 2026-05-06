@@ -35,7 +35,7 @@ namespace Intervu.Application.UseCases.GeneratedQuestion
                     InterviewRoomId = interviewRoomId,
                     Title = q.Title?.Trim() ?? string.Empty,
                     Content = q.Content?.Trim() ?? string.Empty,
-                    Status = GeneratedQuestionStatus.PendingReview
+                    Status = GeneratedQuestionStatus.PendingReview,
                 };
 
                 if (q.Tags != null && q.Tags.Any())

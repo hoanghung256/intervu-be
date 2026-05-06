@@ -1,4 +1,4 @@
-﻿using Intervu.Domain.Entities.Constants.QuestionConstants;
+using Intervu.Domain.Entities.Constants.QuestionConstants;
 using System;
 using System.Collections.Generic;
 
