@@ -87,7 +87,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                     t => t.BookingRequestId,
                     br => br.Id,
                     (t, br) => new { t, br })
-                .Where(x => x.br.RespondedAt >= from && x.br.RespondedAt < to)
+                // .Where(x => x.br.RespondedAt >= from && x.br.RespondedAt < to)
                 .SumAsync(x => x.t.Amount);
         }
 
