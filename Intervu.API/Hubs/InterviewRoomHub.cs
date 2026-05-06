@@ -14,6 +14,7 @@ using Intervu.API.Utils.Constant;
 using Intervu.Domain.Entities;
 using Intervu.Application.Interfaces.UseCases.Audit;
 using Intervu.Domain.Entities.Constants;
+using Intervu.Domain.Repositories;
 
 namespace Intervu.API.Hubs
 {
@@ -27,6 +28,7 @@ namespace Intervu.API.Hubs
         private readonly InterviewRoomCache _cache;
         private readonly IAddAuditLogEntry _addAuditLogEntry;
         private readonly IHubContext<InterviewRoomHub> _hubContext;
+        private readonly IInterviewRoomRepository _roomRepo;
 
         // A static dictionary to track connections per room
         private static readonly ConcurrentDictionary<string, ConcurrentDictionary<string, bool>> _roomConnections = new();
@@ -40,7 +42,8 @@ namespace Intervu.API.Hubs
             IEnumerable<ICodeGenerationService> codeGenerationServices,
             InterviewRoomCache cache,
             IAddAuditLogEntry addAuditLogEntry,
-            IHubContext<InterviewRoomHub> hubContext)
+            IHubContext<InterviewRoomHub> hubContext,
+            IInterviewRoomRepository roomRepo)
         {
             _codeExecutionService = codeExecutionService;
             _logger = logger;
@@ -49,6 +52,7 @@ namespace Intervu.API.Hubs
             _cache = cache;
             _addAuditLogEntry = addAuditLogEntry;
             _hubContext = hubContext;
+            _roomRepo = roomRepo;
         }
 
         private static string SeatKey(string roomId, Guid userId) => $"{roomId}|{userId}";
@@ -147,7 +151,7 @@ namespace Intervu.API.Hubs
                 throw new HubException("User identity mismatch");
             }
 
-            if (!IsRoomOngoing(room))
+            if (!await IsRoomOngoingAsync(room))
             {
                 _logger.LogInformation("Rejected join for inactive room {RoomId} by connection {ConnectionId}", room, Context.ConnectionId);
                 throw new HubException("Room is not active");
@@ -234,15 +238,28 @@ namespace Intervu.API.Hubs
             return UserRole.Candidate;
         }
 
-        private bool IsRoomOngoing(string roomId)
+        private async Task<bool> IsRoomOngoingAsync(string roomId)
         {
             if (!Guid.TryParse(roomId, out var parsedRoomId))
-            {
                 return false;
+
+            // Fast path: cache already shows Ongoing.
+            var cached = _cache.Rooms.SingleOrDefault(r => r.Id == parsedRoomId);
+            if (cached?.Status == InterviewRoomStatus.Ongoing)
+                return true;
+
+            // Slow path: cache may be stale (background job hasn't run yet this minute).
+            // Re-read from DB and update the cache so subsequent calls are fast.
+            var room = await _roomRepo.GetByIdWithDetailsAsync(parsedRoomId);
+            if (room == null) return false;
+
+            if (room.Status == InterviewRoomStatus.Ongoing)
+            {
+                _cache.Update(room);
+                return true;
             }
 
-            var room = _cache.Rooms.SingleOrDefault(r => r.Id == parsedRoomId);
-            return room?.Status == InterviewRoomStatus.Ongoing;
+            return false;
         }
 
         public async Task LeaveRoom(string room, string userId, UserRole role, string userName)
