@@ -18,7 +18,6 @@ namespace Intervu.Application.UseCases.Withdrawal
         private readonly IPaymentService _paymentService;
         private readonly IBackgroundService _jobService;
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IBankFieldProtector _bankFieldProtector;
 
         public RequestWithdrawalUseCase(
             ICoachProfileRepository coachProfileRepository,
@@ -26,8 +25,7 @@ namespace Intervu.Application.UseCases.Withdrawal
             ITransactionRepository transactionRepository,
             IPaymentService paymentService,
             IBackgroundService jobService,
-            IUnitOfWork unitOfWork,
-            IBankFieldProtector bankFieldProtector)
+            IUnitOfWork unitOfWork)
         {
             _coachProfileRepository = coachProfileRepository;
             _withdrawalRequestRepository = withdrawalRequestRepository;
@@ -35,7 +33,6 @@ namespace Intervu.Application.UseCases.Withdrawal
             _paymentService = paymentService;
             _jobService = jobService;
             _unitOfWork = unitOfWork;
-            _bankFieldProtector = bankFieldProtector;
         }
 
         public async Task<WithdrawalResponseDto> ExecuteAsync(Guid userId, RequestWithdrawalDto request)
@@ -110,12 +107,11 @@ namespace Intervu.Application.UseCases.Withdrawal
             // Step 2: Call external payment service to transfer money
             try
             {
-                var plainAccount = _bankFieldProtector.Decrypt(withdrawalRequest.BankAccountNumber);
                 await _paymentService.CreateSpendOrderAsync(
                     request.Amount,
                     "WITHDRAWAL",
                     withdrawalRequest.BankBinNumber,
-                    plainAccount
+                    withdrawalRequest.BankAccountNumber
                 );
 
                 // Payout succeeded
