@@ -18,9 +18,11 @@ namespace Intervu.Application.UseCases.BookingRequest
         private readonly ITransactionRepository _transactionRepo;
         private readonly ICoachAvailabilitiesRepository _availabilityRepo;
         private readonly IRefundPolicy _refundPolicy;
+        private readonly ICoachCompensationPolicy _compensationPolicy;
         private readonly IPaymentService _paymentService;
         private readonly IBankFieldProtector _bankFieldProtector;
         private readonly IMapper _mapper;
+        private readonly ICoachProfileRepository _coachProfileRepository;
 
         public CancelInterviewRound(
             IBookingRequestRepository bookingRepo,
@@ -28,18 +30,22 @@ namespace Intervu.Application.UseCases.BookingRequest
             ITransactionRepository transactionRepo,
             ICoachAvailabilitiesRepository availabilityRepo,
             IRefundPolicy refundPolicy,
+            ICoachCompensationPolicy compensationPolicy,
             IPaymentService paymentService,
             IBankFieldProtector bankFieldProtector,
-            IMapper mapper)
+            IMapper mapper,
+            ICoachProfileRepository coachProfileRepository)
         {
             _bookingRepo = bookingRepo;
             _roomRepo = roomRepo;
             _transactionRepo = transactionRepo;
             _availabilityRepo = availabilityRepo;
             _refundPolicy = refundPolicy;
+            _compensationPolicy = compensationPolicy;
             _paymentService = paymentService;
             _bankFieldProtector = bankFieldProtector;
             _mapper = mapper;
+            _coachProfileRepository = coachProfileRepository;
         }
 
         public async Task<BookingRequestDto> ExecuteAsync(Guid candidateId, Guid bookingRequestId, Guid roundId)
@@ -93,6 +99,33 @@ namespace Intervu.Application.UseCases.BookingRequest
             if (payment != null && round.Price > 0)
             {
                 var refundAmount = _refundPolicy.CalculateRefundAmount(round.Price, round.StartTime, DateTime.UtcNow);
+                var compensationAmount = _compensationPolicy.CalculateCompensationAmount(round.Price, round.StartTime, DateTime.UtcNow);
+
+                if (compensationAmount > 0)
+                {
+                    var coachProfile = await _coachProfileRepository.GetProfileByIdAsync(bookingRequest.CoachId);
+                    if (coachProfile != null)
+                    {
+                        coachProfile.CurrentAmount = (coachProfile.CurrentAmount ?? 0) + compensationAmount;
+                        coachProfile.Version++;
+                        await _coachProfileRepository.UpdateCoachProfileAsync(coachProfile);
+                    }
+
+                    await _transactionRepo.AddAsync(new InterviewBookingTransaction
+                    {
+                        OrderCode = RandomGenerator.GenerateOrderCode(),
+                        UserId = bookingRequest.CoachId,
+                        BookingRequestId = bookingRequestId,
+                        InterviewRoundId = round.Id,
+                        Amount = compensationAmount,
+                        GrossAmount = round.Price,
+                        CommissionAmount = 0,
+                        CommissionRate = 0,
+                        Type = TransactionType.Compensation,
+                        Status = TransactionStatus.Paid
+                    });
+                }
+
                 if (refundAmount > 0)
                 {
                     var refundTx = new InterviewBookingTransaction
