@@ -31,10 +31,14 @@ TARGET ROLE PRIORITY (STRICT):
 2. If unclear, infer from JD role/title and requirements.
 3. If still unclear, infer from CV target role (not incidental past stacks).
 4. Treat past internship/legacy stacks in CV as secondary unless directly required by the target role/JD.
+5. Infer role/domain orientation holistically from combined signals (goal text, JD responsibilities, CV project nature, stack patterns, and coach profile).
+6. Treat the role/domain direction as primary. Raw technology overlap is secondary when domain direction conflicts.
+7. Shared language alone (e.g., C#) is NOT sufficient evidence if domain focus differs (e.g., game/AR/VR vs backend systems).
+8. The skill examples in this prompt are illustrative, not exhaustive. Generalize to other domains (data, mobile, QA, security, cloud, devops, etc.) using the same reasoning principle.
 
 EVALUATION CRITERIA:
-1. Target-role alignment: coach expertise is relevant to the user's target role.
-2. JD alignment (if present): coach can train the skills/responsibilities required by that JD.
+1. Target-role/domain alignment: coach expertise is relevant to the user's target role and domain direction.
+2. JD alignment (if present): coach can train the responsibilities required by that JD.
 3. Gap-closing value: coach can help close the user's current gaps from CV context toward the target role.
 4. Seniority fit: coach level is appropriate for the user's goal.
 5. Practical interview value: coach profile suggests concrete interview preparation guidance.
@@ -47,6 +51,7 @@ SCORING RULES:
 - 0.30-0.59: weak fit.
 - below 0.30: irrelevant or off-track.
 - If coach is off-track from target role/JD, score <= 0.20.
+- If domain mismatch is clear, keep score conservative even when there is partial tech overlap.
 - If no coach is truly suitable, score all candidates low instead of forcing a high match.
 
 MANDATORY OUTPUT RULES:

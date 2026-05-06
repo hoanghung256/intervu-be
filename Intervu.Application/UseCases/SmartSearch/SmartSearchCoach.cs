@@ -43,6 +43,8 @@ namespace Intervu.Application.UseCases.SmartSearch
             // candidates for the LLM reranker to pick finalOutputTopN winners from.
             const int reasoningCandidateTopK = 10;
             const int finalOutputTopN = 3;
+            const double aiWeight = 0.75;
+            const double vectorWeight = 0.25;
 
             if (string.IsNullOrWhiteSpace(request.Query) && string.IsNullOrWhiteSpace(request.ExtractedProfileContext))
                 throw new ArgumentException("Search query and profile context cannot both be empty.");
@@ -157,8 +159,12 @@ namespace Intervu.Application.UseCases.SmartSearch
                     var coachIdStr = result.CoachId.ToString();
                     if (reasoningMap.TryGetValue(coachIdStr, out var aiResult))
                     {
+                        var aiScore = Clamp01(aiResult.Score);
+                        var vectorScore = Clamp01(result.MatchScore);
+                        var hybridScore = Clamp01((aiWeight * aiScore) + (vectorWeight * vectorScore));
+
                         result.RerankScore = aiResult.Score;
-                        result.FinalScore = aiResult.Score;
+                        result.FinalScore = hybridScore;
                         result.Reasoning = aiResult.Reasoning;
                         result.RerankSource = "AI";
                     }
@@ -184,7 +190,7 @@ namespace Intervu.Application.UseCases.SmartSearch
             // AI-validated matches are never outranked by unreranked fallbacks.
             var ordered = results
                 .OrderByDescending(r => r.RerankSource == "AI")
-                .ThenByDescending(r => r.RerankSource == "AI" ? r.RerankScore : r.MatchScore)
+                .ThenByDescending(r => r.RerankSource == "AI" ? r.FinalScore : r.MatchScore)
                 .Take(finalOutputTopN)
                 .ToList();
 
@@ -224,6 +230,13 @@ namespace Intervu.Application.UseCases.SmartSearch
             }
 
             return candidates;
+        }
+
+        private static double Clamp01(double value)
+        {
+            if (value < 0) return 0;
+            if (value > 1) return 1;
+            return value;
         }
 
         /// <summary>
