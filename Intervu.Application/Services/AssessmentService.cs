@@ -409,6 +409,16 @@ namespace Intervu.Application.Services
                 AnswerJson = userSkillAssessment.AnswerJson
             };
         }
+
+        public async Task<bool> DeleteUserSkillAssessmentSnapshotAsync(Guid userId, CancellationToken cancellationToken = default)
+        {
+            if (userId == Guid.Empty)
+            {
+                return false;
+            }
+
+            return await _snapshotRepository.DeleteByUserIdAsync(userId, cancellationToken);
+        }
         
         public async Task<GenerateRoadmapResultDto> GenerateRoadmapFromSurveyAsync(Guid userId, bool forceRegenerate = false, CancellationToken cancellationToken = default)
         {

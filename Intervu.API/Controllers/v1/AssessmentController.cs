@@ -96,6 +96,26 @@ namespace Intervu.API.Controllers.v1
             });
         }
 
+        [HttpDelete("{userId:guid}")]
+        public async Task<IActionResult> DeleteUserAssessment([FromRoute] Guid userId, CancellationToken cancellationToken)
+        {
+            var deleted = await _service.DeleteUserSkillAssessmentSnapshotAsync(userId, cancellationToken);
+            if (!deleted)
+            {
+                return NotFound(new
+                {
+                    success = false,
+                    message = "Assessment snapshot not found."
+                });
+            }
+
+            return Ok(new
+            {
+                success = true,
+                message = "Assessment snapshot deleted successfully."
+            });
+        }
+
         [HttpPost("roadmap/generate")]
         public async Task<IActionResult> GenerateRoadmap([FromBody] GenerateRoadmapFromSurveyRequestDto request, CancellationToken cancellationToken)
         {

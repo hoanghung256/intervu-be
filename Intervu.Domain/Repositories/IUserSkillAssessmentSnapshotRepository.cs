@@ -10,5 +10,6 @@ namespace Intervu.Domain.Repositories
         Task<UserSkillAssessmentSnapshot?> GetUserSkillAssessmentById(Guid userId, CancellationToken cancellationToken = default);
         Task UpsertSnapshotAsync(UserSkillAssessmentSnapshot snapshot, CancellationToken cancellationToken = default);
         Task SaveAnswerJsonAsync(Guid userId, string answerJson, CancellationToken cancellationToken = default);
+        Task<bool> DeleteByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
     }
 }

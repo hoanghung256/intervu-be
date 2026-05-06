@@ -128,6 +128,21 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL.Repositories
             }
         }
 
+        public async Task<bool> DeleteByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+        {
+            var existing = await _context.UserSkillAssessments
+                .FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
+
+            if (existing == null)
+            {
+                return false;
+            }
+
+            _context.UserSkillAssessments.Remove(existing);
+            await _context.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+
         private static string NormalizeJsonPayload(string? json)
         {
             if (string.IsNullOrWhiteSpace(json))
