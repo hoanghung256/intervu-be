@@ -77,6 +77,19 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             return profile;
         }
 
+        public async Task<bool> IncreaseCurrentAmountAtomicAsync(Guid coachId, int amountDelta)
+        {
+            if (amountDelta <= 0) return true;
+
+            var affectedRows = await _context.CoachProfiles
+                .Where(p => p.Id == coachId)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(p => p.CurrentAmount, p => (p.CurrentAmount ?? 0) + amountDelta)
+                    .SetProperty(p => p.Version, p => p.Version + 1));
+
+            return affectedRows > 0;
+        }
+
         public async Task<List<CoachProfile>> GetProfilesByIdsAsync(IEnumerable<Guid> ids)
         {
             var idList = ids.ToList();
@@ -221,6 +234,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
 
             if (updatedProfile.PortfolioUrl != null) existingProfile.PortfolioUrl = updatedProfile.PortfolioUrl;
             if (updatedProfile.CurrentAmount != null) existingProfile.CurrentAmount = updatedProfile.CurrentAmount;
+            existingProfile.Version = updatedProfile.Version;
             if (updatedProfile.ExperienceYears != null) existingProfile.ExperienceYears = updatedProfile.ExperienceYears;
             if (updatedProfile.CurrentJobTitle != null) existingProfile.CurrentJobTitle = updatedProfile.CurrentJobTitle;
             if (updatedProfile.Bio != null) existingProfile.Bio = updatedProfile.Bio;
@@ -271,14 +285,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             existingProfile.BankBinNumber ??= string.Empty;
             existingProfile.BankAccountNumber ??= string.Empty;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("An error occurred while saving coach profile changes. " + ex.ToString(), ex);
-            }
+            await _context.SaveChangesAsync();
         }
 
         public async Task ReplaceWorkExperiencesAsync(Guid coachId, IEnumerable<CoachWorkExperience> workExperiences)

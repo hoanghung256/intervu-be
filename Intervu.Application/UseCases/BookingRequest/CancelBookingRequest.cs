@@ -116,12 +116,11 @@ namespace Intervu.Application.UseCases.BookingRequest
 
                 if (compensationAmount > 0 && bookingRequest.CoachId != Guid.Empty)
                 {
-                    var coachProfile = await _coachProfileRepository.GetProfileByIdAsync(bookingRequest.CoachId);
-                    if (coachProfile != null)
+                    var balanceUpdated = await _coachProfileRepository
+                        .IncreaseCurrentAmountAtomicAsync(bookingRequest.CoachId, compensationAmount);
+                    if (!balanceUpdated)
                     {
-                        coachProfile.CurrentAmount = (coachProfile.CurrentAmount ?? 0) + compensationAmount;
-                        coachProfile.Version++;
-                        await _coachProfileRepository.UpdateCoachProfileAsync(coachProfile);
+                        throw new BadRequestException("Coach profile not found.");
                     }
 
                     await _transactionRepo.AddAsync(new InterviewBookingTransaction
@@ -157,7 +156,6 @@ namespace Intervu.Application.UseCases.BookingRequest
                     continue;
 
                 room.Status = InterviewRoomStatus.Cancelled;
-                _roomRepo.UpdateAsync(room);
             }
 
             // Restore availability blocks for all rounds back to Available
@@ -171,13 +169,18 @@ namespace Intervu.Application.UseCases.BookingRequest
                 {
                     block.Status = CoachAvailabilityStatus.Available;
                     block.InterviewRoundId = null;
-                    _availabilityRepo.UpdateAsync(block);
                 }
                 round.Status = InterviewRoundStatus.Cancelled;
             }
 
-            _bookingRepo.UpdateAsync(bookingRequest);
-            await _bookingRepo.SaveChangesAsync();
+            try
+            {
+                await _bookingRepo.SaveChangesAsync();
+            }
+            catch (Exception ex) when (ex.GetType().Name == "DbUpdateConcurrencyException")
+            {
+                throw new BadRequestException("Booking request changed while cancelling. Please refresh and try again.");
+            }
 
             // Send cancellation emails to both candidate and coach
             try

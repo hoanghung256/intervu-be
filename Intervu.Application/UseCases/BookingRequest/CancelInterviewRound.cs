@@ -83,7 +83,6 @@ namespace Intervu.Application.UseCases.BookingRequest
             if (round.InterviewRoom != null)
             {
                 round.InterviewRoom.Status = InterviewRoomStatus.Cancelled;
-                _roomRepo.UpdateAsync(round.InterviewRoom);
             }
 
             // Free availability blocks for this round
@@ -91,7 +90,6 @@ namespace Intervu.Application.UseCases.BookingRequest
             {
                 block.Status = CoachAvailabilityStatus.Available;
                 block.InterviewRoundId = null;
-                _availabilityRepo.UpdateAsync(block);
             }
 
             // Create partial refund using RefundPolicy
@@ -103,12 +101,11 @@ namespace Intervu.Application.UseCases.BookingRequest
 
                 if (compensationAmount > 0)
                 {
-                    var coachProfile = await _coachProfileRepository.GetProfileByIdAsync(bookingRequest.CoachId);
-                    if (coachProfile != null)
+                    var balanceUpdated = await _coachProfileRepository
+                        .IncreaseCurrentAmountAtomicAsync(bookingRequest.CoachId, compensationAmount);
+                    if (!balanceUpdated)
                     {
-                        coachProfile.CurrentAmount = (coachProfile.CurrentAmount ?? 0) + compensationAmount;
-                        coachProfile.Version++;
-                        await _coachProfileRepository.UpdateCoachProfileAsync(coachProfile);
+                        throw new BadRequestException("Coach profile not found.");
                     }
 
                     await _transactionRepo.AddAsync(new InterviewBookingTransaction
@@ -154,7 +151,6 @@ namespace Intervu.Application.UseCases.BookingRequest
                     if (isRefundSent)
                     {
                         refundTx.Status = TransactionStatus.Paid;
-                        _transactionRepo.UpdateAsync(refundTx);
                     }
                 }
             }
@@ -170,8 +166,14 @@ namespace Intervu.Application.UseCases.BookingRequest
                 bookingRequest.UpdatedAt = DateTime.UtcNow;
             }
 
-            _bookingRepo.UpdateAsync(bookingRequest);
-            await _bookingRepo.SaveChangesAsync();
+            try
+            {
+                await _bookingRepo.SaveChangesAsync();
+            }
+            catch (Exception ex) when (ex.GetType().Name == "DbUpdateConcurrencyException")
+            {
+                throw new BadRequestException("Booking request changed while cancelling. Please refresh and try again.");
+            }
 
             var result = _mapper.Map<BookingRequestDto>(bookingRequest);
             result.CandidateName = bookingRequest.Candidate?.User?.FullName;
