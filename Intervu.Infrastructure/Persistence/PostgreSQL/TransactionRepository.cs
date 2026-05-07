@@ -68,7 +68,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
             var total = await query.CountAsync();
 
             var items = await query
-                .OrderByDescending(t => t.OrderCode)
+                .OrderByDescending(t => t.CreatedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();

@@ -21,6 +21,7 @@ namespace Intervu.Application.DTOs.Admin
         /// Payment: Candidate pays platform.
         /// Payout: Platform pays Coach after interview completed.
         /// Refund: Platform returns money to Candidate.
+        /// Compensation: Platform credits Coach for a cancellation.
         /// </summary>
         public string Type { get; set; } = string.Empty;
 

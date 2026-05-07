@@ -115,10 +115,10 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
                 90,
                 "REFUND",
                 booking.Candidate.BankBinNumber,
-                "1234567890"), Times.Once);
+                booking.Candidate.BankAccountNumber), Times.Once);
 
             ctx.TransactionRepo.Verify(x => x.UpdateAsync(It.Is<InterviewBookingTransaction>(t =>
-                t.Id == refundTx.Id && t.Status == TransactionStatus.Paid)), Times.Once);
+                t.Id == refundTx.Id && t.Status == TransactionStatus.Paid)), Times.Never);
 
             ctx.TransactionRepo.Verify(x => x.UpdateAsync(It.Is<InterviewBookingTransaction>(t =>
                 t.Id == payout.Id && t.Status == TransactionStatus.Cancel)), Times.Never);
@@ -199,7 +199,7 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
                 75,
                 "REFUND",
                 booking.Candidate.BankBinNumber,
-                "1234567890"), Times.Once);
+                booking.Candidate.BankAccountNumber), Times.Once);
 
             ctx.BookingRepo.Verify(x => x.SaveChangesAsync(), Times.Once);
         }
@@ -215,8 +215,10 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
             var transactionRepo = new Mock<ITransactionRepository>();
             var availabilityRepo = new Mock<ICoachAvailabilitiesRepository>();
             var refundPolicy = new Mock<IRefundPolicy>();
+            var compensationPolicy = new Mock<ICoachCompensationPolicy>();
             var paymentService = new Mock<IPaymentService>();
             var bankFieldProtector = new Mock<IBankFieldProtector>();
+            var coachProfileRepository = new Mock<ICoachProfileRepository>();
 
             var refundTransactions = new List<InterviewBookingTransaction>();
 
@@ -231,12 +233,16 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
 
             refundPolicy.Setup(x => x.CalculateRefundAmount(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Returns(refundAmount);
+            compensationPolicy.Setup(x => x.CalculateCompensationAmount(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns(0);
 
             paymentService.Setup(x => x.CreateSpendOrderAsync(
                     It.IsAny<int>(),
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<string>()))
+                .ReturnsAsync(true);
+            coachProfileRepository.Setup(x => x.IncreaseCurrentAmountAtomicAsync(It.IsAny<Guid>(), It.IsAny<int>()))
                 .ReturnsAsync(true);
 
             bankFieldProtector
@@ -255,8 +261,10 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
             serviceCollection.AddScoped(_ => transactionRepo.Object);
             serviceCollection.AddScoped(_ => availabilityRepo.Object);
             serviceCollection.AddScoped(_ => refundPolicy.Object);
+            serviceCollection.AddScoped(_ => compensationPolicy.Object);
             serviceCollection.AddScoped(_ => paymentService.Object);
             serviceCollection.AddScoped(_ => bankFieldProtector.Object);
+            serviceCollection.AddScoped(_ => coachProfileRepository.Object);
 
             var provider = serviceCollection.BuildServiceProvider();
             return new RoundCancelContext(

@@ -328,6 +328,7 @@ namespace Intervu.Application
         public static IServiceCollection AddDomainBusinessRules(this IServiceCollection services)
         {
             services.AddScoped<IRefundPolicy, RefundPolicy>();
+            services.AddScoped<ICoachCompensationPolicy, CoachCompensationPolicy>();
 
             return services;
         }

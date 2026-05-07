@@ -16,6 +16,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IRefundPolicy _refundPolicy;
+        private readonly ICoachCompensationPolicy _compensationPolicy;
         private readonly IBackgroundService _jobService;
         private readonly IPaymentService _paymentService;
         private readonly IUserRepository _userRepository;
@@ -23,12 +24,14 @@ namespace Intervu.Application.UseCases.InterviewBooking
         public CancelInterview(
             IUnitOfWork unitOfWork,
             IRefundPolicy refundPolicy,
+            ICoachCompensationPolicy compensationPolicy,
             IBackgroundService jobService,
             IPaymentService paymentService,
             IUserRepository userRepository)
         {
             _unitOfWork = unitOfWork;
             _refundPolicy = refundPolicy;
+            _compensationPolicy = compensationPolicy;
             _jobService = jobService;
             _paymentService = paymentService;
             _userRepository = userRepository;
@@ -43,6 +46,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 var transactionRepo = _unitOfWork.GetRepository<ITransactionRepository>();
                 var bookingRepo = _unitOfWork.GetRepository<IBookingRequestRepository>();
                 var availabilityRepo = _unitOfWork.GetRepository<ICoachAvailabilitiesRepository>();
+                var coachProfileRepo = _unitOfWork.GetRepository<ICoachProfileRepository>();
 
                 Domain.Entities.InterviewRoom room = await interviewRoomRepo.GetByIdAsync(interviewRoomId)
                     ?? throw new NotFoundException("Interview room not found");
@@ -57,14 +61,21 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     throw new NotFoundException("Candidate not found for interview room");
 
                 // Find transactions via BookingRequestId
-                InterviewBookingTransaction payout = await transactionRepo.GetByBookingRequestId(room.BookingRequestId.Value, TransactionType.Payout)
-                    ?? throw new NotFoundException("Payout transaction not found");
-                payout.Status = TransactionStatus.Cancel;
-
                 InterviewBookingTransaction payment = await transactionRepo.GetByBookingRequestId(room.BookingRequestId.Value, TransactionType.Payment)
                     ?? throw new NotFoundException("Payment transaction not found");
 
-                int refundAmount = _refundPolicy.CalculateRefundAmount(payment.Amount, room.ScheduledTime ?? DateTime.UtcNow, DateTime.UtcNow);
+                room.Status = InterviewRoomStatus.Cancelled;
+                interviewRoomRepo.UpdateAsync(room);
+
+                // Restore availability blocks: load booking request with rounds and their blocks
+                var bookingRequest = await bookingRepo.GetByIdWithDetailsAsync(room.BookingRequestId.Value);
+                if (bookingRequest == null) throw new NotFoundException("Booking request not found for interview room");
+
+                var round = bookingRequest.Rounds.FirstOrDefault(r => r.RoundNumber == room.RoundNumber);
+                var scheduledTime = round?.StartTime ?? room.ScheduledTime ?? DateTime.UtcNow;
+                var baseAmount = round?.Price ?? payment.Amount;
+                var refundAmount = _refundPolicy.CalculateRefundAmount(baseAmount, scheduledTime, DateTime.UtcNow);
+                var compensationAmount = _compensationPolicy.CalculateCompensationAmount(baseAmount, scheduledTime, DateTime.UtcNow);
 
                 await transactionRepo.AddAsync(new InterviewBookingTransaction
                 {
@@ -76,15 +87,43 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     Status = TransactionStatus.Created
                 });
 
-                room.Status = InterviewRoomStatus.Cancelled;
-                interviewRoomRepo.UpdateAsync(room);
-
-                // Restore availability blocks: load booking request with rounds and their blocks
-                var bookingRequest = await bookingRepo.GetByIdWithDetailsAsync(room.BookingRequestId.Value);
-                if (bookingRequest == null) throw new NotFoundException("Booking request not found for interview room");
+                if (round != null)
+                {
+                    var payout = await transactionRepo.GetByInterviewRoundId(round.Id, TransactionType.Payout);
+                    if (payout != null)
+                    {
+                        payout.Status = TransactionStatus.Cancel;
+                        transactionRepo.UpdateAsync(payout);
+                    }
+                }
 
                 bookingRequest.Status = BookingRequestStatus.Cancelled;
                 bookingRepo.UpdateAsync(bookingRequest);
+
+                if (compensationAmount > 0 && room.CoachId.HasValue)
+                {
+                    var coachProfile = await coachProfileRepo.GetProfileByIdAsync(room.CoachId.Value);
+                    if (coachProfile != null)
+                    {
+                        coachProfile.CurrentAmount = (coachProfile.CurrentAmount ?? 0) + compensationAmount;
+                        coachProfile.Version++;
+                        await coachProfileRepo.UpdateCoachProfileAsync(coachProfile);
+                    }
+
+                    await transactionRepo.AddAsync(new InterviewBookingTransaction
+                    {
+                        OrderCode = RandomGenerator.GenerateOrderCode(),
+                        UserId = room.CoachId.Value,
+                        BookingRequestId = room.BookingRequestId.Value,
+                        InterviewRoundId = round?.Id,
+                        Amount = compensationAmount,
+                        GrossAmount = baseAmount,
+                        CommissionAmount = 0,
+                        CommissionRate = 0,
+                        Type = TransactionType.Compensation,
+                        Status = TransactionStatus.Paid
+                    });
+                }
 
                 // Refund candidate
                 //_jobService.Enqueue<IPaymentService>(
@@ -103,7 +142,6 @@ namespace Intervu.Application.UseCases.InterviewBooking
                     );
 
                 // Find the round matching this room and restore its availability blocks
-                var round = bookingRequest.Rounds.FirstOrDefault(r => r.RoundNumber == room.RoundNumber);
                 if (round?.AvailabilityBlocks != null)
                 {
                     foreach (var block in round.AvailabilityBlocks)
@@ -170,13 +208,17 @@ namespace Intervu.Application.UseCases.InterviewBooking
 
                     if (coach != null)
                     {
+                        var coachCompensationNote = compensationAmount > 0
+                            ? $"A cancellation compensation of {compensationAmount:N0} resources has been credited to your balance."
+                            : "This cancellation was initiated by the candidate. No payout will be processed for this session.";
+
                         var coachPlaceholders = new Dictionary<string, string>
                         {
                             ["RecipientName"] = coach.FullName,
                             ["OtherPartyName"] = candidate?.FullName ?? "Candidate",
                             ["InterviewDate"] = interviewDate,
-                            ["RefundAmount"] = "0",
-                            ["RefundNote"] = "This cancellation was initiated by the candidate. No payout will be processed for this session."
+                            ["RefundAmount"] = compensationAmount > 0 ? compensationAmount.ToString("N0") : "0",
+                            ["RefundNote"] = coachCompensationNote
                         };
 
                         _jobService.Enqueue<IEmailService>(svc => svc.SendEmailWithTemplateAsync(

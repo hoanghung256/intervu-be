@@ -6,7 +6,9 @@ using Intervu.Application.Interfaces.ExternalServices.Email;
 using Intervu.Application.Interfaces.UseCases.BookingRequest;
 using Intervu.Application.Interfaces.UseCases.InterviewBooking;
 using Intervu.Application.UseCases.InterviewBooking;
+using Intervu.Application.Utils;
 using Intervu.Domain.Abstractions.Policies.Interfaces;
+using Intervu.Domain.Entities;
 using Intervu.Domain.Entities.Constants;
 using Intervu.Domain.Repositories;
 using Microsoft.Extensions.Hosting;
@@ -20,11 +22,13 @@ namespace Intervu.Application.UseCases.BookingRequest
         private readonly ITransactionRepository _transactionRepo;
         private readonly ICoachAvailabilitiesRepository _availabilityRepo;
         private readonly IRefundPolicy _refundPolicy;
+        private readonly ICoachCompensationPolicy _compensationPolicy;
         private readonly IRefundForCandidate _refundForCandidate;
         private readonly IMapper _mapper;
         private readonly IBackgroundService _backgroundService;
         private readonly IPaymentService _paymentService;
         private readonly IUserRepository _userRepository;
+        private readonly ICoachProfileRepository _coachProfileRepository;
 
         public CancelBookingRequest(
             IBookingRequestRepository bookingRepo,
@@ -32,22 +36,26 @@ namespace Intervu.Application.UseCases.BookingRequest
             ITransactionRepository transactionRepo,
             ICoachAvailabilitiesRepository availabilityRepo,
             IRefundPolicy refundPolicy,
+            ICoachCompensationPolicy compensationPolicy,
             IMapper mapper,
             IBackgroundService backgroundService,
             IRefundForCandidate refundForCandidate,
             IPaymentService paymentService,
-            IUserRepository userRepository)
+            IUserRepository userRepository,
+            ICoachProfileRepository coachProfileRepository)
         {
             _bookingRepo = bookingRepo;
             _roomRepo = roomRepo;
             _transactionRepo = transactionRepo;
             _availabilityRepo = availabilityRepo;
             _refundPolicy = refundPolicy;
+            _compensationPolicy = compensationPolicy;
             _refundForCandidate = refundForCandidate;
             _mapper = mapper;
             _backgroundService = backgroundService;
             _paymentService = paymentService;
             _userRepository = userRepository;
+            _coachProfileRepository = coachProfileRepository;
         }
 
         public async Task<BookingRequestDto> ExecuteAsync(Guid candidateId, Guid bookingRequestId)
@@ -76,6 +84,7 @@ namespace Intervu.Application.UseCases.BookingRequest
             // Payout rows are written per-round on completion, so a cancelled booking has none to cancel.
 
             int refundAmount = 0;
+            int compensationAmount = 0;
             var payment = await _transactionRepo.GetByBookingRequestId(bookingRequestId, TransactionType.Payment);
             if (payment != null)
             {
@@ -85,9 +94,10 @@ namespace Intervu.Application.UseCases.BookingRequest
                 // Because may have a case Candidate cancel 1 round in booking request with multiple rounds, 
                 // so only refund for the cancelled round, not the whole booking request
                 var roundsToCancel = bookingRequest.Rounds.Where(r => r.Status == InterviewRoundStatus.Active).ToList();
-                refundAmount = roundsToCancel.Sum(r => r.Price);
+                var totalAmount = roundsToCancel.Sum(r => r.Price);
 
-                refundAmount = _refundPolicy.CalculateRefundAmount(refundAmount, scheduledTime, DateTime.UtcNow);
+                refundAmount = _refundPolicy.CalculateRefundAmount(totalAmount, scheduledTime, DateTime.UtcNow);
+                compensationAmount = _compensationPolicy.CalculateCompensationAmount(totalAmount, scheduledTime, DateTime.UtcNow);
 
                 // Refund for Candidate
                 //_backgroundService.Enqueue<IPaymentService>(
@@ -103,6 +113,29 @@ namespace Intervu.Application.UseCases.BookingRequest
                         bookingRequest.Candidate.BankBinNumber,
                         bookingRequest.Candidate.BankAccountNumber
                 );
+
+                if (compensationAmount > 0 && bookingRequest.CoachId != Guid.Empty)
+                {
+                    var balanceUpdated = await _coachProfileRepository
+                        .IncreaseCurrentAmountAtomicAsync(bookingRequest.CoachId, compensationAmount);
+                    if (!balanceUpdated)
+                    {
+                        throw new BadRequestException("Coach profile not found.");
+                    }
+
+                    await _transactionRepo.AddAsync(new InterviewBookingTransaction
+                    {
+                        OrderCode = RandomGenerator.GenerateOrderCode(),
+                        UserId = bookingRequest.CoachId,
+                        BookingRequestId = bookingRequestId,
+                        Amount = compensationAmount,
+                        GrossAmount = totalAmount,
+                        CommissionAmount = 0,
+                        CommissionRate = 0,
+                        Type = TransactionType.Compensation,
+                        Status = TransactionStatus.Paid
+                    });
+                }
                 //await _transactionRepo.AddAsync(new Domain.Entities.InterviewBookingTransaction
                 //{
                 //    OrderCode = Intervu.Application.Utils.RandomGenerator.GenerateOrderCode(),
@@ -123,7 +156,6 @@ namespace Intervu.Application.UseCases.BookingRequest
                     continue;
 
                 room.Status = InterviewRoomStatus.Cancelled;
-                _roomRepo.UpdateAsync(room);
             }
 
             // Restore availability blocks for all rounds back to Available
@@ -137,13 +169,18 @@ namespace Intervu.Application.UseCases.BookingRequest
                 {
                     block.Status = CoachAvailabilityStatus.Available;
                     block.InterviewRoundId = null;
-                    _availabilityRepo.UpdateAsync(block);
                 }
                 round.Status = InterviewRoundStatus.Cancelled;
             }
 
-            _bookingRepo.UpdateAsync(bookingRequest);
-            await _bookingRepo.SaveChangesAsync();
+            try
+            {
+                await _bookingRepo.SaveChangesAsync();
+            }
+            catch (Exception ex) when (ex.GetType().Name == "DbUpdateConcurrencyException")
+            {
+                throw new BadRequestException("Booking request changed while cancelling. Please refresh and try again.");
+            }
 
             // Send cancellation emails to both candidate and coach
             try

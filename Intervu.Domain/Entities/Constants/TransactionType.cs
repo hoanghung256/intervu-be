@@ -27,6 +27,11 @@ namespace Intervu.Domain.Entities.Constants
         Refund,
 
         /// <summary>
+        /// Money credited to a coach as a cancellation compensation.
+        /// </summary>
+        Compensation,
+
+        /// <summary>
         /// Income credited to a user account from completed services.
         /// This increases the internal available balance and represents earned funds
         /// before a separate withdrawal or payout transaction moves money out.
