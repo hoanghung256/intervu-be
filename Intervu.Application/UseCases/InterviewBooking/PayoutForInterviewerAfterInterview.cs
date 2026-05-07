@@ -21,6 +21,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
         private readonly ICoachProfileRepository _coachProfileRepository;
         private readonly IBookingRequestRepository _bookingRequestRepository;
         private readonly IInterviewRoundRepository _interviewRoundRepository;
+        private readonly IInterviewReportRepository _interviewReportRepository;
         private readonly ICommissionCalculator _commissionCalculator;
         private readonly IBackgroundService _jobService;
         private readonly IUserRepository _userRepository;
@@ -33,6 +34,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
             ICoachProfileRepository coachProfileRepository,
             IBookingRequestRepository bookingRequestRepository,
             IInterviewRoundRepository interviewRoundRepository,
+            IInterviewReportRepository interviewReportRepository,
             ICommissionCalculator commissionCalculator,
             IBackgroundService jobService,
             IUserRepository userRepository,
@@ -44,6 +46,7 @@ namespace Intervu.Application.UseCases.InterviewBooking
             _coachProfileRepository = coachProfileRepository;
             _bookingRequestRepository = bookingRequestRepository;
             _interviewRoundRepository = interviewRoundRepository;
+            _interviewReportRepository = interviewReportRepository;
             _commissionCalculator = commissionCalculator;
             _jobService = jobService;
             _userRepository = userRepository;
@@ -72,6 +75,12 @@ namespace Intervu.Application.UseCases.InterviewBooking
             var split = await _commissionCalculator.ComputeAsync(round.Price);
             if (split.Net <= 0) return;
 
+            // If a candidate report is currently Pending, freeze the payout: create the Payout row with
+            // Status = PendingPayout, do NOT credit coach balance and do NOT emit an Earnings audit row.
+            // Admin Resolve (Rejected) will release the payout and credit the balance later.
+            var existingReport = await _interviewReportRepository.GetByRoomIdAsync(interviewRoomId);
+            var hasPendingReport = existingReport != null && existingReport.Status == InterviewReportStatus.Pending;
+
             var bookingRequest = await _bookingRequestRepository.GetByIdWithDetailsAsync(room.BookingRequestId.Value);
 
             // Credit earnings to coach's internal balance with optimistic concurrency.
@@ -85,10 +94,13 @@ namespace Intervu.Application.UseCases.InterviewBooking
                 {
                     await _unitOfWork.BeginTransactionAsync();
 
-                    var coach = await _coachProfileRepository.GetProfileByIdAsync(interviewerId);
-                    coach.CurrentAmount = (coach.CurrentAmount ?? 0) + split.Net;
-                    coach.Version++;
-                    await _coachProfileRepository.UpdateCoachProfileAsync(coach);
+                    if (!hasPendingReport)
+                    {
+                        var coach = await _coachProfileRepository.GetProfileByIdAsync(interviewerId);
+                        coach.CurrentAmount = (coach.CurrentAmount ?? 0) + split.Net;
+                        coach.Version++;
+                        await _coachProfileRepository.UpdateCoachProfileAsync(coach);
+                    }
 
                     var payoutTransaction = new InterviewBookingTransaction
                     {
@@ -102,27 +114,30 @@ namespace Intervu.Application.UseCases.InterviewBooking
                         CommissionAmount = split.Commission,
                         CommissionRate = split.Rate,
                         Type = TransactionType.Payout,
-                        Status = TransactionStatus.Paid,
+                        Status = hasPendingReport ? TransactionStatus.PendingPayout : TransactionStatus.Paid,
                         CreatedAt = DateTime.UtcNow
                     };
                     await _transactionRepository.AddAsync(payoutTransaction);
 
-                    var earningsTransaction = new InterviewBookingTransaction
+                    if (!hasPendingReport)
                     {
-                        Id = Guid.NewGuid(),
-                        OrderCode = RandomGenerator.GenerateOrderCode(),
-                        UserId = interviewerId,
-                        BookingRequestId = room.BookingRequestId,
-                        InterviewRoundId = round.Id,
-                        Amount = split.Net,
-                        GrossAmount = round.Price,
-                        CommissionAmount = split.Commission,
-                        CommissionRate = split.Rate,
-                        Type = TransactionType.Earnings,
-                        Status = TransactionStatus.Paid,
-                        CreatedAt = DateTime.UtcNow
-                    };
-                    await _transactionRepository.AddAsync(earningsTransaction);
+                        var earningsTransaction = new InterviewBookingTransaction
+                        {
+                            Id = Guid.NewGuid(),
+                            OrderCode = RandomGenerator.GenerateOrderCode(),
+                            UserId = interviewerId,
+                            BookingRequestId = room.BookingRequestId,
+                            InterviewRoundId = round.Id,
+                            Amount = split.Net,
+                            GrossAmount = round.Price,
+                            CommissionAmount = split.Commission,
+                            CommissionRate = split.Rate,
+                            Type = TransactionType.Earnings,
+                            Status = TransactionStatus.Paid,
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        await _transactionRepository.AddAsync(earningsTransaction);
+                    }
 
                     await _unitOfWork.SaveChangesAsync();
                     await _unitOfWork.CommitTransactionAsync();
@@ -152,13 +167,29 @@ namespace Intervu.Application.UseCases.InterviewBooking
             var scheduledTime = room.ScheduledTime ?? round.StartTime;
             var interviewDateText = scheduledTime.ToLocalTime().ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture);
 
-            var notificationMessage = $"Your payout for interview with {candidateName} at {interviewDateText} has been processed.";
             const string actionUrl = "/payment-history";
+
+            if (hasPendingReport)
+            {
+                var notificationMessage = $"Your payout for interview with {candidateName} at {interviewDateText} is on hold pending review of a candidate report.";
+                _jobService.Enqueue<INotificationUseCase>(uc => uc.CreateAsync(
+                    interviewerId,
+                    NotificationType.SystemAnnouncement,
+                    "Payout On Hold",
+                    notificationMessage,
+                    actionUrl,
+                    null
+                ));
+                // Skip the PayoutConfirmation email until the report is resolved.
+                return;
+            }
+
+            var processedMessage = $"Your payout for interview with {candidateName} at {interviewDateText} has been processed.";
             _jobService.Enqueue<INotificationUseCase>(uc => uc.CreateAsync(
                 interviewerId,
                 NotificationType.PaymentSuccess,
                 "Payout Processed",
-                notificationMessage,
+                processedMessage,
                 actionUrl,
                 null
             ));

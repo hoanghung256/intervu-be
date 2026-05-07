@@ -27,6 +27,7 @@ namespace Intervu.Application.UseCases.InterviewRoom
                 var reportRepo = unitOfWork.GetRepository<IInterviewReportRepository>();
                 var roomRepo = unitOfWork.GetRepository<IInterviewRoomRepository>();
                 var transactionRepo = unitOfWork.GetRepository<ITransactionRepository>();
+                var roundRepo = unitOfWork.GetRepository<IInterviewRoundRepository>();
 
                 var report = await reportRepo.GetByIdAsync(request.ReportId)
                     ?? throw new NotFoundException("Report not found");
@@ -34,7 +35,8 @@ namespace Intervu.Application.UseCases.InterviewRoom
                 var room = await roomRepo.GetByIdWithDetailsAsync(report.InterviewRoomId)
                     ?? throw new NotFoundException("Interview room not found");
 
-                // Update Report Status
+                var round = await roundRepo.GetByInterviewRoomIdAsync(report.InterviewRoomId);
+
                 report.Status = request.Status;
                 report.AdminNote = request.AdminNote;
                 report.ResolvedAt = DateTime.UtcNow;
@@ -44,7 +46,6 @@ namespace Intervu.Application.UseCases.InterviewRoom
                 string notificationDetail = "";
                 string refundInfo = "No refund was issued for this report.";
 
-                // Handle Resolve Logic (Refund etc.)
                 if (request.Status == InterviewReportStatus.Resolved)
                 {
                     if (request.RefundOption != null && request.RefundOption != RefundOption.None)
@@ -53,17 +54,15 @@ namespace Intervu.Application.UseCases.InterviewRoom
                         if (payment != null)
                         {
                             int refundAmount = (int)(payment.Amount * (int)request.RefundOption / 100.0);
-                            
-                            // Create Refund Transaction
+
                             await transactionRepo.AddAsync(new InterviewBookingTransaction
                             {
                                 Id = Guid.NewGuid(),
                                 OrderCode = RandomGenerator.GenerateOrderCode(),
                                 UserId = room.CandidateId ?? report.ReporterId ?? report.ReportedBy,
-                                //CoachAvailabilityId = room.CurrentAvailabilityId,
                                 Amount = refundAmount,
                                 Type = TransactionType.Refund,
-                                Status = TransactionStatus.Paid // Mark as paid immediately for internal resource refund
+                                Status = TransactionStatus.Paid
                             });
 
                             notificationDetail = $"Your report has been reviewed and resolved. We have issued a {request.RefundOption}% refund ({refundAmount:N0} resources) to your account. Thank you for your feedback.";
@@ -76,12 +75,14 @@ namespace Intervu.Application.UseCases.InterviewRoom
                          refundInfo = "This report was resolved without refund.";
                     }
 
-                    // Always Cancel the Payout if Resolved (meaning the coach might be at fault or session was bad)
-                    var payout = await transactionRepo.GetByAvailabilityId(room.CurrentAvailabilityId ?? Guid.Empty, TransactionType.Payout);
+                    // Cancel the coach payout when admin sides with the candidate.
+                    // - Status == Paid: coach was credited (race), reverse the credit and write a negative Earnings audit row.
+                    // - Status == PendingPayout: coach was never credited (gated/frozen), just flip to Cancel.
+                    var payout = round != null
+                        ? await transactionRepo.GetByInterviewRoundId(round.Id, TransactionType.Payout)
+                        : null;
                     if (payout != null)
                     {
-                        // If the coach was already credited, reverse: debit coach wallet and write a
-                        // compensating Earnings row with negative amounts so the audit trail is explicit.
                         if (payout.Status == TransactionStatus.Paid && room.CoachId.HasValue)
                         {
                             var coachProfileRepo = unitOfWork.GetRepository<ICoachProfileRepository>();
@@ -98,6 +99,7 @@ namespace Intervu.Application.UseCases.InterviewRoom
                                     OrderCode = RandomGenerator.GenerateOrderCode(),
                                     UserId = room.CoachId.Value,
                                     BookingRequestId = payout.BookingRequestId,
+                                    InterviewRoundId = round!.Id,
                                     Amount = -payout.Amount,
                                     GrossAmount = payout.GrossAmount.HasValue ? -payout.GrossAmount.Value : null,
                                     CommissionAmount = payout.CommissionAmount.HasValue ? -payout.CommissionAmount.Value : null,
@@ -110,17 +112,56 @@ namespace Intervu.Application.UseCases.InterviewRoom
                         }
 
                         payout.Status = TransactionStatus.Cancel;
-                        unitOfWork.GetRepository<ITransactionRepository>().UpdateAsync(payout);
+                        transactionRepo.UpdateAsync(payout);
                     }
                 }
                 else if (request.Status == InterviewReportStatus.Rejected)
                 {
-                    // If Rejected, unfreeze the Payout
-                    var payout = await transactionRepo.GetByAvailabilityId(room.CurrentAvailabilityId ?? Guid.Empty, TransactionType.Payout);
-                    if (payout != null && payout.Status == TransactionStatus.PendingPayout)
+                    // Release the frozen payout: flip PendingPayout -> Paid and credit the coach balance.
+                    var payout = round != null
+                        ? await transactionRepo.GetByInterviewRoundId(round.Id, TransactionType.Payout)
+                        : null;
+                    if (payout != null && payout.Status == TransactionStatus.PendingPayout && room.CoachId.HasValue)
                     {
-                        payout.Status = TransactionStatus.Paid; // Or whatever valid state to allow payout
-                        unitOfWork.GetRepository<ITransactionRepository>().UpdateAsync(payout);
+                        var coachProfileRepo = unitOfWork.GetRepository<ICoachProfileRepository>();
+                        var coach = await coachProfileRepo.GetProfileByIdAsync(room.CoachId.Value);
+                        if (coach != null)
+                        {
+                            coach.CurrentAmount = (coach.CurrentAmount ?? 0) + payout.Amount;
+                            coach.Version++;
+                            await coachProfileRepo.UpdateCoachProfileAsync(coach);
+
+                            await transactionRepo.AddAsync(new InterviewBookingTransaction
+                            {
+                                Id = Guid.NewGuid(),
+                                OrderCode = RandomGenerator.GenerateOrderCode(),
+                                UserId = room.CoachId.Value,
+                                BookingRequestId = payout.BookingRequestId,
+                                InterviewRoundId = round!.Id,
+                                Amount = payout.Amount,
+                                GrossAmount = payout.GrossAmount,
+                                CommissionAmount = payout.CommissionAmount,
+                                CommissionRate = payout.CommissionRate,
+                                Type = TransactionType.Earnings,
+                                Status = TransactionStatus.Paid,
+                                CreatedAt = DateTime.UtcNow
+                            });
+                        }
+
+                        payout.Status = TransactionStatus.Paid;
+                        transactionRepo.UpdateAsync(payout);
+
+                        var coachId = room.CoachId.Value;
+                        var roomShortId = room.Id.ToString().Substring(0, 8).ToUpperInvariant();
+                        var releasedMessage = $"Your payout for interview room {roomShortId} has been released after report review.";
+                        jobService.Enqueue<INotificationUseCase>(uc => uc.CreateAsync(
+                            coachId,
+                            NotificationType.PaymentSuccess,
+                            "Payout Released",
+                            releasedMessage,
+                            "/payment-history",
+                            null
+                        ));
                     }
                    notificationDetail = "Your report has been rejected due to insufficient or unclear information. Please review the details and submit again if necessary.";
                 }
