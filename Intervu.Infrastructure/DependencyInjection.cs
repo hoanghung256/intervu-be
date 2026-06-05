@@ -26,6 +26,8 @@ using Hangfire;
 using Intervu.Application.Utils;
 using Hangfire.PostgreSql;
 using Intervu.Infrastructure.Persistence.PostgreSQL.DataContext;
+using Intervu.Application.Interfaces.Services;
+using Intervu.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
@@ -93,6 +95,7 @@ namespace Intervu.Infrastructure
             services.AddScoped<IUserSkillAssessmentSnapshotRepository, UserSkillAssessmentSnapshotRepository>();
             services.AddScoped<IInterviewTypeRepository, InterviewTypeRepository>();
             services.AddScoped<IQuestionRepository, QuestionRepository>();
+            services.AddScoped<IRoadmapPracticeEnrichmentService, RoadmapPracticeEnrichmentService>();
             services.AddScoped<IGeneratedQuestionRepository, GeneratedQuestionRepository>();
             services.AddScoped<IPreparedQuestionRepository, PreparedQuestionRepository>();
             services.AddScoped<ICommentRepository, CommentRepository>();

@@ -1,7 +1,9 @@
 ﻿using Asp.Versioning;
+using Intervu.API.Utils.Constant;
 using Intervu.Application.DTOs.Common;
 using Intervu.Application.DTOs.InterviewType;
 using Intervu.Application.Interfaces.UseCases.InterviewType;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 
@@ -30,7 +32,7 @@ namespace Intervu.API.Controllers.v1
             [FromQuery][Range(1, int.MaxValue)] int page = 1,
             [FromQuery][Range(1, int.MaxValue)] int pageSize = 10)
         {
-            var result = await _getInterviewType.ExecuteAsync(pageSize, page);
+            var result = await _getInterviewType.ExecuteAsync(pageSize, page, includeAllStatuses: false);
             return Ok(new {
                 success = true,
                 message = "Interview types retrieved successfully",
@@ -38,7 +40,25 @@ namespace Intervu.API.Controllers.v1
             });
         }
 
-        [HttpGet("{id}")]
+        /// <summary>
+        /// Admin: all interview types regardless of status (Draft, Active, Inactive, Deprecated).
+        /// </summary>
+        [Authorize(Policy = AuthorizationPolicies.Admin)]
+        [HttpGet("admin")]
+        public async Task<IActionResult> GetAllForAdmin(
+            [FromQuery][Range(1, int.MaxValue)] int page = 1,
+            [FromQuery][Range(1, int.MaxValue)] int pageSize = 10)
+        {
+            var result = await _getInterviewType.ExecuteAsync(pageSize, page, includeAllStatuses: true);
+            return Ok(new
+            {
+                success = true,
+                message = "Interview types retrieved successfully",
+                data = result
+            });
+        }
+
+        [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetById(Guid id)
         {
             var result = await _getInterviewType.ExecuteAsync(id);

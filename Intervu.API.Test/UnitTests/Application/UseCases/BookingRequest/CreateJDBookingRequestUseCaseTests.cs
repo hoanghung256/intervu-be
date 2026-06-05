@@ -1,6 +1,8 @@
 using AutoMapper;
 using Intervu.Application;
 using Intervu.Application.DTOs.BookingRequest;
+using Intervu.Application.Exceptions;
+using Intervu.Application.Interfaces.ExternalServices;
 using Intervu.Application.Interfaces.UseCases.BookingRequest;
 using Intervu.Application.Mappings;
 using Intervu.Domain.Abstractions.Entity.Interfaces;
@@ -53,7 +55,12 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
                         CoachId = coachId,
                         Price = 120,
                         DurationMinutes = 60,
-                        InterviewType = new InterviewType { Name = "System Design", IsCoding = false }
+                        InterviewType = new InterviewType
+                        {
+                            Name = "System Design",
+                            IsCoding = false,
+                            Status = InterviewTypeStatus.Active
+                        }
                     }
                 },
                 new Dictionary<Guid, CoachAvailability>
@@ -138,7 +145,12 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
                         CoachId = coachId,
                         Price = 100,
                         DurationMinutes = 60,
-                        InterviewType = new InterviewType { Name = "Tech", IsCoding = true }
+                        InterviewType = new InterviewType
+                        {
+                            Name = "Tech",
+                            IsCoding = true,
+                            Status = InterviewTypeStatus.Active
+                        }
                     },
                     new CoachInterviewService
                     {
@@ -146,7 +158,12 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
                         CoachId = coachId,
                         Price = 80,
                         DurationMinutes = 30,
-                        InterviewType = new InterviewType { Name = "Behavioral", IsCoding = false }
+                        InterviewType = new InterviewType
+                        {
+                            Name = "Behavioral",
+                            IsCoding = false,
+                            Status = InterviewTypeStatus.Active
+                        }
                     }
                 },
                 new Dictionary<Guid, CoachAvailability>
@@ -194,6 +211,78 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
             service.AvailabilityRepo.Verify(x => x.UpdateAsync(It.IsAny<CoachAvailability>()), Times.Exactly(3));
         }
 
+        [Fact]
+        [Trait("Category", "Unit")]
+        public async Task ExecuteAsync_ThrowsBadRequest_WhenInterviewTypeIsNotActive()
+        {
+            var candidateId = Guid.NewGuid();
+            var coachId = Guid.NewGuid();
+            var serviceId = Guid.NewGuid();
+            var block1Id = Guid.NewGuid();
+            var block2Id = Guid.NewGuid();
+            var start = DateTime.UtcNow.AddDays(2).Date.AddHours(9);
+
+            var dto = new CreateJDBookingRequestDto
+            {
+                CoachId = coachId,
+                JobDescriptionUrl = "https://example.com/jd.pdf",
+                CVUrl = "https://example.com/cv.pdf",
+                AimLevel = AimLevel.Senior,
+                Rounds =
+                [
+                    new CreateInterviewRoundDto
+                    {
+                        CoachInterviewServiceId = serviceId,
+                        AvailabilityIds = [block1Id, block2Id]
+                    }
+                ]
+            };
+
+            var service = BuildServiceProviderForCreateBooking(
+                coachId,
+                new[]
+                {
+                    new CoachInterviewService
+                    {
+                        Id = serviceId,
+                        CoachId = coachId,
+                        Price = 120,
+                        DurationMinutes = 60,
+                        InterviewType = new InterviewType
+                        {
+                            Name = "Inactive Type",
+                            IsCoding = false,
+                            Status = InterviewTypeStatus.Inactive
+                        }
+                    }
+                },
+                new Dictionary<Guid, CoachAvailability>
+                {
+                    [block1Id] = new CoachAvailability
+                    {
+                        Id = block1Id,
+                        CoachId = coachId,
+                        StartTime = start,
+                        EndTime = start.AddMinutes(30),
+                        Status = CoachAvailabilityStatus.Available
+                    },
+                    [block2Id] = new CoachAvailability
+                    {
+                        Id = block2Id,
+                        CoachId = coachId,
+                        StartTime = start.AddMinutes(30),
+                        EndTime = start.AddMinutes(60),
+                        Status = CoachAvailabilityStatus.Available
+                    }
+                });
+
+            var useCase = service.Provider.GetRequiredService<ICreateJDBookingRequest>();
+
+            await Assert.ThrowsAsync<BadRequestException>(() => useCase.ExecuteAsync(candidateId, dto));
+
+            service.UnitOfWorkRepo.Verify(x => x.BeginTransactionAsync(), Times.Never);
+        }
+
         private static BookingCreateContext BuildServiceProviderForCreateBooking(
             Guid coachId,
             IEnumerable<CoachInterviewService> services,
@@ -204,6 +293,16 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
             var coachProfileRepo = new Mock<ICoachProfileRepository>();
             var availabilityRepo = new Mock<ICoachAvailabilitiesRepository>();
             var unitOfWorkRepo = new Mock<IUnitOfWork>();
+            var userRepo = new Mock<IUserRepository>();
+            userRepo.Setup(x => x.GetByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync((Guid id) => new User
+                {
+                    Id = id,
+                    FullName = "Test User",
+                    Email = "test@example.com",
+                    Password = "hashed"
+                });
+            var backgroundService = new Mock<IBackgroundService>();
 
             DomainBookingRequest? addedBooking = null;
             var serviceList = services.ToList();
@@ -270,10 +369,12 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
             var config = new ConfigurationBuilder()
                 .AddInMemoryCollection(new Dictionary<string, string?>
                 {
-                    ["ApiClients:AIService"] = "https://example.com"
+                    ["ApiClients:AIService"] = "https://example.com",
+                    ["AppSettings:FrontendUrl"] = "http://localhost:5173"
                 })
                 .Build();
 
+            serviceCollection.AddSingleton<IConfiguration>(config);
             serviceCollection.AddUseCases(config);
             serviceCollection.AddSingleton<IMapper>(new Mapper(new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>())));
             serviceCollection.AddScoped(_ => bookingRepo.Object);
@@ -281,6 +382,8 @@ namespace Intervu.API.Test.UnitTests.Application.UseCases.BookingRequest
             serviceCollection.AddScoped(_ => coachProfileRepo.Object);
             serviceCollection.AddScoped(_ => availabilityRepo.Object);
             serviceCollection.AddScoped(_ => unitOfWorkRepo.Object);
+            serviceCollection.AddScoped(_ => userRepo.Object);
+            serviceCollection.AddScoped(_ => backgroundService.Object);
 
             var provider = serviceCollection.BuildServiceProvider();
 

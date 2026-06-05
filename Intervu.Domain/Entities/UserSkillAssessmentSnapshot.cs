@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Intervu.Domain.Entities.Constants;
 
 namespace Intervu.Domain.Entities
 {
@@ -147,6 +148,9 @@ namespace Intervu.Domain.Entities
 
     public class RoadmapSnapshot
     {
+        [JsonPropertyName("schema_version")]
+        public int SchemaVersion { get; set; } = 2;
+
         [JsonPropertyName("roadmap_metadata")]
         public RoadmapMetadataSnapshot RoadmapMetadata { get; set; } = new();
 
@@ -173,6 +177,27 @@ namespace Intervu.Domain.Entities
 
         [JsonPropertyName("phase_name")]
         public string PhaseName { get; set; } = string.Empty;
+
+        [JsonPropertyName("phase_description")]
+        public string PhaseDescription { get; set; } = string.Empty;
+
+        [JsonPropertyName("status")]
+        public string Status { get; set; } = "Locked";
+
+        [JsonPropertyName("is_unlocked")]
+        public bool IsUnlocked { get; set; }
+
+        [JsonPropertyName("unlocked_at")]
+        public string? UnlockedAt { get; set; }
+
+        [JsonPropertyName("passed_at")]
+        public string? PassedAt { get; set; }
+
+        [JsonPropertyName("checkpoint_evaluation")]
+        public RubricEvaluationSnapshot? CheckpointEvaluation { get; set; }
+
+        [JsonPropertyName("recommended_coach")]
+        public RoadmapNodeCoachSnapshot? RecommendedCoach { get; set; }
 
         [JsonPropertyName("recommended_coaches")]
         public List<RoadmapCoachSnapshot> RecommendedCoaches { get; set; } = new();
@@ -240,11 +265,21 @@ namespace Intervu.Domain.Entities
 
     public class RoadmapNodeSnapshot
     {
+        [JsonPropertyName("node_id")]
+        public string NodeId { get; set; } = string.Empty;
+
         [JsonPropertyName("skill_id")]
         public string SkillId { get; set; } = string.Empty;
 
         [JsonPropertyName("skill_name")]
         public string SkillName { get; set; } = string.Empty;
+
+        [JsonPropertyName("pillar_type")]
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public PillarType PillarType { get; set; } = PillarType.HARD_SKILL;
+
+        [JsonPropertyName("checkpoint")]
+        public RoadmapCheckpointSnapshot? Checkpoint { get; set; }
 
         [JsonPropertyName("assessment")]
         public RoadmapNodeAssessmentSnapshot Assessment { get; set; } = new();
@@ -287,6 +322,66 @@ namespace Intervu.Domain.Entities
 
         [JsonPropertyName("progress")]
         public int Progress { get; set; }
+
+        [JsonPropertyName("score")]
+        public decimal Score { get; set; }
+    }
+
+    public class RoadmapCheckpointSnapshot
+    {
+        [JsonPropertyName("title")]
+        public string Title { get; set; } = string.Empty;
+
+        [JsonPropertyName("objective")]
+        public string Objective { get; set; } = string.Empty;
+
+        [JsonPropertyName("pass_threshold")]
+        public int PassThreshold { get; set; } = 70;
+
+        [JsonPropertyName("interview_room_id")]
+        public string? InterviewRoomId { get; set; }
+
+        [JsonPropertyName("rubric_evaluation")]
+        public RubricEvaluationSnapshot? RubricEvaluation { get; set; }
+    }
+
+    public class RubricEvaluationSnapshot
+    {
+        [JsonPropertyName("interview_room_id")]
+        public string InterviewRoomId { get; set; } = string.Empty;
+
+        [JsonPropertyName("submitted_at")]
+        public string SubmittedAt { get; set; } = string.Empty;
+
+        [JsonPropertyName("total_percentage")]
+        public int TotalPercentage { get; set; }
+
+        [JsonPropertyName("pass_threshold")]
+        public int PassThreshold { get; set; } = 70;
+
+        [JsonPropertyName("status")]
+        public string Status { get; set; } = "Needs Improvement";
+
+        [JsonPropertyName("low_score_categories")]
+        public List<string> LowScoreCategories { get; set; } = new();
+
+        [JsonPropertyName("items")]
+        public List<RubricEvaluationItemSnapshot> Items { get; set; } = new();
+    }
+
+    public class RubricEvaluationItemSnapshot
+    {
+        [JsonPropertyName("type")]
+        public string Type { get; set; } = string.Empty;
+
+        [JsonPropertyName("score")]
+        public int Score { get; set; }
+
+        [JsonPropertyName("question")]
+        public string Question { get; set; } = string.Empty;
+
+        [JsonPropertyName("answer")]
+        public string Answer { get; set; } = string.Empty;
     }
 
     public class RoadmapChildSkillSnapshot

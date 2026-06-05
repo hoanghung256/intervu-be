@@ -421,7 +421,7 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .Include(p => p.InterviewServices)
                     .ThenInclude(s => s.InterviewType)
                 .Where(p => p.Status == CoachProfileStatus.Enable
-                            && p.InterviewServices.Any())
+                            && p.InterviewServices.Any(s => s.InterviewType.Status == InterviewTypeStatus.Active))
                 .OrderByDescending(p => _context.Feedbacks.Where(f => f.CoachId == p.Id).Count())
                 .ThenByDescending(p => _context.Feedbacks.Where(f => f.CoachId == p.Id).Average(f => (double?)f.Rating) ?? 0)
                 .Take(limit)

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Intervu.Domain.Entities.Constants;
 
 namespace Intervu.Application.UseCases.InterviewType
 {
@@ -29,7 +30,9 @@ namespace Intervu.Application.UseCases.InterviewType
             if (type == null)
                 throw new KeyNotFoundException($"InterviewType with ID {typeId} not found.");
 
-            _repo.DeleteAsync(type);
+            // _repo.DeleteAsync(type);
+            type.Status = InterviewTypeStatus.Deprecated;
+            _repo.UpdateAsync(type);
             await _repo.SaveChangesAsync();
         }
     }

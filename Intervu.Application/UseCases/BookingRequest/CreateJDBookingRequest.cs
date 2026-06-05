@@ -69,6 +69,13 @@ namespace Intervu.Application.UseCases.BookingRequest
             if (invalidServices.Count > 0)
                 throw new BadRequestException("One or more selected services do not belong to the specified coach");
 
+            foreach (var s in services)
+            {
+                if (s.InterviewType == null)
+                    throw new NotFoundException("One or more coach interview services are missing interview type metadata");
+                InterviewTypeBookability.EnsureActiveForBooking(s.InterviewType);
+            }
+
             var serviceMap = services.ToDictionary(s => s.Id);
             var serviceDurations = services.ToDictionary(s => s.Id, s => s.DurationMinutes);
 

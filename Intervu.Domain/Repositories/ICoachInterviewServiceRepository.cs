@@ -8,6 +8,7 @@ namespace Intervu.Domain.Repositories
         Task<CoachInterviewService?> GetByCoachAndTypeAsync(Guid coachId, Guid interviewTypeId);
         Task<CoachInterviewService?> GetByIdWithDetailsAsync(Guid id);
         Task<IEnumerable<CoachInterviewService>> GetByIdsAsync(IEnumerable<Guid> ids);
+        Task<List<Guid>> GetCoachIdsByInterviewTypeIdAsync(Guid interviewTypeId);
         Task<bool> HasActiveReferencesAsync(Guid serviceId);
     }
 }

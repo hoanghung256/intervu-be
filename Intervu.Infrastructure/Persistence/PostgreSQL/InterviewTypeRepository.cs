@@ -20,15 +20,20 @@ namespace Intervu.Infrastructure.Persistence.PostgreSQL
                 .FirstOrDefaultAsync(it => it.Name.ToLower() == normalized);
         }
 
-        public async Task<IEnumerable<InterviewType>> GetList(int page, int pageSize)
+        public async Task<(IEnumerable<InterviewType> Items, int TotalCount)> GetPagedAsync(int page, int pageSize, bool activeOnly)
         {
-            return await _context.InterviewTypes
-                // .Where(it => it.Status == InterviewTypeStatus.Active)
+            IQueryable<InterviewType> query = _context.InterviewTypes.AsNoTracking();
+            if (activeOnly)
+                query = query.Where(it => it.Status == InterviewTypeStatus.Active);
+
+            var total = await query.CountAsync();
+            var items = await query
+                .OrderBy(it => it.Name)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .OrderBy(it => it.Name)
-                .AsNoTracking()
                 .ToListAsync();
+
+            return (items, total);
         }
     }
 }

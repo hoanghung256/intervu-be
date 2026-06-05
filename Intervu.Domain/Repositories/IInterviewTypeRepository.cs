@@ -9,7 +9,11 @@ namespace Intervu.Domain.Repositories
 {
     public interface IInterviewTypeRepository : IRepositoryBase<InterviewType>
     {
-        Task<IEnumerable<InterviewType>> GetList(int page, int pageSize);
+        /// <summary>
+        /// Paged interview types. When <paramref name="activeOnly"/> is true, only Active statuses (public/coach). When false, all statuses (admin).
+        /// </summary>
+        Task<(IEnumerable<InterviewType> Items, int TotalCount)> GetPagedAsync(int page, int pageSize, bool activeOnly);
+
         Task<InterviewType?> GetByNameAsync(string name);
     }
 }

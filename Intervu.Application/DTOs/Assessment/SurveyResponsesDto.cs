@@ -106,6 +106,9 @@ namespace Intervu.Application.DTOs.Assessment
 
     public class SurveyRoadmapDto
     {
+        [JsonPropertyName("schema_version")]
+        public int SchemaVersion { get; set; } = 2;
+
         [JsonPropertyName("roadmap_metadata")]
         public SurveyRoadmapMetadataDto RoadmapMetadata { get; set; } = new();
 
@@ -132,6 +135,27 @@ namespace Intervu.Application.DTOs.Assessment
 
         [JsonPropertyName("phase_name")]
         public string PhaseName { get; set; } = string.Empty;
+
+        [JsonPropertyName("phase_description")]
+        public string PhaseDescription { get; set; } = string.Empty;
+
+        [JsonPropertyName("status")]
+        public string Status { get; set; } = "Locked";
+
+        [JsonPropertyName("is_unlocked")]
+        public bool IsUnlocked { get; set; }
+
+        [JsonPropertyName("unlocked_at")]
+        public string? UnlockedAt { get; set; }
+
+        [JsonPropertyName("passed_at")]
+        public string? PassedAt { get; set; }
+
+        [JsonPropertyName("checkpoint_evaluation")]
+        public SurveyRubricEvaluationDto? CheckpointEvaluation { get; set; }
+
+        [JsonPropertyName("recommended_coach")]
+        public SurveyRoadmapNodeCoachDto? RecommendedCoach { get; set; }
 
         [JsonPropertyName("recommended_coaches")]
         public List<SurveyRoadmapCoachDto> RecommendedCoaches { get; set; } = new();
@@ -199,11 +223,20 @@ namespace Intervu.Application.DTOs.Assessment
 
     public class SurveyRoadmapNodeDto
     {
+        [JsonPropertyName("node_id")]
+        public string NodeId { get; set; } = string.Empty;
+
         [JsonPropertyName("skill_id")]
         public string SkillId { get; set; } = string.Empty;
 
         [JsonPropertyName("skill_name")]
         public string SkillName { get; set; } = string.Empty;
+
+        [JsonPropertyName("pillar_type")]
+        public string PillarType { get; set; } = "HARD_SKILL";
+
+        [JsonPropertyName("checkpoint")]
+        public SurveyRoadmapCheckpointDto? Checkpoint { get; set; }
 
         [JsonPropertyName("assessment")]
         public SurveyRoadmapNodeAssessmentDto Assessment { get; set; } = new();
@@ -246,6 +279,51 @@ public class SurveyRoadmapNodeAssessmentDto
 
         [JsonPropertyName("progress")]
         public int Progress { get; set; }
+
+        [JsonPropertyName("score")]
+        public decimal Score { get; set; }
+    }
+
+    public class SurveyRoadmapCheckpointDto
+    {
+        [JsonPropertyName("title")]
+        public string Title { get; set; } = string.Empty;
+
+        [JsonPropertyName("objective")]
+        public string Objective { get; set; } = string.Empty;
+
+        [JsonPropertyName("pass_threshold")]
+        public int PassThreshold { get; set; } = 70;
+
+        [JsonPropertyName("interview_room_id")]
+        public string? InterviewRoomId { get; set; }
+
+        [JsonPropertyName("rubric_evaluation")]
+        public SurveyRubricEvaluationDto? RubricEvaluation { get; set; }
+    }
+
+    public class SurveyRubricEvaluationDto
+    {
+        [JsonPropertyName("interview_room_id")]
+        public string InterviewRoomId { get; set; } = string.Empty;
+
+        [JsonPropertyName("submitted_at")]
+        public string SubmittedAt { get; set; } = string.Empty;
+
+        [JsonPropertyName("total_percentage")]
+        public int TotalPercentage { get; set; }
+
+        [JsonPropertyName("pass_threshold")]
+        public int PassThreshold { get; set; } = 70;
+
+        [JsonPropertyName("status")]
+        public string Status { get; set; } = "Needs Improvement";
+
+        [JsonPropertyName("low_score_categories")]
+        public List<string> LowScoreCategories { get; set; } = new();
+
+        [JsonPropertyName("items")]
+        public List<SurveyRoadmapEvaluationDto> Items { get; set; } = new();
     }
 
     [JsonConverter(typeof(SurveyRoadmapChildSkillDtoJsonConverter))]
