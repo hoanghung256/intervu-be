@@ -1,6 +1,6 @@
 ﻿# INTERVU - Guidelines & Conventions
 
-Welcome to the Intervu project! This document provides general guidelines and conventions to ensure code quality and consistency throughout the development process.
+Welcome to the Intervu project! This document provides general guidelines and conventions to ensure code quality and consistency throughout the development process. 
 
 ## Quick Links (Tabs)
 
