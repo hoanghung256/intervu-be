@@ -14,5 +14,6 @@ namespace Intervu.Domain.Repositories
         Task<bool> MarkAsUsedAsync(Guid tokenId);
         Task InvalidateAllUserTokensAsync(Guid userId);
         Task<PasswordResetToken?> GetLatestValidTokenByUserIdAsync(Guid userId);
+        Task DeleteExpiredTokensAsync();
     }
 }
