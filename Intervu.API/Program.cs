@@ -231,18 +231,27 @@ namespace Intervu.API
                 options.AddPolicy(name: CorsPolicies.DevCorsPolicy, policy =>
                 {
                     string? currentIpV4 = GetLocalIPv4();
-                    policy.WithOrigins(
-                              "http://localhost:5173",
-                              "https://localhost:5173",
-                              $"http://{currentIpV4}:5173",
-                              $"https://{currentIpV4}:5173",
-                              "https://scrupleless-aliana-unbreachable.ngrok-free.dev",
-                              "https://scrupleless-aliana-unbreachable.ngrok-free.dev:5173",
-                              "https://supereminent-alita-honorless.ngrok-free.dev",
-                              "https://supereminent-alita-honorless.ngrok-free.dev:5173",
-                              "https://d9z00h1g-5173.asse.devtunnels.ms",
-                              "https://2zrf59x4-5173.asse.devtunnels.ms"
-                          )
+                    var localOrigins = new List<string>
+                    {
+                        "http://localhost:5173",
+                        "https://localhost:5173",
+                    };
+
+                    if (!string.IsNullOrWhiteSpace(currentIpV4))
+                    {
+                        localOrigins.Add($"http://{currentIpV4}:5173");
+                        localOrigins.Add($"https://{currentIpV4}:5173");
+                    }
+
+                    // Additional dev origins from config (e.g., ngrok, dev tunnels)
+                    var configDevOrigins = builder.Configuration
+                        .GetValue<string>("CorsSettings:DevAllowedOrigins")?
+                        .Split(",", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        ?? [];
+
+                    var allOrigins = localOrigins.Concat(configDevOrigins).ToArray();
+
+                    policy.WithOrigins(allOrigins)
                           .AllowAnyHeader()
                           .AllowAnyMethod()
                           .AllowCredentials();
@@ -253,7 +262,8 @@ namespace Intervu.API
                 {
                     var allowedOrigins = builder.Configuration
                         .GetValue<string>("CorsSettings:AllowedOrigins")?
-                        .Split(",") ?? [];
+                        .Split(",", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        ?? [];
 
                     policy.WithOrigins(allowedOrigins)
                           .AllowAnyHeader()
