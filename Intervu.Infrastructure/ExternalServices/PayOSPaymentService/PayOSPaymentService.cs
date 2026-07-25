@@ -15,6 +15,7 @@ namespace Intervu.Infrastructure.ExternalServices.PayOSPaymentService
         private readonly PayoutClient _payoutClient;
         private readonly string _returnUrl;
         private readonly string _cancelUrl;
+        private readonly string _webhookUrl;
         private readonly IBankFieldProtector _bankFieldProtector;
         private readonly ILogger<PayOSPaymentService> _logger;
 
@@ -23,6 +24,7 @@ namespace Intervu.Infrastructure.ExternalServices.PayOSPaymentService
             PayoutClient payoutClient,
             string returnUrl,
             string cancelUrl,
+            string webhookUrl,
             IBankFieldProtector bankFieldProtector,
             ILogger<PayOSPaymentService> logger)
         {
@@ -30,6 +32,7 @@ namespace Intervu.Infrastructure.ExternalServices.PayOSPaymentService
             _payoutClient = payoutClient;
             _returnUrl = returnUrl;
             _cancelUrl = cancelUrl;
+            _webhookUrl = webhookUrl;
             _bankFieldProtector = bankFieldProtector;
             _logger = logger;
         }
@@ -138,7 +141,10 @@ namespace Intervu.Infrastructure.ExternalServices.PayOSPaymentService
 
         public async Task RegisterWebhooks()
         {
-            await _paymentClient.Client.Webhooks.ConfirmAsync("https://pn3tc7bj-7118.asse.devtunnels.ms/api/v1/interview-booking/webhook");
+            if (!string.IsNullOrWhiteSpace(_webhookUrl))
+            {
+                await _paymentClient.Client.Webhooks.ConfirmAsync(_webhookUrl);
+            }
         }
     }
 }

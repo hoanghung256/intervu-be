@@ -191,8 +191,9 @@ namespace Intervu.Infrastructure
 
                 string returnUrl = configuration["PayOS:Payment:ReturnEndpoint"]!;
                 string cancelUrl = configuration["PayOS:Payment:CancelEndpoint"]!;
+                string webhookUrl = configuration["PayOS:Payment:WebhookUrl"] ?? string.Empty;
 
-                return new PayOSPaymentService(paymentClient, payoutClient, returnUrl, cancelUrl, bankFieldProtector, logger);
+                return new PayOSPaymentService(paymentClient, payoutClient, returnUrl, cancelUrl, webhookUrl, bankFieldProtector, logger);
             });
 
             services.AddScoped<CodeExecutionService>();
