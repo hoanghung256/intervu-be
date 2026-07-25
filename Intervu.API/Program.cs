@@ -133,8 +133,8 @@ namespace Intervu.API
                     ValidIssuer = builder.Configuration["JwtConfig:Issuer"],
                     ValidAudience = builder.Configuration["JwtConfig:Audience"],
                     IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(builder.Configuration["JwtConfig:Key"]!)),
-                    ValidateIssuer = false, // Disable because Issuer is empty in config
-                    ValidateAudience = false, // Disable because Audience is empty in config
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
                     ClockSkew = TimeSpan.Zero
